@@ -39,7 +39,7 @@ applications.
         to create isolated Python environments.
 
         ```shell
-        $ pip install virtualenv
+        $ pip install --user virtualenv
         ```
 
 2.  Clone the TensorFlow Ranking repository.
@@ -61,7 +61,7 @@ applications.
     any system dependencies.
 
     ```shell
-    $ virtualenv -p python3 /tmp/tfr
+    $ ~/.local/bin/virtualenv -p python3 /tmp/tfr
     $ source /tmp/tfr/bin/activate
     (tfr) $ pip install /tmp/ranking_pip/tensorflow_ranking*.whl
     ```
@@ -146,7 +146,9 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
 3.  Start a jupyter notebook instance on remote server.
 
     ```shell
-    (tfr) $ jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com' --port=8888
+    (tfr) $ jupyter notebook tensorflow_ranking/examples/tf_ranking_libsvm.ipynb \
+            --NotebookApp.allow_origin='https://colab.research.google.com' \
+            --port=8888
     ```
 
 4.  (Optional) If you are working on remote server, set up port forwarding with
