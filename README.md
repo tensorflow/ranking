@@ -61,7 +61,7 @@ applications.
     any system dependencies.
 
     ```shell
-    $ virtualenv -p python3 /tmp/tfr
+    $ ~/.local/bin/virtualenv -p python3 /tmp/tfr
     $ source /tmp/tfr/bin/activate
     (tfr) $ pip install /tmp/ranking_pip/tensorflow_ranking*.whl
     ```
@@ -146,7 +146,7 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
 3.  Start a jupyter notebook instance on remote server.
 
     ```shell
-    (tfr) $ jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com' --port=8888
+    (tfr) $ jupyter notebook tensorflow_ranking/examples/tf_ranking_libsvm.ipynb --NotebookApp.allow_origin='https://colab.research.google.com' --port=8888
     ```
 
 4.  (Optional) If you are working on remote server, set up port forwarding with
@@ -159,8 +159,7 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
 5.  Running the notebook.
 
     *   Start jupyter notebook on your local machine at
-        [http://localhost:8888/](http://localhost:8888/) and browse to the
-        ipython notebook.
+        [http://localhost:8888/](http://localhost:8888/).
 
     *   An alternative is to use colaboratory notebook via
         [colab.research.google.com](http://colab.research.google.com) and open
