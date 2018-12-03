@@ -146,7 +146,9 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
 3.  Start a jupyter notebook instance on remote server.
 
     ```shell
-    (tfr) $ jupyter notebook tensorflow_ranking/examples/tf_ranking_libsvm.ipynb --NotebookApp.allow_origin='https://colab.research.google.com' --port=8888
+    (tfr) $ jupyter notebook tensorflow_ranking/examples/tf_ranking_libsvm.ipynb \
+              --NotebookApp.allow_origin='https://colab.research.google.com' \
+              --port=8888
     ```
 
 4.  (Optional) If you are working on remote server, set up port forwarding with
