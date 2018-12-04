@@ -167,3 +167,20 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
     *   An alternative is to use colaboratory notebook via
         [colab.research.google.com](http://colab.research.google.com) and open
         the notebook in the browser. Choose local runtime and link to port 8888.
+ 
+##  References
++ _TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank._ Rama Kumar Pasumarthi, Xuanhui Wang, Cheng Li, Sebastian Bruch, Michael Bendersky, Marc Najork, Jan Pfeifer, Nadav Golbandi, Rohan Anil, Stephan Wolf.
+[https://arxiv.org/abs/1812.00073](https://arxiv.org/abs/1812.00073).
+
++ _Learning Groupwise Scoring Functions Using Deep Neural Networks._ Qingyao Ai, Xuanhui Wang, Nadav Golbandi, Michael Bendersky, Marc Najork.
+[https://arxiv.org/abs/1811.04415](https://arxiv.org/abs/1811.04415).
+
+### Citation
+If you use TensorFlow Ranking in your research and would like to cite it, we suggest you use the following citation:
+
+       @misc{TensorflowRanking2018,
+       Author = {Rama Kumar Pasumarthi and Xuanhui Wang and Cheng Li and Sebastian Bruch and Michael Bendersky and Marc Najork and Jan Pfeifer and Nadav Golbandi and Rohan Anil and Stephan Wolf},
+       Title = {TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank},
+       Year = {2018},
+       Eprint = {arXiv:1812.00073},
+       } 
