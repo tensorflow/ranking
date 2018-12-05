@@ -167,3 +167,37 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
     *   An alternative is to use colaboratory notebook via
         [colab.research.google.com](http://colab.research.google.com) and open
         the notebook in the browser. Choose local runtime and link to port 8888.
+
+## References
+
++   Rama Kumar Pasumarthi, Xuanhui Wang, Cheng Li, Sebastian Bruch, Michael
+    Bendersky, Marc Najork, Jan Pfeifer, Nadav Golbandi, Rohan Anil, Stephan
+    Wolf. _TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank._
+    [CoRR abs/1812.00073 (2018)](https://arxiv.org/abs/1812.00073)
+
+
++   Qingyao Ai, Xuanhui Wang, Nadav Golbandi, Michael Bendersky, Marc Najork.
+    _Learning Groupwise Scoring Functions Using Deep Neural Networks._
+    [CoRR abs/1811.04415 (2018)](https://arxiv.org/abs/1811.04415)
+
+
++   Xuanhui Wang, Michael Bendersky, Donald Metzler, and Marc Najork.
+    _Learning to Rank with Selection Bias in Personal Search._
+    [SIGIR 2016.](https://ai.google/research/pubs/pub45286)
+
+
++   Xuanhui Wang, Cheng Li, Nadav Golbandi, Mike Bendersky, Marc Najork.
+    _The LambdaLoss Framework for Ranking Metric Optimization_.
+    [CIKM 2018.](https://ai.google/research/pubs/pub47258)
+
+### Citation
+
+If you use TensorFlow Ranking in your research and would like to cite it, we
+suggest you use the following citation:
+
+       @misc{TensorflowRanking2018,
+       author = {Rama Kumar Pasumarthi and Xuanhui Wang and Cheng Li and Sebastian Bruch and Michael Bendersky and Marc Najork and Jan Pfeifer and Nadav Golbandi and Rohan Anil and Stephan Wolf},
+       title = {TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank},
+       year = {2018},
+       eprint = {arXiv:1812.00073},
+       }
