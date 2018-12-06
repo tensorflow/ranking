@@ -118,7 +118,7 @@ def load_libsvm_data(path, list_size):
 
   def _parse_line(line):
     """Parses a single line in LibSVM format."""
-    tokens = line.split()
+    tokens = line.split("#")[0].split()
     assert len(tokens) >= 2, "Ill-formatted line: {}".format(line)
     label = float(tokens[0])
     qid = tokens[1]
