@@ -223,7 +223,7 @@ def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
   labels = array_ops.where(is_label_valid, labels, array_ops.zeros_like(labels))
   predictions = array_ops.where(
       is_label_valid, predictions,
-      -1e-6 * array_ops.zeros_like(predictions) + math_ops.reduce_min(
+      -1e-6 * array_ops.ones_like(predictions) + math_ops.reduce_min(
           predictions, axis=1, keepdims=True))
   return labels, predictions, example_weights, topn
 
