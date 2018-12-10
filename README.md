@@ -53,6 +53,7 @@ applications.
 
     ```shell
     $ cd ranking  # The folder which was cloned in Step 2.
+    $ touch WORKSPACE 
     $ bazel build //tensorflow_ranking/tools/pip_package:build_pip_package
     $ bazel-bin/tensorflow_ranking/tools/pip_package/build_pip_package /tmp/ranking_pip
     ```
