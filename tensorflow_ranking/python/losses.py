@@ -484,7 +484,7 @@ def _sort_and_normalize(labels, logits, weights=None):
   # Only sort entries with valid labels that are >= 0.
   scores = array_ops.where(
       math_ops.greater_equal(labels, 0.), logits,
-      -1e-6 * array_ops.zeros_like(logits) + math_ops.reduce_min(
+      -1e-6 * array_ops.ones_like(logits) + math_ops.reduce_min(
           logits, axis=1, keepdims=True))
   sorted_labels, sorted_logits, sorted_weights = utils.sort_by_scores(
       scores, [labels, logits, weights], topn=topn)
