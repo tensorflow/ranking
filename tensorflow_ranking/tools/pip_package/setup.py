@@ -33,7 +33,7 @@ _VERSION = '0.1.0'
 
 REQUIRED_PACKAGES = [
     'absl-py >= 0.1.6', 'numpy >= 1.13.3', 'six >= 1.10.0',
-    'tensorflow >= 1.12.0'
+    'tensorflow-gpu >= 1.12.0'
 ]
 
 project_name = 'tensorflow_ranking'
