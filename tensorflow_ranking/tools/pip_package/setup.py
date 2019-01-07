@@ -49,7 +49,7 @@ setuptools.setup(
     long_description='\n'.join(DOCLINES[2:]),
     url='https://www.tensorflow.org/',
     author='Google Inc.',
-    author_email='opensource@google.com',
+    author_email='packages@tensorflow.org',
     packages=setuptools.find_packages(),
     install_requires=REQUIRED_PACKAGES,
     # PyPI package information.
