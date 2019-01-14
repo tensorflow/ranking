@@ -63,15 +63,19 @@ class UtilsTest(test.TestCase):
       self.assertAllEqual(sorted_positions, [[2, 3, 1]])
       self.assertAllEqual(sorted_names, [[b'b', b'c', b'a']])
 
-  def test_shuffle_valid_indices(self):
+  def test_organize_valid_indices(self):
     random_seed.set_random_seed(1)
     labels = [[1.0, 0.0, -1.0], [-1.0, 1.0, 2.0]]
     is_valid = utils.is_label_valid(labels)
     shuffled_indices = utils.shuffle_valid_indices(is_valid)
+    organized_indices = utils.organize_valid_indices(is_valid, shuffle=False)
     with session.Session() as sess:
       shuffled_indices = sess.run(shuffled_indices)
       self.assertAllEqual(shuffled_indices,
                           [[[0, 1], [0, 0], [0, 2]], [[1, 1], [1, 2], [1, 0]]])
+      organized_indices = sess.run(organized_indices)
+      self.assertAllEqual(organized_indices,
+                          [[[0, 0], [0, 1], [0, 2]], [[1, 1], [1, 2], [1, 0]]])
 
   def test_reshape_first_ndims_dense_tensor(self):
     # Batch size = 2, list size = 5, embedding size = 10.

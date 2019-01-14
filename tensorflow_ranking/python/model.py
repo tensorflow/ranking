@@ -80,13 +80,15 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
     return batch_rw_indices, batch_indices_mask
 
 
-def _form_group_indices_nd(is_valid, group_size):
+def _form_group_indices_nd(is_valid, group_size, shuffle=True):
   """Forms the indices for groups for gather_nd or scatter_nd.
 
   Args:
     is_valid: A boolen `Tensor` for entry validity with shape [batch_size,
       list_size].
     group_size: An scalar int `Tensor` for the number of examples in a group.
+    shuffle: A boolean that indicates whether valid indices should be shuffled
+      when forming group indices.
 
   Returns:
     A tuple of Tensors (indices, mask). The first has shape [batch_size,
@@ -104,7 +106,8 @@ def _form_group_indices_nd(is_valid, group_size):
     # [batch_size, list_size, 2]. A determinstic op-level seed is set mainly for
     # unittest purpose. We can find a better way to avoid setting this seed
     # explicitly.
-    shuffled_indices = utils.shuffle_valid_indices(is_valid, seed=87124)
+    shuffled_indices = utils.organize_valid_indices(
+        is_valid, shuffle=shuffle, seed=87124)
     # Construct indices for gather_nd.
     # [batch_size, num_groups, group_size, 2]
     group_indices_nd = array_ops.expand_dims(rw_indices, axis=3)
@@ -217,7 +220,9 @@ def make_groupwise_ranking_fn(group_score_fn,
       # group. The total number of groups we have for a mini-batch is batch_size
       # * num_groups. Inside each group, we have a 'group_size' number of
       # examples.
-      indices, mask = _form_group_indices_nd(is_valid, group_size)
+      indices, mask = _form_group_indices_nd(
+          is_valid, group_size,
+          shuffle=(mode != model_fn.ModeKeys.PREDICT))
       num_groups = array_ops.shape(mask)[1]
 
       with ops.name_scope('group_features'):

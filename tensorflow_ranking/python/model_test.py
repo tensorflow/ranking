@@ -96,6 +96,26 @@ class UtilsTest(test.TestCase):
       # shape = [2, 3] = [batch_size, num_groups]
       self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
+    # Disable shuffling.
+    indices, mask = model._form_group_indices_nd(
+        is_valid, group_size=2, shuffle=False)
+
+    with session.Session() as sess:
+      indices, mask = sess.run([indices, mask])
+      # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
+      self.assertAllEqual(
+          indices,
+          [  # batch_size = 2.
+              [  # num_groups = 3.
+                  [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
+              ],
+              [  # num_groups = 3.
+                  [[1, 0], [1, 1]], [[1, 1], [1, 0]], [[1, 0], [1, 1]]
+              ]
+          ])
+      # shape = [2, 3] = [batch_size, num_groups]
+      self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+
 
 def _save_variables_to_ckpt(model_dir):
   """Save all graph variables in a checkpoint under 'model_dir'."""
@@ -260,9 +280,9 @@ class GroupwiseRankingEstimatorTest(test.TestCase):
                 [[20.], [10.], [10.], [10.]]],
     }
     predictions = self._estimator.predict(input_fn=lambda: (features, None))
-    self.assertAllClose([254., 244., 229., 239.], list(next(predictions)))
-    self.assertAllClose([254., 244., 229., 239.], list(next(predictions)))
-    self.assertAllClose([254., 229., 244., 239.], list(next(predictions)))
+    self.assertAllClose([254., 239., 229., 244.], list(next(predictions)))
+    self.assertAllClose([254., 239., 229., 244.], list(next(predictions)))
+    self.assertAllClose([254., 239., 229., 244.], list(next(predictions)))
 
     # Evaluation after training.
     self._estimator.train(input_fn=_train_input_fn, steps=1)
@@ -281,9 +301,9 @@ class GroupwiseRankingEstimatorTest(test.TestCase):
                 [[20.], [10.], [10.], [10.]]],
     }
     predictions = self._estimator.predict(input_fn=lambda: (features, None))
-    self.assertAllClose([253., 244.5, 229., 239.5], list(next(predictions)))
-    self.assertAllClose([253., 244.5, 229., 239.5], list(next(predictions)))
-    self.assertAllClose([253., 229., 244.5, 239.5], list(next(predictions)))
+    self.assertAllClose([253., 239.5, 229., 244.5], list(next(predictions)))
+    self.assertAllClose([253., 239.5, 229., 244.5], list(next(predictions)))
+    self.assertAllClose([253., 239.5, 229., 244.5], list(next(predictions)))
 
 
 if __name__ == '__main__':

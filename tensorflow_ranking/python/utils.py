@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.ops import array_ops
@@ -69,11 +70,17 @@ def sort_by_scores(scores, features_list, topn=None):
 
 
 def shuffle_valid_indices(is_valid, seed=None):
-  """Returns a shuffle of indices with valid ones on top.
+  """Returns a shuffle of indices with valid ones on top."""
+  return organize_valid_indices(is_valid, shuffle=True, seed=seed)
+
+
+def organize_valid_indices(is_valid, shuffle=True, seed=None):
+  """Organizes indices in such a way that valid items appear first.
 
   Args:
     is_valid: A boolen `Tensor` for entry validity with shape [batch_size,
       list_size].
+    shuffle: A boolean indicating whether valid items should be shuffled.
     seed: An int for random seed at the op level. It works together with the
       seed at global graph level together to determine the random number
       generation. See `tf.set_random_seed`.
@@ -87,9 +94,16 @@ def shuffle_valid_indices(is_valid, seed=None):
   is_valid = ops.convert_to_tensor(is_valid)
   is_valid.get_shape().assert_has_rank(2)
   output_shape = array_ops.shape(is_valid)
-  rand = array_ops.where(is_valid,
-                         random_ops.random_uniform(output_shape, seed=seed),
-                         array_ops.ones(output_shape) * -1e-6)
+
+  if shuffle:
+    values = random_ops.random_uniform(output_shape, seed=seed)
+  else:
+    values = (array_ops.ones_like(is_valid, dtypes.float32) *
+              array_ops.reverse(
+                  math_ops.to_float(math_ops.range(output_shape[1])), [-1]))
+
+  rand = array_ops.where(
+      is_valid, values, array_ops.ones(output_shape) * -1e-6)
   # shape(indices) = [batch_size, list_size]
   _, indices = nn_ops.top_k(rand, output_shape[1], sorted=True)
   # shape(batch_ids) = [batch_size, list_size]
