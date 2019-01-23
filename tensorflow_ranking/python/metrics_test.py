@@ -36,7 +36,7 @@ def _dcg(label, rank, weight=1.0):
     weight: The document weight.
 
   Returns:
-    A single dcg adend  e.g. wieght*(2^relevance-1)/log2(rank+1).
+    A single dcg addend. e.g. weight*(2^relevance-1)/log2(rank+1).
   """
   return weight * (math.pow(2.0, label) - 1.0) / math.log(rank + 1.0, 2.0)
 
