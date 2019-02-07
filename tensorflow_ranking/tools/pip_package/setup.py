@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Ranking Authors.
+# Copyright 2019 The TensorFlow Ranking Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import setuptools
 
 DOCLINES = __doc__.split('\n')
@@ -37,10 +36,6 @@ REQUIRED_PACKAGES = [
 ]
 
 project_name = 'tensorflow_ranking'
-
-if sys.version_info.major == 2:
-  # mock comes with unittest.mock for python3, need to install for python2
-  REQUIRED_PACKAGES.append('mock >= 2.0.0')
 
 setuptools.setup(
     name='tensorflow_ranking',
