@@ -18,7 +18,28 @@ hosting and advancing state-of-the-art ranking models based on deep learning
 techniques, and thus facilitate both academic research as well as industrial
 applications.
 
+A quick demo for a ranker on dummy dataset (no setup required): [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png "")](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.ipynb)
+
+For more details on this code and data, look at
+ the section on [Example Code](https://github.com/tensorflow/ranking#example-code).
+
 ## Linux Installation
+
+### Stable Builds
+
+To install the latest version from [PyPI](https://pypi.org/project/tensorflow-ranking/), run the following:
+
+```shell
+# Installing with the `--upgrade` flag ensures you'll get the latest version.
+pip install --user --upgrade tensorflow_ranking  # depends on tensorflow (CPU-only)
+```
+
+To force a Python 3-specific install, replace `pip` with `pip3` in the above
+commands. For additional installation help, guidance installing prerequisites,
+and (optionally) setting up virtual environments, see the [TensorFlow
+installation guide](https://www.tensorflow.org/install).
+
+### Installing from Source
 
 1.  To build TensorFlow Ranking locally, you will need to install:
 
@@ -80,10 +101,10 @@ applications.
 
 ## Example Code
 
-The repository has a runing script over a dummy data set in
+The repository has a running script over a dummy data set in
 [the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format).
 
-### Runing Script
+### Running Script
 
 1.  Set up the data and directory.
 
