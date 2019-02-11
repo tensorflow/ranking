@@ -47,6 +47,7 @@ class RankingLossKey(object):
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
   LIST_MLE_LOSS = 'list_mle_loss'
+  APPROX_NDCG_LOSS = 'approx_ndcg_loss'
 
 
 def make_loss_fn(loss_keys,
@@ -55,7 +56,8 @@ def make_loss_fn(loss_keys,
                  lambda_weight=None,
                  reduction=core_losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
                  name=None,
-                 seed=None):
+                 seed=None,
+                 extra_args=None):
   """Makes a loss function using a single loss or multiple losses.
 
   Args:
@@ -75,6 +77,8 @@ def make_loss_fn(loss_keys,
     name: A string used as the name for this loss.
     seed: A randomization seed used in computation of some loss functions such
       as ListMLE and pListMLE.
+    extra_args: A string-keyed dictionary that contains any other loss-specific
+      arguments.
 
   Returns:
     A function _loss_fn(). See `_loss_fn()` for its signature.
@@ -123,6 +127,8 @@ def make_loss_fn(loss_keys,
         'reduction': reduction,
         'name': name,
     }
+    if extra_args is not None:
+      loss_kwargs.update(extra_args)
 
     loss_kwargs_with_lambda_weight = loss_kwargs.copy()
     loss_kwargs_with_lambda_weight['lambda_weight'] = lambda_weight
@@ -145,6 +151,7 @@ def make_loss_fn(loss_keys,
         RankingLossKey.MEAN_SQUARED_LOSS: (_mean_squared_loss, loss_kwargs),
         RankingLossKey.LIST_MLE_LOSS: (_list_mle_loss,
                                        loss_kwargs_with_lambda_weight_and_seed),
+        RankingLossKey.APPROX_NDCG_LOSS: (_approx_ndcg_loss, loss_kwargs),
     }
 
     # Obtain the list of loss ops.
@@ -192,7 +199,7 @@ def create_p_list_mle_lambda_weight(list_size):
   """Creates _LambdaWeight based on Position-Aware ListMLE paper.
 
   Produces a weight based on the formulation presented in the
-  "Position-Aware ListMLE" paper (Lan et. al) and available using
+  "Position-Aware ListMLE" paper (Lan et al.) and available using
   create_p_list_mle_lambda_weight() factory function above.
 
   Args:
@@ -291,18 +298,6 @@ class DCGLambdaWeight(_LambdaWeight):
         'smooth_fraction %s should be in range [0, 1].' % smooth_fraction)
     self._smooth_fraction = smooth_fraction
 
-  def _inverse_max_dcg(self, labels):
-    """Computes the inverse of max DCG."""
-    ideal_sorted_labels, = utils.sort_by_scores(
-        labels, [labels], topn=self._topn)
-    rank = math_ops.range(array_ops.shape(ideal_sorted_labels)[1]) + 1
-    discounted_gain = self._gain_fn(
-        ideal_sorted_labels) * self._rank_discount_fn(math_ops.to_float(rank))
-    discounted_gain = math_ops.reduce_sum(discounted_gain, 1, keepdims=True)
-    return array_ops.where(
-        math_ops.greater(discounted_gain, 0.), 1. / discounted_gain,
-        array_ops.zeros_like(discounted_gain))
-
   def pair_weights(self, sorted_labels):
     """See `_LambdaWeight`."""
     with ops.name_scope(None, 'dcg_lambda_weight', (sorted_labels,)):
@@ -310,7 +305,9 @@ class DCGLambdaWeight(_LambdaWeight):
           sorted_labels)
       gain = self._gain_fn(sorted_labels)
       if self._normalized:
-        gain *= self._inverse_max_dcg(sorted_labels)
+        gain *= utils.inverse_max_dcg(
+            sorted_labels, gain_fn=self._gain_fn,
+            rank_discount_fn=self._rank_discount_fn, topn=self._topn)
       pair_gain = array_ops.expand_dims(gain, 2) - array_ops.expand_dims(
           gain, 1)
       pair_gain *= math_ops.to_float(valid_pair)
@@ -374,7 +371,9 @@ class DCGLambdaWeight(_LambdaWeight):
           array_ops.zeros_like(sorted_labels))
       gain = self._gain_fn(sorted_labels)
       if self._normalized:
-        gain *= self._inverse_max_dcg(sorted_labels)
+        gain *= utils.inverse_max_dcg(
+            sorted_labels, gain_fn=self._gain_fn,
+            rank_discount_fn=self._rank_discount_fn, topn=self._topn)
       rank_discount = self._rank_discount_fn(
           math_ops.to_float(
               math_ops.range(array_ops.shape(sorted_labels)[1]) + 1))
@@ -867,16 +866,14 @@ def _list_mle_loss(labels,
                    reduction=core_losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
                    name=None,
                    seed=None):
-  """Computes the ListMLE loss [Xia et al.
-
-  2008] for a list.
+  """Computes the ListMLE loss [Xia et al. 2008] for a list.
 
   Given the labels of graded relevance l_i and the logits s_i, we calculate
   the ListMLE loss for the given list.
 
   The `lambda_weight` re-weights examples based on l_i and r_i.
   The recommended weighting scheme is the formulation presented in the
-  "Position-Aware ListMLE" paper (Lan et. al) and available using
+  "Position-Aware ListMLE" paper (Lan et al.) and available using
   create_p_list_mle_lambda_weight() factory function above.
 
   Args:
@@ -929,3 +926,63 @@ def _list_mle_loss(labels,
 
     return core_losses.compute_weighted_loss(
         negative_log_likelihood, weights=weights, reduction=reduction)
+
+
+def _approx_ndcg_loss(
+    labels,
+    logits,
+    weights=None,
+    reduction=core_losses.Reduction.SUM,
+    name=None,
+    alpha=10.):
+  """Computes ApproxNDCG loss.
+
+  ApproxNDCG ["A general approximation framework for direct optimization of
+  information retrieval measures" by Qin et al.] is a smooth approximation
+  to NDCG.
+
+  Args:
+    labels: A `Tensor` of the same shape as `logits` representing graded
+      relevance.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+      weights. If None, the weight of a list in the mini-batch is set to
+      the sum of the labels of the items in that list.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
+    name: A string used as the name for this loss.
+    alpha: The exponent in the generalized sigmoid function.
+
+  Returns:
+    An op for the ApproxNDCG loss.
+  """
+  with ops.name_scope(name, 'approx_ndcg_loss', (labels, logits, weights)):
+    is_label_valid = utils.is_label_valid(labels)
+    labels = array_ops.where(is_label_valid, labels,
+                             array_ops.zeros_like(labels))
+    logits = array_ops.where(
+        is_label_valid, logits,
+        -1e3 * array_ops.ones_like(logits) + math_ops.reduce_min(
+            logits, axis=-1, keepdims=True))
+
+    label_sum = math_ops.reduce_sum(labels, 1, keepdims=True)
+    if weights is None:
+      weights = array_ops.ones_like(label_sum)
+    weights = array_ops.squeeze(weights)
+
+    nonzero_mask = math_ops.greater(array_ops.reshape(label_sum, [-1]), 0.0)
+    labels, logits, weights = [
+        array_ops.boolean_mask(x, nonzero_mask)
+        for x in [labels, logits, weights]
+    ]
+
+    gains = math_ops.pow(2., math_ops.to_float(labels)) - 1.
+    ranks = utils.approx_ranks(logits, alpha=alpha)
+    discounts = 1. / math_ops.log1p(ranks)
+    dcg = math_ops.reduce_sum(gains * discounts, -1)
+    cost = -dcg * array_ops.squeeze(utils.inverse_max_dcg(labels))
+
+    return core_losses.compute_weighted_loss(
+        cost, weights=weights, reduction=reduction)

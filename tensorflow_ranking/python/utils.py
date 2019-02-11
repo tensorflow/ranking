@@ -135,3 +135,64 @@ def reshape_first_ndims(tensor, first_ndims, new_shape):
     return sparse_ops.sparse_reshape(tensor, new_shape)
 
   return array_ops.reshape(tensor, new_shape)
+
+
+def approx_ranks(logits, alpha=10.):
+  r"""Computes approximate ranks given a list of logits.
+
+  Given a list of logits, the rank of an item in the list is simply
+  one plus the total number of items with a larger logit. In other words,
+
+    rank_i = 1 + \sum_{j \neq i} I_{s_j > s_i},
+
+  where "I" is the indicator function. The indicator function can be
+  approximated by a generalized sigmoid:
+
+    I_{s_j < s_i} \approx 1/(1 + exp(-\alpha * (s_j - s_i))).
+
+  This function approximates the rank of an item using this sigmoid
+  approximation to the indicator function. This technique is at the core
+  of "A general approximation framework for direct optimization of
+  information retrieval measures" by Qin et al.
+
+  Args:
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    alpha: Exponent of the generalized sigmoid function.
+
+  Returns:
+    A `Tensor` of ranks with the same shape as logits.
+  """
+  list_size = array_ops.shape(logits)[1]
+  x = array_ops.tile(
+      array_ops.expand_dims(logits, 2), [1, 1, list_size])
+  y = array_ops.tile(
+      array_ops.expand_dims(logits, 1), [1, list_size, 1])
+  pairs = math_ops.sigmoid(alpha * (y - x))
+  return math_ops.reduce_sum(pairs, -1) + .5
+
+
+def inverse_max_dcg(labels,
+                    gain_fn=lambda labels: math_ops.pow(2.0, labels) - 1.,
+                    rank_discount_fn=lambda rank: 1. / math_ops.log1p(rank),
+                    topn=None):
+  """Computes the inverse of max DCG.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      graded relevance of the corresponding item.
+    gain_fn: A gain function. By default this is set to: 2^label - 1.
+    rank_discount_fn: A discount function. By default this is set to:
+      1/log(1+rank).
+    topn: An integer as the cutoff of examples in the sorted list.
+  Returns:
+    A `Tensor` with shape [batch_size, 1].
+  """
+  ideal_sorted_labels, = sort_by_scores(labels, [labels], topn=topn)
+  rank = math_ops.range(array_ops.shape(ideal_sorted_labels)[1]) + 1
+  discounted_gain = gain_fn(
+      ideal_sorted_labels) * rank_discount_fn(math_ops.to_float(rank))
+  discounted_gain = math_ops.reduce_sum(discounted_gain, 1, keepdims=True)
+  return array_ops.where(
+      math_ops.greater(discounted_gain, 0.), 1. / discounted_gain,
+      array_ops.zeros_like(discounted_gain))

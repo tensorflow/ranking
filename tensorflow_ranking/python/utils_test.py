@@ -110,6 +110,28 @@ class UtilsTest(test.TestCase):
       self.assertAllEqual(reshaped_array.values, target_array.values)
       self.assertAllEqual(reshaped_array.dense_shape, target_array.dense_shape)
 
+  def test_approx_ranks(self):
+    logits = [[1., 3., 2., 0.], [4., 2., 1.5, 3.]]
+    target_ranks = [[3., 1., 2., 4.], [1., 3., 4., 2.]]
+
+    approx_ranks = utils.approx_ranks(logits, 100.)
+    with session.Session() as sess:
+      approx_ranks = sess.run(approx_ranks)
+      self.assertAllClose(approx_ranks, target_ranks)
+
+  def test_inverse_max_dcg(self):
+    labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
+    target = [[0.04297], [0.033139], [0.]]
+    target_1 = [[0.04621], [0.04621], [0.]]
+
+    inverse_max_dcg = utils.inverse_max_dcg(labels)
+    inverse_max_dcg_1 = utils.inverse_max_dcg(labels, topn=1)
+    with session.Session() as sess:
+      inverse_max_dcg = sess.run(inverse_max_dcg)
+      self.assertAllClose(inverse_max_dcg, target)
+      inverse_max_dcg_1 = sess.run(inverse_max_dcg_1)
+      self.assertAllClose(inverse_max_dcg_1, target_1)
+
 
 if __name__ == '__main__':
   test.main()

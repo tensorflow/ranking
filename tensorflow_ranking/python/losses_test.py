@@ -725,6 +725,86 @@ class LossesTest(test.TestCase):
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())
 
+  def test_approx_ndcg_loss(self):
+    scores = [[1.4, -2.8, -0.4],
+              [0., 1.8, 10.2],
+              [1., 1.2, -3.2]]
+    labels = [[0., 2., 1.],
+              [1., 0., 3.],
+              [0., 0., 0.]]
+    weights = [[2.],
+               [1.],
+               [1.]]
+
+    with self.cached_session():
+      self.assertAlmostEqual(
+          ranking_losses._approx_ndcg_loss(
+              labels, scores).eval(),
+          -((1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
+            (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          places=5)
+      self.assertAlmostEqual(
+          ranking_losses._approx_ndcg_loss(
+              labels, scores, weights).eval(),
+          -(2 * (1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
+            1 * (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          places=5)
+
+  def test_make_approx_ndcg_fn(self):
+    scores = [[1.4, -2.8, -0.4],
+              [0., 1.8, 10.2],
+              [1., 1.2, -3.2]]
+    labels = [[0., 2., 1.],
+              [1., 0., 3.],
+              [0., 0., 0.]]
+    weights = [[2.],
+               [1.],
+               [1.]]
+    weights_feature_name = 'weights'
+    features = {weights_feature_name: weights}
+    with self.cached_session():
+      loss_fn_simple = ranking_losses.make_loss_fn(
+          ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
+          reduction=core_losses.Reduction.SUM)
+      self.assertAlmostEqual(
+          loss_fn_simple(labels, scores, features).eval(),
+          -((1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
+            (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          places=5)
+
+      loss_fn_weighted = ranking_losses.make_loss_fn(
+          ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
+          weights_feature_name=weights_feature_name,
+          reduction=core_losses.Reduction.SUM)
+      self.assertAlmostEqual(
+          loss_fn_weighted(labels, scores, features).eval(),
+          -(2 * (1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
+            1 * (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          places=5)
+
+      # Test different alphas.
+      loss_fn_1 = ranking_losses.make_loss_fn(
+          ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
+          extra_args={'alpha': 0.1})
+      loss_fn_2 = ranking_losses.make_loss_fn(
+          ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
+          extra_args={'alpha': 100.})
+      self.assertNotAlmostEqual(
+          loss_fn_1(labels, scores, features).eval(),
+          loss_fn_2(labels, scores, features).eval())
+
+      # Test loss reduction method.
+      # Two reduction methods should return different loss values.
+      loss_fn_1 = ranking_losses.make_loss_fn(
+          ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
+          reduction=core_losses.Reduction.SUM)
+      loss_fn_2 = ranking_losses.make_loss_fn(
+          ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
+          reduction=core_losses.Reduction.MEAN)
+      self.assertNotAlmostEqual(
+          loss_fn_1(labels, scores, features).eval(),
+          loss_fn_2(labels, scores, features).eval())
+
   def test_make_loss_fn(self):
     scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5]]
     labels = [[0., 0., 1.], [0., 0., 1.]]
