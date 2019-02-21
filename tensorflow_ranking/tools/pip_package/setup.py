@@ -28,11 +28,11 @@ DOCLINES = __doc__.split('\n')
 # This version string is semver compatible, but incompatible with pip.
 # For pip, we will remove all '-' characters from this string, and use the
 # result for pip.
-_VERSION = '0.1.0'
+_VERSION = '0.1.1'
 
 REQUIRED_PACKAGES = [
     'absl-py >= 0.1.6', 'numpy >= 1.13.3', 'six >= 1.10.0',
-    'tensorflow >= 1.12.0'
+    # 'tensorflow >= 1.12.0' ## User should manually install TF or TF-gpu.
 ]
 
 project_name = 'tensorflow_ranking'
@@ -42,7 +42,7 @@ setuptools.setup(
     version=_VERSION.replace('-', ''),
     description=DOCLINES[0],
     long_description='\n'.join(DOCLINES[2:]),
-    url='https://www.tensorflow.org/',
+    url='https://github.com/tensorflow/ranking',
     author='Google Inc.',
     author_email='packages@tensorflow.org',
     packages=setuptools.find_packages(),

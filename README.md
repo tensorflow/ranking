@@ -31,13 +31,18 @@ To install the latest version from [PyPI](https://pypi.org/project/tensorflow-ra
 
 ```shell
 # Installing with the `--upgrade` flag ensures you'll get the latest version.
-pip install --user --upgrade tensorflow_ranking  # depends on tensorflow (CPU-only)
+pip install --user --upgrade tensorflow_ranking
 ```
 
 To force a Python 3-specific install, replace `pip` with `pip3` in the above
 commands. For additional installation help, guidance installing prerequisites,
 and (optionally) setting up virtual environments, see the [TensorFlow
 installation guide](https://www.tensorflow.org/install).
+
+Note: Since TensorFlow is *not* included as a dependency of the TensorFlow
+Ranking package (in `setup.py`), you must explicitly install the TensorFlow
+package (`tensorflow` or `tensorflow-gpu`). This allows us to maintain one
+package instead of separate packages for CPU and GPU-enabled TensorFlow.
 
 ### Installing from Source
 
@@ -84,6 +89,7 @@ installation guide](https://www.tensorflow.org/install).
     ```shell
     $ ~/.local/bin/virtualenv -p python3 /tmp/tfr
     $ source /tmp/tfr/bin/activate
+    (tfr) $ pip install tensorflow  #  or tensorflow-gpu, if GPU support is needed.
     (tfr) $ pip install /tmp/ranking_pip/tensorflow_ranking*.whl
     ```
 
