@@ -98,7 +98,7 @@ class RankingHeadTest(test.TestCase):
     self.assertIsNone(spec.loss)
     self.assertEqual({}, spec.eval_metric_ops)
     self.assertIsNone(spec.train_op)
-    self.assertItemsEqual((self._default_signature,),
+    self.assertItemsEqual((self._default_signature, 'regression', 'predict'),
                           spec.export_outputs.keys())
 
     # Assert predictions.

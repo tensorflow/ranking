@@ -34,6 +34,13 @@ from tensorflow.python.estimator import model_fn
 from tensorflow.python.estimator.canned import head as head_lib
 from tensorflow.python.estimator.export import export_lib
 
+_DEFAULT_SERVING_KEY = signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+
+# The above default is defined by TF Serving, but these next three are just
+# a local convention without any special meaning.
+_REGRESS_SERVING_KEY = 'regression'
+_PREDICT_SERVING_KEY = 'predict'
+
 
 def create_ranking_head(loss_fn,
                         eval_metric_fns=None,
@@ -188,8 +195,9 @@ class _RankingHead(object):
             mode=mode,
             predictions=logits,
             export_outputs={
-                signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                    export_lib.RegressionOutput(logits),
+                _DEFAULT_SERVING_KEY: export_lib.RegressionOutput(logits),
+                _REGRESS_SERVING_KEY: export_lib.RegressionOutput(logits),
+                _PREDICT_SERVING_KEY: export_lib.PredictOutput(logits),
             })
 
       training_loss, _, _, _ = self.create_loss(
