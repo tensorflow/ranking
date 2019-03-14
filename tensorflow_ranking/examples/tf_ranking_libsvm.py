@@ -158,7 +158,7 @@ def load_libsvm_data(path, list_size):
         discarded_docs += 1
         continue
       for k, v in six.iteritems(features):
-        assert k in feature_map, "Key {} not founded in features.".format(k)
+        assert k in feature_map, "Key {} not found in features.".format(k)
         feature_map[k][batch_idx][doc_idx, 0] = v
       label_list[batch_idx][doc_idx] = label
 

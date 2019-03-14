@@ -478,7 +478,7 @@ def _sort_and_normalize(labels, logits, weights=None):
   logits.get_shape().assert_is_compatible_with(labels.get_shape())
   weights = 1.0 if weights is None else ops.convert_to_tensor(weights)
   weights = array_ops.ones_like(labels) * weights
-  _, topn = array_ops.unstack(array_ops.shape(logits))
+  topn = array_ops.shape(logits)[1]
 
   # Only sort entries with valid labels that are >= 0.
   scores = array_ops.where(
