@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import itertools
 import six
 
 from tensorflow.python.feature_column import feature_column
@@ -63,6 +64,26 @@ def make_identity_transform_fn(context_feature_names):
     return context_features, per_example_features
 
   return _transform_fn
+
+
+def get_feed_feature_names(feature_columns):
+  """Returns feed feature names from feature_columns.
+
+  Args:
+    feature_columns: (list) list of feature column, possibly obtained
+      from `example_feature_columns.values()`.
+
+  Returns:
+    (list) list of feature name (string).
+    """
+  def _get_feed_feature_names(feature_column):
+    if not hasattr(feature_column, "parents"):
+      return [feature_column]
+    return itertools.chain.from_iterable(_get_feed_feature_names(parent)
+                                         for parent in feature_column.parents)
+
+  return list(set(itertools.chain.from_iterable(_get_feed_feature_names(feature_column)
+                                                for feature_column in feature_columns)))
 
 
 def encode_features(features,
@@ -151,9 +172,10 @@ def encode_listwise_features(features,
   if example_feature_columns:
     # Reshape [batch_size, input_size] to [batch * input_size] so that
     # features are encoded.
+    feed_example_feature_names = get_feed_feature_names(example_feature_columns.values())
     batch_size = None
     reshaped_features = {}
-    for name in example_feature_columns:
+    for name in feed_example_feature_names:
       batch_size = array_ops.shape(features[name])[0]
       try:
         reshaped_features[name] = utils.reshape_first_ndims(
