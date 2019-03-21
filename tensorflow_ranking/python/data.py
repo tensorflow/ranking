@@ -38,6 +38,8 @@ from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.ops import sparse_ops
+from tensorflow.python.platform import gfile
+
 from tensorflow.python.estimator.export import export as export_lib
 
 # The document relevance label.
@@ -457,7 +459,7 @@ def libsvm_generator(path, num_features, list_size, seed=None):
     # each dictionary is a mapping from a feature ID to a feature value.
     doc_list = []
 
-    with open(path, "rt") as f:
+    with gfile.Open(path, "r") as f:
       # cur indicates the current query ID.
       cur = -1
 
