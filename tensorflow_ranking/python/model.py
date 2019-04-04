@@ -266,6 +266,8 @@ def make_groupwise_ranking_fn(group_score_fn,
                                            [batch_size, list_size])
         # Use average.
         list_scores /= math_ops.to_float(group_size)
+        # Make predictions easier to look up.
+        list_scores = array_ops.identity(list_scores, name='list_scores')
 
     if mode == model_fn.ModeKeys.PREDICT:
       return list_scores
@@ -277,6 +279,14 @@ def make_groupwise_ranking_fn(group_score_fn,
   def _model_fn(features, labels, mode, params, config):
     """Defines an `Estimator` model_fn."""
     params = params or {}
+
+    # Make features easier to look up.
+    # The tensors in features are 'features/{key}:0'
+    with ops.name_scope('features'):
+      features = {
+          key: array_ops.identity(value, name=key)
+          for key, value in six.iteritems(features)
+      }
 
     tf_logging.info('Use groupwise dnn v2.')
     logits = _groupwise_dnn_v2(features, labels, mode, params, config)
