@@ -154,6 +154,8 @@ def encode_listwise_features(features,
     batch_size = None
     reshaped_features = {}
     for name in example_feature_columns:
+      if name not in features:
+        continue
       batch_size = array_ops.shape(features[name])[0]
       try:
         reshaped_features[name] = utils.reshape_first_ndims(
