@@ -152,7 +152,7 @@ def read_batched_sequence_example_dataset(file_pattern,
                                           prefetch_buffer_size=32,
                                           reader_num_threads=10,
                                           sloppy_ordering=True,
-                                          drop_final_batch=True):
+                                          drop_final_batch=False):
   """Returns a `Dataset` of features from `SequenceExample`.
 
   Example:
