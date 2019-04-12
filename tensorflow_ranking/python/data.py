@@ -240,7 +240,7 @@ def read_batched_sequence_example_dataset(file_pattern,
 
   Args:
     file_pattern: (str | list(str)) List of files or patterns of file paths
-      containing ExampleListWithContext protos. See `tf.gfile.Glob` for pattern
+      containing tf.SequenceExample protos. See `tf.gfile.Glob` for pattern
       rules.
     batch_size: (int) Number of records to combine in a single batch.
     list_size: (int) Number of required examples per SequenceExample. Required
@@ -338,7 +338,7 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
   only features in general.
 
   Args:
-    input_size: (int) number of examples in an ExampleListWithContext. This is
+    input_size: (int) number of examples in an tf.SequenceExample. This is
       used for normalize SequenceExample.
     context_feature_spec: (dict) Map from feature keys to `FixedLenFeature` or
       `VarLenFeature` values.
