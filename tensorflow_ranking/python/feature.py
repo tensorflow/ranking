@@ -121,7 +121,9 @@ def encode_listwise_features(features,
       or `tf.SparseTensor`), possibly obtained from input_fn. For context
       features, the tensors are 2-D, while for example features the tensors are
       3-D.
-    input_size: (int) number of examples in an ExampleListWithContext.
+    input_size: (int) number of examples per query. This is the size of second
+      dimension of the Tensor corresponding to one of the example feature
+      columns.
     context_feature_columns: (dict) context feature names to columns.
     example_feature_columns: (dict) example feature names to columns.
     mode: (`estimator.ModeKeys`) Specifies if this is training, evaluation or
