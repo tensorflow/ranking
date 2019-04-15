@@ -75,7 +75,7 @@ def parse_from_sequence_example(serialized,
   """
   # Convert `FixedLenFeature` in `example_feature_spec` to
   # `FixedLenSequenceFeature` to parse the `feature_lists` in SequenceExample.
-  # TODO(xuanhui): Handle missing feature_list since allow_missing=True.
+  # TODO: Handle missing feature_list since allow_missing=True.
   fixed_len_sequence_features = {
       k: parsing_ops.FixedLenSequenceFeature(
           s.shape, s.dtype, allow_missing=True)
@@ -282,7 +282,7 @@ def read_batched_sequence_example_dataset(file_pattern,
     are mapped to a rank-3 tensor of shape [batch_size, list_size,
     feature_size], where list_size is the number of required example.
   """
-  # TODO(xuanhui): Move the file reading part into a common function for all
+  # TODO: Move the file reading part into a common function for all
   # batch readers.
   files = dataset_ops.Dataset.list_files(
       file_pattern, shuffle=shuffle, seed=shuffle_seed)

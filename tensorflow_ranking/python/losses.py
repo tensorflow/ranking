@@ -627,7 +627,7 @@ def _pairwise_hinge_loss(labels,
 
   def _loss(logits):
     """The loss of pairwise logits with l_i > l_j."""
-    # TODO(xuanhui, pointer-team): Consider pass params object into the loss and
+    # TODO: Consider pass params object into the loss and
     # put a margin here.
     return nn_ops.relu(1. - logits)
 

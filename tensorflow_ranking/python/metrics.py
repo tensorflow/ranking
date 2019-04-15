@@ -285,7 +285,7 @@ def average_relevance_position(labels, predictions, weights=None, name=None):
         predictions, [labels, weights], topn=topn)
     relevance = sorted_labels * sorted_weights
     position = math_ops.to_float(math_ops.range(1, topn + 1))
-    # TODO(xuanhui): Consider to add a cap poistion topn + 1 when there is no
+    # TODO: Consider to add a cap poistion topn + 1 when there is no
     # relevant examples.
     return metrics.mean(position * array_ops.ones_like(relevance), relevance)
 
