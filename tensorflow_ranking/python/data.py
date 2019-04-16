@@ -28,19 +28,7 @@ import functools
 import numpy as np
 import six
 
-from tensorflow.contrib.data.python.ops import interleave_ops
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.ops import readers
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import sparse_tensor
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import control_flow_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops import parsing_ops
-from tensorflow.python.ops import sparse_ops
-from tensorflow.python.platform import gfile
-
-from tensorflow.python.estimator.export import export as export_lib
+import tensorflow as tf
 
 # The document relevance label.
 _LABEL_FEATURE = "label"
@@ -77,14 +65,13 @@ def parse_from_sequence_example(serialized,
   # `FixedLenSequenceFeature` to parse the `feature_lists` in SequenceExample.
   # TODO: Handle missing feature_list since allow_missing=True.
   fixed_len_sequence_features = {
-      k: parsing_ops.FixedLenSequenceFeature(
-          s.shape, s.dtype, allow_missing=True)
+      k: tf.FixedLenSequenceFeature(s.shape, s.dtype, allow_missing=True)
       for k, s in six.iteritems(example_feature_spec)
-      if isinstance(s, parsing_ops.FixedLenFeature)
+      if isinstance(s, tf.FixedLenFeature)
   }
   sequence_features = example_feature_spec.copy()
   sequence_features.update(fixed_len_sequence_features)
-  context, examples, _ = parsing_ops.parse_sequence_example(
+  context, examples, _ = tf.io.parse_sequence_example(
       serialized,
       context_features=context_feature_spec,
       sequence_features=sequence_features)
@@ -95,19 +82,18 @@ def parse_from_sequence_example(serialized,
   # [batch_size, num_frames, ...] --> [batch_size, list_size, ...]
   for k, t in six.iteritems(examples):
     # Old shape: [batch_size, num_frames, ...]
-    shape = array_ops.unstack(array_ops.shape(t))
+    shape = tf.unstack(tf.shape(t))
     ndims = len(shape)
     num_frames = shape[1]
     # New shape: [batch_size, list_size, ...]
-    new_shape = array_ops.concat([[shape[0], list_size], shape[2:]], 0)
+    new_shape = tf.concat([[shape[0], list_size], shape[2:]], 0)
 
     def slice_fn(t=t, ndims=ndims, new_shape=new_shape):
       """Slices the tensor."""
-      if isinstance(t, sparse_tensor.SparseTensor):
-        return sparse_ops.sparse_slice(t, [0] * ndims,
-                                       math_ops.to_int64(new_shape))
+      if isinstance(t, tf.sparse.SparseTensor):
+        return tf.sparse_slice(t, [0] * ndims, tf.to_int64(new_shape))
       else:
-        return array_ops.slice(t, [0] * ndims, new_shape)
+        return tf.slice(t, [0] * ndims, new_shape)
 
     def pad_fn(k=k,
                t=t,
@@ -115,22 +101,22 @@ def parse_from_sequence_example(serialized,
                num_frames=num_frames,
                new_shape=new_shape):
       """Pads the tensor."""
-      if isinstance(t, sparse_tensor.SparseTensor):
-        return sparse_ops.sparse_reset_shape(t, new_shape)
+      if isinstance(t, tf.SparseTensor):
+        return tf.sparse_reset_shape(t, new_shape)
       else:
         # Padding is n * 2 tensor where n is the ndims or rank of the padded
         # tensor.
-        paddings = array_ops.stack([[0, 0], [0, list_size - num_frames]] +
-                                   [[0, 0]] * (ndims - 2))
-        return array_ops.pad(
+        paddings = tf.stack([[0, 0], [0, list_size - num_frames]] + [[0, 0]] *
+                            (ndims - 2))
+        return tf.pad(
             t,
             paddings,
-            constant_values=array_ops.squeeze(
+            constant_values=tf.squeeze(
                 example_feature_spec[k].default_value[0]))
 
-    tensor = control_flow_ops.cond(num_frames > list_size, slice_fn, pad_fn)
+    tensor = tf.cond(num_frames > list_size, slice_fn, pad_fn)
     # Infer static shape for Tensor.
-    if not isinstance(tensor, sparse_tensor.SparseTensor):
+    if not isinstance(tensor, tf.SparseTensor):
       static_shape = t.get_shape().as_list()
       static_shape[1] = list_size
       tensor.set_shape(static_shape)
@@ -143,7 +129,7 @@ def read_batched_sequence_example_dataset(file_pattern,
                                           list_size,
                                           context_feature_spec,
                                           example_feature_spec,
-                                          reader=readers.TFRecordDataset,
+                                          reader=tf.data.TFRecordDataset,
                                           reader_args=None,
                                           num_epochs=None,
                                           shuffle=True,
@@ -284,19 +270,19 @@ def read_batched_sequence_example_dataset(file_pattern,
   """
   # TODO: Move the file reading part into a common function for all
   # batch readers.
-  files = dataset_ops.Dataset.list_files(
+  files = tf.data.Dataset.list_files(
       file_pattern, shuffle=shuffle, seed=shuffle_seed)
 
   reader_args = reader_args or []
   dataset = files.apply(
-      interleave_ops.parallel_interleave(
+      tf.data.experimental.parallel_interleave(
           lambda filename: reader(filename, *reader_args),
           cycle_length=reader_num_threads,
           sloppy=sloppy_ordering))
 
   # Extract values if tensors are stored as key-value tuples. This happens when
   # the reader is tf.data.SSTableDataset.
-  if dataset.output_types == (dtypes.string, dtypes.string):
+  if dataset.output_types == (tf.string, tf.string):
     dataset = dataset.map(lambda _, v: v)
 
   # Repeat and shuffle, if needed.
@@ -354,8 +340,8 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
 
   def serving_input_receiver_fn():
     """An input function on serialized SequenceExample protos."""
-    serialized_sequence_example = array_ops.placeholder(
-        dtype=dtypes.string,
+    serialized_sequence_example = tf.placeholder(
+        dtype=tf.string,
         shape=[default_batch_size],
         name="input_sequence_example_tensor")
     receiver_tensors = {"sequence_example": serialized_sequence_example}
@@ -365,7 +351,7 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
         context_feature_spec=context_feature_spec,
         example_feature_spec=example_feature_spec)
 
-    return export_lib.ServingInputReceiver(features, receiver_tensors)
+    return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
   return serving_input_receiver_fn
 
@@ -459,7 +445,7 @@ def libsvm_generator(path, num_features, list_size, seed=None):
     # each dictionary is a mapping from a feature ID to a feature value.
     doc_list = []
 
-    with gfile.Open(path, "r") as f:
+    with tf.gfile.Open(path, "r") as f:
       # cur indicates the current query ID.
       cur = -1
 
