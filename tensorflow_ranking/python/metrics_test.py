@@ -19,12 +19,9 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+import tensorflow as tf
 
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import test_util
-from tensorflow.python.ops import variables
-from tensorflow.python.platform import test
-from tensorflow_ranking.python import metrics
+from tensorflow_ranking.python import metrics as metrics_lib
 
 
 def _dcg(label, rank, weight=1.0):
@@ -79,16 +76,16 @@ def _example_weights_to_list_weights(weights, relevances, boost_form):
   return list_weights
 
 
-class MetricsTest(test_util.TensorFlowTestCase):
+class MetricsTest(tf.test.TestCase):
 
   def setUp(self):
     super(MetricsTest, self).setUp()
-    ops.reset_default_graph()
+    tf.reset_default_graph()
 
   def _check_metrics(self, metrics_and_values):
     """Checks metrics against values."""
     with self.test_session() as sess:
-      sess.run(variables.local_variables_initializer())
+      sess.run(tf.local_variables_initializer())
       for (metric_op, update_op), value in metrics_and_values:
         sess.run(update_op)
         self.assertAlmostEqual(sess.run(metric_op), value, places=5)
@@ -96,7 +93,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
   def test_reset_invalid_labels(self):
     scores = [[1., 3., 2.]]
     labels = [[0., -1., 1.]]
-    labels, predictions, _, _ = metrics._prepare_and_validate_params(
+    labels, predictions, _, _ = metrics_lib._prepare_and_validate_params(
         labels, scores)
     self.assertAllClose(labels, [[0., 0., 1.]])
     self.assertAllClose(predictions, [[1., 1. - 1e-6, 2]])
@@ -105,7 +102,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 2., 3.], [4., 5., 6.]]
-    m = metrics.mean_reciprocal_rank
+    m = metrics_lib.mean_reciprocal_rank
     self._check_metrics([
         (m([labels[0]], [scores[0]]), 0.5),
         (m(labels, scores), (0.5 + 1.0) / 2),
@@ -118,9 +115,10 @@ class MetricsTest(test_util.TensorFlowTestCase):
     weights = [[1., 2., 3.], [4., 5., 6.]]
     weights_feature_name = 'weights'
     features = {weights_feature_name: weights}
-    m = metrics.make_ranking_metric_fn(metrics.RankingMetricKey.MRR)
-    m_w = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.MRR, weights_feature_name=weights_feature_name)
+    m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.MRR)
+    m_w = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.MRR,
+        weights_feature_name=weights_feature_name)
     self._check_metrics([
         (m([labels[0]], [scores[0]], features), 0.5),
         (m(labels, scores, features), (0.5 + 1.0) / 2),
@@ -131,7 +129,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 2., 3.], [4., 5., 6.]]
-    m = metrics.average_relevance_position
+    m = metrics_lib.average_relevance_position
     self._check_metrics([
         (m([labels[0]], [scores[0]]), 2.),
         (m(labels, scores), (1. * 2. + 2. * 1. + 1. * 2.) / 4.),
@@ -145,9 +143,10 @@ class MetricsTest(test_util.TensorFlowTestCase):
     weights = [[1., 2., 3.], [4., 5., 6.]]
     weights_feature_name = 'weights'
     features = {weights_feature_name: weights}
-    m = metrics.make_ranking_metric_fn(metrics.RankingMetricKey.ARP)
-    m_w = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.ARP, weights_feature_name=weights_feature_name)
+    m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.ARP)
+    m_w = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.ARP,
+        weights_feature_name=weights_feature_name)
     self._check_metrics([
         (m([labels[0]], [scores[0]], features), 2.),
         (m(labels, scores, features), (1. * 2. + 2. * 1. + 1. * 2.) / 4.),
@@ -158,7 +157,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
   def test_precision(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
-    m = metrics.precision
+    m = metrics_lib.precision
     self._check_metrics([
         (m([labels[0]], [scores[0]]), 1. / 3.),
         (m([labels[0]], [scores[0]], topn=1), 0. / 1.),
@@ -171,7 +170,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 2., 3.], [4., 5., 6.]]
     list_weights = [[1.], [2.]]
-    m = metrics.precision
+    m = metrics_lib.precision
     as_list_weights = _example_weights_to_list_weights(weights, labels,
                                                        'PRECISION')
     self._check_metrics([
@@ -193,11 +192,12 @@ class MetricsTest(test_util.TensorFlowTestCase):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
     features = {}
-    m = metrics.make_ranking_metric_fn(metrics.RankingMetricKey.PRECISION)
-    m_top_1 = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.PRECISION, topn=1)
-    m_top_2 = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.PRECISION, topn=2)
+    m = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.PRECISION)
+    m_top_1 = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.PRECISION, topn=1)
+    m_top_2 = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.PRECISION, topn=2)
     self._check_metrics([
         (m([labels[0]], [scores[0]], features), 1. / 3.),
         (m_top_1([labels[0]], [scores[0]], features), 0. / 1.),
@@ -208,7 +208,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
   def test_normalized_discounted_cumulative_gain(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
-    m = metrics.normalized_discounted_cumulative_gain
+    m = metrics_lib.normalized_discounted_cumulative_gain
     expected_ndcg = (_dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)) / (
         _dcg(1., 1) + _dcg(0., 2) + _dcg(0., 3))
     self._check_metrics([
@@ -227,7 +227,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 2., 3.], [4., 5., 6.]]
     list_weights = [[1.], [2.]]
-    m = metrics.normalized_discounted_cumulative_gain
+    m = metrics_lib.normalized_discounted_cumulative_gain
     self._check_metrics([
         (m([labels[0]], [scores[0]], weights[0], topn=1),
          _dcg(0., 1, 2.) / _dcg(1., 1, 3.)),
@@ -266,7 +266,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 2., 3.], [4., 5., 6.]]
-    m = metrics.normalized_discounted_cumulative_gain
+    m = metrics_lib.normalized_discounted_cumulative_gain
     self._check_metrics([
         (m(labels, scores, [[0.], [0.]]), 0.),
         (m([[0., 0., 0.]], [scores[0]], weights[0], topn=1), 0.),
@@ -278,7 +278,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     weights = [[1., 2., 3.], [4., 5., 6.]]
     weights_feature_name = 'weights'
     features = {weights_feature_name: weights[0]}
-    m = metrics.make_ranking_metric_fn(metrics.RankingMetricKey.NDCG)
+    m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.NDCG)
 
     expected_ndcg = (_dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)) / (
         _dcg(1., 1) + _dcg(0., 2) + _dcg(0., 3))
@@ -294,12 +294,12 @@ class MetricsTest(test_util.TensorFlowTestCase):
     ])
 
     # With weights.
-    m_top = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.NDCG,
+    m_top = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.NDCG,
         weights_feature_name=weights_feature_name,
         topn=1)
-    m_weight = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.NDCG,
+    m_weight = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.NDCG,
         weights_feature_name=weights_feature_name)
     self._check_metrics([
         (m_top([labels[0]], [scores[0]], features),
@@ -313,7 +313,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 1., 1.], [2., 2., 1.]]
-    m = metrics.discounted_cumulative_gain
+    m = metrics_lib.discounted_cumulative_gain
     expected_dcg_1 = _dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)
     self._check_metrics([
         (m([labels[0]], [scores[0]]), expected_dcg_1),
@@ -333,9 +333,10 @@ class MetricsTest(test_util.TensorFlowTestCase):
     weights = [[1., 1., 1.], [2., 2., 1.]]
     weights_feature_name = 'weights'
     features = {weights_feature_name: weights}
-    m = metrics.make_ranking_metric_fn(metrics.RankingMetricKey.DCG)
-    m_w = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.DCG, weights_feature_name=weights_feature_name)
+    m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.DCG)
+    m_w = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.DCG,
+        weights_feature_name=weights_feature_name)
     expected_dcg_1 = _dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)
     self._check_metrics([
         (m([labels[0]], [scores[0]], features), expected_dcg_1),
@@ -354,7 +355,7 @@ class MetricsTest(test_util.TensorFlowTestCase):
     labels = [[-1., 0., 1.], [0., 1., 2.]]
     weights = [[1.], [2.]]
     item_weights = [[1., 1., 1.], [2., 2., 3.]]
-    m = metrics.ordered_pair_accuracy
+    m = metrics_lib.ordered_pair_accuracy
     self._check_metrics([
         (m([labels[0]], [scores[0]]), 0.),
         (m([labels[1]], [scores[1]]), 1.),
@@ -367,8 +368,8 @@ class MetricsTest(test_util.TensorFlowTestCase):
   def test_make_ordered_pair_accuracy_fn(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
-    m = metrics.make_ranking_metric_fn(
-        metrics.RankingMetricKey.ORDERED_PAIR_ACCURACY)
+    m = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.ORDERED_PAIR_ACCURACY)
     self._check_metrics([
         (m([labels[0]], [scores[0]], {}), 1. / 2.),
         (m([labels[1]], [scores[1]], {}), 1.),
@@ -377,4 +378,4 @@ class MetricsTest(test_util.TensorFlowTestCase):
 
 
 if __name__ == '__main__':
-  test.main()
+  tf.test.main()

@@ -23,10 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.framework import ops
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops import metrics
+import tensorflow as tf
 
 from tensorflow_ranking.python import utils
 
@@ -146,10 +143,10 @@ def _safe_div(numerator, denominator, name='safe_div'):
   Returns:
     The element-wise value of the numerator divided by the denominator.
   """
-  return array_ops.where(
-      math_ops.equal(denominator, 0),
-      array_ops.zeros_like(numerator),
-      math_ops.div(numerator, denominator),
+  return tf.where(
+      tf.equal(denominator, 0),
+      tf.zeros_like(numerator),
+      tf.div(numerator, denominator),
       name=name)
 
 
@@ -164,8 +161,8 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
     The per list `Tensor` of shape [batch_size, 1]
   """
   per_list_weights = _safe_div(
-      math_ops.reduce_sum(weights * relevance, 1, keepdims=True),
-      math_ops.reduce_sum(relevance, 1, keepdims=True))
+      tf.reduce_sum(weights * relevance, 1, keepdims=True),
+      tf.reduce_sum(relevance, 1, keepdims=True))
   return per_list_weights
 
 
@@ -184,12 +181,11 @@ def _discounted_cumulative_gain(labels, weights=None):
     A `Tensor` as the weighted discounted cumulative gain per-list. The
     tensor shape is [batch_size, 1].
   """
-  list_size = array_ops.shape(labels)[1]
-  position = math_ops.to_float(math_ops.range(1, list_size + 1))
-  denominator = math_ops.log(position + 1)
-  numerator = math_ops.pow(2.0, math_ops.to_float(labels)) - 1.0
-  return math_ops.reduce_sum(
-      weights * numerator / denominator, 1, keepdims=True)
+  list_size = tf.shape(labels)[1]
+  position = tf.to_float(tf.range(1, list_size + 1))
+  denominator = tf.log(position + 1)
+  numerator = tf.pow(2.0, tf.to_float(labels)) - 1.0
+  return tf.reduce_sum(weights * numerator / denominator, 1, keepdims=True)
 
 
 def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
@@ -208,23 +204,22 @@ def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
     (labels, predictions, weights, topn) ready to be used for metric
     calculation.
   """
-  labels = ops.convert_to_tensor(labels)
-  predictions = ops.convert_to_tensor(predictions)
-  weights = 1.0 if weights is None else ops.convert_to_tensor(weights)
-  example_weights = array_ops.ones_like(labels) * weights
+  labels = tf.convert_to_tensor(labels)
+  predictions = tf.convert_to_tensor(predictions)
+  weights = 1.0 if weights is None else tf.convert_to_tensor(weights)
+  example_weights = tf.ones_like(labels) * weights
   predictions.get_shape().assert_is_compatible_with(example_weights.get_shape())
   predictions.get_shape().assert_is_compatible_with(labels.get_shape())
   predictions.get_shape().assert_has_rank(2)
   if topn is None:
-    topn = array_ops.shape(predictions)[1]
+    topn = tf.shape(predictions)[1]
 
   # All labels should be >= 0. Invalid entries are reset.
   is_label_valid = utils.is_label_valid(labels)
-  labels = array_ops.where(is_label_valid, labels, array_ops.zeros_like(labels))
-  predictions = array_ops.where(
-      is_label_valid, predictions,
-      -1e-6 * array_ops.ones_like(predictions) + math_ops.reduce_min(
-          predictions, axis=1, keepdims=True))
+  labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
+  predictions = tf.where(
+      is_label_valid, predictions, -1e-6 * tf.ones_like(predictions) +
+      tf.reduce_min(predictions, axis=1, keepdims=True))
   return labels, predictions, example_weights, topn
 
 
@@ -243,19 +238,18 @@ def mean_reciprocal_rank(labels, predictions, weights=None, name=None):
   Returns:
     A metric for the weighted mean reciprocal rank of the batch.
   """
-  with ops.name_scope(name, 'mean_reciprocal_rank',
-                      (labels, predictions, weights)):
-    _, list_size = array_ops.unstack(array_ops.shape(predictions))
+  with tf.name_scope(name, 'mean_reciprocal_rank',
+                     (labels, predictions, weights)):
+    _, list_size = tf.unstack(tf.shape(predictions))
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, list_size)
     sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn)
     # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
-    relevance = math_ops.to_float(math_ops.greater_equal(sorted_labels, 1.0))
-    reciprocal_rank = 1.0 / math_ops.to_float(math_ops.range(1, topn + 1))
+    relevance = tf.to_float(tf.greater_equal(sorted_labels, 1.0))
+    reciprocal_rank = 1.0 / tf.to_float(tf.range(1, topn + 1))
     # MRR has a shape of [batch_size, 1]
-    mrr = math_ops.reduce_max(
-        relevance * reciprocal_rank, axis=1, keepdims=True)
-    return metrics.mean(mrr * array_ops.ones_like(weights), weights)
+    mrr = tf.reduce_max(relevance * reciprocal_rank, axis=1, keepdims=True)
+    return tf.metrics.mean(mrr * tf.ones_like(weights), weights)
 
 
 def average_relevance_position(labels, predictions, weights=None, name=None):
@@ -276,18 +270,18 @@ def average_relevance_position(labels, predictions, weights=None, name=None):
   Returns:
     A metric for the weighted average relevance position.
   """
-  with ops.name_scope(name, 'average_relevance_position',
-                      (labels, predictions, weights)):
-    _, list_size = array_ops.unstack(array_ops.shape(predictions))
+  with tf.name_scope(name, 'average_relevance_position',
+                     (labels, predictions, weights)):
+    _, list_size = tf.unstack(tf.shape(predictions))
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, list_size)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
     relevance = sorted_labels * sorted_weights
-    position = math_ops.to_float(math_ops.range(1, topn + 1))
+    position = tf.to_float(tf.range(1, topn + 1))
     # TODO: Consider to add a cap poistion topn + 1 when there is no
     # relevant examples.
-    return metrics.mean(position * array_ops.ones_like(relevance), relevance)
+    return tf.metrics.mean(position * tf.ones_like(relevance), relevance)
 
 
 def precision(labels, predictions, weights=None, topn=None, name=None):
@@ -306,22 +300,22 @@ def precision(labels, predictions, weights=None, topn=None, name=None):
   Returns:
     A metric for the weighted precision of the batch.
   """
-  with ops.name_scope(name, 'precision', (labels, predictions, weights)):
+  with tf.name_scope(name, 'precision', (labels, predictions, weights)):
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
     # Relevance = 1.0 when labels >= 1.0.
-    relevance = math_ops.to_float(math_ops.greater_equal(sorted_labels, 1.0))
+    relevance = tf.to_float(tf.greater_equal(sorted_labels, 1.0))
     per_list_precision = _safe_div(
-        math_ops.reduce_sum(relevance * sorted_weights, 1, keepdims=True),
-        math_ops.reduce_sum(
-            array_ops.ones_like(relevance) * sorted_weights, 1, keepdims=True))
+        tf.reduce_sum(relevance * sorted_weights, 1, keepdims=True),
+        tf.reduce_sum(
+            tf.ones_like(relevance) * sorted_weights, 1, keepdims=True))
     # per_list_weights are computed from the whole list to avoid the problem of
     # 0 when there is no relevant example in topn.
     per_list_weights = _per_example_weights_to_per_list_weights(
-        weights, math_ops.to_float(math_ops.greater_equal(labels, 1.0)))
-    return metrics.mean(per_list_precision, per_list_weights)
+        weights, tf.to_float(tf.greater_equal(labels, 1.0)))
+    return tf.metrics.mean(per_list_precision, per_list_weights)
 
 
 def normalized_discounted_cumulative_gain(labels,
@@ -344,8 +338,8 @@ def normalized_discounted_cumulative_gain(labels,
     A metric for the weighted normalized discounted cumulative gain of the
     batch.
   """
-  with ops.name_scope(name, 'normalized_discounted_cumulative_gain',
-                      (labels, predictions, weights)):
+  with tf.name_scope(name, 'normalized_discounted_cumulative_gain',
+                     (labels, predictions, weights)):
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
@@ -358,9 +352,8 @@ def normalized_discounted_cumulative_gain(labels,
                                             ideal_sorted_weights)
     per_list_ndcg = _safe_div(dcg, ideal_dcg)
     per_list_weights = _per_example_weights_to_per_list_weights(
-        weights=weights,
-        relevance=math_ops.pow(2.0, math_ops.to_float(labels)) - 1.0)
-    return metrics.mean(per_list_ndcg, per_list_weights)
+        weights=weights, relevance=tf.pow(2.0, tf.to_float(labels)) - 1.0)
+    return tf.metrics.mean(per_list_ndcg, per_list_weights)
 
 
 def discounted_cumulative_gain(labels,
@@ -382,18 +375,17 @@ def discounted_cumulative_gain(labels,
   Returns:
     A metric for the weighted discounted cumulative gain of the batch.
   """
-  with ops.name_scope(name, 'discounted_cumulative_gain',
-                      (labels, predictions, weights)):
+  with tf.name_scope(name, 'discounted_cumulative_gain',
+                     (labels, predictions, weights)):
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
     dcg = _discounted_cumulative_gain(sorted_labels,
-                                      sorted_weights) * math_ops.log1p(1.0)
+                                      sorted_weights) * tf.log1p(1.0)
     per_list_weights = _per_example_weights_to_per_list_weights(
-        weights=weights,
-        relevance=math_ops.pow(2.0, math_ops.to_float(labels)) - 1.0)
-    return metrics.mean(_safe_div(dcg, per_list_weights), per_list_weights)
+        weights=weights, relevance=tf.pow(2.0, tf.to_float(labels)) - 1.0)
+    return tf.metrics.mean(_safe_div(dcg, per_list_weights), per_list_weights)
 
 
 def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
@@ -415,23 +407,21 @@ def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
   Returns:
     A metric for the accuracy or ordered pairs.
   """
-  with ops.name_scope(name, 'ordered_pair_accuracy',
-                      (labels, predictions, weights)):
+  with tf.name_scope(name, 'ordered_pair_accuracy',
+                     (labels, predictions, weights)):
     clean_labels, predictions, weights, _ = _prepare_and_validate_params(
         labels, predictions, weights)
-    label_valid = math_ops.equal(clean_labels, labels)
-    valid_pair = math_ops.logical_and(
-        array_ops.expand_dims(label_valid, 2),
-        array_ops.expand_dims(label_valid, 1))
-    pair_label_diff = array_ops.expand_dims(
-        clean_labels, 2) - array_ops.expand_dims(clean_labels, 1)
-    pair_pred_diff = array_ops.expand_dims(
-        predictions, 2) - array_ops.expand_dims(predictions, 1)
+    label_valid = tf.equal(clean_labels, labels)
+    valid_pair = tf.logical_and(
+        tf.expand_dims(label_valid, 2), tf.expand_dims(label_valid, 1))
+    pair_label_diff = tf.expand_dims(clean_labels, 2) - tf.expand_dims(
+        clean_labels, 1)
+    pair_pred_diff = tf.expand_dims(predictions, 2) - tf.expand_dims(
+        predictions, 1)
     # Correct pairs are represented twice in the above pair difference tensors.
     # We only take one copy for each pair.
-    correct_pairs = math_ops.to_float(pair_label_diff > 0) * math_ops.to_float(
+    correct_pairs = tf.to_float(pair_label_diff > 0) * tf.to_float(
         pair_pred_diff > 0)
-    pair_weights = math_ops.to_float(
-        pair_label_diff > 0) * array_ops.expand_dims(
-            weights, 2) * math_ops.to_float(valid_pair)
-    return metrics.mean(correct_pairs, pair_weights)
+    pair_weights = tf.to_float(pair_label_diff > 0) * tf.expand_dims(
+        weights, 2) * tf.to_float(valid_pair)
+    return tf.metrics.mean(correct_pairs, pair_weights)
