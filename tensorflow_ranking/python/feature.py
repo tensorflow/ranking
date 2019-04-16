@@ -19,12 +19,9 @@ from __future__ import division
 from __future__ import print_function
 
 import six
+import tensorflow as tf
 
-from tensorflow.python.feature_column import feature_column
 from tensorflow.python.feature_column import feature_column_lib
-from tensorflow.python.ops import array_ops
-from tensorflow.python.estimator import model_fn
-
 from tensorflow_ranking.python import utils
 
 
@@ -67,7 +64,7 @@ def make_identity_transform_fn(context_feature_names):
 
 def encode_features(features,
                     feature_columns,
-                    mode=model_fn.ModeKeys.TRAIN,
+                    mode=tf.estimator.ModeKeys.TRAIN,
                     scope=None):
   """Returns dense tensors from features using feature columns.
 
@@ -88,9 +85,10 @@ def encode_features(features,
   """
   # Having scope here for backward compatibility.
   del scope
-  trainable = (mode == model_fn.ModeKeys.TRAIN)
+  trainable = (mode == tf.estimator.ModeKeys.TRAIN)
   cols_to_tensors = {}
 
+  # TODO: Ensure only v2 Feature Columns are used.
   if hasattr(feature_column_lib, "is_feature_column_v2"
             ) and feature_column_lib.is_feature_column_v2(feature_columns):
     dense_layer = feature_column_lib.DenseFeatures(
@@ -99,7 +97,7 @@ def encode_features(features,
         trainable=trainable)
     dense_layer(features, cols_to_output_tensors=cols_to_tensors)
   else:
-    feature_column.input_layer(
+    tf.feature_column.input_layer(
         features=features,
         feature_columns=feature_columns,
         trainable=trainable,
@@ -112,7 +110,7 @@ def encode_listwise_features(features,
                              input_size,
                              context_feature_columns,
                              example_feature_columns,
-                             mode=model_fn.ModeKeys.TRAIN,
+                             mode=tf.estimator.ModeKeys.TRAIN,
                              scope=None):
   """Returns dense tensors from features using feature columns.
 
@@ -158,7 +156,7 @@ def encode_listwise_features(features,
     for name in example_feature_columns:
       if name not in features:
         continue
-      batch_size = array_ops.shape(features[name])[0]
+      batch_size = tf.shape(features[name])[0]
       try:
         reshaped_features[name] = utils.reshape_first_ndims(
             features[name], 2, [batch_size * input_size])
@@ -184,7 +182,7 @@ def encode_listwise_features(features,
 def encode_pointwise_features(features,
                               context_feature_columns,
                               example_feature_columns,
-                              mode=model_fn.ModeKeys.PREDICT,
+                              mode=tf.estimator.ModeKeys.PREDICT,
                               scope=None):
   """Returns dense tensors from pointwise features using feature columns.
 
@@ -218,7 +216,7 @@ def encode_pointwise_features(features,
     example_cols_to_tensors = encode_features(
         features, example_feature_columns.values(), mode=mode, scope=scope)
     example_features = {
-        name: array_ops.expand_dims(example_cols_to_tensors[col], 1)
+        name: tf.expand_dims(example_cols_to_tensors[col], 1)
         for name, col in six.iteritems(example_feature_columns)
     }
 
