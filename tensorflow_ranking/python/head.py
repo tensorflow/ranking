@@ -23,18 +23,11 @@ from __future__ import division
 from __future__ import print_function
 
 import six
+import tensorflow as tf
 
-from tensorflow.python.framework import ops
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops import metrics as metrics_core
-from tensorflow.python.saved_model import signature_constants
-from tensorflow.python.training import training_util
-from tensorflow.python.estimator import model_fn
 from tensorflow.python.estimator.canned import head as head_lib
-from tensorflow.python.estimator.export import export_lib
 
-_DEFAULT_SERVING_KEY = signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+_DEFAULT_SERVING_KEY = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
 
 # The above default is defined by TF Serving, but these next three are just
 # a local convention without any special meaning.
@@ -116,11 +109,10 @@ class _RankingHead(object):
 
   def _labels_and_logits_metrics(self, labels, logits):
     """Returns metrics for labels and logits."""
-    is_label_valid = array_ops.reshape(math_ops.greater_equal(labels, 0.), [-1])
+    is_label_valid = tf.reshape(tf.greater_equal(labels, 0.), [-1])
     return {
-        name: metrics_core.mean(
-            array_ops.boolean_mask(
-                array_ops.reshape(tensor, [-1]), is_label_valid))
+        name: tf.metrics.mean(
+            tf.boolean_mask(tf.reshape(tensor, [-1]), is_label_valid))
         for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]
     }
 
@@ -147,8 +139,8 @@ class _RankingHead(object):
         etc.)
     """
     del mode  # Unused for this head.
-    logits = ops.convert_to_tensor(logits)
-    labels = math_ops.to_float(labels)
+    logits = tf.convert_to_tensor(logits)
+    labels = tf.to_float(labels)
 
     training_loss = self._loss_fn(labels, logits, features)
 
@@ -187,55 +179,56 @@ class _RankingHead(object):
       ValueError: If, in TRAIN mode, both `train_op_fn` and `optimizer`
         specified in the init function are `None` or if both are set.
     """
-    logits = ops.convert_to_tensor(logits)
+    logits = tf.convert_to_tensor(logits)
     # Predict.
-    with ops.name_scope(self._name, 'head'):
-      if mode == model_fn.ModeKeys.PREDICT:
-        return model_fn.EstimatorSpec(
+    with tf.name_scope(self._name, 'head'):
+      if mode == tf.estimator.ModeKeys.PREDICT:
+        return tf.estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,
             export_outputs={
-                _DEFAULT_SERVING_KEY: export_lib.RegressionOutput(logits),
-                _REGRESS_SERVING_KEY: export_lib.RegressionOutput(logits),
-                _PREDICT_SERVING_KEY: export_lib.PredictOutput(logits),
+                _DEFAULT_SERVING_KEY:
+                    tf.estimator.export.RegressionOutput(logits),
+                _REGRESS_SERVING_KEY:
+                    tf.estimator.export.RegressionOutput(logits),
+                _PREDICT_SERVING_KEY:
+                    tf.estimator.export.PredictOutput(logits),
             })
 
       training_loss, _, _, _ = self.create_loss(
           features=features, mode=mode, logits=logits, labels=labels)
       if regularization_losses:
-        regularization_loss = math_ops.add_n(regularization_losses)
-        regularized_training_loss = math_ops.add(training_loss,
-                                                 regularization_loss)
+        regularization_loss = tf.add_n(regularization_losses)
+        regularized_training_loss = tf.add(training_loss, regularization_loss)
       else:
         regularized_training_loss = training_loss
 
       # Eval.
-      if mode == model_fn.ModeKeys.EVAL:
+      if mode == tf.estimator.ModeKeys.EVAL:
         eval_metric_ops = {
             name: metric_fn(
                 labels=labels, predictions=logits, features=features)
             for name, metric_fn in six.iteritems(self._eval_metric_fns)
         }
         eval_metric_ops.update(self._labels_and_logits_metrics(labels, logits))
-        return model_fn.EstimatorSpec(
+        return tf.estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,
             loss=regularized_training_loss,
             eval_metric_ops=eval_metric_ops)
 
       # Train.
-      assert mode == model_fn.ModeKeys.TRAIN
+      assert mode == tf.estimator.ModeKeys.TRAIN
       if self._optimizer is not None:
         if self._train_op_fn is not None:
           raise ValueError('train_op_fn and optimizer cannot both be set.')
         train_op = self._optimizer.minimize(
-            regularized_training_loss,
-            global_step=training_util.get_global_step())
+            regularized_training_loss, global_step=tf.train.get_global_step())
       elif self._train_op_fn is not None:
         train_op = self._train_op_fn(regularized_training_loss)
       else:
         raise ValueError('train_op_fn and optimizer cannot both be None.')
-      return model_fn.EstimatorSpec(
+      return tf.estimator.EstimatorSpec(
           mode=mode,
           predictions=logits,
           loss=regularized_training_loss,
