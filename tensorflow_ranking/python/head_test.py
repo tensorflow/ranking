@@ -46,11 +46,12 @@ def _make_loss_fn(weights_feature_name=None):
 
   def _loss_fn(labels, logits, features):
     """A fake loss function."""
-    logits = tf.convert_to_tensor(logits)
-    labels = tf.to_float(labels)
+    logits = tf.convert_to_tensor(value=logits)
+    labels = tf.cast(labels, dtype=tf.float32)
     weights = features[
         weights_feature_name] if weights_feature_name is not None else 1.
-    loss = tf.reduce_sum(logits - labels) * tf.reduce_sum(weights)
+    loss = tf.reduce_sum(input_tensor=logits -
+                         labels) * tf.reduce_sum(input_tensor=weights)
     return loss
 
   return _loss_fn
@@ -59,10 +60,9 @@ def _make_loss_fn(weights_feature_name=None):
 class RankingHeadTest(tf.test.TestCase):
 
   def setUp(self):
-    tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
     self._default_features_dict = {}
-    self._default_signature = (
-        tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
+    self._default_signature = (tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
     logits = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 0., 2.]]
     weights = [1.] * 3
@@ -149,16 +149,16 @@ class RankingHeadTest(tf.test.TestCase):
         logits=self._default_logits,
         labels=self._default_labels)[0]
     with self.cached_session():
-      _initialize_variables(self, tf.train.Scaffold())
+      _initialize_variables(self, tf.compat.v1.train.Scaffold())
       self.assertAllClose(self._default_loss, training_loss.eval())
 
   def test_train(self):
     expected_train_result = b'my_train_op'
 
     def _train_op_fn(loss):
-      with tf.control_dependencies((tf.assert_near(
-          tf.to_float(self._default_loss),
-          tf.to_float(loss),
+      with tf.control_dependencies((tf.compat.v1.assert_near(
+          tf.cast(self._default_loss, dtype=tf.float32),
+          tf.cast(loss, dtype=tf.float32),
           name='assert_loss'),)):
         return tf.constant(expected_train_result)
 
@@ -192,8 +192,9 @@ class RankingHeadTest(tf.test.TestCase):
 
       def minimize(self, loss, global_step):
         del global_step
-        with tf.control_dependencies((tf.assert_equal(
-            tf.to_float(expected_loss), tf.to_float(loss),
+        with tf.control_dependencies((tf.compat.v1.assert_equal(
+            tf.cast(expected_loss, dtype=tf.float32),
+            tf.cast(loss, dtype=tf.float32),
             name='assert_loss'),)):
           return tf.constant(expected_train_result)
 
@@ -221,8 +222,10 @@ class RankingHeadTest(tf.test.TestCase):
     expected_loss = expected_regularization_loss + self._default_loss
 
     def _train_op_fn(loss):
-      with tf.control_dependencies((tf.assert_equal(
-          tf.to_float(expected_loss), tf.to_float(loss), name='assert_loss'),)):
+      with tf.control_dependencies((tf.compat.v1.assert_equal(
+          tf.cast(expected_loss, dtype=tf.float32),
+          tf.cast(loss, dtype=tf.float32),
+          name='assert_loss'),)):
         return tf.constant(expected_train_result)
 
     head = ranking_head.create_ranking_head(

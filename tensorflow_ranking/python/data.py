@@ -65,9 +65,9 @@ def parse_from_sequence_example(serialized,
   # `FixedLenSequenceFeature` to parse the `feature_lists` in SequenceExample.
   # TODO: Handle missing feature_list since allow_missing=True.
   fixed_len_sequence_features = {
-      k: tf.FixedLenSequenceFeature(s.shape, s.dtype, allow_missing=True)
+      k: tf.io.FixedLenSequenceFeature(s.shape, s.dtype, allow_missing=True)
       for k, s in six.iteritems(example_feature_spec)
-      if isinstance(s, tf.FixedLenFeature)
+      if isinstance(s, tf.io.FixedLenFeature)
   }
   sequence_features = example_feature_spec.copy()
   sequence_features.update(fixed_len_sequence_features)
@@ -82,7 +82,7 @@ def parse_from_sequence_example(serialized,
   # [batch_size, num_frames, ...] --> [batch_size, list_size, ...]
   for k, t in six.iteritems(examples):
     # Old shape: [batch_size, num_frames, ...]
-    shape = tf.unstack(tf.shape(t))
+    shape = tf.unstack(tf.shape(input=t))
     ndims = len(shape)
     num_frames = shape[1]
     # New shape: [batch_size, list_size, ...]
@@ -91,7 +91,8 @@ def parse_from_sequence_example(serialized,
     def slice_fn(t=t, ndims=ndims, new_shape=new_shape):
       """Slices the tensor."""
       if isinstance(t, tf.sparse.SparseTensor):
-        return tf.sparse_slice(t, [0] * ndims, tf.to_int64(new_shape))
+        return tf.sparse.slice(t, [0] * ndims,
+                               tf.cast(new_shape, dtype=tf.int64))
       else:
         return tf.slice(t, [0] * ndims, new_shape)
 
@@ -102,19 +103,20 @@ def parse_from_sequence_example(serialized,
                new_shape=new_shape):
       """Pads the tensor."""
       if isinstance(t, tf.SparseTensor):
-        return tf.sparse_reset_shape(t, new_shape)
+        return tf.sparse.reset_shape(t, new_shape)
       else:
         # Padding is n * 2 tensor where n is the ndims or rank of the padded
         # tensor.
         paddings = tf.stack([[0, 0], [0, list_size - num_frames]] + [[0, 0]] *
                             (ndims - 2))
         return tf.pad(
-            t,
-            paddings,
+            tensor=t,
+            paddings=paddings,
             constant_values=tf.squeeze(
                 example_feature_spec[k].default_value[0]))
 
-    tensor = tf.cond(num_frames > list_size, slice_fn, pad_fn)
+    tensor = tf.cond(
+        pred=num_frames > list_size, true_fn=slice_fn, false_fn=pad_fn)
     # Infer static shape for Tensor.
     if not isinstance(tensor, tf.SparseTensor):
       static_shape = t.get_shape().as_list()
@@ -340,7 +342,7 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
 
   def serving_input_receiver_fn():
     """An input function on serialized SequenceExample protos."""
-    serialized_sequence_example = tf.placeholder(
+    serialized_sequence_example = tf.compat.v1.placeholder(
         dtype=tf.string,
         shape=[default_batch_size],
         name="input_sequence_example_tensor")
@@ -445,7 +447,7 @@ def libsvm_generator(path, num_features, list_size, seed=None):
     # each dictionary is a mapping from a feature ID to a feature value.
     doc_list = []
 
-    with tf.gfile.Open(path, "r") as f:
+    with tf.io.gfile.GFile(path, "r") as f:
       # cur indicates the current query ID.
       cur = -1
 

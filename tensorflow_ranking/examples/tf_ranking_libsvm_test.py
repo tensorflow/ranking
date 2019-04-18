@@ -36,10 +36,10 @@ LIBSVM_DATA = """1 qid:10 32:0.14 48:0.97  51:0.45
 class TfRankingLibSVMTest(tf.test.TestCase):
 
   def test_train_and_eval(self):
-    data_dir = tf.test.get_temp_dir()
+    data_dir = tf.compat.v1.test.get_temp_dir()
     data_file = os.path.join(data_dir, "libvsvm.txt")
-    if tf.gfile.Exists(data_file):
-      tf.gfile.Remove(data_file)
+    if tf.io.gfile.exists(data_file):
+      tf.io.gfile.remove(data_file)
 
     with open(data_file, "wt") as writer:
       writer.write(LIBSVM_DATA)
@@ -58,8 +58,8 @@ class TfRankingLibSVMTest(tf.test.TestCase):
         num_features=100):
       tf_ranking_libsvm.train_and_eval()
 
-    if tf.gfile.Exists(self._output_dir):
-      tf.gfile.DeleteRecursively(self._output_dir)
+    if tf.io.gfile.exists(self._output_dir):
+      tf.io.gfile.rmtree(self._output_dir)
 
 
 if __name__ == "__main__":

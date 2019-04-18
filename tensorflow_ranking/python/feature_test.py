@@ -51,27 +51,29 @@ def _create_input_fn():
 
   def my_input_fn():
     feature_to_type = {
-        "example_0.age": tf.FixedLenFeature([1], tf.int64),
-        "example_1.age": tf.FixedLenFeature([1], tf.int64),
-        "example_0.weight": tf.FixedLenFeature([1], tf.int64),
-        "example_1.weight": tf.FixedLenFeature([1], tf.int64),
-        "example_0.label": tf.FixedLenFeature([1], tf.float32),
-        "example_1.label": tf.FixedLenFeature([1], tf.float32)
+        "example_0.age": tf.io.FixedLenFeature([1], tf.int64),
+        "example_1.age": tf.io.FixedLenFeature([1], tf.int64),
+        "example_0.weight": tf.io.FixedLenFeature([1], tf.int64),
+        "example_1.weight": tf.io.FixedLenFeature([1], tf.int64),
+        "example_0.label": tf.io.FixedLenFeature([1], tf.float32),
+        "example_1.label": tf.io.FixedLenFeature([1], tf.float32)
     }
     feature_1_proto = tf.train.Example()
     feature_2_proto = tf.train.Example()
     text_format.Merge(EXAMPLE_1_PROTO, feature_1_proto)
     text_format.Merge(EXAMPLE_2_PROTO, feature_2_proto)
 
-    features_tensor = tf.io.parse_example([
-        feature_1_proto.SerializeToString(),
-        feature_2_proto.SerializeToString()
-    ], feature_to_type)
+    features_tensor = tf.io.parse_example(
+        serialized=[
+            feature_1_proto.SerializeToString(),
+            feature_2_proto.SerializeToString()
+        ],
+        features=feature_to_type)
 
     # Create the dataset.
     dataset = tf.data.Dataset.from_tensor_slices(features_tensor).batch(2)
 
-    return dataset.make_one_shot_iterator().get_next()
+    return tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
 
   return my_input_fn
 
@@ -81,11 +83,11 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
   def test_make_identity_transform_fn(self):
     features = {
         "context":  # Input size: (batch_size=2, num_features=2).
-            tf.convert_to_tensor([[1.0, 1.0], [1.0, 1.0]]),
+            tf.convert_to_tensor(value=[[1.0, 1.0], [1.0, 1.0]]),
         "per_example":
-            tf.convert_to_tensor([[[10.0]], [[10.0]]]),
+            tf.convert_to_tensor(value=[[[10.0]], [[10.0]]]),
     }
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       transform_fn = feature_lib.make_identity_transform_fn(["context"])
       context_features, per_example_features = sess.run(
           transform_fn(features, 1))
@@ -155,11 +157,12 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
     embedding_lookup_b = cols_to_tensors[feature_columns["bbb"]]
 
     # Assert expected embedding variable and lookups.
-    global_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    global_vars = tf.compat.v1.get_collection(
+        tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
     embedding_var = global_vars[0]
-    with tf.Session() as sess:
-      sess.run(tf.global_variables_initializer())
-      sess.run(tf.tables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.compat.v1.tables_initializer())
       self.assertAllEqual(embedding_values, embedding_var.eval())
       self.assertAllEqual(expected_lookups_a, embedding_lookup_a.eval())
       self.assertAllEqual(expected_lookups_b, embedding_lookup_b.eval())
@@ -168,9 +171,9 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
     # Batch size = 2, list_size = 2.
     features = {
         "query_length":
-            tf.convert_to_tensor([[1], [2]]),
+            tf.convert_to_tensor(value=[[1], [2]]),
         "utility":
-            tf.convert_to_tensor([[[1.0], [0.0]], [[0.0], [1.0]]]),
+            tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
         "unigrams":
             tf.SparseTensor(
                 indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
@@ -214,9 +217,9 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
     self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
     self.assertAllEqual([2, 2, 10],
                         example_features["unigrams"].get_shape().as_list())
-    with tf.Session() as sess:
-      sess.run(tf.global_variables_initializer())
-      sess.run(tf.tables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.compat.v1.tables_initializer())
       context_features, example_features = sess.run(
           [context_features, example_features])
       self.assertAllEqual([[1], [2]], context_features["query_length"])
@@ -227,9 +230,9 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
     # Batch size = 2, tf.Example input format.
     features = {
         "query_length":
-            tf.convert_to_tensor([[1], [1]]),  # Repeated context feature.
+            tf.convert_to_tensor(value=[[1], [1]]),  # Repeated context feature.
         "utility":
-            tf.convert_to_tensor([[1.0], [0.0]]),
+            tf.convert_to_tensor(value=[[1.0], [0.0]]),
         "unigrams":
             tf.SparseTensor(
                 indices=[[0, 0], [1, 0]],
@@ -265,9 +268,9 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
     # Unigrams dense tensor has shape: [batch_size=2, list_size=1, dim=10].
     self.assertAllEqual([2, 1, 10],
                         example_features["unigrams"].get_shape().as_list())
-    with tf.Session() as sess:
-      sess.run(tf.global_variables_initializer())
-      sess.run(tf.tables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.compat.v1.tables_initializer())
       context_features, example_features = sess.run(
           [context_features, example_features])
       self.assertAllEqual([[1], [1]], context_features["query_length"])

@@ -97,7 +97,7 @@ def encode_features(features,
         trainable=trainable)
     dense_layer(features, cols_to_output_tensors=cols_to_tensors)
   else:
-    tf.feature_column.input_layer(
+    tf.compat.v1.feature_column.input_layer(
         features=features,
         feature_columns=feature_columns,
         trainable=trainable,
@@ -156,7 +156,7 @@ def encode_listwise_features(features,
     for name in example_feature_columns:
       if name not in features:
         continue
-      batch_size = tf.shape(features[name])[0]
+      batch_size = tf.shape(input=features[name])[0]
       try:
         reshaped_features[name] = utils.reshape_first_ndims(
             features[name], 2, [batch_size * input_size])

@@ -27,7 +27,7 @@ import tensorflow as tf
 
 from tensorflow.python.estimator.canned import head as head_lib
 
-_DEFAULT_SERVING_KEY = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+_DEFAULT_SERVING_KEY = tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
 
 # The above default is defined by TF Serving, but these next three are just
 # a local convention without any special meaning.
@@ -110,11 +110,12 @@ class _RankingHead(object):
   def _labels_and_logits_metrics(self, labels, logits):
     """Returns metrics for labels and logits."""
     is_label_valid = tf.reshape(tf.greater_equal(labels, 0.), [-1])
-    return {
-        name: tf.metrics.mean(
-            tf.boolean_mask(tf.reshape(tensor, [-1]), is_label_valid))
-        for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]
-    }
+    metrics_dict = {}
+    for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]:
+      metrics_dict[name] = tf.compat.v1.metrics.mean(
+          tf.boolean_mask(tensor=tf.reshape(tensor, [-1]), mask=is_label_valid))
+
+    return metrics_dict
 
   def create_loss(self, features, mode, logits, labels):
     """Returns a loss Tensor from provided logits.
@@ -139,8 +140,8 @@ class _RankingHead(object):
         etc.)
     """
     del mode  # Unused for this head.
-    logits = tf.convert_to_tensor(logits)
-    labels = tf.to_float(labels)
+    logits = tf.convert_to_tensor(value=logits)
+    labels = tf.cast(labels, dtype=tf.float32)
 
     training_loss = self._loss_fn(labels, logits, features)
 
@@ -179,9 +180,9 @@ class _RankingHead(object):
       ValueError: If, in TRAIN mode, both `train_op_fn` and `optimizer`
         specified in the init function are `None` or if both are set.
     """
-    logits = tf.convert_to_tensor(logits)
+    logits = tf.convert_to_tensor(value=logits)
     # Predict.
-    with tf.name_scope(self._name, 'head'):
+    with tf.compat.v1.name_scope(self._name, 'head'):
       if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(
             mode=mode,
@@ -223,7 +224,8 @@ class _RankingHead(object):
         if self._train_op_fn is not None:
           raise ValueError('train_op_fn and optimizer cannot both be set.')
         train_op = self._optimizer.minimize(
-            regularized_training_loss, global_step=tf.train.get_global_step())
+            regularized_training_loss,
+            global_step=tf.compat.v1.train.get_global_step())
       elif self._train_op_fn is not None:
         train_op = self._train_op_fn(regularized_training_loss)
       else:

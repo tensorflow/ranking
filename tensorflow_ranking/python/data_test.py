@@ -81,12 +81,12 @@ SEQ_EXAMPLE_PROTO_2 = text_format.Parse(
     """, tf.train.SequenceExample())
 
 CONTEXT_FEATURE_SPEC = {
-    "query_length": tf.FixedLenFeature([1], tf.int64, default_value=[0])
+    "query_length": tf.io.FixedLenFeature([1], tf.int64, default_value=[0])
 }
 
 EXAMPLE_FEATURE_SPEC = {
-    "unigrams": tf.VarLenFeature(tf.string),
-    "utility": tf.FixedLenFeature([1], tf.float32, default_value=[0.])
+    "unigrams": tf.io.VarLenFeature(tf.string),
+    "utility": tf.io.FixedLenFeature([1], tf.float32, default_value=[0.])
 }
 
 LIBSVM_DATA = """2 qid:1 1:0.1 3:0.3 4:-0.4
@@ -99,7 +99,7 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_parse_from_sequence_example(self):
     features = data_lib.parse_from_sequence_example(
-        tf.convert_to_tensor([
+        tf.convert_to_tensor(value=[
             SEQ_EXAMPLE_PROTO_1.SerializeToString(),
             SEQ_EXAMPLE_PROTO_2.SerializeToString(),
         ]),
@@ -107,8 +107,8 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
         context_feature_spec=CONTEXT_FEATURE_SPEC,
         example_feature_spec=EXAMPLE_FEATURE_SPEC)
 
-    with tf.Session() as sess:
-      sess.run(tf.local_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
       feature_map = sess.run(features)
       self.assertEqual(
           sorted(feature_map), ["query_length", "unigrams", "utility"])
@@ -123,15 +123,15 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_parse_from_sequence_example_slice(self):
     features = data_lib.parse_from_sequence_example(
-        tf.convert_to_tensor([
+        tf.convert_to_tensor(value=[
             SEQ_EXAMPLE_PROTO_1.SerializeToString(),
         ]),
         list_size=1,
         context_feature_spec=CONTEXT_FEATURE_SPEC,
         example_feature_spec=EXAMPLE_FEATURE_SPEC)
 
-    with tf.Session() as sess:
-      sess.run(tf.local_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
       feature_map = sess.run(features)
       self.assertEqual(
           sorted(feature_map), ["query_length", "unigrams", "utility"])
@@ -143,15 +143,15 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_parse_from_sequence_example_pad(self):
     features = data_lib.parse_from_sequence_example(
-        tf.convert_to_tensor([
+        tf.convert_to_tensor(value=[
             SEQ_EXAMPLE_PROTO_1.SerializeToString(),
         ]),
         list_size=3,
         context_feature_spec=CONTEXT_FEATURE_SPEC,
         example_feature_spec=EXAMPLE_FEATURE_SPEC)
 
-    with tf.Session() as sess:
-      sess.run(tf.local_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
       feature_map = sess.run(features)
       self.assertEqual(
           sorted(feature_map), ["query_length", "unigrams", "utility"])
@@ -177,13 +177,13 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
         }
         """, tf.train.SequenceExample())
     features = data_lib.parse_from_sequence_example(
-        tf.convert_to_tensor([missing_frame_proto.SerializeToString()]),
+        tf.convert_to_tensor(value=[missing_frame_proto.SerializeToString()]),
         list_size=2,
         context_feature_spec=None,
         example_feature_spec={"utility": EXAMPLE_FEATURE_SPEC["utility"]})
 
-    with tf.Session() as sess:
-      sess.run(tf.local_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
       with self.assertRaisesRegexp(
           tf.errors.InvalidArgumentError,
           r"Unexpected number of elements in feature utility"):
@@ -197,10 +197,10 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
         SEQ_EXAMPLE_PROTO_1.SerializeToString(),
         SEQ_EXAMPLE_PROTO_2.SerializeToString()
     ] * 100
-    data_dir = tf.test.get_temp_dir()
+    data_dir = tf.compat.v1.test.get_temp_dir()
     data_file = os.path.join(data_dir, "test_sequence_example.tfrecord")
-    if tf.gfile.Exists(data_file):
-      tf.gfile.Remove(data_file)
+    if tf.io.gfile.exists(data_file):
+      tf.io.gfile.remove(data_file)
 
     with tf.io.TFRecordWriter(data_file) as writer:
       for s in serialized_sequence_examples:
@@ -216,15 +216,16 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
         shuffle=False,
         sloppy_ordering=sloppy_ordering)
 
-    features = batched_dataset.make_one_shot_iterator().get_next()
+    features = tf.compat.v1.data.make_one_shot_iterator(
+        batched_dataset).get_next()
     self.assertAllEqual(
         sorted(features), ["query_length", "unigrams", "utility"])
     # Check static shapes for dense tensors.
     self.assertAllEqual([2, 1], features["query_length"].get_shape().as_list())
     self.assertAllEqual([2, 2, 1], features["utility"].get_shape().as_list())
 
-    with tf.Session() as sess:
-      sess.run(tf.local_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
       feature_map = sess.run(features)
       # Test dense_shape, indices and values for a SparseTensor.
       self.assertAllEqual(feature_map["unigrams"].dense_shape, [2, 2, 3])
@@ -250,8 +251,8 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
     self.assertEqual(
         sorted(serving_input_receiver.receiver_tensors.keys()),
         ["sequence_example"])
-    with tf.Session() as sess:
-      sess.run(tf.local_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
       feature_map = sess.run(
           serving_input_receiver.features,
           feed_dict={
@@ -311,10 +312,10 @@ class LibSVMUnitTest(tf.test.TestCase, parameterized.TestCase):
       self.assertAllEqual(features.get(k), want.get(k))
 
   def test_libsvm_generator(self):
-    data_dir = tf.test.get_temp_dir()
+    data_dir = tf.compat.v1.test.get_temp_dir()
     data_file = os.path.join(data_dir, "test_libvsvm.txt")
-    if tf.gfile.Exists(data_file):
-      tf.gfile.Remove(data_file)
+    if tf.io.gfile.exists(data_file):
+      tf.io.gfile.remove(data_file)
 
     with open(data_file, "wt") as writer:
       writer.write(LIBSVM_DATA)

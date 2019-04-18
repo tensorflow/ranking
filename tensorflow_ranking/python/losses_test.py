@@ -33,7 +33,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
 
   def setUp(self):
     super(DCGLambdaWeightTest, self).setUp()
-    tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
 
   def test_default(self):
     """For the weight using rank diff."""
@@ -81,7 +81,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     sorted_labels = [[2.0, 1.0]]
     lambda_weight = ranking_losses.DCGLambdaWeight(
         gain_fn=lambda x: tf.pow(2., x) - 1.,
-        rank_discount_fn=lambda r: 1. / tf.log1p(r))
+        rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
     with self.cached_session():
       self.assertAllClose(
           lambda_weight.pair_weights(sorted_labels).eval(),
@@ -139,7 +139,7 @@ class PrecisionLambdaWeightTest(tf.test.TestCase):
 
   def setUp(self):
     super(PrecisionLambdaWeightTest, self).setUp()
-    tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
 
   def test_default(self):
     sorted_labels = [[2.0, 1.0, 0.0]]
@@ -255,7 +255,7 @@ class LossesTest(tf.test.TestCase):
 
   def setUp(self):
     super(LossesTest, self).setUp()
-    tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
 
   def _check_pairwise_loss(self, loss_fn):
     """Helper function to test `loss_fn`."""
@@ -322,7 +322,7 @@ class LossesTest(tf.test.TestCase):
 
       # Test LambdaWeight.
       lambda_weight = ranking_losses.DCGLambdaWeight(
-          rank_discount_fn=lambda r: 1. / tf.log1p(r), smooth_fraction=1.)
+          rank_discount_fn=lambda r: 1. / tf.math.log1p(r), smooth_fraction=1.)
       self.assertAlmostEqual(
           loss_fn(
               labels,
@@ -348,9 +348,9 @@ class LossesTest(tf.test.TestCase):
       # Test loss reduction method.
       # Two reduction methods should return different loss values.
       reduced_1 = loss_fn(
-          labels, scores, reduction=tf.losses.Reduction.SUM).eval()
+          labels, scores, reduction=tf.compat.v1.losses.Reduction.SUM).eval()
       reduced_2 = loss_fn(
-          labels, scores, reduction=tf.losses.Reduction.MEAN).eval()
+          labels, scores, reduction=tf.compat.v1.losses.Reduction.MEAN).eval()
       self.assertNotAlmostEqual(reduced_1, reduced_2)
 
   def test_pairwise_hinge_loss(self):
@@ -425,7 +425,7 @@ class LossesTest(tf.test.TestCase):
 
       # Test LambdaWeight.
       lambda_weight = ranking_losses.DCGLambdaWeight(
-          rank_discount_fn=lambda r: 1. / tf.log1p(r), smooth_fraction=1.)
+          rank_discount_fn=lambda r: 1. / tf.math.log1p(r), smooth_fraction=1.)
       loss_fn = ranking_losses.make_loss_fn(
           loss_key,
           weights_feature_name=weights_feature_name,
@@ -451,9 +451,9 @@ class LossesTest(tf.test.TestCase):
       # Test loss reduction method.
       # Two reduction methods should return different loss values.
       loss_fn_1 = ranking_losses.make_loss_fn(
-          loss_key, reduction=tf.losses.Reduction.SUM)
+          loss_key, reduction=tf.compat.v1.losses.Reduction.SUM)
       loss_fn_2 = ranking_losses.make_loss_fn(
-          loss_key, reduction=tf.losses.Reduction.MEAN)
+          loss_key, reduction=tf.compat.v1.losses.Reduction.MEAN)
       self.assertNotAlmostEqual(
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())
@@ -487,7 +487,7 @@ class LossesTest(tf.test.TestCase):
           places=5)
       # Test LambdaWeight.
       lambda_weight = ranking_losses.DCGLambdaWeight(
-          rank_discount_fn=lambda r: 1. / tf.log1p(r))
+          rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
       self.assertAlmostEqual(
           ranking_losses._softmax_loss(
               labels, scores, lambda_weight=lambda_weight).eval(),
@@ -523,10 +523,10 @@ class LossesTest(tf.test.TestCase):
       # Two reduction methods should return different loss values.
       loss_fn_1 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.SOFTMAX_LOSS,
-          reduction=tf.losses.Reduction.SUM)
+          reduction=tf.compat.v1.losses.Reduction.SUM)
       loss_fn_2 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.SOFTMAX_LOSS,
-          reduction=tf.losses.Reduction.MEAN)
+          reduction=tf.compat.v1.losses.Reduction.MEAN)
       self.assertNotAlmostEqual(
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())
@@ -578,10 +578,10 @@ class LossesTest(tf.test.TestCase):
       # Two reduction methods should return different loss values.
       loss_fn_1 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS,
-          reduction=tf.losses.Reduction.SUM)
+          reduction=tf.compat.v1.losses.Reduction.SUM)
       loss_fn_2 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS,
-          reduction=tf.losses.Reduction.MEAN)
+          reduction=tf.compat.v1.losses.Reduction.MEAN)
       self.assertNotAlmostEqual(
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())
@@ -632,10 +632,10 @@ class LossesTest(tf.test.TestCase):
       # Two reduction methods should return different loss values.
       loss_fn_1 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.MEAN_SQUARED_LOSS,
-          reduction=tf.losses.Reduction.SUM)
+          reduction=tf.compat.v1.losses.Reduction.SUM)
       loss_fn_2 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.MEAN_SQUARED_LOSS,
-          reduction=tf.losses.Reduction.MEAN)
+          reduction=tf.compat.v1.losses.Reduction.MEAN)
       self.assertNotAlmostEqual(
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())
@@ -714,10 +714,10 @@ class LossesTest(tf.test.TestCase):
       # Two reduction methods should return different loss values.
       loss_fn_1 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.LIST_MLE_LOSS,
-          reduction=tf.losses.Reduction.SUM)
+          reduction=tf.compat.v1.losses.Reduction.SUM)
       loss_fn_2 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.LIST_MLE_LOSS,
-          reduction=tf.losses.Reduction.MEAN)
+          reduction=tf.compat.v1.losses.Reduction.MEAN)
       self.assertNotAlmostEqual(
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())
@@ -762,7 +762,7 @@ class LossesTest(tf.test.TestCase):
     with self.cached_session():
       loss_fn_simple = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
-          reduction=tf.losses.Reduction.SUM)
+          reduction=tf.compat.v1.losses.Reduction.SUM)
       self.assertAlmostEqual(
           loss_fn_simple(labels, scores, features).eval(),
           -((1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
@@ -772,7 +772,7 @@ class LossesTest(tf.test.TestCase):
       loss_fn_weighted = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
           weights_feature_name=weights_feature_name,
-          reduction=tf.losses.Reduction.SUM)
+          reduction=tf.compat.v1.losses.Reduction.SUM)
       self.assertAlmostEqual(
           loss_fn_weighted(labels, scores, features).eval(),
           -(2 * (1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
@@ -794,10 +794,10 @@ class LossesTest(tf.test.TestCase):
       # Two reduction methods should return different loss values.
       loss_fn_1 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
-          reduction=tf.losses.Reduction.SUM)
+          reduction=tf.compat.v1.losses.Reduction.SUM)
       loss_fn_2 = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.APPROX_NDCG_LOSS,
-          reduction=tf.losses.Reduction.MEAN)
+          reduction=tf.compat.v1.losses.Reduction.MEAN)
       self.assertNotAlmostEqual(
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())
@@ -849,9 +849,9 @@ class LossesTest(tf.test.TestCase):
       # Test loss reduction method.
       # Two reduction methods should return different loss values.
       loss_fn_1 = ranking_losses.make_loss_fn(
-          loss_keys, reduction=tf.losses.Reduction.SUM)
+          loss_keys, reduction=tf.compat.v1.losses.Reduction.SUM)
       loss_fn_2 = ranking_losses.make_loss_fn(
-          loss_keys, reduction=tf.losses.Reduction.MEAN)
+          loss_keys, reduction=tf.compat.v1.losses.Reduction.MEAN)
       self.assertNotAlmostEqual(
           loss_fn_1(labels, scores, features).eval(),
           loss_fn_2(labels, scores, features).eval())

@@ -50,8 +50,7 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
     shape [batch_size, size, rw_size] and the second has shape [batch_size,
     size].
   """
-  with tf.name_scope(None, 'rolling_window_indices',
-                     (size, rw_size, num_valid_entries)):
+  with tf.name_scope(name='rolling_window_indices'):
     # shape = [size, rw_size] with value [[0, 1, ...], [1, 2, ...], ...].
     rw_indices = tf.expand_dims(tf.range(rw_size), 0) + tf.expand_dims(
         tf.range(size), 1)
@@ -60,7 +59,7 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
         tf.expand_dims(rw_indices, 0), tf.zeros_like(num_valid_entries), axis=0)
     # Mark the first n indices as valid where n = num_valid_entries.
     batch_indices_mask = tf.less(
-        tf.reduce_min(batch_rw_indices, axis=2),
+        tf.reduce_min(input_tensor=batch_rw_indices, axis=2),
         tf.reshape(num_valid_entries, [-1, 1]))
     # Mod the indices to the range of num_valid_entries.
     num_valid_entries = tf.where(
@@ -87,10 +86,11 @@ def _form_group_indices_nd(is_valid, group_size, shuffle=True):
     group features. The second has the shape of [batch_size, num_groups] with
     value True for valid groups.
   """
-  with tf.name_scope(None, 'form_group_indices', (is_valid, group_size)):
-    is_valid = tf.convert_to_tensor(is_valid)
-    batch_size, list_size = tf.unstack(tf.shape(is_valid))
-    num_valid_entries = tf.reduce_sum(tf.to_int32(is_valid), axis=1)
+  with tf.name_scope(name='form_group_indices'):
+    is_valid = tf.convert_to_tensor(value=is_valid)
+    batch_size, list_size = tf.unstack(tf.shape(input=is_valid))
+    num_valid_entries = tf.reduce_sum(
+        input_tensor=tf.cast(is_valid, dtype=tf.int32), axis=1)
     rw_indices, mask = _rolling_window_indices(list_size, group_size,
                                                num_valid_entries)
     # Valid indices of the tensor are shuffled and put on the top.
@@ -174,12 +174,12 @@ def make_groupwise_ranking_fn(group_score_fn,
 
   def _groupwise_dnn_v2(features, labels, mode, params, config):
     """Defines the dnn for groupwise scoring functions."""
-    with tf.name_scope('transform'):
+    with tf.compat.v1.name_scope('transform'):
       context_features, per_example_features = _call_transform_fn(
           features, mode)
 
     def _score_fn(context_features, group_features, reuse):
-      with tf.variable_scope('group_score', reuse=reuse):
+      with tf.compat.v1.variable_scope('group_score', reuse=reuse):
         return group_score_fn(context_features, group_features, mode, params,
                               config)
 
@@ -187,15 +187,15 @@ def make_groupwise_ranking_fn(group_score_fn,
     # instance in a mini-batch will form a number of groups. Each groups of
     # examples are scored by 'score_fn' and socres for individual examples
     # accumulated over groups.
-    with tf.name_scope('groupwise_dnn_v2'):
-      with tf.name_scope('infer_sizes'):
+    with tf.compat.v1.name_scope('groupwise_dnn_v2'):
+      with tf.compat.v1.name_scope('infer_sizes'):
         if labels is not None:
-          batch_size, list_size = tf.unstack(tf.shape(labels))
+          batch_size, list_size = tf.unstack(tf.shape(input=labels))
           is_valid = utils.is_label_valid(labels)
         else:
           # Infer batch_size and list_size from a feature.
           example_tensor_shape = tf.shape(
-              next(six.itervalues(per_example_features)))
+              input=next(six.itervalues(per_example_features)))
           batch_size = example_tensor_shape[0]
           list_size = example_tensor_shape[1]
           is_valid = utils.is_label_valid(tf.ones([batch_size, list_size]))
@@ -212,9 +212,9 @@ def make_groupwise_ranking_fn(group_score_fn,
       # examples.
       indices, mask = _form_group_indices_nd(
           is_valid, group_size, shuffle=(mode != tf.estimator.ModeKeys.PREDICT))
-      num_groups = tf.shape(mask)[1]
+      num_groups = tf.shape(input=mask)[1]
 
-      with tf.name_scope('group_features'):
+      with tf.compat.v1.name_scope('group_features'):
         # For context features, We have shape [batch_size * num_groups, ...].
         large_batch_context_features = {}
         for name, value in six.iteritems(context_features):
@@ -241,7 +241,7 @@ def make_groupwise_ranking_fn(group_score_fn,
       scores = _score_fn(
           large_batch_context_features, large_batch_group_features, reuse=False)
 
-      with tf.name_scope('accumulate_scores'):
+      with tf.compat.v1.name_scope('accumulate_scores'):
         scores = tf.reshape(scores, [batch_size, num_groups, group_size])
         # Reset invalid scores to 0 based on mask.
         scores = tf.where(
@@ -252,7 +252,7 @@ def make_groupwise_ranking_fn(group_score_fn,
         # [batch_size, num_groups, group_size].
         list_scores = tf.scatter_nd(indices, scores, [batch_size, list_size])
         # Use average.
-        list_scores /= tf.to_float(group_size)
+        list_scores /= tf.cast(group_size, dtype=tf.float32)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
       return list_scores
@@ -265,7 +265,7 @@ def make_groupwise_ranking_fn(group_score_fn,
     """Defines an `Estimator` model function."""
     params = params or {}
 
-    tf.logging.info('Use groupwise dnn v2.')
+    tf.compat.v1.logging.info('Use groupwise dnn v2.')
     logits = _groupwise_dnn_v2(features, labels, mode, params, config)
 
     return ranking_head.create_estimator_spec(

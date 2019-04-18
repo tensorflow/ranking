@@ -23,7 +23,7 @@ import tensorflow as tf
 
 def is_label_valid(labels):
   """Returns a boolean `Tensor` for label validity."""
-  labels = tf.convert_to_tensor(labels)
+  labels = tf.convert_to_tensor(value=labels)
   return tf.greater_equal(labels, 0.)
 
 
@@ -40,9 +40,9 @@ def sort_by_scores(scores, features_list, topn=None):
   Returns:
     A list of `Tensor`s as the list of sorted features by `scores`.
   """
-  scores = tf.convert_to_tensor(scores)
+  scores = tf.convert_to_tensor(value=scores)
   scores.get_shape().assert_has_rank(2)
-  batch_size, list_size = tf.unstack(tf.shape(scores))
+  batch_size, list_size = tf.unstack(tf.shape(input=scores))
   if topn is None:
     topn = list_size
   topn = tf.minimum(topn, list_size)
@@ -83,16 +83,16 @@ def organize_valid_indices(is_valid, shuffle=True, seed=None):
     [batch_size, list_size] tensor. The values in the last dimension are the
     indices for an element in the input tensor.
   """
-  is_valid = tf.convert_to_tensor(is_valid)
+  is_valid = tf.convert_to_tensor(value=is_valid)
   is_valid.get_shape().assert_has_rank(2)
-  output_shape = tf.shape(is_valid)
+  output_shape = tf.shape(input=is_valid)
 
   if shuffle:
     values = tf.random.uniform(output_shape, seed=seed)
   else:
     values = (
         tf.ones_like(is_valid, tf.float32) *
-        tf.reverse(tf.to_float(tf.range(output_shape[1])), [-1]))
+        tf.reverse(tf.cast(tf.range(output_shape[1]), dtype=tf.float32), [-1]))
 
   rand = tf.where(is_valid, values, tf.ones(output_shape) * -1e-6)
   # shape(indices) = [batch_size, list_size]
@@ -119,7 +119,7 @@ def reshape_first_ndims(tensor, first_ndims, new_shape):
   assert tensor.get_shape().ndims is None or tensor.get_shape(
   ).ndims >= first_ndims, (
       'Tensor shape is less than {} dims.'.format(first_ndims))
-  new_shape = tf.concat([new_shape, tf.shape(tensor)[first_ndims:]], 0)
+  new_shape = tf.concat([new_shape, tf.shape(input=tensor)[first_ndims:]], 0)
   if isinstance(tensor, tf.SparseTensor):
     return tf.sparse.reshape(tensor, new_shape)
 
@@ -152,16 +152,16 @@ def approx_ranks(logits, alpha=10.):
   Returns:
     A `Tensor` of ranks with the same shape as logits.
   """
-  list_size = tf.shape(logits)[1]
+  list_size = tf.shape(input=logits)[1]
   x = tf.tile(tf.expand_dims(logits, 2), [1, 1, list_size])
   y = tf.tile(tf.expand_dims(logits, 1), [1, list_size, 1])
   pairs = tf.sigmoid(alpha * (y - x))
-  return tf.reduce_sum(pairs, -1) + .5
+  return tf.reduce_sum(input_tensor=pairs, axis=-1) + .5
 
 
 def inverse_max_dcg(labels,
                     gain_fn=lambda labels: tf.pow(2.0, labels) - 1.,
-                    rank_discount_fn=lambda rank: 1. / tf.log1p(rank),
+                    rank_discount_fn=lambda rank: 1. / tf.math.log1p(rank),
                     topn=None):
   """Computes the inverse of max DCG.
 
@@ -176,10 +176,11 @@ def inverse_max_dcg(labels,
     A `Tensor` with shape [batch_size, 1].
   """
   ideal_sorted_labels, = sort_by_scores(labels, [labels], topn=topn)
-  rank = tf.range(tf.shape(ideal_sorted_labels)[1]) + 1
+  rank = tf.range(tf.shape(input=ideal_sorted_labels)[1]) + 1
   discounted_gain = gain_fn(ideal_sorted_labels) * rank_discount_fn(
-      tf.to_float(rank))
-  discounted_gain = tf.reduce_sum(discounted_gain, 1, keepdims=True)
+      tf.cast(rank, dtype=tf.float32))
+  discounted_gain = tf.reduce_sum(
+      input_tensor=discounted_gain, axis=1, keepdims=True)
   return tf.where(
       tf.greater(discounted_gain, 0.), 1. / discounted_gain,
       tf.zeros_like(discounted_gain))

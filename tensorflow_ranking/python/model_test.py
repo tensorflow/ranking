@@ -37,7 +37,7 @@ class UtilsTest(tf.test.TestCase):
   """Tests for util functions."""
 
   def test_rolling_window_indices(self):
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       # All valid.
       indices, mask = sess.run(model._rolling_window_indices(3, 2, [3]))
       self.assertAllEqual(indices, [[[0, 1], [1, 2], [2, 0]]])
@@ -61,12 +61,12 @@ class UtilsTest(tf.test.TestCase):
       self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
   def test_form_group_indices_nd(self):
-    tf.set_random_seed(1)
+    tf.compat.v1.set_random_seed(1)
     # batch_size, list_size = 2, 3.
     is_valid = [[True, True, True], [True, True, False]]
     indices, mask = model._form_group_indices_nd(is_valid, group_size=2)
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       indices, mask = sess.run([indices, mask])
       # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
       self.assertAllEqual(
@@ -86,7 +86,7 @@ class UtilsTest(tf.test.TestCase):
     indices, mask = model._form_group_indices_nd(
         is_valid, group_size=2, shuffle=False)
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       indices, mask = sess.run([indices, mask])
       # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
       self.assertAllEqual(
@@ -105,15 +105,15 @@ class UtilsTest(tf.test.TestCase):
 
 def _save_variables_to_ckpt(model_dir):
   """Save all graph variables in a checkpoint under 'model_dir'."""
-  with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    tf.train.Saver().save(sess, os.path.join(model_dir, 'model.ckpt'))
+  with tf.compat.v1.Session() as sess:
+    sess.run(tf.compat.v1.global_variables_initializer())
+    tf.compat.v1.train.Saver().save(sess, os.path.join(model_dir, 'model.ckpt'))
 
 
 def _group_score_fn(context_features, group_features, mode, params, config):
   """Scoring function of the groupwise ranking model_fn under test."""
   del [mode, params, config]
-  batch_size = tf.shape(context_features['context'])[0]
+  batch_size = tf.shape(input=context_features['context'])[0]
   input_layer = tf.concat([
       tf.reshape(context_features['context'], [batch_size, -1]),
       tf.reshape(group_features['age'], [batch_size, -1])
@@ -121,7 +121,7 @@ def _group_score_fn(context_features, group_features, mode, params, config):
                           axis=1)
   # Shape is [batch_size, 2].
   # TODO: Convert to tf.keras.layers.Dense, and change *_NAME.
-  group_score = tf.layers.dense(input_layer, units=2)
+  group_score = tf.compat.v1.layers.dense(input_layer, units=2)
   return group_score
 
 
@@ -146,9 +146,9 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
 
   def setUp(self):
     super(GroupwiseRankingEstimatorTest, self).setUp()
-    tf.reset_default_graph()
-    self._model_dir = tf.test.get_temp_dir()
-    tf.gfile.MakeDirs(self._model_dir)
+    tf.compat.v1.reset_default_graph()
+    self._model_dir = tf.compat.v1.test.get_temp_dir()
+    tf.io.gfile.makedirs(self._model_dir)
     model_fn = model.make_groupwise_ranking_fn(
         _group_score_fn,
         group_size=2,
@@ -157,12 +157,12 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
             loss_fn=losses.make_loss_fn(
                 losses.RankingLossKey.PAIRWISE_HINGE_LOSS,
                 weights_feature_name='weight'),
-            optimizer=tf.train.AdagradOptimizer(learning_rate=0.1)))
+            optimizer=tf.compat.v1.train.AdagradOptimizer(learning_rate=0.1)))
     self._estimator = tf.estimator.Estimator(model_fn, self._model_dir)
 
   def tearDown(self):
     if self._model_dir:
-      tf.gfile.DeleteRecursively(self._model_dir)
+      tf.io.gfile.rmtree(self._model_dir)
     self._model_dir = None
     self._estimator = None
 
@@ -178,9 +178,9 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
 
     reader = tf.train.load_checkpoint(self._model_dir)
 
-    self.assertEqual([], shapes[tf.GraphKeys.GLOBAL_STEP])
+    self.assertEqual([], shapes[tf.compat.v1.GraphKeys.GLOBAL_STEP])
     self.assertEqual(expected_global_step,
-                     reader.get_tensor(tf.GraphKeys.GLOBAL_STEP))
+                     reader.get_tensor(tf.compat.v1.GraphKeys.GLOBAL_STEP))
 
     self.assertEqual([3, 2], shapes[WEIGHTS_NAME])
     if expected_weights is not None:
@@ -193,10 +193,10 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
   def _initialize_checkpoint(self):
     """Initialize the model checkpoint with constant values."""
     with tf.Graph().as_default():
-      tf.set_random_seed(23)
+      tf.compat.v1.set_random_seed(23)
       tf.Variable([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]], name=WEIGHTS_NAME)
       tf.Variable([1.0, 1.0], name=BIAS_NAME)
-      tf.Variable(100, name=tf.GraphKeys.GLOBAL_STEP, dtype=tf.int64)
+      tf.Variable(100, name=tf.compat.v1.GraphKeys.GLOBAL_STEP, dtype=tf.int64)
       # Adagrad weights should not be zero, otherwise we get NaNs.
       tf.Variable([[1e-12, 1e-12], [1e-12, 1e-12], [1e-12, 1e-12]],
                   name=ADAGRAD_WEIGHTS_NAME)

@@ -80,12 +80,12 @@ class MetricsTest(tf.test.TestCase):
 
   def setUp(self):
     super(MetricsTest, self).setUp()
-    tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
 
   def _check_metrics(self, metrics_and_values):
     """Checks metrics against values."""
     with self.test_session() as sess:
-      sess.run(tf.local_variables_initializer())
+      sess.run(tf.compat.v1.local_variables_initializer())
       for (metric_op, update_op), value in metrics_and_values:
         sess.run(update_op)
         self.assertAlmostEqual(sess.run(metric_op), value, places=5)
