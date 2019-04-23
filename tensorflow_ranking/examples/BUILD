@@ -27,6 +27,7 @@ py_binary(
     name = "tf_ranking_libsvm_py_binary",
     srcs = ["tf_ranking_libsvm.py"],
     main = "tf_ranking_libsvm.py",
+    python_version = "PY2",
     srcs_version = "PY2AND3",
     deps = [
         ":tf_ranking_libsvm_lib",
