@@ -38,17 +38,37 @@ _LABEL_FEATURE = "label"
 _PADDING_LABEL = -1.
 
 
+def _get_scalar_default_value(dtype, default_value):
+  """Gets the scalar compatible default value."""
+  if dtype == tf.string or default_value is None:
+    return None
+  if isinstance(default_value, int) or isinstance(default_value, float):
+    return default_value
+  elif (isinstance(default_value, list) or
+        isinstance(default_value, tuple)) and len(default_value) == 1:
+    return default_value[0]
+  else:
+    raise ValueError("Only scalar or equivalent is allowed in default_value.")
+
+
 def parse_from_sequence_example(serialized,
-                                list_size,
+                                list_size=None,
                                 context_feature_spec=None,
                                 example_feature_spec=None):
   """Parses SequenceExample to feature maps.
 
+  The `FixedLenFeature` in `example_feature_spec` is converted to
+  `FixedLenSequenceFeature` to parse `feature_list` in SequenceExample. We keep
+  track of the non-trivial default_values (e.g., -1 for labels) for features in
+  `example_feature_spec` and use them to replace the parsing defaults of the
+  SequenceExample (i.e., 0 for numbers and "" for strings). Due to this
+  complexity, we only allow scalar non-trivial default values for numbers.
+
   Args:
     serialized: (Tensor) A string Tensor for a batch of serialized
       SequenceExample.
-    list_size: (int) number of required frames in a SequenceExample. This is
-      needed to normalize output tensor shapes across batches.
+    list_size: (int) The maximum number of frames to keep for a SequenceExample.
+      If specified, truncation may happen.
     context_feature_spec: (dict) A mapping from feature keys to
       `FixedLenFeature` or `VarLenFeature` values for context.
     example_feature_spec: (dict) A mapping from feature keys to
@@ -63,33 +83,65 @@ def parse_from_sequence_example(serialized,
   """
   # Convert `FixedLenFeature` in `example_feature_spec` to
   # `FixedLenSequenceFeature` to parse the `feature_lists` in SequenceExample.
-  # TODO: Handle missing feature_list since allow_missing=True.
-  fixed_len_sequence_features = {
-      k: tf.io.FixedLenSequenceFeature(s.shape, s.dtype, allow_missing=True)
-      for k, s in six.iteritems(example_feature_spec)
-      if isinstance(s, tf.io.FixedLenFeature)
-  }
+  # In addition, we collect non-trivial `default_value`s (neither "" nor 0) for
+  # post-processing. This is because no `default_value` except None is allowed
+  # for `FixedLenSequenceFeature`. Also, we set allow_missing=True and handle
+  # the missing feature_list later.
+  fixed_len_sequence_features = {}
+  padding_values = {}
+  for k, s in six.iteritems(example_feature_spec):
+    if not isinstance(s, tf.io.FixedLenFeature):
+      continue
+    fixed_len_sequence_features[k] = tf.io.FixedLenSequenceFeature(
+        s.shape, s.dtype, allow_missing=True)
+    scalar = _get_scalar_default_value(s.dtype, s.default_value)
+    if scalar and scalar != 0:
+      padding_values[k] = scalar
+
   sequence_features = example_feature_spec.copy()
   sequence_features.update(fixed_len_sequence_features)
-  context, examples, _ = tf.io.parse_sequence_example(
+  context, examples, sizes = tf.io.parse_sequence_example(
       serialized,
       context_features=context_feature_spec,
       sequence_features=sequence_features)
 
+  # Reset to no trivial padding values for example features.
+  for k, v in six.iteritems(padding_values):
+    tensor = examples[k]  # [batch_size, num_frames, feature_size]
+    tensor.get_shape().assert_has_rank(3)
+    size = tf.reshape(sizes[k], [-1, 1, 1])  # [batch_size, 1, 1]
+    rank = tf.reshape(
+        tf.tile(tf.range(tf.shape(tensor)[1]), [tf.shape(tensor)[0]]),
+        tf.shape(tensor))
+    tensor = tf.where(
+        tf.less(rank, tf.cast(size, tf.int32)), tensor,
+        v * tf.ones_like(tensor))
+    examples[k] = tensor
+
+  list_size_dynamic = tf.reduce_max(
+      tf.stack([tf.shape(t)[1] for t in six.itervalues(examples)]))
+  if list_size is None or list_size <= 0:
+    # Use dynamic list_size. This is needed to pad missing feature_list.
+    list_size = list_size_dynamic
+  else:
+    # Use the smaller one to avoid unnecessary padding.
+    list_size = tf.where(list_size > list_size_dynamic, list_size_dynamic,
+                         list_size)
+
+  # Collect features. Truncate or pad example features to normalize the tensor
+  # shape: [batch_size, num_frames, ...] --> [batch_size, list_size, ...]
   features = {}
   features.update(context)
-  # Slice or pad example features to normalize the tensor shape:
-  # [batch_size, num_frames, ...] --> [batch_size, list_size, ...]
   for k, t in six.iteritems(examples):
     # Old shape: [batch_size, num_frames, ...]
-    shape = tf.unstack(tf.shape(input=t))
-    ndims = len(shape)
+    shape = tf.shape(input=t)
+    ndims = t.get_shape().rank
     num_frames = shape[1]
     # New shape: [batch_size, list_size, ...]
     new_shape = tf.concat([[shape[0], list_size], shape[2:]], 0)
 
-    def slice_fn(t=t, ndims=ndims, new_shape=new_shape):
-      """Slices the tensor."""
+    def truncate_fn(t=t, ndims=ndims, new_shape=new_shape):
+      """Truncates the tensor."""
       if isinstance(t, tf.sparse.SparseTensor):
         return tf.sparse.slice(t, [0] * ndims,
                                tf.cast(new_shape, dtype=tf.int64))
@@ -102,27 +154,25 @@ def parse_from_sequence_example(serialized,
                num_frames=num_frames,
                new_shape=new_shape):
       """Pads the tensor."""
-      if isinstance(t, tf.SparseTensor):
+      if isinstance(t, tf.sparse.SparseTensor):
         return tf.sparse.reset_shape(t, new_shape)
       else:
-        # Padding is n * 2 tensor where n is the ndims or rank of the padded
-        # tensor.
+        # Paddings has shape [n, 2] where n is the rank of the tensor.
         paddings = tf.stack([[0, 0], [0, list_size - num_frames]] + [[0, 0]] *
                             (ndims - 2))
-        return tf.pad(
-            tensor=t,
-            paddings=paddings,
-            constant_values=tf.squeeze(
-                example_feature_spec[k].default_value[0]))
+        pad_val = tf.squeeze(example_feature_spec[k].default_value[0])
+        return tf.pad(tensor=t, paddings=paddings, constant_values=pad_val)
 
     tensor = tf.cond(
-        pred=num_frames > list_size, true_fn=slice_fn, false_fn=pad_fn)
-    # Infer static shape for Tensor.
-    if not isinstance(tensor, tf.SparseTensor):
+        pred=num_frames > list_size, true_fn=truncate_fn, false_fn=pad_fn)
+    # Infer static shape for Tensor. Set the 2nd dim to None and set_shape
+    # merges `static_shape` with the existing static shape of the thensor.
+    if not isinstance(tensor, tf.sparse.SparseTensor):
       static_shape = t.get_shape().as_list()
-      static_shape[1] = list_size
+      static_shape[1] = None
       tensor.set_shape(static_shape)
     features[k] = tensor
+
   return features
 
 
@@ -231,8 +281,8 @@ def read_batched_sequence_example_dataset(file_pattern,
       containing tf.SequenceExample protos. See `tf.gfile.Glob` for pattern
       rules.
     batch_size: (int) Number of records to combine in a single batch.
-    list_size: (int) Number of required examples per SequenceExample. Required
-      so that we can normalize tensor shapes across batches.
+    list_size: (int) The maximum number of frames to keep in a SequenceExample.
+      Leave it to None to avoid truncation.
     context_feature_spec: (dict) A mapping from  feature keys to
       `FixedLenFeature` or `VarLenFeature` values.
     example_feature_spec: (dict) A mapping feature keys to `FixedLenFeature` or
@@ -268,7 +318,7 @@ def read_batched_sequence_example_dataset(file_pattern,
     `Tensor` or `SparseTensor` objects. The context features are mapped to a
     rank-2 tensor of shape [batch_size, feature_size], and the example features
     are mapped to a rank-3 tensor of shape [batch_size, list_size,
-    feature_size], where list_size is the number of required example.
+    feature_size], where list_size is the number of examples.
   """
   # TODO: Move the file reading part into a common function for all
   # batch readers.
@@ -326,8 +376,8 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
   only features in general.
 
   Args:
-    input_size: (int) number of examples in an tf.SequenceExample. This is
-      used for normalize SequenceExample.
+    input_size: (int) The maximum number of frames to keep in a SequenceExample.
+      Leave it to None to avoid truncation (recommended).
     context_feature_spec: (dict) Map from feature keys to `FixedLenFeature` or
       `VarLenFeature` values.
     example_feature_spec: (dict) Map from  feature keys to `FixedLenFeature` or
@@ -349,7 +399,7 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
     receiver_tensors = {"sequence_example": serialized_sequence_example}
     features = parse_from_sequence_example(
         serialized_sequence_example,
-        input_size,
+        list_size=input_size,
         context_feature_spec=context_feature_spec,
         example_feature_spec=example_feature_spec)
 
@@ -385,8 +435,9 @@ def _libsvm_generate(num_features, list_size, doc_list):
   Args:
     num_features: An integer representing the number of features per instance.
     list_size: Size of the document list per query.
-    doc_list: A list of dictionaries (one per document) where each
-      dictionary is a mapping from feature ID (string) to feature value (float).
+    doc_list: A list of dictionaries (one per document) where each dictionary is
+      a mapping from feature ID (string) to feature value (float).
+
   Returns:
     A tuple consisting of a dictionary (feature ID to `Tensor`s) and a label
     `Tensor`.
@@ -394,8 +445,8 @@ def _libsvm_generate(num_features, list_size, doc_list):
   # Construct output variables.
   features = {}
   for fid in range(num_features):
-    features[str(fid+1)] = np.zeros([list_size, 1], dtype=np.float32)
-  labels = np.ones([list_size], dtype=np.float32)*(_PADDING_LABEL)
+    features[str(fid + 1)] = np.zeros([list_size, 1], dtype=np.float32)
+  labels = np.ones([list_size], dtype=np.float32) * (_PADDING_LABEL)
 
   # Shuffle the document list and trim to a prescribed list_size.
   np.random.shuffle(doc_list)
@@ -461,8 +512,7 @@ def libsvm_generator(path, num_features, list_size, seed=None):
           doc_list.append(doc)
           continue
 
-        yield _libsvm_generate(
-            num_features, list_size, doc_list)
+        yield _libsvm_generate(num_features, list_size, doc_list)
 
         # Reset current pointer and re-initialize document list.
         cur = qid

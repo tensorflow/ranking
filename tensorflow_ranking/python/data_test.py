@@ -27,7 +27,6 @@ import tensorflow as tf
 from google.protobuf import text_format
 from tensorflow_ranking.python import data as data_lib
 
-
 SEQ_EXAMPLE_PROTO_1 = text_format.Parse(
     """
     context {
@@ -67,13 +66,11 @@ SEQ_EXAMPLE_PROTO_2 = text_format.Parse(
         key: "unigrams"
         value {
           feature { bytes_list { value: "gbdt" } }
-          feature { }
         }
       }
       feature_list {
         key: "utility"
         value {
-          feature { float_list { value: 0.0 } }
           feature { float_list { value: 0.0 } }
         }
       }
@@ -86,7 +83,7 @@ CONTEXT_FEATURE_SPEC = {
 
 EXAMPLE_FEATURE_SPEC = {
     "unigrams": tf.io.VarLenFeature(tf.string),
-    "utility": tf.io.FixedLenFeature([1], tf.float32, default_value=[0.])
+    "utility": tf.io.FixedLenFeature([1], tf.float32, default_value=[-1.])
 }
 
 LIBSVM_DATA = """2 qid:1 1:0.1 3:0.3 4:-0.4
@@ -103,7 +100,6 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
             SEQ_EXAMPLE_PROTO_1.SerializeToString(),
             SEQ_EXAMPLE_PROTO_2.SerializeToString(),
         ]),
-        list_size=2,
         context_feature_spec=CONTEXT_FEATURE_SPEC,
         example_feature_spec=EXAMPLE_FEATURE_SPEC)
 
@@ -119,9 +115,39 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
       self.assertAllEqual(feature_map["unigrams"].values,
                           [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
       self.assertAllEqual(feature_map["query_length"], [[3], [2]])
-      self.assertAllEqual(feature_map["utility"], [[[0.], [1.]], [[0.], [0.]]])
+      self.assertAllEqual(feature_map["utility"], [[[0.], [1.]], [[0.], [-1.]]])
+      # Check static shapes for dense tensors.
+      self.assertAllEqual([2, 1],
+                          features["query_length"].get_shape().as_list())
+      self.assertAllEqual([2, 2, 1], features["utility"].get_shape().as_list())
 
-  def test_parse_from_sequence_example_slice(self):
+  def test_parse_from_sequence_example_with_large_list_size(self):
+    features = data_lib.parse_from_sequence_example(
+        tf.convert_to_tensor(value=[
+            SEQ_EXAMPLE_PROTO_1.SerializeToString(),
+        ]),
+        list_size=3,
+        context_feature_spec=CONTEXT_FEATURE_SPEC,
+        example_feature_spec=EXAMPLE_FEATURE_SPEC)
+
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      feature_map = sess.run(features)
+      self.assertEqual(
+          sorted(feature_map), ["query_length", "unigrams", "utility"])
+      self.assertAllEqual(feature_map["query_length"], [[3]])
+      self.assertAllEqual(feature_map["unigrams"].dense_shape, [1, 2, 3])
+      self.assertAllEqual(feature_map["unigrams"].indices,
+                          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2]])
+      self.assertAllEqual(feature_map["unigrams"].values,
+                          [b"tensorflow", b"learning", b"to", b"rank"])
+      self.assertAllEqual(feature_map["utility"], [[[0.], [1.]]])
+      # Check static shapes for dense tensors.
+      self.assertAllEqual([1, 1],
+                          features["query_length"].get_shape().as_list())
+      self.assertAllEqual([1, 2, 1], features["utility"].get_shape().as_list())
+
+  def test_parse_from_sequence_example_with_small_list_size(self):
     features = data_lib.parse_from_sequence_example(
         tf.convert_to_tensor(value=[
             SEQ_EXAMPLE_PROTO_1.SerializeToString(),
@@ -140,30 +166,13 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
       self.assertAllEqual(feature_map["unigrams"].values, [b"tensorflow"])
       self.assertAllEqual(feature_map["query_length"], [[3]])
       self.assertAllEqual(feature_map["utility"], [[[0.]]])
+      # Check static shapes for dense tensors.
+      self.assertAllEqual([1, 1],
+                          features["query_length"].get_shape().as_list())
+      self.assertAllEqual([1, None, 1],
+                          features["utility"].get_shape().as_list())
 
-  def test_parse_from_sequence_example_pad(self):
-    features = data_lib.parse_from_sequence_example(
-        tf.convert_to_tensor(value=[
-            SEQ_EXAMPLE_PROTO_1.SerializeToString(),
-        ]),
-        list_size=3,
-        context_feature_spec=CONTEXT_FEATURE_SPEC,
-        example_feature_spec=EXAMPLE_FEATURE_SPEC)
-
-    with tf.compat.v1.Session() as sess:
-      sess.run(tf.compat.v1.local_variables_initializer())
-      feature_map = sess.run(features)
-      self.assertEqual(
-          sorted(feature_map), ["query_length", "unigrams", "utility"])
-      self.assertAllEqual(feature_map["query_length"], [[3]])
-      self.assertAllEqual(feature_map["unigrams"].dense_shape, [1, 3, 3])
-      self.assertAllEqual(feature_map["unigrams"].indices,
-                          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2]])
-      self.assertAllEqual(feature_map["unigrams"].values,
-                          [b"tensorflow", b"learning", b"to", b"rank"])
-      self.assertAllEqual(feature_map["utility"], [[[0.], [1.], [0.]]])
-
-  def test_parse_from_sequence_example_missing_framei_exception(self):
+  def test_parse_from_sequence_example_missing_frame_exception(self):
     missing_frame_proto = text_format.Parse(
         """
         feature_lists {
@@ -188,6 +197,39 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
           tf.errors.InvalidArgumentError,
           r"Unexpected number of elements in feature utility"):
         sess.run(features)
+
+  def test_parse_from_sequence_example_missing_feature_list(self):
+    empty_proto = text_format.Parse(
+        """
+        feature_lists {
+          feature_list {
+            key: "utility2"
+            value {
+              feature { float_list { value: 0.0 } }
+            }
+          }
+        }
+        """, tf.train.SequenceExample())
+    features = data_lib.parse_from_sequence_example(
+        tf.convert_to_tensor(value=[empty_proto.SerializeToString()]),
+        list_size=2,
+        context_feature_spec=None,
+        example_feature_spec={"utility": EXAMPLE_FEATURE_SPEC["utility"]})
+
+    features_0 = data_lib.parse_from_sequence_example(
+        tf.convert_to_tensor(value=[empty_proto.SerializeToString()]),
+        context_feature_spec=None,
+        example_feature_spec={
+            "utility": EXAMPLE_FEATURE_SPEC["utility"],
+            "utility2": EXAMPLE_FEATURE_SPEC["utility"]
+        })
+
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      sess.run([features, features_0])
+      self.assertAllEqual([1, 0, 1], features["utility"].get_shape().as_list())
+      self.assertAllEqual([1, 1, 1],
+                          features_0["utility"].get_shape().as_list())
 
   @parameterized.named_parameters(("with_sloppy_ordering", True),
                                   ("with_deterministic_ordering", False))
@@ -222,7 +264,7 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
         sorted(features), ["query_length", "unigrams", "utility"])
     # Check static shapes for dense tensors.
     self.assertAllEqual([2, 1], features["query_length"].get_shape().as_list())
-    self.assertAllEqual([2, 2, 1], features["utility"].get_shape().as_list())
+    self.assertAllEqual([2, None, 1], features["utility"].get_shape().as_list())
 
     with tf.compat.v1.Session() as sess:
       sess.run(tf.compat.v1.local_variables_initializer())
@@ -236,7 +278,8 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
                           [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
       # Check values directly for dense tensors.
       self.assertAllEqual(feature_map["query_length"], [[3], [2]])
-      self.assertAllEqual(feature_map["utility"], [[[0.], [1.0]], [[0.], [0.]]])
+      self.assertAllEqual(feature_map["utility"],
+                          [[[0.], [1.0]], [[0.], [-1.]]])
 
   def test_sequence_example_serving_input_receiver_fn(self):
     serving_input_receiver_fn = (
@@ -271,7 +314,8 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
                           [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
       # Check values directly for dense tensors.
       self.assertAllEqual(feature_map["query_length"], [[3], [2]])
-      self.assertAllEqual(feature_map["utility"], [[[0.], [1.0]], [[0.], [0.]]])
+      self.assertAllEqual(feature_map["utility"],
+                          [[[0.], [1.0]], [[0.], [-1.]]])
 
 
 class LibSVMUnitTest(tf.test.TestCase, parameterized.TestCase):
@@ -280,16 +324,31 @@ class LibSVMUnitTest(tf.test.TestCase, parameterized.TestCase):
     data = "1 qid:10 32:0.14 48:0.97  51:0.45"
     qid, features = data_lib._libsvm_parse_line(data)
     self.assertEqual(qid, 10)
-    self.assertDictEqual(
-        features,
-        {"32": 0.14, "48": 0.97, "51": 0.45, "label": 1.0}
-    )
+    self.assertDictEqual(features, {
+        "32": 0.14,
+        "48": 0.97,
+        "51": 0.45,
+        "label": 1.0
+    })
 
   def test_libsvm_generate(self):
     doc_list = [
-        {"1": 0.1, "3": 0.3, "4": -0.4, "label": 2.0},
-        {"1": 0.12, "4": 0.24, "5": 0.5, "label": 1.0},
-        {"2": 0.13, "label": 0.0},
+        {
+            "1": 0.1,
+            "3": 0.3,
+            "4": -0.4,
+            "label": 2.0
+        },
+        {
+            "1": 0.12,
+            "4": 0.24,
+            "5": 0.5,
+            "label": 1.0
+        },
+        {
+            "2": 0.13,
+            "label": 0.0
+        },
     ]
     want = {
         "1": np.array([[0.1], [0.], [0.12], [0.]], dtype=np.float32),
@@ -304,10 +363,7 @@ class LibSVMUnitTest(tf.test.TestCase, parameterized.TestCase):
         num_features=5, list_size=4, doc_list=doc_list)
 
     self.assertAllEqual(labels, [2.0, 0.0, 1.0, -1.0])
-    self.assertAllEqual(
-        sorted(features.keys()),
-        sorted(want.keys())
-    )
+    self.assertAllEqual(sorted(features.keys()), sorted(want.keys()))
     for k in sorted(want):
       self.assertAllEqual(features.get(k), want.get(k))
 
@@ -332,10 +388,7 @@ class LibSVMUnitTest(tf.test.TestCase, parameterized.TestCase):
 
     for features, labels in reader():
       self.assertAllEqual(labels, [2.0, 0., 1.0, -1.0])
-      self.assertAllEqual(
-          sorted(features.keys()),
-          sorted(want.keys())
-      )
+      self.assertAllEqual(sorted(features.keys()), sorted(want.keys()))
       for k in sorted(want):
         self.assertAllEqual(features.get(k), want.get(k))
       break
