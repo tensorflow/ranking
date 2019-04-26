@@ -40,8 +40,10 @@ _PADDING_LABEL = -1.
 
 def _get_scalar_default_value(dtype, default_value):
   """Gets the scalar compatible default value."""
-  if dtype == tf.string or default_value is None:
-    return None
+  if dtype == tf.string:
+    return default_value or ""
+  elif default_value is None:
+    return 0
   if isinstance(default_value, int) or isinstance(default_value, float):
     return default_value
   elif (isinstance(default_value, list) or
@@ -95,7 +97,7 @@ def parse_from_sequence_example(serialized,
     fixed_len_sequence_features[k] = tf.io.FixedLenSequenceFeature(
         s.shape, s.dtype, allow_missing=True)
     scalar = _get_scalar_default_value(s.dtype, s.default_value)
-    if scalar and scalar != 0:
+    if scalar and not isinstance(scalar, six.text_type) and scalar != 0:
       padding_values[k] = scalar
 
   sequence_features = example_feature_spec.copy()
@@ -160,7 +162,9 @@ def parse_from_sequence_example(serialized,
         # Paddings has shape [n, 2] where n is the rank of the tensor.
         paddings = tf.stack([[0, 0], [0, list_size - num_frames]] + [[0, 0]] *
                             (ndims - 2))
-        pad_val = tf.squeeze(example_feature_spec[k].default_value[0])
+        pad_val = _get_scalar_default_value(
+            example_feature_spec[k].dtype,
+            example_feature_spec[k].default_value)
         return tf.pad(tensor=t, paddings=paddings, constant_values=pad_val)
 
     tensor = tf.cond(
