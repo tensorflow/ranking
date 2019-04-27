@@ -136,16 +136,16 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
       self.assertEqual(
           sorted(feature_map), ["query_length", "unigrams", "utility"])
       self.assertAllEqual(feature_map["query_length"], [[3]])
-      self.assertAllEqual(feature_map["unigrams"].dense_shape, [1, 2, 3])
+      self.assertAllEqual(feature_map["unigrams"].dense_shape, [1, 3, 3])
       self.assertAllEqual(feature_map["unigrams"].indices,
                           [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2]])
       self.assertAllEqual(feature_map["unigrams"].values,
                           [b"tensorflow", b"learning", b"to", b"rank"])
-      self.assertAllEqual(feature_map["utility"], [[[0.], [1.]]])
+      self.assertAllEqual(feature_map["utility"], [[[0.], [1.], [-1.]]])
       # Check static shapes for dense tensors.
       self.assertAllEqual([1, 1],
                           features["query_length"].get_shape().as_list())
-      self.assertAllEqual([1, 2, 1], features["utility"].get_shape().as_list())
+      self.assertAllEqual([1, 3, 1], features["utility"].get_shape().as_list())
 
   def test_parse_from_sequence_example_with_small_list_size(self):
     features = data_lib.parse_from_sequence_example(
@@ -169,8 +169,7 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
       # Check static shapes for dense tensors.
       self.assertAllEqual([1, 1],
                           features["query_length"].get_shape().as_list())
-      self.assertAllEqual([1, None, 1],
-                          features["utility"].get_shape().as_list())
+      self.assertAllEqual([1, 1, 1], features["utility"].get_shape().as_list())
 
   def test_parse_from_sequence_example_missing_frame_exception(self):
     missing_frame_proto = text_format.Parse(
@@ -227,7 +226,7 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
     with tf.compat.v1.Session() as sess:
       sess.run(tf.compat.v1.local_variables_initializer())
       sess.run([features, features_0])
-      self.assertAllEqual([1, 0, 1], features["utility"].get_shape().as_list())
+      self.assertAllEqual([1, 2, 1], features["utility"].get_shape().as_list())
       self.assertAllEqual([1, 1, 1],
                           features_0["utility"].get_shape().as_list())
 
@@ -264,7 +263,7 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
         sorted(features), ["query_length", "unigrams", "utility"])
     # Check static shapes for dense tensors.
     self.assertAllEqual([2, 1], features["query_length"].get_shape().as_list())
-    self.assertAllEqual([2, None, 1], features["utility"].get_shape().as_list())
+    self.assertAllEqual([2, 2, 1], features["utility"].get_shape().as_list())
 
     with tf.compat.v1.Session() as sess:
       sess.run(tf.compat.v1.local_variables_initializer())

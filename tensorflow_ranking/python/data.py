@@ -66,11 +66,17 @@ def parse_from_sequence_example(serialized,
   SequenceExample (i.e., 0 for numbers and "" for strings). Due to this
   complexity, we only allow scalar non-trivial default values for numbers.
 
+  When `list_size` is None, the 2nd dim of the output Tensors are not fixed and
+  vary from batch to batch. When `list_size` is specified as a positive integer,
+  truncation or padding is applied so that the 2nd dim of the output Tensors is
+  the specified `list_size`.
+
   Args:
     serialized: (Tensor) A string Tensor for a batch of serialized
       SequenceExample.
-    list_size: (int) The maximum number of frames to keep for a SequenceExample.
-      If specified, truncation may happen.
+    list_size: (int) The number of frames to keep for a SequenceExample. If
+      specified, truncation or padding may happen. Otherwise, the output Tensors
+      have a dynamic list size.
     context_feature_spec: (dict) A mapping from feature keys to
       `FixedLenFeature` or `VarLenFeature` values for context.
     example_feature_spec: (dict) A mapping from feature keys to
@@ -83,6 +89,8 @@ def parse_from_sequence_example(serialized,
   Returns:
     A mapping from feature keys to `Tensor` or `SparseTensor`.
   """
+  if list_size is not None and list_size <= 0:
+    list_size = None
   # Convert `FixedLenFeature` in `example_feature_spec` to
   # `FixedLenSequenceFeature` to parse the `feature_lists` in SequenceExample.
   # In addition, we collect non-trivial `default_value`s (neither "" nor 0) for
@@ -120,15 +128,12 @@ def parse_from_sequence_example(serialized,
         v * tf.ones_like(tensor))
     examples[k] = tensor
 
-  list_size_dynamic = tf.reduce_max(
-      tf.stack([tf.shape(t)[1] for t in six.itervalues(examples)]))
-  if list_size is None or list_size <= 0:
+  list_size_arg = list_size
+  if list_size is None:
     # Use dynamic list_size. This is needed to pad missing feature_list.
+    list_size_dynamic = tf.reduce_max(
+        tf.stack([tf.shape(t)[1] for t in six.itervalues(examples)]))
     list_size = list_size_dynamic
-  else:
-    # Use the smaller one to avoid unnecessary padding.
-    list_size = tf.where(list_size > list_size_dynamic, list_size_dynamic,
-                         list_size)
 
   # Collect features. Truncate or pad example features to normalize the tensor
   # shape: [batch_size, num_frames, ...] --> [batch_size, list_size, ...]
@@ -173,7 +178,7 @@ def parse_from_sequence_example(serialized,
     # merges `static_shape` with the existing static shape of the thensor.
     if not isinstance(tensor, tf.sparse.SparseTensor):
       static_shape = t.get_shape().as_list()
-      static_shape[1] = None
+      static_shape[1] = list_size_arg
       tensor.set_shape(static_shape)
     features[k] = tensor
 
@@ -285,8 +290,9 @@ def read_batched_sequence_example_dataset(file_pattern,
       containing tf.SequenceExample protos. See `tf.gfile.Glob` for pattern
       rules.
     batch_size: (int) Number of records to combine in a single batch.
-    list_size: (int) The maximum number of frames to keep in a SequenceExample.
-      Leave it to None to avoid truncation.
+    list_size: (int) The number of frames to keep in a SequenceExample. If
+      specified, truncation or padding may happen. Otherwise, set it to None to
+      allow dynamic list size.
     context_feature_spec: (dict) A mapping from  feature keys to
       `FixedLenFeature` or `VarLenFeature` values.
     example_feature_spec: (dict) A mapping feature keys to `FixedLenFeature` or
@@ -380,8 +386,9 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
   only features in general.
 
   Args:
-    input_size: (int) The maximum number of frames to keep in a SequenceExample.
-      Leave it to None to avoid truncation (recommended).
+    input_size: (int) The number of frames to keep in a SequenceExample. If
+      specified, truncation or padding may happen. Otherwise, set it to None to
+      allow dynamic list size (recommended).
     context_feature_spec: (dict) Map from feature keys to `FixedLenFeature` or
       `VarLenFeature` values.
     example_feature_spec: (dict) Map from  feature keys to `FixedLenFeature` or
