@@ -222,9 +222,11 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
 If you use TensorFlow Ranking in your research and would like to cite it, we
 suggest you use the following citation:
 
-       @misc{TensorflowRanking2018,
-       author = {Rama Kumar Pasumarthi and Xuanhui Wang and Cheng Li and Sebastian Bruch and Michael Bendersky and Marc Najork and Jan Pfeifer and Nadav Golbandi and Rohan Anil and Stephan Wolf},
+    @inproceedings{TensorflowRankingKDD2019,
+       author = {Rama Kumar Pasumarthi and Sebastian Bruch and Xuanhui Wang and Cheng Li and Michael Bendersky and Marc Najork and Jan Pfeifer and Nadav Golbandi and Rohan Anil and Stephan Wolf},
        title = {TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank},
-       year = {2018},
-       eprint = {arXiv:1812.00073},
-       }
+       booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+       year = {2019},
+       pages = {(to appear)}
+       location = {Anchorage, AK}
+    }
