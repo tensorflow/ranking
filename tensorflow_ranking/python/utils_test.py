@@ -126,6 +126,16 @@ class UtilsTest(tf.test.TestCase):
       inverse_max_dcg_1 = sess.run(inverse_max_dcg_1)
       self.assertAllClose(inverse_max_dcg_1, target_1)
 
+  def test_reshape_to_2d(self):
+    tensor_3d = tf.constant([[[1], [2], [3]], [[4], [5], [6]]])
+    tensor_3d_reshaped = utils.reshape_to_2d(tensor_3d)
+    tensor_1d = tf.constant([1, 2, 3])
+    tensor_1d_reshaped = utils.reshape_to_2d(tensor_1d)
+    with tf.compat.v1.Session() as sess:
+      self.assertAllEqual(sess.run(tensor_3d_reshaped),
+                          [[1, 2, 3], [4, 5, 6]])
+      self.assertAllEqual(sess.run(tensor_1d_reshaped),
+                          [[1], [2], [3]])
 
 if __name__ == '__main__':
   tf.test.main()

@@ -114,7 +114,12 @@ def make_loss_fn(loss_keys,
     Raises:
       ValueError: If `loss_keys` is invalid.
     """
-    weights = features[weights_feature_name] if weights_feature_name else None
+    weights = None
+    if weights_feature_name:
+      weights = tf.convert_to_tensor(features[weights_feature_name])
+      # Convert weights to a 2-D Tensor.
+      weights = utils.reshape_to_2d(weights)
+
     loss_kwargs = {
         'labels': labels,
         'logits': logits,
@@ -133,19 +138,19 @@ def make_loss_fn(loss_keys,
     loss_kwargs_with_lambda_weight_and_seed['seed'] = seed
 
     key_to_fn = {
-        RankingLossKey.PAIRWISE_HINGE_LOSS: (_pairwise_hinge_loss,
-                                             loss_kwargs_with_lambda_weight),
-        RankingLossKey.PAIRWISE_LOGISTIC_LOSS: (_pairwise_logistic_loss,
-                                                loss_kwargs_with_lambda_weight),
-        RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS: (
-            _pairwise_soft_zero_one_loss, loss_kwargs_with_lambda_weight),
-        RankingLossKey.SOFTMAX_LOSS: (_softmax_loss,
-                                      loss_kwargs_with_lambda_weight),
-        RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS: (_sigmoid_cross_entropy_loss,
-                                                    loss_kwargs),
+        RankingLossKey.PAIRWISE_HINGE_LOSS:
+            (_pairwise_hinge_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.PAIRWISE_LOGISTIC_LOSS:
+            (_pairwise_logistic_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
+            (_pairwise_soft_zero_one_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.SOFTMAX_LOSS:
+            (_softmax_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
+            (_sigmoid_cross_entropy_loss, loss_kwargs),
         RankingLossKey.MEAN_SQUARED_LOSS: (_mean_squared_loss, loss_kwargs),
-        RankingLossKey.LIST_MLE_LOSS: (_list_mle_loss,
-                                       loss_kwargs_with_lambda_weight_and_seed),
+        RankingLossKey.LIST_MLE_LOSS:
+            (_list_mle_loss, loss_kwargs_with_lambda_weight_and_seed),
         RankingLossKey.APPROX_NDCG_LOSS: (_approx_ndcg_loss, loss_kwargs),
     }
 
@@ -168,6 +173,69 @@ def make_loss_fn(loss_keys,
     return tf.add_n(weighted_losses)
 
   return _loss_fn
+
+
+def make_loss_metric_fn(loss_key,
+                        weights_feature_name=None,
+                        lambda_weight=None,
+                        name=None):
+  """Factory method to create a metric based on a loss.
+
+  Args:
+    loss_key: A key in `RankingLossKey`.
+    weights_feature_name: A `string` specifying the name of the weights feature
+      in `features` dict.
+    lambda_weight: A `_LambdaWeight` object.
+    name: A `string` used as the name for this metric.
+
+  Returns:
+    A metric fn with the following Args:
+    * `labels`: A `Tensor` of the same shape as `predictions` representing
+    graded relevance.
+    * `predictions`: A `Tensor` with shape [batch_size, list_size]. Each value
+    is the ranking score of the corresponding example.
+    * `features`: A dict of `Tensor`s that contains all features.
+  """
+
+  metric_dict = {
+      RankingLossKey.PAIRWISE_HINGE_LOSS:
+          _PairwiseHingeLoss(name, reduction=None, lambda_weight=lambda_weight),
+      RankingLossKey.PAIRWISE_LOGISTIC_LOSS:
+          _PairwiseLogisticLoss(
+              name, reduction=None, lambda_weight=lambda_weight),
+      RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
+          _PairwiseSoftZeroOneLoss(
+              name, reduction=None, lambda_weight=lambda_weight),
+      RankingLossKey.SOFTMAX_LOSS:
+          _SoftmaxLoss(name, reduction=None, lambda_weight=lambda_weight),
+      RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
+          _SigmoidCrossEntropyLoss(name, reduction=None),
+      RankingLossKey.MEAN_SQUARED_LOSS:
+          _MeanSquaredLoss(name, reduction=None),
+      RankingLossKey.LIST_MLE_LOSS:
+          _ListMLELoss(name, reduction=None, lambda_weight=lambda_weight),
+      RankingLossKey.APPROX_NDCG_LOSS:
+          _ApproxNDCGLoss(name, reduction=None),
+  }
+
+  def _get_weights(features):
+    """Get weights tensor from features and reshape it to 2-D if necessary."""
+    weights = None
+    if weights_feature_name:
+      weights = tf.convert_to_tensor(features[weights_feature_name])
+      # Convert weights to a 2-D Tensor.
+      weights = utils.reshape_to_2d(weights)
+    return weights
+
+  def metric_fn(labels, predictions, features):
+    """Defines the metric fn."""
+    weights = _get_weights(features)
+    loss = metric_dict.get(loss_key, None)
+    if loss is None:
+      raise ValueError('loss_key {} not supported.'.format(loss_key))
+    return loss.eval_metric(labels, predictions, weights)
+
+  return metric_fn
 
 
 def create_ndcg_lambda_weight(topn=None, smooth_fraction=0.):
@@ -300,8 +368,10 @@ class DCGLambdaWeight(_LambdaWeight):
       gain = self._gain_fn(sorted_labels)
       if self._normalized:
         gain *= utils.inverse_max_dcg(
-            sorted_labels, gain_fn=self._gain_fn,
-            rank_discount_fn=self._rank_discount_fn, topn=self._topn)
+            sorted_labels,
+            gain_fn=self._gain_fn,
+            rank_discount_fn=self._rank_discount_fn,
+            topn=self._topn)
       pair_gain = tf.expand_dims(gain, 2) - tf.expand_dims(gain, 1)
       pair_gain *= tf.cast(valid_pair, dtype=tf.float32)
 
@@ -345,8 +415,8 @@ class DCGLambdaWeight(_LambdaWeight):
 
       u = _discount_for_relative_rank_diff()
       v = _discount_for_absolute_rank()
-      pair_discount = (
-          1. - self._smooth_fraction) * u + self._smooth_fraction * v
+      pair_discount = (1. -
+                       self._smooth_fraction) * u + self._smooth_fraction * v
       pair_weight = tf.abs(pair_gain) * pair_discount
       if self._topn is None:
         return pair_weight
@@ -365,8 +435,10 @@ class DCGLambdaWeight(_LambdaWeight):
       gain = self._gain_fn(sorted_labels)
       if self._normalized:
         gain *= utils.inverse_max_dcg(
-            sorted_labels, gain_fn=self._gain_fn,
-            rank_discount_fn=self._rank_discount_fn, topn=self._topn)
+            sorted_labels,
+            gain_fn=self._gain_fn,
+            rank_discount_fn=self._rank_discount_fn,
+            topn=self._topn)
       rank_discount = self._rank_discount_fn(
           tf.cast(
               tf.range(tf.shape(input=sorted_labels)[1]) + 1, dtype=tf.float32))
@@ -548,45 +620,144 @@ def _pairwise_comparison(sorted_labels,
   return pairwise_labels, pairwise_logits, pairwise_weights
 
 
-def _pairwise_loss(
-    loss_fn,
-    labels,
-    logits,
-    weights=None,
-    lambda_weight=None,
-    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS):
-  """Template to compute pairwise loss.
+class _RankingLoss(object):
+  """Interface for ranking loss."""
 
-  Args:
-    loss_fn: A function that computes loss from the pairwise logits with l_i >
-      l_j.
-    labels: A `Tensor` of the same shape as `logits` representing graded
-      relevance.
-    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
-      ranking score of the corresponding item.
-    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
-      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
-      weights.
-    lambda_weight: A `_LambdaWeight` object.
-    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
-      reduce training loss over batch.
+  __metaclass__ = abc.ABCMeta
 
-  Returns:
-    An op for the pairwise loss.
-  """
-  sorted_labels, sorted_logits, sorted_weights = _sort_and_normalize(
-      labels, logits, weights)
-  _, pairwise_logits, pairwise_weights = _pairwise_comparison(
-      sorted_labels, sorted_logits, sorted_weights, lambda_weight)
-  if lambda_weight is not None:
-    # For LambdaLoss with relative rank difference, the scale of loss becomes
-    # much smaller when applying LambdaWeight. This affects the training can
-    # make the optimal learning rate become much larger. We use a heuristic to
-    # scale it up to the same magnitude as standard pairwise loss.
-    pairwise_weights *= tf.cast(
-        tf.shape(input=sorted_labels)[1], dtype=tf.float32)
-  return tf.compat.v1.losses.compute_weighted_loss(
-      loss_fn(pairwise_logits), weights=pairwise_weights, reduction=reduction)
+  @abc.abstractproperty
+  def name(self):
+    """The loss name."""
+    raise NotImplementedError('Calling an abstract method.')
+
+  @abc.abstractmethod
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """Computes the unreduced loss.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+
+    Returns:
+      A tuple of (losses, weights) before reduction.
+    """
+    raise NotImplementedError('Calling an abstract method.')
+
+  def compute(self, labels, logits, weights):
+    """Computes the reduced loss for training and eval.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+
+    Returns:
+      Reduced loss for training and eval.
+    """
+    losses, weights = self.compute_unreduced_loss(labels, logits, weights)
+    return tf.compat.v1.losses.compute_weighted_loss(
+        losses, weights, reduction=self._reduction)
+
+  def eval_metric(self, labels, logits, weights):
+    """Computes the eval metric for the loss.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+
+    Returns:
+      A metric op.
+    """
+    losses, weights = self.compute_unreduced_loss(labels, logits, weights)
+    return tf.compat.v1.metrics.mean(losses, weights)
+
+
+class _PairwiseLoss(_RankingLoss):
+  """Interface for pairwise ranking loss."""
+
+  __metaclass__ = abc.ABCMeta
+
+  def __init__(self, name, reduction, lambda_weight=None, params=None):
+    """Constructor.
+
+    Args:
+      name: A string used as the name for this loss.
+      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+        reduce training loss over batch.
+      lambda_weight: A `_LambdaWeight` object.
+      params: A dict for params used in loss computation.
+    """
+    self._name = name
+    self._reduction = reduction
+    self._lambda_weight = lambda_weight
+    self._params = params or {}
+
+  @property
+  def name(self):
+    """The loss name."""
+    return self._name
+
+  @abc.abstractmethod
+  def _pairwise_loss(self, pairwise_logits):
+    """The loss of pairwise logits with l_i > l_j."""
+    raise NotImplementedError('Calling an abstract method.')
+
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    sorted_labels, sorted_logits, sorted_weights = _sort_and_normalize(
+        labels, logits, weights)
+    _, pairwise_logits, pairwise_weights = _pairwise_comparison(
+        sorted_labels, sorted_logits, sorted_weights, self._lambda_weight)
+    if self._lambda_weight is not None:
+      # For LambdaLoss with relative rank difference, the scale of loss becomes
+      # much smaller when applying LambdaWeight. This affects the training can
+      # make the optimal learning rate become much larger. We use a heuristic to
+      # scale it up to the same magnitude as standard pairwise loss.
+      pairwise_weights *= tf.cast(
+          tf.shape(input=sorted_labels)[1], dtype=tf.float32)
+    return self._pairwise_loss(pairwise_logits), pairwise_weights
+
+
+class _PairwiseLogisticLoss(_PairwiseLoss):
+  """Implements pairwise logistic loss."""
+
+  def _pairwise_loss(self, pairwise_logits):
+    """See `_PairwiseLoss`."""
+    # The following is the same as log(1 + exp(-pairwise_logits)).
+    return tf.nn.relu(-pairwise_logits) + tf.math.log1p(
+        tf.exp(-tf.abs(pairwise_logits)))
+
+
+class _PairwiseHingeLoss(_PairwiseLoss):
+  """Implements pairwise hinge loss."""
+
+  def _pairwise_loss(self, pairwise_logits):
+    """See `_PairwiseLoss`."""
+    return tf.nn.relu(1 - pairwise_logits)
+
+
+class _PairwiseSoftZeroOneLoss(_PairwiseLoss):
+  """Implements pairwise hinge loss."""
+
+  def _pairwise_loss(self, pairwise_logits):
+    """See `_PairwiseLoss`."""
+    return tf.where(
+        tf.greater(pairwise_logits, 0), 1. - tf.sigmoid(pairwise_logits),
+        tf.sigmoid(-pairwise_logits))
 
 
 def _pairwise_hinge_loss(
@@ -619,17 +790,10 @@ def _pairwise_hinge_loss(
   Returns:
     An op for the pairwise hinge loss.
   """
-
-  def _loss(logits):
-    """The loss of pairwise logits with l_i > l_j."""
-    # TODO: Consider pass params object into the loss and
-    # put a margin here.
-    return tf.nn.relu(1. - logits)
-
-  with tf.compat.v1.name_scope(name, 'pairwise_hinge_loss',
+  loss = _PairwiseHingeLoss(name, reduction, lambda_weight)
+  with tf.compat.v1.name_scope(loss.name, 'pairwise_hinge_loss',
                                (labels, logits, weights)):
-    return _pairwise_loss(
-        _loss, labels, logits, weights, lambda_weight, reduction=reduction)
+    return loss.compute(labels, logits, weights)
 
 
 def _pairwise_logistic_loss(
@@ -661,16 +825,10 @@ def _pairwise_logistic_loss(
   Returns:
     An op for the pairwise logistic loss.
   """
-
-  def _loss(logits):
-    """The loss of pairwise logits with l_i > l_j."""
-    # The following is the same as log(1 + exp(-pairwise_logits)).
-    return tf.nn.relu(-logits) + tf.math.log1p(tf.exp(-tf.abs(logits)))
-
-  with tf.compat.v1.name_scope(name, 'pairwise_logistic_loss',
+  loss = _PairwiseLogisticLoss(name, reduction, lambda_weight)
+  with tf.compat.v1.name_scope(loss.name, 'pairwise_logistic_loss',
                                (labels, logits, weights)):
-    return _pairwise_loss(
-        _loss, labels, logits, weights, lambda_weight, reduction=reduction)
+    return loss.compute(labels, logits, weights)
 
 
 def _pairwise_soft_zero_one_loss(
@@ -705,16 +863,86 @@ def _pairwise_soft_zero_one_loss(
   Returns:
     An op for the pairwise soft zero one loss.
   """
-
-  def _loss(logits):
-    """The loss of pairwise logits with l_i > l_j."""
-    return tf.where(
-        tf.greater(logits, 0), 1. - tf.sigmoid(logits), tf.sigmoid(-logits))
-
-  with tf.compat.v1.name_scope(name, 'pairwise_soft_zero_one_loss',
+  loss = _PairwiseSoftZeroOneLoss(name, reduction, lambda_weight)
+  with tf.compat.v1.name_scope(loss.name, 'pairwise_soft_zero_one_loss',
                                (labels, logits, weights)):
-    return _pairwise_loss(
-        _loss, labels, logits, weights, lambda_weight, reduction=reduction)
+    return loss.compute(labels, logits, weights)
+
+
+class _ListwiseLoss(_RankingLoss):
+  """Interface for listwise loss."""
+
+  def __init__(self,
+               name,
+               reduction,
+               lambda_weight=None,
+               seed=None,
+               params=None):
+    """Constructor.
+
+    Args:
+      name: A string used as the name for this loss.
+      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+        reduce training loss over batch.
+      lambda_weight: A `_LambdaWeight` object.
+      seed: A randomization seed used when shuffling ground truth permutations.
+      params: A dict for params used in loss computation.
+    """
+    self._name = name
+    self._reduction = reduction
+    self._lambda_weight = lambda_weight
+    self._seed = seed
+    self._params = params or {}
+
+  @property
+  def name(self):
+    """The loss name."""
+    return self._name
+
+
+class _SoftmaxLoss(_ListwiseLoss):
+  """Implements softmax loss."""
+
+  def _precompute(self, labels, logits, weights):
+    """Precomputes Tensors for softmax cross entropy inputs."""
+    sorted_labels, sorted_logits, sorted_weights = _sort_and_normalize(
+        labels, logits, weights)
+    is_label_valid = utils.is_label_valid(sorted_labels)
+    # Reset the invalid labels to 0 and reset the invalid logits to a logit with
+    # ~= 0 contribution in softmax.
+    sorted_labels = tf.where(is_label_valid, sorted_labels,
+                             tf.zeros_like(sorted_labels))
+    sorted_logits = tf.where(
+        is_label_valid, sorted_logits,
+        tf.math.log(_EPSILON) * tf.ones_like(sorted_logits))
+    if self._lambda_weight is not None and isinstance(self._lambda_weight,
+                                                      DCGLambdaWeight):
+      sorted_labels = self._lambda_weight.individual_weights(sorted_labels)
+    sorted_labels *= sorted_weights
+    label_sum = tf.reduce_sum(input_tensor=sorted_labels, axis=1, keepdims=True)
+    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
+    padded_sorted_labels = tf.where(nonzero_mask, sorted_labels,
+                                    _EPSILON * tf.ones_like(sorted_labels))
+    padded_label_sum = tf.reduce_sum(
+        input_tensor=padded_sorted_labels, axis=1, keepdims=True)
+    labels_for_softmax = padded_sorted_labels / padded_label_sum
+    logits_for_softmax = sorted_logits
+    # Padded labels have 0 weights in label_sum.
+    weights_for_softmax = tf.reshape(label_sum, [-1])
+    return labels_for_softmax, logits_for_softmax, weights_for_softmax
+
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    labels, logits, weights = self._precompute(labels, logits, weights)
+    losses = tf.compat.v1.losses.softmax_cross_entropy(
+        labels, logits, reduction=tf.compat.v1.losses.Reduction.NONE)
+    return losses, weights
+
+  def compute(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    labels, logits, weights = self._precompute(labels, logits, weights)
+    return tf.compat.v1.losses.softmax_cross_entropy(
+        labels, logits, weights=weights, reduction=self._reduction)
 
 
 def _softmax_loss(
@@ -749,31 +977,46 @@ def _softmax_loss(
   Returns:
     An op for the softmax cross entropy as a loss.
   """
-  with tf.compat.v1.name_scope(name, 'softmax_loss', (labels, logits, weights)):
-    sorted_labels, sorted_logits, sorted_weights = _sort_and_normalize(
-        labels, logits, weights)
-    is_label_valid = utils.is_label_valid(sorted_labels)
-    # Reset the invalid labels to 0 and reset the invalid logits to a logit with
-    # ~= 0 contribution in softmax.
-    sorted_labels = tf.where(is_label_valid, sorted_labels,
-                             tf.zeros_like(sorted_labels))
-    sorted_logits = tf.where(
-        is_label_valid, sorted_logits,
-        tf.math.log(_EPSILON) * tf.ones_like(sorted_logits))
-    if lambda_weight is not None and isinstance(lambda_weight, DCGLambdaWeight):
-      sorted_labels = lambda_weight.individual_weights(sorted_labels)
-    sorted_labels *= sorted_weights
-    label_sum = tf.reduce_sum(input_tensor=sorted_labels, axis=1, keepdims=True)
-    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
-    label_sum, sorted_labels, sorted_logits = [
-        tf.boolean_mask(tensor=x, mask=nonzero_mask)
-        for x in [label_sum, sorted_labels, sorted_logits]
-    ]
-    return tf.compat.v1.losses.softmax_cross_entropy(
-        sorted_labels / label_sum,
-        sorted_logits,
-        weights=tf.reshape(label_sum, [-1]),
-        reduction=reduction)
+  loss = _SoftmaxLoss(name, reduction, lambda_weight)
+  with tf.compat.v1.name_scope(loss.name, 'softmax_loss',
+                               (labels, logits, weights)):
+    return loss.compute(labels, logits, weights)
+
+
+class _PointwiseLoss(_RankingLoss):
+  """Interface for pointwise loss."""
+
+  def __init__(self, name, reduction, params=None):
+    """Constructor.
+
+    Args:
+      name: A string used as the name for this loss.
+      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+        reduce training loss over batch.
+      params: A dict for params used in loss computation.
+    """
+    self._name = name
+    self._reduction = reduction
+    self._params = params or {}
+
+  @property
+  def name(self):
+    """The loss name."""
+    return self._name
+
+
+class _SigmoidCrossEntropyLoss(_PointwiseLoss):
+  """Implements sigmoid cross entropy loss."""
+
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
+    weights = tf.where(
+        utils.is_label_valid(labels),
+        tf.ones_like(labels) * weights, tf.zeros_like(labels))
+    losses = tf.compat.v1.losses.sigmoid_cross_entropy(
+        labels, logits, reduction=tf.compat.v1.losses.Reduction.NONE)
+    return losses, weights
 
 
 def _sigmoid_cross_entropy_loss(
@@ -803,17 +1046,24 @@ def _sigmoid_cross_entropy_loss(
   Returns:
     An op for the sigmoid cross entropy as a loss.
   """
-  with tf.compat.v1.name_scope(name, 'sigmoid_cross_entropy_loss',
+  loss = _SigmoidCrossEntropyLoss(name, reduction)
+  with tf.compat.v1.name_scope(loss.name, 'sigmoid_cross_entropy_loss',
                                (labels, logits, weights)):
-    is_label_valid = tf.reshape(utils.is_label_valid(labels), [-1])
+    return loss.compute(labels, logits, weights)
+
+
+class _MeanSquaredLoss(_PointwiseLoss):
+  """Implements the means squared error loss."""
+
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """See `_RankingLoss`."""
     weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
-    weights = tf.ones_like(labels) * weights
-    label_vector, logit_vector, weight_vector = [
-        tf.boolean_mask(tensor=tf.reshape(x, [-1]), mask=is_label_valid)
-        for x in [labels, logits, weights]
-    ]
-    return tf.compat.v1.losses.sigmoid_cross_entropy(
-        label_vector, logit_vector, weights=weight_vector, reduction=reduction)
+    weights = tf.where(
+        utils.is_label_valid(labels),
+        tf.ones_like(labels) * weights, tf.zeros_like(labels))
+    losses = tf.compat.v1.losses.mean_squared_error(
+        labels, logits, reduction=tf.compat.v1.losses.Reduction.NONE)
+    return losses, weights
 
 
 def _mean_squared_loss(
@@ -843,17 +1093,45 @@ def _mean_squared_loss(
   Returns:
     An op for the mean squared error as a loss.
   """
-  with tf.compat.v1.name_scope(name, 'mean_squared_loss',
+  loss = _MeanSquaredLoss(name, reduction)
+  with tf.compat.v1.name_scope(loss.name, 'mean_squared_loss',
                                (labels, logits, weights)):
-    is_label_valid = tf.reshape(utils.is_label_valid(labels), [-1])
+    return loss.compute(labels, logits, weights)
+
+
+class _ListMLELoss(_ListwiseLoss):
+  """Implements ListMLE loss."""
+
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    is_label_valid = utils.is_label_valid(labels)
+    # Reset the invalid labels to 0 and reset the invalid logits to a logit with
+    # ~= 0 contribution.
+    labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
+    logits = tf.where(is_label_valid, logits,
+                      tf.math.log(_EPSILON) * tf.ones_like(logits))
     weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
-    weights = tf.ones_like(labels) * weights
-    label_vector, logit_vector, weight_vector = [
-        tf.boolean_mask(tensor=tf.reshape(x, [-1]), mask=is_label_valid)
-        for x in [labels, logits, weights]
-    ]
-    return tf.compat.v1.losses.mean_squared_error(
-        label_vector, logit_vector, weights=weight_vector, reduction=reduction)
+    weights = tf.squeeze(weights)
+
+    # Shuffle labels and logits to add randomness to sort.
+    shuffled_indices = utils.shuffle_valid_indices(is_label_valid, self._seed)
+    shuffled_labels = tf.gather_nd(labels, shuffled_indices)
+    shuffled_logits = tf.gather_nd(logits, shuffled_indices)
+
+    sorted_labels, sorted_logits = utils.sort_by_scores(
+        shuffled_labels, [shuffled_labels, shuffled_logits])
+
+    raw_max = tf.reduce_max(input_tensor=sorted_logits, axis=1, keepdims=True)
+    sorted_logits = sorted_logits - raw_max
+    sums = tf.cumsum(tf.exp(sorted_logits), axis=1, reverse=True)
+    sums = tf.math.log(sums) - sorted_logits
+
+    if self._lambda_weight is not None and isinstance(self._lambda_weight,
+                                                      ListMLELambdaWeight):
+      sums *= self._lambda_weight.individual_weights(sorted_labels)
+
+    negative_log_likelihood = tf.reduce_sum(input_tensor=sums, axis=1)
+    return negative_log_likelihood, weights
 
 
 def _list_mle_loss(
@@ -864,7 +1142,9 @@ def _list_mle_loss(
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     name=None,
     seed=None):
-  """Computes the ListMLE loss [Xia et al. 2008] for a list.
+  """Computes the ListMLE loss [Xia et al.
+
+  2008] for a list.
 
   Given the labels of graded relevance l_i and the logits s_i, we calculate
   the ListMLE loss for the given list.
@@ -891,38 +1171,39 @@ def _list_mle_loss(
   Returns:
     An op for the ListMLE loss.
   """
-  with tf.compat.v1.name_scope(name, 'list_mle_loss',
+  loss = _ListMLELoss(name, reduction, lambda_weight, seed)
+  with tf.compat.v1.name_scope(loss.name, 'list_mle_loss',
                                (labels, logits, weights)):
+    return loss.compute(labels, logits, weights)
+
+
+class _ApproxNDCGLoss(_ListwiseLoss):
+  """Implements ApproxNDCG loss."""
+
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    alpha = self._params.get('alpha')
     is_label_valid = utils.is_label_valid(labels)
-    # Reset the invalid labels to 0 and reset the invalid logits to a logit with
-    # ~= 0 contribution.
     labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
-    logits = tf.where(is_label_valid, logits,
-                      tf.math.log(_EPSILON) * tf.ones_like(logits))
-    weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
+    logits = tf.where(
+        is_label_valid, logits, -1e3 * tf.ones_like(logits) +
+        tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
+
+    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    if weights is None:
+      weights = tf.ones_like(label_sum)
     weights = tf.squeeze(weights)
 
-    # Shuffle labels and logits to add randomness to sort.
-    shuffled_indices = utils.shuffle_valid_indices(is_label_valid, seed)
-    shuffled_labels = tf.gather_nd(labels, shuffled_indices)
-    shuffled_logits = tf.gather_nd(logits, shuffled_indices)
+    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
+    labels = tf.where(nonzero_mask, labels, _EPSILON * tf.ones_like(labels))
+    weights = tf.where(nonzero_mask, weights, tf.zeros_like(weights))
 
-    sorted_labels, sorted_logits = utils.sort_by_scores(
-        shuffled_labels, [shuffled_labels, shuffled_logits])
-
-    raw_max = tf.reduce_max(input_tensor=sorted_logits, axis=1, keepdims=True)
-    sorted_logits = sorted_logits - raw_max
-    sums = tf.cumsum(tf.exp(sorted_logits), axis=1, reverse=True)
-    sums = tf.math.log(sums) - sorted_logits
-
-    if lambda_weight is not None and isinstance(lambda_weight,
-                                                ListMLELambdaWeight):
-      sums *= lambda_weight.individual_weights(sorted_labels)
-
-    negative_log_likelihood = tf.reduce_sum(input_tensor=sums, axis=1)
-
-    return tf.compat.v1.losses.compute_weighted_loss(
-        negative_log_likelihood, weights=weights, reduction=reduction)
+    gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
+    ranks = utils.approx_ranks(logits, alpha=alpha)
+    discounts = 1. / tf.math.log1p(ranks)
+    dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1)
+    cost = -dcg * tf.squeeze(utils.inverse_max_dcg(labels))
+    return cost, weights
 
 
 def _approx_ndcg_loss(labels,
@@ -944,8 +1225,8 @@ def _approx_ndcg_loss(labels,
       ranking score of the corresponding item.
     weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
       weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
-      weights. If None, the weight of a list in the mini-batch is set to
-      the sum of the labels of the items in that list.
+      weights. If None, the weight of a list in the mini-batch is set to the sum
+      of the labels of the items in that list.
     reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
       reduce training loss over batch.
     name: A string used as the name for this loss.
@@ -954,30 +1235,7 @@ def _approx_ndcg_loss(labels,
   Returns:
     An op for the ApproxNDCG loss.
   """
-  with tf.compat.v1.name_scope(name, 'approx_ndcg_loss',
+  loss = _ApproxNDCGLoss(name, reduction, params={'alpha': alpha})
+  with tf.compat.v1.name_scope(loss.name, 'approx_ndcg_loss',
                                (labels, logits, weights)):
-    is_label_valid = utils.is_label_valid(labels)
-    labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
-    logits = tf.where(
-        is_label_valid, logits, -1e3 * tf.ones_like(logits) +
-        tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
-
-    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
-    if weights is None:
-      weights = tf.ones_like(label_sum)
-    weights = tf.squeeze(weights)
-
-    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
-    labels, logits, weights = [
-        tf.boolean_mask(tensor=x, mask=nonzero_mask)
-        for x in [labels, logits, weights]
-    ]
-
-    gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
-    ranks = utils.approx_ranks(logits, alpha=alpha)
-    discounts = 1. / tf.math.log1p(ranks)
-    dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1)
-    cost = -dcg * tf.squeeze(utils.inverse_max_dcg(labels))
-
-    return tf.compat.v1.losses.compute_weighted_loss(
-        cost, weights=weights, reduction=reduction)
+    return loss.compute(labels, logits, weights)

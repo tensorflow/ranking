@@ -276,8 +276,21 @@ class MetricsTest(tf.test.TestCase):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 2., 3.], [4., 5., 6.]]
+    weights_3d = [[[1.], [2.], [3.]], [[4.], [5.], [6.]]]
+    list_weights = [1., 0.]
+    list_weights_2d = [[1.], [0.]]
     weights_feature_name = 'weights'
-    features = {weights_feature_name: weights[0]}
+    weights_invalid_feature_name = 'weights_invalid'
+    weights_3d_feature_name = 'weights_3d'
+    list_weights_name = 'list_weights'
+    list_weights_2d_name = 'list_weights_2d'
+    features = {
+        weights_feature_name: [weights[0]],
+        weights_invalid_feature_name: weights[0],
+        weights_3d_feature_name: [weights_3d[0]],
+        list_weights_name: list_weights,
+        list_weights_2d_name: list_weights_2d
+    }
     m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.NDCG)
 
     expected_ndcg = (_dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)) / (
@@ -293,7 +306,7 @@ class MetricsTest(tf.test.TestCase):
         (m(labels, scores, features), expected_ndcg),
     ])
 
-    # With weights.
+    # With item-wise weights.
     m_top = metrics_lib.make_ranking_metric_fn(
         metrics_lib.RankingMetricKey.NDCG,
         weights_feature_name=weights_feature_name,
@@ -301,10 +314,37 @@ class MetricsTest(tf.test.TestCase):
     m_weight = metrics_lib.make_ranking_metric_fn(
         metrics_lib.RankingMetricKey.NDCG,
         weights_feature_name=weights_feature_name)
+    m_weights_3d = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.NDCG,
+        weights_feature_name=weights_3d_feature_name)
     self._check_metrics([
-        (m_top([labels[0]], [scores[0]], features),
-         _dcg(0., 1, 2.) / _dcg(1., 1, 3.)),
+        (m_top([labels[0]], [scores[0]],
+               features), _dcg(0., 1, 2.) / _dcg(1., 1, 3.)),
         (m_weight([labels[0]], [scores[0]], features),
+         (_dcg(0., 1, 2.) + _dcg(1., 2, 3.) + _dcg(0., 3, 1.)) /
+         (_dcg(1., 1, 3.) + _dcg(0., 2, 1.) + _dcg(0., 3, 2.))),
+        (m_weights_3d([labels[0]], [scores[0]], features),
+         (_dcg(0., 1, 2.) + _dcg(1., 2, 3.) + _dcg(0., 3, 1.)) /
+         (_dcg(1., 1, 3.) + _dcg(0., 2, 1.) + _dcg(0., 3, 2.))),
+    ])
+    with self.assertRaises(ValueError):
+      m_weight_invalid = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.NDCG,
+          weights_feature_name=weights_invalid_feature_name)
+      m_weight_invalid([labels[0]], [scores[0]], features)
+
+    # With list-wise weights.
+    m_list_weight = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.NDCG,
+        weights_feature_name=list_weights_name)
+    m_list_weight_2d = metrics_lib.make_ranking_metric_fn(
+        metrics_lib.RankingMetricKey.NDCG,
+        weights_feature_name=list_weights_2d_name)
+    self._check_metrics([
+        (m_list_weight(labels, scores, features),
+         (_dcg(0., 1, 2.) + _dcg(1., 2, 3.) + _dcg(0., 3, 1.)) /
+         (_dcg(1., 1, 3.) + _dcg(0., 2, 1.) + _dcg(0., 3, 2.))),
+        (m_list_weight_2d(labels, scores, features),
          (_dcg(0., 1, 2.) + _dcg(1., 2, 3.) + _dcg(0., 3, 1.)) /
          (_dcg(1., 1, 3.) + _dcg(0., 2, 1.) + _dcg(0., 3, 2.))),
     ])

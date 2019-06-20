@@ -184,3 +184,15 @@ def inverse_max_dcg(labels,
   return tf.where(
       tf.greater(discounted_gain, 0.), 1. / discounted_gain,
       tf.zeros_like(discounted_gain))
+
+
+def reshape_to_2d(tensor):
+  """Converts the given `tensor` to a 2-D `Tensor`."""
+  rank = tensor.shape.rank if tensor.shape is not None else None
+  if rank is not None and rank != 2:
+    if rank >= 3:
+      tensor = tf.reshape(tensor, tf.shape(tensor)[0:2])
+    else:
+      while tensor.shape.rank < 2:
+        tensor = tf.expand_dims(tensor, -1)
+  return tensor

@@ -96,7 +96,6 @@ py_test(
     name = "losses_test",
     size = "medium",
     srcs = ["losses_test.py"],
-    shard_count = 4,
     srcs_version = "PY2AND3",
     tags = [
         "no_pip",
@@ -140,6 +139,7 @@ py_library(
     srcs = ["data.py"],
     srcs_version = "PY2AND3",
     deps = [
+        ":utils",
         # py/tensorflow dep,
     ],
 )

@@ -27,6 +27,65 @@ import tensorflow as tf
 from google.protobuf import text_format
 from tensorflow_ranking.python import data as data_lib
 
+CONTEXT_1 = text_format.Parse(
+    """
+features {
+  feature {
+    key: "query_length"
+    value { int64_list { value: 3 } }
+  }
+}""", tf.train.Example())
+
+EXAMPLES_1 = [
+    text_format.Parse(
+        """
+    features {
+      feature {
+        key: "unigrams"
+        value { bytes_list { value: "tensorflow" } }
+      }
+      feature {
+        key: "utility"
+        value { float_list { value: 0.0 } }
+      }
+    }""", tf.train.Example()),
+    text_format.Parse(
+        """
+    features {
+      feature {
+        key: "unigrams"
+        value { bytes_list { value: ["learning", "to", "rank"] } }
+      }
+      feature {
+        key: "utility"
+        value { float_list { value: 1.0 } }
+      }
+    }""", tf.train.Example()),
+]
+
+CONTEXT_2 = text_format.Parse(
+    """
+features {
+  feature {
+    key: "query_length"
+    value { int64_list { value: 2 } }
+  }
+}""", tf.train.Example())
+EXAMPLES_2 = [
+    text_format.Parse(
+        """
+    features {
+      feature {
+        key: "unigrams"
+        value { bytes_list { value: "gbdt" } }
+      }
+      feature {
+        key: "utility"
+        value { float_list { value: 0.0 } }
+      }
+    }""", tf.train.Example()),
+]
+
 SEQ_EXAMPLE_PROTO_1 = text_format.Parse(
     """
     context {
@@ -92,7 +151,45 @@ LIBSVM_DATA = """2 qid:1 1:0.1 3:0.3 4:-0.4
 """
 
 
-class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
+def _example_in_example(context, examples):
+  """Returns an Example in Example."""
+  example_in_example = tf.train.Example()
+  example_in_example.features.feature[
+      "serialized_context"].bytes_list.value.append(context.SerializeToString())
+  for ex in examples:
+    example_in_example.features.feature[
+        "serialized_examples"].bytes_list.value.append(ex.SerializeToString())
+  return example_in_example
+
+
+class ExampleInExampleTest(tf.test.TestCase):
+
+  def test_parse_from_example_in_example(self):
+    serialized_example_in_example = [
+        _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+        _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+    ]
+    features = data_lib.parse_from_example_in_example(
+        serialized_example_in_example,
+        context_feature_spec=CONTEXT_FEATURE_SPEC,
+        example_feature_spec=EXAMPLE_FEATURE_SPEC)
+
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      features = sess.run(features)
+      # Test dense_shape, indices and values for a SparseTensor.
+      self.assertAllEqual(features["unigrams"].dense_shape, [2, 2, 3])
+      self.assertAllEqual(
+          features["unigrams"].indices,
+          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+      self.assertAllEqual(features["unigrams"].values,
+                          [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+      # For Tensors with dense values, values can be directly checked.
+      self.assertAllEqual(features["query_length"], [[3], [2]])
+      self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
+
+class SequenceExampleTest(tf.test.TestCase):
 
   def test_parse_from_sequence_example(self):
     features = data_lib.parse_from_sequence_example(
@@ -230,6 +327,182 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
       self.assertAllEqual([1, 1, 1],
                           features_0["utility"].get_shape().as_list())
 
+
+class RankingDatasetTest(tf.test.TestCase, parameterized.TestCase):
+
+  def test_make_parsing_fn_eie(self):
+    parsing_fn = data_lib.make_parsing_fn(
+        data_lib.EIE,
+        context_feature_spec=CONTEXT_FEATURE_SPEC,
+        example_feature_spec=EXAMPLE_FEATURE_SPEC)
+    serialized_example_in_example = [
+        _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+        _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+    ]
+    features = parsing_fn(serialized_example_in_example)
+
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      features = sess.run(features)
+      # Test dense_shape, indices and values for a SparseTensor.
+      self.assertAllEqual(features["unigrams"].dense_shape, [2, 2, 3])
+      self.assertAllEqual(
+          features["unigrams"].indices,
+          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+      self.assertAllEqual(features["unigrams"].values,
+                          [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+      # For Tensors with dense values, values can be directly checked.
+      self.assertAllEqual(features["query_length"], [[3], [2]])
+      self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
+  def test_make_parsing_fn_seq(self):
+    parsing_fn = data_lib.make_parsing_fn(
+        data_lib.SEQ,
+        context_feature_spec=CONTEXT_FEATURE_SPEC,
+        example_feature_spec=EXAMPLE_FEATURE_SPEC)
+    sequence_examples = [
+        SEQ_EXAMPLE_PROTO_1.SerializeToString(),
+        SEQ_EXAMPLE_PROTO_2.SerializeToString(),
+    ]
+    features = parsing_fn(sequence_examples)
+
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      feature_map = sess.run(features)
+      self.assertCountEqual(feature_map,
+                            ["query_length", "unigrams", "utility"])
+      self.assertAllEqual(feature_map["unigrams"].dense_shape, [2, 2, 3])
+      self.assertAllEqual(
+          feature_map["unigrams"].indices,
+          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+      self.assertAllEqual(feature_map["unigrams"].values,
+                          [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+      self.assertAllEqual(feature_map["query_length"], [[3], [2]])
+      self.assertAllEqual(feature_map["utility"], [[[0.], [1.]], [[0.], [-1.]]])
+
+  def test_make_parsing_fn_exception(self):
+    with self.assertRaises(ValueError):
+      data_lib.make_parsing_fn(
+          "non_existing_format",
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC)
+
+  @parameterized.named_parameters(("with_sloppy_ordering", True),
+                                  ("with_deterministic_ordering", False))
+  def test_build_ranking_dataset(self, sloppy_ordering):
+    # Save EIE protos in a sstable file in a temp folder.
+    serialized_example_in_examples = [
+        _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+        _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+    ] * 5
+    data_dir = tf.compat.v1.test.get_temp_dir()
+    data_file = os.path.join(data_dir, "test_ranking_data.tfrecord")
+    if tf.io.gfile.exists(data_file):
+      tf.io.gfile.remove(data_file)
+
+    with tf.io.TFRecordWriter(data_file) as writer:
+      for serialized_eie in serialized_example_in_examples:
+        writer.write(serialized_eie)
+
+    batched_dataset = data_lib.build_ranking_dataset(
+        file_pattern=data_file,
+        data_format=data_lib.EIE,
+        batch_size=2,
+        list_size=2,
+        context_feature_spec=CONTEXT_FEATURE_SPEC,
+        example_feature_spec=EXAMPLE_FEATURE_SPEC,
+        reader=tf.data.TFRecordDataset,
+        shuffle=False,
+        sloppy_ordering=sloppy_ordering)
+    features = tf.compat.v1.data.make_one_shot_iterator(
+        batched_dataset).get_next()
+    self.assertAllEqual([2, 1], features["query_length"].get_shape().as_list())
+    self.assertAllEqual([2, 2, 1], features["utility"].get_shape().as_list())
+
+    self.assertAllEqual(
+        sorted(features.keys()), ["query_length", "unigrams", "utility"])
+
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      features = sess.run(features)
+      self.assertAllEqual(features["unigrams"].dense_shape, [2, 2, 3])
+      self.assertAllEqual(
+          features["unigrams"].indices,
+          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+      self.assertAllEqual(features["unigrams"].values,
+                          [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+      # For Tensors with dense values, values can be directly checked.
+      self.assertAllEqual(features["query_length"], [[3], [2]])
+      self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
+  def test_build_ranking_serving_input_receiver_fn(self):
+    serving_input_receiver_fn = (
+        data_lib.build_ranking_serving_input_receiver_fn(
+            data_format=data_lib.EIE,
+            context_feature_spec=CONTEXT_FEATURE_SPEC,
+            example_feature_spec=EXAMPLE_FEATURE_SPEC))
+    serving_input_receiver = serving_input_receiver_fn()
+    self.assertCountEqual(serving_input_receiver.features.keys(),
+                          ["query_length", "unigrams", "utility"])
+    self.assertCountEqual(serving_input_receiver.receiver_tensors.keys(),
+                          ["input_ranking_data"])
+    eie_input = [_example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString()]
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      features = sess.run(
+          serving_input_receiver.features,
+          feed_dict={
+              serving_input_receiver.receiver_tensors["input_ranking_data"]
+              .name:
+                  eie_input
+          })
+      # Test dense_shape, indices and values for a SparseTensor.
+      self.assertAllEqual(features["unigrams"].dense_shape, [1, 2, 3])
+      self.assertAllEqual(features["unigrams"].indices,
+                          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2]])
+      self.assertAllEqual(features["unigrams"].values,
+                          [b"tensorflow", b"learning", b"to", b"rank"])
+      # For Tensors with dense values, values can be directly checked.
+      self.assertAllEqual(features["query_length"], [[3]])
+      self.assertAllEqual(features["utility"], [[[0.], [1.]]])
+
+  def test_sequence_example_serving_input_receiver_fn(self):
+    serving_input_receiver_fn = (
+        data_lib.build_sequence_example_serving_input_receiver_fn(
+            input_size=2,
+            context_feature_spec=CONTEXT_FEATURE_SPEC,
+            example_feature_spec=EXAMPLE_FEATURE_SPEC))
+    serving_input_receiver = serving_input_receiver_fn()
+    self.assertCountEqual(serving_input_receiver.features,
+                          ["query_length", "unigrams", "utility"])
+    self.assertCountEqual(serving_input_receiver.receiver_tensors.keys(),
+                          ["sequence_example"])
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      feature_map = sess.run(
+          serving_input_receiver.features,
+          feed_dict={
+              serving_input_receiver.receiver_tensors["sequence_example"].name:
+                  [
+                      SEQ_EXAMPLE_PROTO_1.SerializeToString(),
+                      SEQ_EXAMPLE_PROTO_2.SerializeToString()
+                  ]
+          })
+      # Test dense_shape, indices and values for a SparseTensor.
+      self.assertAllEqual(feature_map["unigrams"].dense_shape, [2, 2, 3])
+      self.assertAllEqual(
+          feature_map["unigrams"].indices,
+          [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+      self.assertAllEqual(feature_map["unigrams"].values,
+                          [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+      # Check values directly for dense tensors.
+      self.assertAllEqual(feature_map["query_length"], [[3], [2]])
+      self.assertAllEqual(feature_map["utility"],
+                          [[[0.], [1.0]], [[0.], [-1.]]])
+
+
+class SequenceExampleDatasetTest(tf.test.TestCase, parameterized.TestCase):
+
   @parameterized.named_parameters(("with_sloppy_ordering", True),
                                   ("with_deterministic_ordering", False))
   def test_read_batched_sequence_example_dataset(self, sloppy_ordering):
@@ -287,12 +560,10 @@ class SequenceExampleTest(tf.test.TestCase, parameterized.TestCase):
             context_feature_spec=CONTEXT_FEATURE_SPEC,
             example_feature_spec=EXAMPLE_FEATURE_SPEC))
     serving_input_receiver = serving_input_receiver_fn()
-    self.assertAllEqual(
-        sorted(serving_input_receiver.features),
-        ["query_length", "unigrams", "utility"])
-    self.assertEqual(
-        sorted(serving_input_receiver.receiver_tensors.keys()),
-        ["sequence_example"])
+    self.assertCountEqual(serving_input_receiver.features,
+                          ["query_length", "unigrams", "utility"])
+    self.assertCountEqual(serving_input_receiver.receiver_tensors.keys(),
+                          ["sequence_example"])
     with tf.compat.v1.Session() as sess:
       sess.run(tf.compat.v1.local_variables_initializer())
       feature_map = sess.run(

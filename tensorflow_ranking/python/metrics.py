@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import abc
 import tensorflow as tf
 
 from tensorflow_ranking.python import utils
@@ -66,16 +67,20 @@ def make_ranking_metric_fn(metric_key,
   Returns:
     A metric fn with the following Args:
     * `labels`: A `Tensor` of the same shape as `predictions` representing
-    graded
-        relevance.
+    graded relevance.
     * `predictions`: A `Tensor` with shape [batch_size, list_size]. Each value
-    is
-        the ranking score of the corresponding example.
+    is the ranking score of the corresponding example.
     * `features`: A dict of `Tensor`s that contains all features.
   """
 
   def _get_weights(features):
-    return features[weights_feature_name] if weights_feature_name else None
+    """Get weights tensor from features and reshape it to 2-D if necessary."""
+    weights = None
+    if weights_feature_name:
+      weights = tf.convert_to_tensor(features[weights_feature_name])
+      # Convert weights to a 2-D Tensor.
+      weights = utils.reshape_to_2d(weights)
+    return weights
 
   def _average_relevance_position_fn(labels, predictions, features):
     """Returns average relevance position as the metric."""
@@ -127,8 +132,8 @@ def make_ranking_metric_fn(metric_key,
       RankingMetricKey.PRECISION: _precision_fn,
       RankingMetricKey.ORDERED_PAIR_ACCURACY: _ordered_pair_accuracy_fn,
   }
-  assert metric_key in metric_fn_dict, (
-      'metric_key %s not supported.' % metric_key)
+  assert metric_key in metric_fn_dict, ('metric_key %s not supported.' %
+                                        metric_key)
   return metric_fn_dict[metric_key]
 
 
@@ -224,6 +229,61 @@ def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
   return labels, predictions, example_weights, topn
 
 
+class _RankingMetric(object):
+  """Interface for ranking metrics."""
+
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractproperty
+  def name(self):
+    """The metric name."""
+    raise NotImplementedError('Calling an abstract method.')
+
+  @abc.abstractmethod
+  def compute(self, labels, predictions, weights):
+    """Computes the metric with the given inputs.
+
+    Args:
+      labels: A `Tensor` of the same shape as `predictions` representing
+        relevance.
+      predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+        the ranking score of the corresponding example.
+      weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
+        The former case is per-example and the latter case is per-list.
+
+    Returns:
+      A tf metric.
+    """
+    raise NotImplementedError('Calling an abstract method.')
+
+
+class _MRRMetric(_RankingMetric):
+  """Implements mean reciprocal rank (MRR)."""
+
+  def __init__(self, name):
+    """Constructor."""
+    self._name = name
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+    list_size = tf.shape(input=predictions)[1]
+    labels, predictions, weights, topn = _prepare_and_validate_params(
+        labels, predictions, weights, list_size)
+    sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn)
+    # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
+    relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
+    reciprocal_rank = 1.0 / tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
+    # MRR has a shape of [batch_size, 1]
+    mrr = tf.reduce_max(
+        input_tensor=relevance * reciprocal_rank, axis=1, keepdims=True)
+    return tf.compat.v1.metrics.mean(mrr * tf.ones_like(weights), weights)
+
+
 def mean_reciprocal_rank(labels, predictions, weights=None, name=None):
   """Computes mean reciprocal rank (MRR).
 
@@ -239,19 +299,37 @@ def mean_reciprocal_rank(labels, predictions, weights=None, name=None):
   Returns:
     A metric for the weighted mean reciprocal rank of the batch.
   """
-  with tf.compat.v1.name_scope(name, 'mean_reciprocal_rank',
+  metric = _MRRMetric(name)
+  with tf.compat.v1.name_scope(metric.name, 'mean_reciprocal_rank',
                                (labels, predictions, weights)):
-    _, list_size = tf.unstack(tf.shape(input=predictions))
+    return metric.compute(labels, predictions, weights)
+
+
+class _ARPMetric(_RankingMetric):
+  """Implements average relevance position (ARP)."""
+
+  def __init__(self, name):
+    """Constructor."""
+    self._name = name
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+    list_size = tf.shape(input=predictions)[1]
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, list_size)
-    sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn)
-    # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
-    relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
-    reciprocal_rank = 1.0 / tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
-    # MRR has a shape of [batch_size, 1]
-    mrr = tf.reduce_max(
-        input_tensor=relevance * reciprocal_rank, axis=1, keepdims=True)
-    return tf.compat.v1.metrics.mean(mrr * tf.ones_like(weights), weights)
+    sorted_labels, sorted_weights = utils.sort_by_scores(
+        predictions, [labels, weights], topn=topn)
+    relevance = sorted_labels * sorted_weights
+    position = tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
+    # TODO: Consider to add a cap poistion topn + 1 when there is no
+    # relevant examples.
+    return tf.compat.v1.metrics.mean(position * tf.ones_like(relevance),
+                                     relevance)
 
 
 def average_relevance_position(labels, predictions, weights=None, name=None):
@@ -272,19 +350,45 @@ def average_relevance_position(labels, predictions, weights=None, name=None):
   Returns:
     A metric for the weighted average relevance position.
   """
-  with tf.compat.v1.name_scope(name, 'average_relevance_position',
+  metric = _ARPMetric(name)
+  with tf.compat.v1.name_scope(metric.name, 'average_relevance_position',
                                (labels, predictions, weights)):
-    _, list_size = tf.unstack(tf.shape(input=predictions))
+    return metric.compute(labels, predictions, weights)
+
+
+class _PrecisionMetric(_RankingMetric):
+  """Implements average relevance position (ARP)."""
+
+  def __init__(self, name, topn):
+    """Constructor."""
+    self._name = name
+    self._topn = topn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, list_size)
+        labels, predictions, weights, self._topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
-    relevance = sorted_labels * sorted_weights
-    position = tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
-    # TODO: Consider to add a cap poistion topn + 1 when there is no
-    # relevant examples.
-    return tf.compat.v1.metrics.mean(position * tf.ones_like(relevance),
-                                     relevance)
+    # Relevance = 1.0 when labels >= 1.0.
+    relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
+    per_list_precision = _safe_div(
+        tf.reduce_sum(
+            input_tensor=relevance * sorted_weights, axis=1, keepdims=True),
+        tf.reduce_sum(
+            input_tensor=tf.ones_like(relevance) * sorted_weights,
+            axis=1,
+            keepdims=True))
+    # per_list_weights are computed from the whole list to avoid the problem of
+    # 0 when there is no relevant example in topn.
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights, tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
+    return tf.compat.v1.metrics.mean(per_list_precision, per_list_weights)
 
 
 def precision(labels, predictions, weights=None, topn=None, name=None):
@@ -303,26 +407,42 @@ def precision(labels, predictions, weights=None, topn=None, name=None):
   Returns:
     A metric for the weighted precision of the batch.
   """
-  with tf.compat.v1.name_scope(name, 'precision',
+  metric = _PrecisionMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name, 'precision',
                                (labels, predictions, weights)):
+    return metric.compute(labels, predictions, weights)
+
+
+class _NDCGMetric(_RankingMetric):
+  """Implements normalized discounted cumulative gain (NDCG)."""
+
+  def __init__(self, name, topn):
+    """Constructor."""
+    self._name = name
+    self._topn = topn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, topn)
+        labels, predictions, weights, self._topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
-    # Relevance = 1.0 when labels >= 1.0.
-    relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
-    per_list_precision = _safe_div(
-        tf.reduce_sum(
-            input_tensor=relevance * sorted_weights, axis=1, keepdims=True),
-        tf.reduce_sum(
-            input_tensor=tf.ones_like(relevance) * sorted_weights,
-            axis=1,
-            keepdims=True))
-    # per_list_weights are computed from the whole list to avoid the problem of
-    # 0 when there is no relevant example in topn.
+    dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights)
+    # Sorting over the weighted labels to get ideal ranking.
+    ideal_sorted_labels, ideal_sorted_weights = utils.sort_by_scores(
+        weights * labels, [labels, weights], topn=topn)
+    ideal_dcg = _discounted_cumulative_gain(ideal_sorted_labels,
+                                            ideal_sorted_weights)
+    per_list_ndcg = _safe_div(dcg, ideal_dcg)
     per_list_weights = _per_example_weights_to_per_list_weights(
-        weights, tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
-    return tf.compat.v1.metrics.mean(per_list_precision, per_list_weights)
+        weights=weights,
+        relevance=tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0)
+    return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
 
 
 def normalized_discounted_cumulative_gain(labels,
@@ -345,23 +465,39 @@ def normalized_discounted_cumulative_gain(labels,
     A metric for the weighted normalized discounted cumulative gain of the
     batch.
   """
-  with tf.compat.v1.name_scope(name, 'normalized_discounted_cumulative_gain',
+  metric = _NDCGMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name,
+                               'normalized_discounted_cumulative_gain',
                                (labels, predictions, weights)):
+    return metric.compute(labels, predictions, weights)
+
+
+class _DCGMetric(_RankingMetric):
+  """Implements discounted cumulative gain (DCG)."""
+
+  def __init__(self, name, topn):
+    """Constructor."""
+    self._name = name
+    self._topn = topn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, topn)
+        labels, predictions, weights, self._topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
-    dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights)
-    # Sorting over the weighted labels to get ideal ranking.
-    ideal_sorted_labels, ideal_sorted_weights = utils.sort_by_scores(
-        weights * labels, [labels, weights], topn=topn)
-    ideal_dcg = _discounted_cumulative_gain(ideal_sorted_labels,
-                                            ideal_sorted_weights)
-    per_list_ndcg = _safe_div(dcg, ideal_dcg)
+    dcg = _discounted_cumulative_gain(sorted_labels,
+                                      sorted_weights) * tf.math.log1p(1.0)
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights=weights,
         relevance=tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0)
-    return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
+    return tf.compat.v1.metrics.mean(
+        _safe_div(dcg, per_list_weights), per_list_weights)
 
 
 def discounted_cumulative_gain(labels,
@@ -383,19 +519,45 @@ def discounted_cumulative_gain(labels,
   Returns:
     A metric for the weighted discounted cumulative gain of the batch.
   """
+  metric = _DCGMetric(name, topn)
   with tf.compat.v1.name_scope(name, 'discounted_cumulative_gain',
                                (labels, predictions, weights)):
-    labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, topn)
-    sorted_labels, sorted_weights = utils.sort_by_scores(
-        predictions, [labels, weights], topn=topn)
-    dcg = _discounted_cumulative_gain(sorted_labels,
-                                      sorted_weights) * tf.math.log1p(1.0)
-    per_list_weights = _per_example_weights_to_per_list_weights(
-        weights=weights,
-        relevance=tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0)
-    return tf.compat.v1.metrics.mean(
-        _safe_div(dcg, per_list_weights), per_list_weights)
+    return metric.compute(labels, predictions, weights)
+
+
+class _OPAMetric(_RankingMetric):
+  """Implements ordered pair accuracy (OPA)."""
+
+  def __init__(self, name):
+    """Constructor."""
+    self._name = name
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+    clean_labels, predictions, weights, _ = _prepare_and_validate_params(
+        labels, predictions, weights)
+    label_valid = tf.equal(clean_labels, labels)
+    valid_pair = tf.logical_and(
+        tf.expand_dims(label_valid, 2), tf.expand_dims(label_valid, 1))
+    pair_label_diff = tf.expand_dims(clean_labels, 2) - tf.expand_dims(
+        clean_labels, 1)
+    pair_pred_diff = tf.expand_dims(predictions, 2) - tf.expand_dims(
+        predictions, 1)
+    # Correct pairs are represented twice in the above pair difference tensors.
+    # We only take one copy for each pair.
+    correct_pairs = tf.cast(
+        pair_label_diff > 0, dtype=tf.float32) * tf.cast(
+            pair_pred_diff > 0, dtype=tf.float32)
+    pair_weights = tf.cast(
+        pair_label_diff > 0, dtype=tf.float32) * tf.expand_dims(
+            weights, 2) * tf.cast(
+                valid_pair, dtype=tf.float32)
+    return tf.compat.v1.metrics.mean(correct_pairs, pair_weights)
 
 
 def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
@@ -417,24 +579,7 @@ def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
   Returns:
     A metric for the accuracy or ordered pairs.
   """
-  with tf.compat.v1.name_scope(name, 'ordered_pair_accuracy',
+  metric = _OPAMetric(name)
+  with tf.compat.v1.name_scope(metric.name, 'ordered_pair_accuracy',
                                (labels, predictions, weights)):
-    clean_labels, predictions, weights, _ = _prepare_and_validate_params(
-        labels, predictions, weights)
-    label_valid = tf.equal(clean_labels, labels)
-    valid_pair = tf.logical_and(
-        tf.expand_dims(label_valid, 2), tf.expand_dims(label_valid, 1))
-    pair_label_diff = tf.expand_dims(clean_labels, 2) - tf.expand_dims(
-        clean_labels, 1)
-    pair_pred_diff = tf.expand_dims(predictions, 2) - tf.expand_dims(
-        predictions, 1)
-    # Correct pairs are represented twice in the above pair difference tensors.
-    # We only take one copy for each pair.
-    correct_pairs = tf.cast(
-        pair_label_diff > 0, dtype=tf.float32) * tf.cast(
-            pair_pred_diff > 0, dtype=tf.float32)
-    pair_weights = tf.cast(
-        pair_label_diff > 0, dtype=tf.float32) * tf.expand_dims(
-            weights, 2) * tf.cast(
-                valid_pair, dtype=tf.float32)
-    return tf.compat.v1.metrics.mean(correct_pairs, pair_weights)
+    return metric.compute(labels, predictions, weights)

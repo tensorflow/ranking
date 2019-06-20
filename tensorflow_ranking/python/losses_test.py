@@ -130,8 +130,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     lambda_weight = ranking_losses.create_p_list_mle_lambda_weight(2)
     with self.cached_session():
       self.assertAllClose(
-          lambda_weight.individual_weights(sorted_labels).eval(),
-          [[1.0, 0.0]])
+          lambda_weight.individual_weights(sorted_labels).eval(), [[1.0, 0.0]])
 
 
 class PrecisionLambdaWeightTest(tf.test.TestCase):
@@ -593,15 +592,15 @@ class LossesTest(tf.test.TestCase):
     with self.cached_session():
       self.assertAlmostEqual(
           ranking_losses._mean_squared_loss(labels, scores).eval(),
-          (_mean_squared_error(labels[0], scores[0]) + _mean_squared_error(
-              labels[1], scores[1]) + _mean_squared_error(labels[2], scores[2]))
-          / 9.,
+          (_mean_squared_error(labels[0], scores[0]) +
+           _mean_squared_error(labels[1], scores[1]) +
+           _mean_squared_error(labels[2], scores[2])) / 9.,
           places=5)
       self.assertAlmostEqual(
           ranking_losses._mean_squared_loss(labels, scores, weights).eval(),
           (_mean_squared_error(labels[0], scores[0]) * 2.0 +
-           _mean_squared_error(labels[1], scores[1]) + _mean_squared_error(
-               labels[2], scores[2])) / 9.,
+           _mean_squared_error(labels[1], scores[1]) +
+           _mean_squared_error(labels[2], scores[2])) / 9.,
           places=5)
 
   def test_make_mean_squared_loss_fn(self):
@@ -615,8 +614,8 @@ class LossesTest(tf.test.TestCase):
           ranking_losses.RankingLossKey.MEAN_SQUARED_LOSS)
       self.assertAlmostEqual(
           loss_fn_simple(labels, scores, features).eval(),
-          (_mean_squared_error(labels[0], scores[0]) + _mean_squared_error(
-              labels[1], scores[1])) / 6.,
+          (_mean_squared_error(labels[0], scores[0]) +
+           _mean_squared_error(labels[1], scores[1])) / 6.,
           places=5)
 
       loss_fn_weighted = ranking_losses.make_loss_fn(
@@ -641,55 +640,43 @@ class LossesTest(tf.test.TestCase):
           loss_fn_2(labels, scores, features).eval())
 
   def test_list_mle_loss(self):
-    scores = [[0., ln(3), ln(2)],
-              [0., ln(2), ln(3)],
-              [0., ln(2), ln(3)]]
-    labels = [[0., 2., 1.],
-              [1., 0., 2.],
-              [0., 0., 0.]]
-    weights = [[2.],
-               [1.],
-               [1.]]
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
 
     with self.cached_session():
       self.assertAlmostEqual(
           ranking_losses._list_mle_loss(labels, scores, seed=1).eval(),
-          -((ln(3./(3+2+1)) + ln(2./(2+1)) + ln(1./1)) +
-            (ln(3./(3+2+1)) + ln(1./(1+2)) + ln(2./2)) +
-            (ln(3./(3+2+1)) + ln(2./(2+1)) + ln(1./1))) / 3,
+          -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) +
+            (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2)) +
+            (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))) / 3,
           places=5)
       self.assertAlmostEqual(
           ranking_losses._list_mle_loss(labels, scores, weights, seed=1).eval(),
-          -(2 * (ln(3./(3+2+1)) + ln(2./(2+1)) + ln(1./1)) +
-            1 * (ln(3./(3+2+1)) + ln(1./(1+2)) + ln(2./2)) +
-            1 * (ln(3./(3+2+1)) + ln(2./(2+1)) + ln(1./1))) / 3,
+          -(2 * (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) + 1 *
+            (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2)) + 1 *
+            (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))) / 3,
           places=5)
 
   def test_list_mle_loss_lambda_weight(self):
-    scores = [[0., ln(3), ln(2)],
-              [0., ln(2), ln(3)],
-              [0., ln(2), ln(3)]]
-    labels = [[0., 2., 1.],
-              [1., 0., 2.],
-              [0., 0., 0.]]
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.], [0., 0., 0.]]
 
     lw = ranking_losses.create_p_list_mle_lambda_weight(3)
     with self.cached_session():
       self.assertAlmostEqual(
           ranking_losses._list_mle_loss(
               labels, scores, lambda_weight=lw, seed=1).eval(),
-          -((3*ln(3./(3+2+1)) + 1*ln(2./(2+1)) + 0*ln(1./1)) +
-            (3*ln(3./(3+2+1)) + 1*ln(1./(1+2)) + 0*ln(2./2)) +
-            (3*ln(3./(3+2+1)) + 1*ln(2./(2+1)) + 0*ln(1./1))) / 3,
+          -((3 * ln(3. / (3 + 2 + 1)) + 1 * ln(2. / (2 + 1)) + 0 * ln(1. / 1)) +
+            (3 * ln(3. / (3 + 2 + 1)) + 1 * ln(1. / (1 + 2)) + 0 * ln(2. / 2)) +
+            (3 * ln(3. / (3 + 2 + 1)) + 1 * ln(2. /
+                                               (2 + 1)) + 0 * ln(1. / 1))) / 3,
           places=5)
 
   def test_make_list_mle_loss_fn(self):
-    scores = [[0., ln(3), ln(2)],
-              [0., ln(2), ln(3)]]
-    labels = [[0., 0., 1.],
-              [0., 0., 2.]]
-    weights = [[2.],
-               [1.]]
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[2.], [1.]]
     weights_feature_name = 'weights'
     features = {weights_feature_name: weights}
     with self.cached_session():
@@ -697,17 +684,18 @@ class LossesTest(tf.test.TestCase):
           ranking_losses.RankingLossKey.LIST_MLE_LOSS, seed=1)
       self.assertAlmostEqual(
           loss_fn_simple(labels, scores, features).eval(),
-          -((ln(2./(2+3+1)) + ln(3./(3+1)) + ln(1./1)) +
-            (ln(3./(3+2+1)) + ln(2./(2+1)) + ln(1./1))) / 2,
+          -((ln(2. / (2 + 3 + 1)) + ln(3. / (3 + 1)) + ln(1. / 1)) +
+            (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))) / 2,
           places=5)
 
       loss_fn_weighted = ranking_losses.make_loss_fn(
           ranking_losses.RankingLossKey.LIST_MLE_LOSS,
-          weights_feature_name=weights_feature_name, seed=1)
+          weights_feature_name=weights_feature_name,
+          seed=1)
       self.assertAlmostEqual(
           loss_fn_weighted(labels, scores, features).eval(),
-          -(2 * (ln(2./(2+3+1)) + ln(3./(3+1)) + ln(1./1)) +
-            1 * (ln(3./(3+2+1)) + ln(2./(2+1)) + ln(1./1))) / 2,
+          -(2 * (ln(2. / (2 + 3 + 1)) + ln(3. / (3 + 1)) + ln(1. / 1)) + 1 *
+            (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))) / 2,
           places=5)
 
       # Test loss reduction method.
@@ -723,40 +711,26 @@ class LossesTest(tf.test.TestCase):
           loss_fn_2(labels, scores, features).eval())
 
   def test_approx_ndcg_loss(self):
-    scores = [[1.4, -2.8, -0.4],
-              [0., 1.8, 10.2],
-              [1., 1.2, -3.2]]
-    labels = [[0., 2., 1.],
-              [1., 0., 3.],
-              [0., 0., 0.]]
-    weights = [[2.],
-               [1.],
-               [1.]]
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
 
     with self.cached_session():
       self.assertAlmostEqual(
-          ranking_losses._approx_ndcg_loss(
-              labels, scores).eval(),
-          -((1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
-            (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          ranking_losses._approx_ndcg_loss(labels, scores).eval(),
+          -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) +
+            (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
           places=5)
       self.assertAlmostEqual(
-          ranking_losses._approx_ndcg_loss(
-              labels, scores, weights).eval(),
-          -(2 * (1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
-            1 * (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          ranking_losses._approx_ndcg_loss(labels, scores, weights).eval(),
+          -(2 * (1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + 1 *
+            (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
           places=5)
 
   def test_make_approx_ndcg_fn(self):
-    scores = [[1.4, -2.8, -0.4],
-              [0., 1.8, 10.2],
-              [1., 1.2, -3.2]]
-    labels = [[0., 2., 1.],
-              [1., 0., 3.],
-              [0., 0., 0.]]
-    weights = [[2.],
-               [1.],
-               [1.]]
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
     weights_feature_name = 'weights'
     features = {weights_feature_name: weights}
     with self.cached_session():
@@ -765,8 +739,8 @@ class LossesTest(tf.test.TestCase):
           reduction=tf.compat.v1.losses.Reduction.SUM)
       self.assertAlmostEqual(
           loss_fn_simple(labels, scores, features).eval(),
-          -((1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
-            (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) +
+            (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
           places=5)
 
       loss_fn_weighted = ranking_losses.make_loss_fn(
@@ -775,8 +749,8 @@ class LossesTest(tf.test.TestCase):
           reduction=tf.compat.v1.losses.Reduction.SUM)
       self.assertAlmostEqual(
           loss_fn_weighted(labels, scores, features).eval(),
-          -(2 * (1/(3/ln(2) + 1/ln(3))) * (3/ln(4) + 1/ln(3)) +
-            1 * (1/(7/ln(2) + 1/ln(3))) * (7/ln(2) + 1/ln(4))),
+          -(2 * (1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + 1 *
+            (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
           places=5)
 
       # Test different alphas.
@@ -806,17 +780,30 @@ class LossesTest(tf.test.TestCase):
     scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5]]
     labels = [[0., 0., 1.], [0., 0., 1.]]
     weights = [[2.], [1.]]
+    weights_1d = [2., 1.]
+    weights_3d = [[[2.], [1.], [0.]], [[0.], [1.], [2.]]]
     weights_feature_name = 'weights'
-    features = {weights_feature_name: weights}
+    weights_1d_feature_name = 'weights_1d'
+    weights_3d_feature_name = 'weights_3d'
+    features = {
+        weights_feature_name: weights,
+        weights_1d_feature_name: weights_1d,
+        weights_3d_feature_name: weights_3d
+    }
     with self.cached_session():
       pairwise_hinge_loss = ranking_losses._pairwise_hinge_loss(labels,
                                                                 scores).eval()
       pairwise_hinge_loss_weighted = ranking_losses._pairwise_hinge_loss(
           labels, scores, weights=weights).eval()
+      pairwise_hinge_loss_itemwise_weighted = (
+          ranking_losses._pairwise_hinge_loss(
+              labels, scores, weights=tf.squeeze(weights_3d)).eval())
       mean_squared_loss = ranking_losses._mean_squared_loss(labels,
                                                             scores).eval()
       mean_squared_loss_weighted = ranking_losses._mean_squared_loss(
           labels, scores, weights=weights).eval()
+      mean_squared_loss_itemwise_weighted = ranking_losses._mean_squared_loss(
+          labels, scores, weights=tf.squeeze(weights_3d)).eval()
 
       loss_keys = [
           ranking_losses.RankingLossKey.PAIRWISE_HINGE_LOSS,
@@ -828,12 +815,29 @@ class LossesTest(tf.test.TestCase):
           pairwise_hinge_loss + mean_squared_loss,
           places=5)
 
-      # With weighted examples.
+      # With 2-d list-wise weighted examples.
       loss_fn_weighted_example = ranking_losses.make_loss_fn(
           loss_keys, weights_feature_name=weights_feature_name)
       self.assertAlmostEqual(
           loss_fn_weighted_example(labels, scores, features).eval(),
           pairwise_hinge_loss_weighted + mean_squared_loss_weighted,
+          places=5)
+
+      # With 1-d list-wise weighted examples.
+      loss_fn_weighted_example = ranking_losses.make_loss_fn(
+          loss_keys, weights_feature_name=weights_1d_feature_name)
+      self.assertAlmostEqual(
+          loss_fn_weighted_example(labels, scores, features).eval(),
+          pairwise_hinge_loss_weighted + mean_squared_loss_weighted,
+          places=5)
+
+      # With 3-d item-wise weighted examples.
+      loss_fn_weighted_example = ranking_losses.make_loss_fn(
+          loss_keys, weights_feature_name=weights_3d_feature_name)
+      self.assertAlmostEqual(
+          loss_fn_weighted_example(labels, scores, features).eval(),
+          pairwise_hinge_loss_itemwise_weighted +
+          mean_squared_loss_itemwise_weighted,
           places=5)
 
       # With both weighted loss and weighted examples.
@@ -909,6 +913,53 @@ class LossesTest(tf.test.TestCase):
           ranking_losses._mean_squared_loss(labels, scores).eval(),
           (1. + 1.) / 2,
           places=5)
+
+
+class LossMetricTest(tf.test.TestCase):
+
+  def setUp(self):
+    super(LossMetricTest, self).setUp()
+    tf.compat.v1.reset_default_graph()
+
+  def _check_metrics(self, metrics_and_values):
+    """Checks metrics against values."""
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.local_variables_initializer())
+      for (metric_op, update_op), value in metrics_and_values:
+        sess.run(update_op)
+        self.assertAlmostEqual(sess.run(metric_op), value, places=5)
+
+  def test_make_loss_metric_fn(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[2.], [1.]]
+    weights_feature_name = 'weights'
+    features = {
+        weights_feature_name: weights,
+    }
+    m = ranking_losses.make_loss_metric_fn(
+        ranking_losses.RankingLossKey.SOFTMAX_LOSS)
+    m_w = ranking_losses.make_loss_metric_fn(
+        ranking_losses.RankingLossKey.SOFTMAX_LOSS,
+        weights_feature_name=weights_feature_name)
+    self._check_metrics([
+        (m(labels, scores,
+           features), -(math.log(_softmax(scores[0])[2]) +
+                        math.log(_softmax(scores[1])[2]) * 2.) / 3.),
+        (m_w(labels, scores,
+             features), -(math.log(_softmax(scores[0])[2]) * 2. +
+                          math.log(_softmax(scores[1])[2]) * 2. * 1.) / 4.),
+    ])
+
+    # Value of loss metric is the same as loss with MEAN reduction.
+    with self.cached_session():
+      loss_fn_mean = ranking_losses.make_loss_fn(
+          ranking_losses.RankingLossKey.SOFTMAX_LOSS,
+          reduction=tf.compat.v1.losses.Reduction.MEAN)
+      loss_mean = loss_fn_mean(labels, scores, features).eval()
+    self._check_metrics([
+        (m(labels, scores, features), loss_mean),
+    ])
 
 
 if __name__ == '__main__':
