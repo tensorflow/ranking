@@ -185,7 +185,7 @@ def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
           _rank_discount(rank_discount_form, i + 1) -
           _rank_discount(rank_discount_form, j + 1))
     else:
-      delta = 1. if label_diff > 0 else 0.
+      delta = 1. if delta > 0 else 0
     return delta
 
   def _loss(score_diff, label_diff, delta):
