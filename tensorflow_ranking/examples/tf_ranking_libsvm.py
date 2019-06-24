@@ -336,13 +336,16 @@ def train_and_eval():
                                                 FLAGS.list_size)
   test_input_fn, test_hook = get_eval_inputs(features_test, labels_test)
 
+  optimizer = tf.compat.v1.train.AdagradOptimizer(
+      learning_rate=FLAGS.learning_rate)
+
   def _train_op_fn(loss):
     """Defines train op used in ranking head."""
-    return tf.contrib.layers.optimize_loss(
-        loss=loss,
-        global_step=tf.compat.v1.train.get_global_step(),
-        learning_rate=FLAGS.learning_rate,
-        optimizer="Adagrad")
+    update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
+    minimize_op = optimizer.minimize(
+        loss=loss, global_step=tf.compat.v1.train.get_global_step())
+    train_op = tf.group([minimize_op, update_ops])
+    return train_op
 
   ranking_head = tfr.head.create_ranking_head(
       loss_fn=tfr.losses.make_loss_fn(FLAGS.loss),
