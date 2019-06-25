@@ -37,70 +37,72 @@ class UtilsTest(tf.test.TestCase):
   """Tests for util functions."""
 
   def test_rolling_window_indices(self):
-    with tf.compat.v1.Session() as sess:
-      # All valid.
-      indices, mask = sess.run(model._rolling_window_indices(3, 2, [3]))
-      self.assertAllEqual(indices, [[[0, 1], [1, 2], [2, 0]]])
-      self.assertAllEqual(mask, [[True, True, True]])
-      # One invalid.
-      indices, mask = sess.run(model._rolling_window_indices(3, 2, [2]))
-      self.assertAllEqual(indices, [[[0, 1], [1, 0], [0, 1]]])
-      self.assertAllEqual(mask, [[True, True, False]])
-      # All invalid.
-      indices, mask = sess.run(model._rolling_window_indices(3, 2, [0]))
-      self.assertAllEqual(indices, [[[0, 0], [0, 0], [0, 0]]])
-      self.assertAllEqual(mask, [[False, False, False]])
-      # size < rw_size.
-      indices, mask = sess.run(model._rolling_window_indices(2, 3, [2]))
-      self.assertAllEqual(indices, [[[0, 1, 0], [1, 0, 1]]])
-      self.assertAllEqual(mask, [[True, True]])
-      # batch_size = 2
-      indices, mask = sess.run(model._rolling_window_indices(3, 2, [3, 2]))
-      self.assertAllEqual(indices,
-                          [[[0, 1], [1, 2], [2, 0]], [[0, 1], [1, 0], [0, 1]]])
-      self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+    with tf.Graph().as_default():
+      with tf.compat.v1.Session() as sess:
+        # All valid.
+        indices, mask = sess.run(model._rolling_window_indices(3, 2, [3]))
+        self.assertAllEqual(indices, [[[0, 1], [1, 2], [2, 0]]])
+        self.assertAllEqual(mask, [[True, True, True]])
+        # One invalid.
+        indices, mask = sess.run(model._rolling_window_indices(3, 2, [2]))
+        self.assertAllEqual(indices, [[[0, 1], [1, 0], [0, 1]]])
+        self.assertAllEqual(mask, [[True, True, False]])
+        # All invalid.
+        indices, mask = sess.run(model._rolling_window_indices(3, 2, [0]))
+        self.assertAllEqual(indices, [[[0, 0], [0, 0], [0, 0]]])
+        self.assertAllEqual(mask, [[False, False, False]])
+        # size < rw_size.
+        indices, mask = sess.run(model._rolling_window_indices(2, 3, [2]))
+        self.assertAllEqual(indices, [[[0, 1, 0], [1, 0, 1]]])
+        self.assertAllEqual(mask, [[True, True]])
+        # batch_size = 2
+        indices, mask = sess.run(model._rolling_window_indices(3, 2, [3, 2]))
+        self.assertAllEqual(
+            indices, [[[0, 1], [1, 2], [2, 0]], [[0, 1], [1, 0], [0, 1]]])
+        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
   def test_form_group_indices_nd(self):
-    tf.compat.v1.set_random_seed(1)
-    # batch_size, list_size = 2, 3.
-    is_valid = [[True, True, True], [True, True, False]]
-    indices, mask = model._form_group_indices_nd(is_valid, group_size=2)
+    with tf.Graph().as_default():
+      tf.compat.v1.set_random_seed(1)
+      # batch_size, list_size = 2, 3.
+      is_valid = [[True, True, True], [True, True, False]]
+      indices, mask = model._form_group_indices_nd(is_valid, group_size=2)
 
-    with tf.compat.v1.Session() as sess:
-      indices, mask = sess.run([indices, mask])
-      # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
-      self.assertAllEqual(
-          indices,
-          [  # batch_size = 2.
-              [  # num_groups = 3.
-                  [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
-              ],
-              [  # num_groups = 3.
-                  [[1, 1], [1, 0]], [[1, 0], [1, 1]], [[1, 1], [1, 0]]
-              ]
-          ])
-      # shape = [2, 3] = [batch_size, num_groups]
-      self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+      with tf.compat.v1.Session() as sess:
+        indices, mask = sess.run([indices, mask])
+        # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
+        self.assertAllEqual(
+            indices,
+            [  # batch_size = 2.
+                [  # num_groups = 3.
+                    [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
+                ],
+                [  # num_groups = 3.
+                    [[1, 1], [1, 0]], [[1, 0], [1, 1]], [[1, 1], [1, 0]]
+                ]
+            ])
+        # shape = [2, 3] = [batch_size, num_groups]
+        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
-    # Disable shuffling.
-    indices, mask = model._form_group_indices_nd(
-        is_valid, group_size=2, shuffle=False)
+      # Disable shuffling.
+      indices, mask = model._form_group_indices_nd(
+          is_valid, group_size=2, shuffle=False)
 
-    with tf.compat.v1.Session() as sess:
-      indices, mask = sess.run([indices, mask])
-      # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
-      self.assertAllEqual(
-          indices,
-          [  # batch_size = 2.
-              [  # num_groups = 3.
-                  [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
-              ],
-              [  # num_groups = 3.
-                  [[1, 0], [1, 1]], [[1, 1], [1, 0]], [[1, 0], [1, 1]]
-              ]
-          ])
-      # shape = [2, 3] = [batch_size, num_groups]
-      self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+      with tf.compat.v1.Session() as sess:
+        indices, mask = sess.run([indices, mask])
+        # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
+        self.assertAllEqual(
+            indices,
+            [  # batch_size = 2.
+                [  # num_groups = 3.
+                    [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
+                ],
+                [  # num_groups = 3.
+                    [[1, 0], [1, 1]], [[1, 1], [1, 0]], [[1, 0], [1, 1]]
+                ]
+            ])
+        # shape = [2, 3] = [batch_size, num_groups]
+        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
 
 def _save_variables_to_ckpt(model_dir):
