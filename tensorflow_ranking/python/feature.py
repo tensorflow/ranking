@@ -147,14 +147,21 @@ def encode_listwise_features(features,
         for name, col in six.iteritems(context_feature_columns)
     }
 
+  # Compute example_features. Note that the key in `example_feature_columns`
+  # dict can be different from the key in the `features` dict. We only need to
+  # reshape the per-example tensors in `features`. To obtain the keys for
+  # per-example features, we use the parsing feature specs.
   example_features = {}
   if example_feature_columns:
+    example_specs = tf.feature_column.make_parse_example_spec(
+        example_feature_columns.values())
     # Reshape [batch_size, input_size] to [batch * input_size] so that
     # features are encoded.
     batch_size = None
     reshaped_features = {}
-    for name in example_feature_columns:
+    for name in example_specs:
       if name not in features:
+        tf.compat.v1.logging.warn("Feature {} is not found.".format(name))
         continue
       batch_size = tf.shape(input=features[name])[0]
       try:
@@ -165,6 +172,7 @@ def encode_listwise_features(features,
             "2nd dimesion of tensor must be equal to input size: {}, "
             "but found feature {} with shape {}.".format(
                 input_size, name, features[name].get_shape()))
+
     example_cols_to_tensors = encode_features(
         reshaped_features,
         example_feature_columns.values(),
