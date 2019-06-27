@@ -613,8 +613,6 @@ def _pairwise_comparison(sorted_labels,
   pairwise_weights *= tf.expand_dims(sorted_weights, 2)
   if lambda_weight is not None:
     pairwise_weights *= lambda_weight.pair_weights(sorted_labels)
-  else:
-    pairwise_weights *= tf.abs(pairwise_label_diff)
   pairwise_weights = tf.stop_gradient(
       pairwise_weights, name='weights_stop_gradient')
   return pairwise_labels, pairwise_logits, pairwise_weights
