@@ -137,24 +137,6 @@ def make_ranking_metric_fn(metric_key,
   return metric_fn_dict[metric_key]
 
 
-def _safe_div(numerator, denominator, name='safe_div'):
-  """Computes a safe divide which returns 0 if the denominator is zero.
-
-  Args:
-    numerator: An arbitrary `Tensor`.
-    denominator: `Tensor` whose shape matches `numerator`.
-    name: An optional name for the returned op.
-
-  Returns:
-    The element-wise value of the numerator divided by the denominator.
-  """
-  return tf.where(
-      tf.equal(denominator, 0),
-      tf.zeros_like(numerator),
-      tf.compat.v1.div(numerator, denominator),
-      name=name)
-
-
 def _per_example_weights_to_per_list_weights(weights, relevance):
   """Computes per list weight from per example weight.
 
@@ -165,7 +147,7 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   Returns:
     The per list `Tensor` of shape [batch_size, 1]
   """
-  per_list_weights = _safe_div(
+  per_list_weights = tf.compat.v1.math.divide_no_nan(
       tf.reduce_sum(input_tensor=weights * relevance, axis=1, keepdims=True),
       tf.reduce_sum(input_tensor=relevance, axis=1, keepdims=True))
   return per_list_weights
@@ -377,7 +359,7 @@ class _PrecisionMetric(_RankingMetric):
         predictions, [labels, weights], topn=topn)
     # Relevance = 1.0 when labels >= 1.0.
     relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
-    per_list_precision = _safe_div(
+    per_list_precision = tf.compat.v1.math.divide_no_nan(
         tf.reduce_sum(
             input_tensor=relevance * sorted_weights, axis=1, keepdims=True),
         tf.reduce_sum(
@@ -438,7 +420,7 @@ class _NDCGMetric(_RankingMetric):
         weights * labels, [labels, weights], topn=topn)
     ideal_dcg = _discounted_cumulative_gain(ideal_sorted_labels,
                                             ideal_sorted_weights)
-    per_list_ndcg = _safe_div(dcg, ideal_dcg)
+    per_list_ndcg = tf.compat.v1.math.divide_no_nan(dcg, ideal_dcg)
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights=weights,
         relevance=tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0)
@@ -497,7 +479,8 @@ class _DCGMetric(_RankingMetric):
         weights=weights,
         relevance=tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0)
     return tf.compat.v1.metrics.mean(
-        _safe_div(dcg, per_list_weights), per_list_weights)
+        tf.compat.v1.math.divide_no_nan(dcg, per_list_weights),
+        per_list_weights)
 
 
 def discounted_cumulative_gain(labels,
