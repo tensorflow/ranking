@@ -18,10 +18,27 @@ hosting and advancing state-of-the-art ranking models based on deep learning
 techniques, and thus facilitate both academic research as well as industrial
 applications.
 
-A quick demo for a ranker on dummy dataset (no setup required): [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png "")](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.ipynb)
+## 1-Click Demos
 
-For more details on this code and data, look at
- the section on [Example Code](https://github.com/tensorflow/ranking#example-code).
+We provide two demos, with no installation required, to get started on using
+TF-Ranking. These demos run on a
+[colaboratory notebook](https://research.google.com/colaboratory/faq.html),
+an interactive Python environment.
+
+
+
+1.  TF-Ranking on a dummy data set with dense features in
+    [the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format):
+    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.ipynb)
+
+2.  Using sparse features and embeddings in TF-Ranking.
+    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/handling_sparse_features.ipynb)
+
+    This demo demonstrates how to:
+
+    *   Use sparse/embedding features
+    *   Process data in TFRecord format
+    *   Tensorboard integration in colab notebook, for Estimator API
 
 ## Linux Installation
 
@@ -105,12 +122,13 @@ package instead of separate packages for CPU and GPU-enabled TensorFlow.
     (tfr) $ python -c "import tensorflow_ranking"
     ```
 
-## Example Code
+## Running Script
 
-The repository has a running script over a dummy data set in
-[the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format).
-
-### Running Script
+For ease of experimentation, we also provide the LIBSVM demo in the form of an
+executable
+[script](https://github.com/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.py).
+This is particularly useful for hyperparameter tuning, where the hyperparameters
+are supplied as flags to the script.
 
 1.  Set up the data and directory.
 
@@ -197,10 +215,10 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
 
 ## References
 
-+   Rama Kumar Pasumarthi, Xuanhui Wang, Cheng Li, Sebastian Bruch, Michael
++   Rama Kumar Pasumarthi, Sebastian Bruch, Xuanhui Wang, Cheng Li, Michael
     Bendersky, Marc Najork, Jan Pfeifer, Nadav Golbandi, Rohan Anil, Stephan
     Wolf. _TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank._
-    [CoRR abs/1812.00073 (2018)](https://arxiv.org/abs/1812.00073)
+    [KDD 2019.](https://ai.google/research/pubs/pub48160)
 
 
 +   Qingyao Ai, Xuanhui Wang, Nadav Golbandi, Michael Bendersky, Marc Najork.
