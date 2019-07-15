@@ -46,6 +46,8 @@ class _RankingModel(object):
           `features`: A dict of Tensors or SparseTensors that contains the raw
             features from an input_fn.
           `mode`: Optional. See estimator `ModeKeys`.
+          `params`: Optional. See tf.estimator model_fn. Hyperparameters for the
+            model.
         * Returns:
           `context_features`: A dict of `Tensor`s with shape [batch_size, ...]
           `example_features`: A dict of `Tensor`s with shape [batch_size,
@@ -56,11 +58,15 @@ class _RankingModel(object):
     else:
       self._transform_fn = transform_fn
 
-  def _call_transform_fn(self, features, mode):
+  def _call_transform_fn(self, features, mode, params):
     """Calls transform_fn and returns dense Tensors."""
     transform_fn_args = function_utils.fn_args(self._transform_fn)
-    if 'mode' in transform_fn_args:
+    if 'mode' in transform_fn_args and 'params' in transform_fn_args:
+      return self._transform_fn(features, mode=mode, params=params)
+    elif 'mode' in transform_fn_args:
       return self._transform_fn(features, mode=mode)
+    elif 'params' in transform_fn_args:
+      return self._transform_fn(features, params=params)
     else:
       return self._transform_fn(features)
 
@@ -89,7 +95,7 @@ class _RankingModel(object):
     """
     with tf.compat.v1.name_scope('transform'):
       context_features, example_features = self._call_transform_fn(
-          features, mode)
+          features, mode, params)
       # Check feature tensor shape.
       for name, value in six.iteritems(example_features):
         tensor_shape = tf.convert_to_tensor(value).shape
