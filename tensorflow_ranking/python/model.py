@@ -354,17 +354,12 @@ class _GroupwiseRankingModel(_RankingModel):
     return logits
 
 
-def make_groupwise_ranking_fn(group_score_fn,
-                              group_size,
-                              ranking_head,
-                              transform_fn=None):
-  """Builds an `Estimator` model_fn for groupwise comparison ranking models.
+def _make_model_fn(ranking_model, ranking_head):
+  """A helper function to make an `Estimator` model_fn.
 
   Args:
-    group_score_fn: See `_GroupwiseRankingModel`.
-    group_size: See `_GroupwiseRankingModel`.
+    ranking_model: A `_RankingModel` object.
     ranking_head: A `head._RankingHead` object.
-    transform_fn: See `_GroupwiseRankingModel`.
 
   Returns:
     An `Estimator` `model_fn` with the following signature:
@@ -378,15 +373,33 @@ def make_groupwise_ranking_fn(group_score_fn,
       `EstimatorSpec`.
   """
 
-  tf.compat.v1.logging.info('Building groupwise ranking model.')
-  ranking_model = _GroupwiseRankingModel(group_score_fn, group_size,
-                                         transform_fn)
-
   def _model_fn(features, labels, mode, params, config):
-    """Defines an `Estimator` model_fn."""
+    """Defines an `Estimator` `model_fn`."""
     logits = ranking_model.compute_logits(features, labels, mode, params,
                                           config)
     return ranking_head.create_estimator_spec(
         features=features, mode=mode, logits=logits, labels=labels)
 
   return _model_fn
+
+
+def make_groupwise_ranking_fn(group_score_fn,
+                              group_size,
+                              ranking_head,
+                              transform_fn=None):
+  """Builds an `Estimator` model_fn for groupwise comparison ranking models.
+
+  Args:
+    group_score_fn: See `_GroupwiseRankingModel`.
+    group_size: See `_GroupwiseRankingModel`.
+    ranking_head: A `head._RankingHead` object.
+    transform_fn: See `_GroupwiseRankingModel`.
+
+  Returns:
+    See `_make_model_fn`.
+  """
+
+  tf.compat.v1.logging.info('Building groupwise ranking model.')
+  ranking_model = _GroupwiseRankingModel(group_score_fn, group_size,
+                                         transform_fn)
+  return _make_model_fn(ranking_model, ranking_head)
