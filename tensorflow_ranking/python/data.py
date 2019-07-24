@@ -563,7 +563,8 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
                                           prefetch_buffer_size=32,
                                           reader_num_threads=10,
                                           sloppy_ordering=True,
-                                          drop_final_batch=False):
+                                          drop_final_batch=False,
+                                          num_parser_threads=None):
   """Builds a ranking tf.dataset using the provided `parsing_fn`.
 
   Args:
@@ -597,6 +598,8 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
     drop_final_batch: (bool) If `True`, and the batch size does not evenly
       divide the input dataset size, the final smaller batch will be dropped.
       Defaults to `True`. If `True`, the batch_size can be statically inferred.
+    num_parser_threads: (int) Optional number of threads to be used with
+      dataset.map() when invoking parsing_fn.
 
   Returns:
     A dataset of `dict` elements. Each `dict` maps feature keys to
@@ -628,7 +631,7 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
       batch_size, drop_remainder=drop_final_batch or num_epochs is None)
 
   # Parse a batch.
-  dataset = dataset.map(parsing_fn)
+  dataset = dataset.map(parsing_fn, num_parallel_calls=num_parser_threads)
 
   # Prefetching allows for data fetching to happen on host while model runs
   # on the accelerator. When run on CPU, makes data fecthing asynchronous.
