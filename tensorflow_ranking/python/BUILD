@@ -208,6 +208,7 @@ py_test(
         ":head",
         ":losses",
         ":model",
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
     ],
 )

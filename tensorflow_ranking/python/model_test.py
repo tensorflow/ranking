@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_ranking.python import feature
@@ -35,6 +36,17 @@ ADAGRAD_WEIGHTS_NAME = 'group_score/dense/kernel/Adagrad'
 
 class UtilsTest(tf.test.TestCase):
   """Tests for util functions."""
+
+  def test_get_params(self):
+    params = {
+        'num_shuffles_train': 1,
+        'num_shuffles_eval': 2,
+        'num_shuffles_predict': 3,
+    }
+    self.assertEqual(model._get_params(tf.estimator.ModeKeys.TRAIN, params), 1)
+    self.assertEqual(model._get_params(tf.estimator.ModeKeys.EVAL, params), 2)
+    self.assertEqual(
+        model._get_params(tf.estimator.ModeKeys.PREDICT, params), 3)
 
   def test_rolling_window_indices(self):
     with tf.Graph().as_default():
@@ -66,7 +78,8 @@ class UtilsTest(tf.test.TestCase):
       tf.compat.v1.set_random_seed(1)
       # batch_size, list_size = 2, 3.
       is_valid = [[True, True, True], [True, True, False]]
-      indices, mask = model._form_group_indices_nd(is_valid, group_size=2)
+      indices, mask = model._form_group_indices_nd(
+          is_valid, group_size=2, shuffle=True, seed=87124)
 
       with tf.compat.v1.Session() as sess:
         indices, mask = sess.run([indices, mask])
@@ -143,7 +156,7 @@ def _train_input_fn():
   return features, label
 
 
-class GroupwiseRankingModelTest(tf.test.TestCase):
+class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
   """GroupwiseRankingModel tests."""
 
   def test_update_scatter_gather_indices_groupsize_1(self):
@@ -154,7 +167,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase):
         ranking_model = model._GroupwiseRankingModel(None, group_size=1)
         ranking_model._update_scatter_gather_indices(
             tf.convert_to_tensor([[True, True, False]]),
-            tf.estimator.ModeKeys.TRAIN)
+            tf.estimator.ModeKeys.TRAIN, None)
         self.assertEqual(
             ranking_model._feature_gather_indices.get_shape().as_list(),
             [1, 3, 1, 2])
@@ -167,29 +180,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase):
                             [[[[0, 0]], [[0, 1]], [[0, 0]]]])
         self.assertAllEqual(indices_mask, [[True, True, False]])
 
-  def test_update_scatter_gather_indices_train(self):
-    """Test for group size > 1 and mode = TRAIN."""
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      with tf.compat.v1.Session() as sess:
-        ranking_model = model._GroupwiseRankingModel(None, group_size=2)
-        ranking_model._update_scatter_gather_indices(
-            tf.convert_to_tensor([[True, True, False]]),
-            tf.estimator.ModeKeys.TRAIN)
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 3, 2, 2])
-        self.assertEqual(ranking_model._indices_mask.get_shape().as_list(),
-                         [1, 3])
-        feature_gather_indices, indices_mask = sess.run([
-            ranking_model._feature_gather_indices, ranking_model._indices_mask
-        ])
-        self.assertAllEqual(
-            feature_gather_indices,
-            [[[[0, 0], [0, 1]], [[0, 1], [0, 0]], [[0, 0], [0, 1]]]])
-        self.assertAllEqual(indices_mask, [[True, True, False]])
-
-  def test_update_scatter_gather_indices_predict(self):
+  def test_update_scatter_gather_indices_predict_no_shuffle(self):
     """Test for group size > 1 and mode = PREDICT."""
     with tf.Graph().as_default():
       tf.compat.v1.set_random_seed(1)
@@ -197,7 +188,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase):
         ranking_model = model._GroupwiseRankingModel(None, group_size=2)
         ranking_model._update_scatter_gather_indices(
             tf.convert_to_tensor([[True, True, True]]),
-            tf.estimator.ModeKeys.PREDICT)
+            tf.estimator.ModeKeys.PREDICT, None)
         self.assertEqual(
             ranking_model._feature_gather_indices.get_shape().as_list(),
             [1, 3, 2, 2])
@@ -211,12 +202,55 @@ class GroupwiseRankingModelTest(tf.test.TestCase):
             [[[[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]]])
         self.assertAllEqual(indices_mask, [[True, True, True]])
 
-  def test_compute_logits(self):
+  @parameterized.named_parameters(
+      ('mode_train', tf.estimator.ModeKeys.TRAIN),
+      ('mode_eval', tf.estimator.ModeKeys.EVAL),
+      ('mode_predict', tf.estimator.ModeKeys.PREDICT))
+  def test_update_scatter_gather_indices(self, mode):
+    """Test for group size > 1."""
+    params = {
+        'num_shuffles_train': 2,
+        'num_shuffles_eval': 2,
+        'num_shuffles_predict': 2,
+    }
+    with tf.Graph().as_default():
+      tf.compat.v1.set_random_seed(1)
+      with tf.compat.v1.Session() as sess:
+        ranking_model = model._GroupwiseRankingModel(None, group_size=2)
+        ranking_model._update_scatter_gather_indices(
+            tf.convert_to_tensor([[True, True, False]]), mode, params)
+        self.assertEqual(
+            ranking_model._feature_gather_indices.get_shape().as_list(),
+            [1, 6, 2, 2])
+        self.assertEqual(ranking_model._indices_mask.get_shape().as_list(),
+                         [1, 6])
+        feature_gather_indices, indices_mask = sess.run([
+            ranking_model._feature_gather_indices, ranking_model._indices_mask
+        ])
+
+        self.assertAllEqual(
+            feature_gather_indices,
+            [[
+                [[0, 0], [0, 1]],
+                [[0, 1], [0, 0]],
+                [[0, 0], [0, 1]],  # shuffle 1.
+                [[0, 1], [0, 0]],
+                [[0, 0], [0, 1]],
+                [[0, 1], [0, 0]],  # shuffle 2.
+            ]])
+        self.assertAllEqual(indices_mask,
+                            [[True, True, False, True, True, False]])
+
+  @parameterized.named_parameters(
+      ('mode_train', tf.estimator.ModeKeys.TRAIN),
+      ('mode_eval', tf.estimator.ModeKeys.EVAL),
+      ('mode_predict', tf.estimator.ModeKeys.PREDICT))
+  def test_compute_logits(self, mode):
     group_size = 2
-    # batch_size = 1, list_size = 2.
-    features = {
-        'context': [[0.]],
-        'example_f1': [[[1.], [2.]]],
+    params = {
+        'num_shuffles_train': 2,
+        'num_shuffles_eval': 2,
+        'num_shuffles_predict': 2,
     }
 
     def _dummy_score_fn(context_features, group_features, mode, params, config):
@@ -225,7 +259,9 @@ class GroupwiseRankingModelTest(tf.test.TestCase):
       # 'example_f1': [batch_size * num_groups, group_size, 1]
       logits = tf.expand_dims(
           context_features['context'], axis=1) + group_features['example_f1']
-      return tf.reshape(logits, [-1, group_size])
+      logits = tf.reshape(logits, [-1, group_size])
+      # Add the shape of the logits to differentiate number of shuffles.
+      return logits + tf.cast(tf.shape(logits)[0], tf.float32)
 
     with tf.Graph().as_default():
       tf.compat.v1.set_random_seed(1)
@@ -235,9 +271,40 @@ class GroupwiseRankingModelTest(tf.test.TestCase):
             group_size=group_size,
             transform_fn=feature.make_identity_transform_fn(['context']),
         )
+
+        # batch_size = 1, list_size = 3, is_valid = [True, True, False]
+        features = {
+            'context': [[1.]],
+            'example_f1': [[[1.], [2.], [3.]]],
+        }
+        labels = [[1., 0, -1]]
+        # No params.
         logits = sess.run(
-            ranking_model.compute_logits(features, None, None, None, None))
-        self.assertAllEqual(logits, [[1., 2.]])
+            ranking_model.compute_logits(features, labels, mode, None, None))
+        self.assertEqual(
+            ranking_model._feature_gather_indices.get_shape().as_list(),
+            [1, 3, 2, 2])
+        self.assertAllEqual(logits, [[5., 6., 0.]])
+        # Trigger params.
+        logits = sess.run(
+            ranking_model.compute_logits(features, labels, mode, params, None))
+        self.assertEqual(
+            ranking_model._feature_gather_indices.get_shape().as_list(),
+            [1, 6, 2, 2])
+        self.assertAllEqual(logits, [[8., 9., 0.]])
+
+        # batch_size = 1, list_size = 3, is_valid = [True, True, True]
+        features = {
+            'context': [[1.]],
+            'example_f1': [[[1.], [2.], [0.]]],
+        }
+        labels = [[1., 0, 1]]
+        logits = sess.run(
+            ranking_model.compute_logits(features, labels, mode, params, None))
+        self.assertEqual(
+            ranking_model._feature_gather_indices.get_shape().as_list(),
+            [1, 6, 2, 2])
+        self.assertAllEqual(logits, [[8., 9., 7.]])
 
 
 class GroupwiseRankingEstimatorTest(tf.test.TestCase):

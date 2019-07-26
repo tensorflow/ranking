@@ -30,6 +30,26 @@ from tensorflow.python.util import function_utils
 from tensorflow_ranking.python import feature
 from tensorflow_ranking.python import utils
 
+# Constant names in `params`.
+# The following are parameter names for number of shuffles of the lists.
+_NUM_SHUFFLES_TRAIN = 'num_shuffles_train'
+_NUM_SHUFFLES_EVAL = 'num_shuffles_eval'
+_NUM_SHUFFLES_PREDICT = 'num_shuffles_predict'
+
+
+def _get_params(mode, params):
+  """Returns the params defined by the above constants."""
+  params = params or {}
+  if mode == tf.estimator.ModeKeys.TRAIN:
+    num_shuffles = params.get(_NUM_SHUFFLES_TRAIN, None)
+  elif mode == tf.estimator.ModeKeys.EVAL:
+    num_shuffles = params.get(_NUM_SHUFFLES_EVAL, None)
+  elif mode == tf.estimator.ModeKeys.PREDICT:
+    num_shuffles = params.get(_NUM_SHUFFLES_PREDICT, None)
+  else:
+    raise ValueError('Invalid mode: {}.'.format(mode))
+  return num_shuffles
+
 
 class _RankingModel(object):
   """Interface for a ranking model."""
@@ -179,7 +199,7 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
     return batch_rw_indices, batch_indices_mask
 
 
-def _form_group_indices_nd(is_valid, group_size, shuffle=True):
+def _form_group_indices_nd(is_valid, group_size, shuffle=False, seed=None):
   """Forms the indices for groups for gather_nd or scatter_nd.
 
   Args:
@@ -188,6 +208,7 @@ def _form_group_indices_nd(is_valid, group_size, shuffle=True):
     group_size: An scalar int `Tensor` for the number of examples in a group.
     shuffle: A boolean that indicates whether valid indices should be shuffled
       when forming group indices.
+    seed: Random seed for shuffle.
 
   Returns:
     A tuple of Tensors (indices, mask). The first has shape [batch_size,
@@ -207,7 +228,7 @@ def _form_group_indices_nd(is_valid, group_size, shuffle=True):
     # unittest purpose. We can find a better way to avoid setting this seed
     # explicitly.
     shuffled_indices = utils.organize_valid_indices(
-        is_valid, shuffle=shuffle, seed=87124)
+        is_valid, shuffle=shuffle, seed=seed)
     # Construct indices for gather_nd.
     # [batch_size, num_groups, group_size, 2]
     group_indices_nd = tf.expand_dims(rw_indices, axis=3)
@@ -281,12 +302,29 @@ class _GroupwiseRankingModel(_RankingModel):
     self._score_scatter_indices = None  # Internal.
     self._indices_mask = None  # Internal.
 
-  def _update_scatter_gather_indices(self, is_valid, mode):
+  def _update_scatter_gather_indices(self, is_valid, mode, params):
     """Updates the internal scatter/gather indices."""
-    shuffle = not (self._group_size == 1 or
-                   mode == tf.estimator.ModeKeys.PREDICT)
-    (self._feature_gather_indices, self._indices_mask) = _form_group_indices_nd(
-        is_valid, self._group_size, shuffle=shuffle)
+    num_shuffles = _get_params(mode, params)
+    if self._group_size == 1:
+      shuffle = False
+      num_shuffles = None
+    elif mode == tf.estimator.ModeKeys.PREDICT:
+      shuffle = num_shuffles is not None
+    else:
+      shuffle = True
+
+    # Shuffle the indices the `num_shuffles` times and concat shuffled indices.
+    num_shuffles = num_shuffles or 1
+    assert num_shuffles > 0, 'Invalid num_shuffles: {}'.format(num_shuffles)
+    if shuffle:
+      tf.compat.v1.logging.info('Number of shuffles: {}'.format(num_shuffles))
+    indices_shuffled = []
+    for _ in range(num_shuffles):
+      indices_shuffled.append(
+          _form_group_indices_nd(is_valid, self._group_size, shuffle=shuffle))
+    feature_gather_indices_list, indices_mask_list = zip(*indices_shuffled)
+    self._feature_gather_indices = tf.concat(feature_gather_indices_list, 1)
+    self._indices_mask = tf.concat(indices_mask_list, 1)
     self._score_scatter_indices = self._feature_gather_indices
 
   def _compute_logits_impl(self, context_features, example_features, labels,
@@ -304,7 +342,7 @@ class _GroupwiseRankingModel(_RankingModel):
       # group. The total number of groups we have for a mini-batch is batch_size
       # * num_groups. Inside each group, we have a 'group_size' number of
       # examples.
-      self._update_scatter_gather_indices(is_valid, mode)
+      self._update_scatter_gather_indices(is_valid, mode, params)
       num_groups = tf.shape(input=self._indices_mask)[1]
 
       with tf.compat.v1.name_scope('group_features'):
@@ -340,17 +378,20 @@ class _GroupwiseRankingModel(_RankingModel):
 
       with tf.compat.v1.name_scope('accumulate_scores'):
         # Reset invalid scores to 0 based on mask.
-        scores = tf.where(
-            tf.gather(
-                tf.expand_dims(self._indices_mask, 2),
-                tf.zeros([tf.shape(scores)[2]], tf.int32),
-                axis=2), scores, tf.zeros_like(scores))
+        scores_mask = tf.gather(
+            tf.expand_dims(self._indices_mask, 2),
+            tf.zeros([tf.shape(scores)[2]], tf.int32),
+            axis=2)
+        scores = tf.where(scores_mask, scores, tf.zeros_like(scores))
         # Scatter scores from [batch_size, num_groups, logits_size] to
         # [batch_size, list_size].
         logits = tf.scatter_nd(self._score_scatter_indices, scores,
                                [batch_size, list_size])
+        counts = tf.scatter_nd(self._score_scatter_indices,
+                               tf.cast(scores_mask, tf.float32),
+                               [batch_size, list_size])
         # Use average.
-        logits /= tf.cast(tf.shape(scores)[2], dtype=tf.float32)
+        logits = tf.compat.v1.div_no_nan(logits, counts)
     return logits
 
 
