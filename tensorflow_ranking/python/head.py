@@ -22,15 +22,23 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
 import six
 import tensorflow as tf
 
-from tensorflow.python.estimator.canned import head as head_lib
+# A LossSpec contains
+# * a scalar `Tensor` representing reduced weighted training loss
+# * a `Tensor` representing the unreduced unweighted loss
+# * a `Tensor` representing the example weights
+# * possibly processed labels (e.g. vocabulary lookup, shape manipulation, etc)
+LossSpec = collections.namedtuple(
+    'LossSpec',
+    ['training_loss', 'unreduced_loss', 'weights', 'processed_labels'])
 
 _DEFAULT_SERVING_KEY = tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
 
-# The above default is defined by TF Serving, but these next three are just
-# a local convention without any special meaning.
+# The above default is defined by TF Serving, but these next two are just a
+# local convention without any special meaning.
 _REGRESS_SERVING_KEY = 'regression'
 _PREDICT_SERVING_KEY = 'predict'
 
@@ -132,12 +140,7 @@ class _RankingHead(object):
       labels: Labels `Tensor`, or `dict` of same.
 
     Returns:
-      A LossSpec that contains
-      * the scalar `Tensor` representing reduced weighted training loss
-      * the `Tensor` representing the unreduced unweighted loss
-      * the `Tensor` representing the example weights
-      * possibly processed labels (e.g. vocabulary lookup, shape manipulation,
-        etc.)
+      A LossSpec object.
     """
     del mode  # Unused for this head.
     logits = tf.convert_to_tensor(value=logits)
@@ -145,7 +148,7 @@ class _RankingHead(object):
 
     training_loss = self._loss_fn(labels, logits, features)
 
-    return head_lib.LossSpec(
+    return LossSpec(
         training_loss=training_loss,
         unreduced_loss=None,
         weights=None,
@@ -207,8 +210,8 @@ class _RankingHead(object):
       # Eval.
       if mode == tf.estimator.ModeKeys.EVAL:
         eval_metric_ops = {
-            name: metric_fn(
-                labels=labels, predictions=logits, features=features)
+            name:
+            metric_fn(labels=labels, predictions=logits, features=features)
             for name, metric_fn in six.iteritems(self._eval_metric_fns)
         }
         eval_metric_ops.update(self._labels_and_logits_metrics(labels, logits))
