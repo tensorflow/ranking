@@ -214,7 +214,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
         'num_shuffles_predict': 2,
     }
     with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
+      tf.compat.v1.set_random_seed(2)
       with tf.compat.v1.Session() as sess:
         ranking_model = model._GroupwiseRankingModel(None, group_size=2)
         ranking_model._update_scatter_gather_indices(

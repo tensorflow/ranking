@@ -1116,8 +1116,10 @@ class _ListMLELoss(_ListwiseLoss):
     shuffled_labels = tf.gather_nd(labels, shuffled_indices)
     shuffled_logits = tf.gather_nd(logits, shuffled_indices)
 
+    # TODO: Remove the shuffling above and use
+    # shuffle_ties=True.
     sorted_labels, sorted_logits = utils.sort_by_scores(
-        shuffled_labels, [shuffled_labels, shuffled_logits])
+        shuffled_labels, [shuffled_labels, shuffled_logits], shuffle_ties=False)
 
     raw_max = tf.reduce_max(input_tensor=sorted_logits, axis=1, keepdims=True)
     sorted_logits = sorted_logits - raw_max
