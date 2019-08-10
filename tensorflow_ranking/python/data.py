@@ -335,7 +335,7 @@ class _SequenceExampleParser(_RankingDataParser):
           tf.shape(tensor))
       tensor = tf.where(
           tf.less(rank, tf.cast(size, tf.int32)), tensor,
-          tf.fill(tf.shape(tensor), v))
+          tf.fill(tf.shape(tensor), tf.cast(v, tensor.dtype)))
       examples[k] = tensor
 
     list_size_arg = list_size
