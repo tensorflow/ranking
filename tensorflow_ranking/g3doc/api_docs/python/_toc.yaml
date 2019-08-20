@@ -1,0 +1,116 @@
+# Automatically generated file; please do not edit
+toc:
+  - title: tfr
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr
+  - title: tfr.data
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/data
+    - title: build_ranking_dataset
+      path: /ranking/api_docs/python/tfr/data/build_ranking_dataset
+    - title: build_ranking_dataset_with_parsing_fn
+      path: /ranking/api_docs/python/tfr/data/build_ranking_dataset_with_parsing_fn
+    - title: build_ranking_serving_input_receiver_fn
+      path: /ranking/api_docs/python/tfr/data/build_ranking_serving_input_receiver_fn
+    - title: build_ranking_serving_input_receiver_fn_with_parsing_fn
+      path: /ranking/api_docs/python/tfr/data/build_ranking_serving_input_receiver_fn_with_parsing_fn
+    - title: build_sequence_example_serving_input_receiver_fn
+      path: /ranking/api_docs/python/tfr/data/build_sequence_example_serving_input_receiver_fn
+    - title: libsvm_generator
+      path: /ranking/api_docs/python/tfr/data/libsvm_generator
+    - title: make_parsing_fn
+      path: /ranking/api_docs/python/tfr/data/make_parsing_fn
+    - title: parse_from_example_in_example
+      path: /ranking/api_docs/python/tfr/data/parse_from_example_in_example
+    - title: parse_from_sequence_example
+      path: /ranking/api_docs/python/tfr/data/parse_from_sequence_example
+    - title: read_batched_sequence_example_dataset
+      path: /ranking/api_docs/python/tfr/data/read_batched_sequence_example_dataset
+  - title: tfr.feature
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/feature
+    - title: encode_features
+      path: /ranking/api_docs/python/tfr/feature/encode_features
+    - title: encode_listwise_features
+      path: /ranking/api_docs/python/tfr/feature/encode_listwise_features
+    - title: encode_pointwise_features
+      path: /ranking/api_docs/python/tfr/feature/encode_pointwise_features
+    - title: make_identity_transform_fn
+      path: /ranking/api_docs/python/tfr/feature/make_identity_transform_fn
+  - title: tfr.head
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/head
+    - title: create_ranking_head
+      path: /ranking/api_docs/python/tfr/head/create_ranking_head
+  - title: tfr.losses
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/losses
+    - title: create_ndcg_lambda_weight
+      path: /ranking/api_docs/python/tfr/losses/create_ndcg_lambda_weight
+    - title: create_p_list_mle_lambda_weight
+      path: /ranking/api_docs/python/tfr/losses/create_p_list_mle_lambda_weight
+    - title: create_reciprocal_rank_lambda_weight
+      path: /ranking/api_docs/python/tfr/losses/create_reciprocal_rank_lambda_weight
+    - title: DCGLambdaWeight
+      path: /ranking/api_docs/python/tfr/losses/DCGLambdaWeight
+    - title: ListMLELambdaWeight
+      path: /ranking/api_docs/python/tfr/losses/ListMLELambdaWeight
+    - title: make_loss_fn
+      path: /ranking/api_docs/python/tfr/losses/make_loss_fn
+    - title: make_loss_metric_fn
+      path: /ranking/api_docs/python/tfr/losses/make_loss_metric_fn
+    - title: PrecisionLambdaWeight
+      path: /ranking/api_docs/python/tfr/losses/PrecisionLambdaWeight
+    - title: RankingLossKey
+      path: /ranking/api_docs/python/tfr/losses/RankingLossKey
+  - title: tfr.metrics
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/metrics
+    - title: average_relevance_position
+      path: /ranking/api_docs/python/tfr/metrics/average_relevance_position
+    - title: discounted_cumulative_gain
+      path: /ranking/api_docs/python/tfr/metrics/discounted_cumulative_gain
+    - title: make_ranking_metric_fn
+      path: /ranking/api_docs/python/tfr/metrics/make_ranking_metric_fn
+    - title: mean_reciprocal_rank
+      path: /ranking/api_docs/python/tfr/metrics/mean_reciprocal_rank
+    - title: normalized_discounted_cumulative_gain
+      path: /ranking/api_docs/python/tfr/metrics/normalized_discounted_cumulative_gain
+    - title: ordered_pair_accuracy
+      path: /ranking/api_docs/python/tfr/metrics/ordered_pair_accuracy
+    - title: precision
+      path: /ranking/api_docs/python/tfr/metrics/precision
+    - title: RankingMetricKey
+      path: /ranking/api_docs/python/tfr/metrics/RankingMetricKey
+  - title: tfr.model
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/model
+    - title: make_groupwise_ranking_fn
+      path: /ranking/api_docs/python/tfr/model/make_groupwise_ranking_fn
+  - title: tfr.utils
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/utils
+    - title: approx_ranks
+      path: /ranking/api_docs/python/tfr/utils/approx_ranks
+    - title: inverse_max_dcg
+      path: /ranking/api_docs/python/tfr/utils/inverse_max_dcg
+    - title: is_label_valid
+      path: /ranking/api_docs/python/tfr/utils/is_label_valid
+    - title: organize_valid_indices
+      path: /ranking/api_docs/python/tfr/utils/organize_valid_indices
+    - title: reshape_first_ndims
+      path: /ranking/api_docs/python/tfr/utils/reshape_first_ndims
+    - title: reshape_to_2d
+      path: /ranking/api_docs/python/tfr/utils/reshape_to_2d
+    - title: shuffle_valid_indices
+      path: /ranking/api_docs/python/tfr/utils/shuffle_valid_indices
+    - title: sort_by_scores
+      path: /ranking/api_docs/python/tfr/utils/sort_by_scores
