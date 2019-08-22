@@ -956,6 +956,12 @@ def _softmax_loss(
     name=None):
   """Computes the softmax cross entropy for a list.
 
+  This is the ListNet loss originally proposed by Cao et al.
+  ["Learning to Rank: From Pairwise Approach to Listwise Approach"] and is
+  appropriate for datasets with binary relevance labels [see "An Analysis of
+  the Softmax Cross Entropy Loss for Learning-to-Rank with Binary Relevance" by
+  Bruch et al.]
+
   Given the labels l_i and the logits s_i, we sort the examples and obtain ranks
   r_i. The standard softmax loss doesn't need r_i and is defined as
       -sum_i l_i * log(exp(s_i) / (exp(s_1) + ... + exp(s_n))).
@@ -1220,7 +1226,9 @@ def _approx_ndcg_loss(labels,
 
   ApproxNDCG ["A general approximation framework for direct optimization of
   information retrieval measures" by Qin et al.] is a smooth approximation
-  to NDCG.
+  to NDCG. Its performance on datasets with graded relevance is competitive
+  with other state-of-the-art algorithms [see "Revisiting Approximate Metric
+  Optimization in the Age of Deep Neural Networks" by Bruch et al.].
 
   Args:
     labels: A `Tensor` of the same shape as `logits` representing graded
