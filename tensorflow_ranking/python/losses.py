@@ -43,6 +43,7 @@ class RankingLossKey(object):
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
   LIST_MLE_LOSS = 'list_mle_loss'
   APPROX_NDCG_LOSS = 'approx_ndcg_loss'
+  APPROX_MRR_LOSS = 'approx_mrr_loss'
 
 
 def make_loss_fn(loss_keys,
@@ -152,6 +153,7 @@ def make_loss_fn(loss_keys,
         RankingLossKey.LIST_MLE_LOSS:
             (_list_mle_loss, loss_kwargs_with_lambda_weight_and_seed),
         RankingLossKey.APPROX_NDCG_LOSS: (_approx_ndcg_loss, loss_kwargs),
+        RankingLossKey.APPROX_MRR_LOSS: (_approx_mrr_loss, loss_kwargs),
     }
 
     # Obtain the list of loss ops.
@@ -216,6 +218,8 @@ def make_loss_metric_fn(loss_key,
           _ListMLELoss(name, reduction=None, lambda_weight=lambda_weight),
       RankingLossKey.APPROX_NDCG_LOSS:
           _ApproxNDCGLoss(name, reduction=None),
+      RankingLossKey.APPROX_MRR_LOSS:
+          _ApproxMRRLoss(name, reduction=None),
   }
 
   def _get_weights(features):
@@ -1182,7 +1186,7 @@ class _ApproxNDCGLoss(_ListwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits, weights):
     """See `_RankingLoss`."""
-    alpha = self._params.get('alpha')
+    alpha = self._params.get('alpha', 10.0)
     is_label_valid = utils.is_label_valid(labels)
     labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
     logits = tf.where(
@@ -1237,5 +1241,68 @@ def _approx_ndcg_loss(labels,
   """
   loss = _ApproxNDCGLoss(name, reduction, params={'alpha': alpha})
   with tf.compat.v1.name_scope(loss.name, 'approx_ndcg_loss',
+                               (labels, logits, weights)):
+    return loss.compute(labels, logits, weights)
+
+
+class _ApproxMRRLoss(_ListwiseLoss):
+  """Implements ApproxMRR loss."""
+
+  def compute_unreduced_loss(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    alpha = self._params.get('alpha', 10.0)
+    is_label_valid = utils.is_label_valid(labels)
+    labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
+    logits = tf.where(
+        is_label_valid, logits, -1e3 * tf.ones_like(logits) +
+        tf.math.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
+
+    label_sum = tf.math.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    if weights is None:
+      weights = tf.ones_like(label_sum)
+    weights = tf.squeeze(weights)
+
+    nonzero_mask = tf.math.greater(tf.reshape(label_sum, [-1]), 0.0)
+    labels = tf.where(nonzero_mask, labels, _EPSILON * tf.ones_like(labels))
+    weights = tf.where(nonzero_mask, weights, tf.zeros_like(weights))
+
+    rr = 1. / utils.approx_ranks(logits, alpha=alpha)
+    rr = tf.math.reduce_sum(input_tensor=rr * labels, axis=-1)
+    mrr = rr / tf.math.reduce_sum(input_tensor=labels, axis=-1)
+    cost = -mrr
+    return cost, weights
+
+
+def _approx_mrr_loss(labels,
+                     logits,
+                     weights=None,
+                     reduction=tf.compat.v1.losses.Reduction.SUM,
+                     name=None,
+                     alpha=10.):
+  """Computes ApproxMRR loss.
+
+  ApproxMRR ["A general approximation framework for direct optimization of
+  information retrieval measures" by Qin et al.] is a smooth approximation
+  to MRR.
+
+  Args:
+    labels: A `Tensor` of the same shape as `logits` representing graded
+      relevance.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+      weights. If None, the weight of a list in the mini-batch is set to the sum
+      of the labels of the items in that list.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
+    name: A string used as the name for this loss.
+    alpha: The exponent in the generalized sigmoid function.
+
+  Returns:
+    An op for the ApproxMRR loss.
+  """
+  loss = _ApproxMRRLoss(name, reduction, params={'alpha': alpha})
+  with tf.compat.v1.name_scope(loss.name, 'approx_mrr_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights)

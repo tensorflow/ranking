@@ -811,6 +811,84 @@ class LossesTest(tf.test.TestCase):
             loss_fn_1(labels, scores, features).eval(),
             loss_fn_2(labels, scores, features).eval())
 
+  def test_approx_mrr_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4],
+                [0., 1.8, 10.2],
+                [1., 1.2, -3.2]]
+      labels = [[0., 0., 1.],
+                [1., 0., 1.],
+                [0., 0., 0.]]
+      weights = [[2.],
+                 [1.],
+                 [1.]]
+
+      with self.cached_session():
+        self.assertAlmostEqual(
+            ranking_losses._approx_mrr_loss(
+                labels, scores).eval(),
+            -((1/2.) + 1/2. * (1/3. + 1/1.)),
+            places=5)
+        self.assertAlmostEqual(
+            ranking_losses._approx_mrr_loss(
+                labels, scores, weights).eval(),
+            -(2 * 1/2. + 1 * 1/2. * (1/3. + 1/1.)),
+            places=5)
+
+  def test_make_approx_mrr_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4],
+                [0., 1.8, 10.2],
+                [1., 1.2, -3.2]]
+      labels = [[0., 0., 1.],
+                [1., 0., 1.],
+                [0., 0., 0.]]
+      weights = [[2.],
+                 [1.],
+                 [1.]]
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      with self.cached_session():
+        loss_fn_simple = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.APPROX_MRR_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.SUM)
+        self.assertAlmostEqual(
+            loss_fn_simple(labels, scores, features).eval(),
+            -((1/2.) + 1/2. * (1/3. + 1/1.)),
+            places=5)
+
+        loss_fn_weighted = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.APPROX_MRR_LOSS,
+            weights_feature_name=weights_feature_name,
+            reduction=tf.compat.v1.losses.Reduction.SUM)
+        self.assertAlmostEqual(
+            loss_fn_weighted(labels, scores, features).eval(),
+            -(2 * 1/2. + 1 * 1/2. * (1/3. + 1/1.)),
+            places=5)
+
+        # Test different alphas.
+        loss_fn_1 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.APPROX_MRR_LOSS,
+            extra_args={'alpha': 0.1})
+        loss_fn_2 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.APPROX_MRR_LOSS,
+            extra_args={'alpha': 100.})
+        self.assertNotAlmostEqual(
+            loss_fn_1(labels, scores, features).eval(),
+            loss_fn_2(labels, scores, features).eval())
+
+        # Test loss reduction method.
+        # Two reduction methods should return different loss values.
+        loss_fn_1 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.APPROX_MRR_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.SUM)
+        loss_fn_2 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.APPROX_MRR_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.MEAN)
+        self.assertNotAlmostEqual(
+            loss_fn_1(labels, scores, features).eval(),
+            loss_fn_2(labels, scores, features).eval())
+
   def test_make_loss_fn(self):
     with tf.Graph().as_default():
       scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5]]
