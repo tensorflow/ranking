@@ -219,10 +219,8 @@ class SequenceExampleTest(tf.test.TestCase):
         self.assertAllEqual(feature_map["utility"],
                             [[[0.], [1.]], [[0.], [-1.]]])
         # Check static shapes for dense tensors.
-        self.assertAllEqual([2, 1],
-                            features["query_length"].get_shape().as_list())
-        self.assertAllEqual([2, 2, 1],
-                            features["utility"].get_shape().as_list())
+        self.assertAllEqual([2, 1], feature_map["query_length"].shape)
+        self.assertAllEqual([2, 2, 1], feature_map["utility"].shape)
 
   def test_parse_from_sequence_example_with_large_list_size(self):
     with tf.Graph().as_default():
@@ -247,10 +245,8 @@ class SequenceExampleTest(tf.test.TestCase):
                             [b"tensorflow", b"learning", b"to", b"rank"])
         self.assertAllEqual(feature_map["utility"], [[[0.], [1.], [-1.]]])
         # Check static shapes for dense tensors.
-        self.assertAllEqual([1, 1],
-                            features["query_length"].get_shape().as_list())
-        self.assertAllEqual([1, 3, 1],
-                            features["utility"].get_shape().as_list())
+        self.assertAllEqual([1, 1], feature_map["query_length"].shape)
+        self.assertAllEqual([1, 3, 1], feature_map["utility"].shape)
 
   def test_parse_from_sequence_example_with_small_list_size(self):
     with tf.Graph().as_default():
@@ -273,10 +269,8 @@ class SequenceExampleTest(tf.test.TestCase):
         self.assertAllEqual(feature_map["query_length"], [[3]])
         self.assertAllEqual(feature_map["utility"], [[[0.]]])
         # Check static shapes for dense tensors.
-        self.assertAllEqual([1, 1],
-                            features["query_length"].get_shape().as_list())
-        self.assertAllEqual([1, 1, 1],
-                            features["utility"].get_shape().as_list())
+        self.assertAllEqual([1, 1], feature_map["query_length"].shape)
+        self.assertAllEqual([1, 1, 1], feature_map["utility"].shape)
 
   def test_parse_from_sequence_example_missing_frame_exception(self):
     with tf.Graph().as_default():
@@ -334,11 +328,9 @@ class SequenceExampleTest(tf.test.TestCase):
 
       with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.local_variables_initializer())
-        sess.run([features, features_0])
-        self.assertAllEqual([1, 2, 1],
-                            features["utility"].get_shape().as_list())
-        self.assertAllEqual([1, 1, 1],
-                            features_0["utility"].get_shape().as_list())
+        feature_map, feature_0_map = sess.run([features, features_0])
+        self.assertAllEqual([1, 2, 1], feature_map["utility"].shape)
+        self.assertAllEqual([1, 1, 1], feature_0_map["utility"].shape)
 
 
 class RankingDatasetTest(tf.test.TestCase, parameterized.TestCase):

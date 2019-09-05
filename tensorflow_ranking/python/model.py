@@ -118,7 +118,7 @@ class _RankingModel(object):
           features, mode, params)
       # Check feature tensor shape.
       for name, value in six.iteritems(example_features):
-        tensor_shape = tf.convert_to_tensor(value).shape
+        tensor_shape = tf.convert_to_tensor(value=value).shape
         if (tensor_shape is not None and tensor_shape.rank is not None and
             tensor_shape.rank < 3):
           tf.compat.v1.logging.warning(
@@ -179,7 +179,7 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
     shape [batch_size, size, rw_size] and the second has shape [batch_size,
     size].
   """
-  with tf.name_scope(name='rolling_window_indices'):
+  with tf.compat.v1.name_scope(name='rolling_window_indices'):
     # shape = [size, rw_size] with value [[0, 1, ...], [1, 2, ...], ...].
     rw_indices = tf.expand_dims(tf.range(rw_size), 0) + tf.expand_dims(
         tf.range(size), 1)
@@ -191,11 +191,11 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
         tf.reduce_min(input_tensor=batch_rw_indices, axis=2),
         tf.reshape(num_valid_entries, [-1, 1]))
     # Mod the indices to the range of num_valid_entries.
-    num_valid_entries = tf.where(
+    num_valid_entries = tf.compat.v1.where(
         tf.less(num_valid_entries, 1), tf.ones_like(num_valid_entries),
         num_valid_entries)
-    batch_rw_indices = tf.mod(batch_rw_indices,
-                              tf.reshape(num_valid_entries, [-1, 1, 1]))
+    batch_rw_indices = tf.math.mod(batch_rw_indices,
+                                   tf.reshape(num_valid_entries, [-1, 1, 1]))
     return batch_rw_indices, batch_indices_mask
 
 
@@ -216,7 +216,7 @@ def _form_group_indices_nd(is_valid, group_size, shuffle=False, seed=None):
     group features. The second has the shape of [batch_size, num_groups] with
     value True for valid groups.
   """
-  with tf.name_scope(name='form_group_indices'):
+  with tf.compat.v1.name_scope(name='form_group_indices'):
     is_valid = tf.convert_to_tensor(value=is_valid)
     batch_size, list_size = tf.unstack(tf.shape(input=is_valid))
     num_valid_entries = tf.reduce_sum(
@@ -374,15 +374,16 @@ class _GroupwiseRankingModel(_RankingModel):
         scores = self._score_fn(large_batch_context_features,
                                 large_batch_group_features, mode, params,
                                 config)
-        scores = tf.reshape(scores, tf.shape(self._score_scatter_indices)[0:3])
+        scores = tf.reshape(scores,
+                            tf.shape(input=self._score_scatter_indices)[0:3])
 
       with tf.compat.v1.name_scope('accumulate_scores'):
         # Reset invalid scores to 0 based on mask.
         scores_mask = tf.gather(
             tf.expand_dims(self._indices_mask, 2),
-            tf.zeros([tf.shape(scores)[2]], tf.int32),
+            tf.zeros([tf.shape(input=scores)[2]], tf.int32),
             axis=2)
-        scores = tf.where(scores_mask, scores, tf.zeros_like(scores))
+        scores = tf.compat.v1.where(scores_mask, scores, tf.zeros_like(scores))
         # Scatter scores from [batch_size, num_groups, logits_size] to
         # [batch_size, list_size].
         logits = tf.scatter_nd(self._score_scatter_indices, scores,

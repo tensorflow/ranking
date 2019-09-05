@@ -166,7 +166,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
       with tf.compat.v1.Session() as sess:
         ranking_model = model._GroupwiseRankingModel(None, group_size=1)
         ranking_model._update_scatter_gather_indices(
-            tf.convert_to_tensor([[True, True, False]]),
+            tf.convert_to_tensor(value=[[True, True, False]]),
             tf.estimator.ModeKeys.TRAIN, None)
         self.assertEqual(
             ranking_model._feature_gather_indices.get_shape().as_list(),
@@ -187,7 +187,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
       with tf.compat.v1.Session() as sess:
         ranking_model = model._GroupwiseRankingModel(None, group_size=2)
         ranking_model._update_scatter_gather_indices(
-            tf.convert_to_tensor([[True, True, True]]),
+            tf.convert_to_tensor(value=[[True, True, True]]),
             tf.estimator.ModeKeys.PREDICT, None)
         self.assertEqual(
             ranking_model._feature_gather_indices.get_shape().as_list(),
@@ -218,7 +218,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
       with tf.compat.v1.Session() as sess:
         ranking_model = model._GroupwiseRankingModel(None, group_size=2)
         ranking_model._update_scatter_gather_indices(
-            tf.convert_to_tensor([[True, True, False]]), mode, params)
+            tf.convert_to_tensor(value=[[True, True, False]]), mode, params)
         self.assertEqual(
             ranking_model._feature_gather_indices.get_shape().as_list(),
             [1, 6, 2, 2])
@@ -261,7 +261,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
           context_features['context'], axis=1) + group_features['example_f1']
       logits = tf.reshape(logits, [-1, group_size])
       # Add the shape of the logits to differentiate number of shuffles.
-      return logits + tf.cast(tf.shape(logits)[0], tf.float32)
+      return logits + tf.cast(tf.shape(input=logits)[0], tf.float32)
 
     with tf.Graph().as_default():
       tf.compat.v1.set_random_seed(1)

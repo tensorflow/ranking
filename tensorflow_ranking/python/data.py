@@ -91,8 +91,8 @@ class _ExampleInExampleParser(_RankingDataParser):
      serialized_list) = self._decode_as_serialized_example_list(serialized)
     # Use static batch size whenever possible.
     batch_size = serialized_context.get_shape().as_list()[0] or tf.shape(
-        serialized_list)[0]
-    cur_list_size = tf.shape(serialized_list)[1]
+        input=serialized_list)[0]
+    cur_list_size = tf.shape(input=serialized_list)[1]
     list_size = self._list_size
 
     # Apply truncation or padding to align tensor shape.
@@ -331,18 +331,20 @@ class _SequenceExampleParser(_RankingDataParser):
       tensor.get_shape().assert_has_rank(3)
       size = tf.reshape(sizes[k], [-1, 1, 1])  # [batch_size, 1, 1]
       rank = tf.reshape(
-          tf.tile(tf.range(tf.shape(tensor)[1]), [tf.shape(tensor)[0]]),
-          tf.shape(tensor))
-      tensor = tf.where(
+          tf.tile(
+              tf.range(tf.shape(input=tensor)[1]), [tf.shape(input=tensor)[0]]),
+          tf.shape(input=tensor))
+      tensor = tf.compat.v1.where(
           tf.less(rank, tf.cast(size, tf.int32)), tensor,
-          tf.fill(tf.shape(tensor), tf.cast(v, tensor.dtype)))
+          tf.fill(tf.shape(input=tensor), tf.cast(v, tensor.dtype)))
       examples[k] = tensor
 
     list_size_arg = list_size
     if list_size is None:
       # Use dynamic list_size. This is needed to pad missing feature_list.
       list_size_dynamic = tf.reduce_max(
-          tf.stack([tf.shape(t)[1] for t in six.itervalues(examples)]))
+          input_tensor=tf.stack(
+              [tf.shape(input=t)[1] for t in six.itervalues(examples)]))
       list_size = list_size_dynamic
 
     # Collect features. Truncate or pad example features to normalize the tensor

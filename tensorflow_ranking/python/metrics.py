@@ -77,7 +77,7 @@ def make_ranking_metric_fn(metric_key,
     """Get weights tensor from features and reshape it to 2-D if necessary."""
     weights = None
     if weights_feature_name:
-      weights = tf.convert_to_tensor(features[weights_feature_name])
+      weights = tf.convert_to_tensor(value=features[weights_feature_name])
       # Convert weights to a 2-D Tensor.
       weights = utils.reshape_to_2d(weights)
     return weights
@@ -204,8 +204,8 @@ def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
 
   # All labels should be >= 0. Invalid entries are reset.
   is_label_valid = utils.is_label_valid(labels)
-  labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
-  predictions = tf.where(
+  labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
+  predictions = tf.compat.v1.where(
       is_label_valid, predictions, -1e-6 * tf.ones_like(predictions) +
       tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
   return labels, predictions, example_weights, topn

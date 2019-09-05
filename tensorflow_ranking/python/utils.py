@@ -36,7 +36,7 @@ def _to_nd_indices(indices):
   """
   indices.get_shape().assert_has_rank(2)
   batch_ids = tf.ones_like(indices) * tf.expand_dims(
-      tf.range(tf.shape(indices)[0]), 1)
+      tf.range(tf.shape(input=indices)[0]), 1)
   return tf.stack([batch_ids, indices], axis=-1)
 
 
@@ -60,7 +60,7 @@ def sort_by_scores(scores, features_list, topn=None, shuffle_ties=True):
   Returns:
     A list of `Tensor`s as the list of sorted features by `scores`.
   """
-  with tf.name_scope(name='sort_by_scores'):
+  with tf.compat.v1.name_scope(name='sort_by_scores'):
     scores = tf.cast(scores, tf.float32)
     scores.get_shape().assert_has_rank(2)
     list_size = tf.shape(input=scores)[1]
@@ -69,7 +69,7 @@ def sort_by_scores(scores, features_list, topn=None, shuffle_ties=True):
     topn = tf.minimum(topn, list_size)
     if shuffle_ties:
       shuffle_ind = _to_nd_indices(
-          tf.argsort(tf.random.uniform(tf.shape(scores)), stable=True))
+          tf.argsort(tf.random.uniform(tf.shape(input=scores)), stable=True))
       scores = tf.gather_nd(scores, shuffle_ind)
       features_list = [tf.gather_nd(f, shuffle_ind) for f in features_list]
     _, indices = tf.math.top_k(scores, topn, sorted=True)
@@ -99,7 +99,7 @@ def organize_valid_indices(is_valid, shuffle=True, seed=None):
     [batch_size, list_size] tensor. The values in the last dimension are the
     indices for an element in the input tensor.
   """
-  with tf.name_scope(name='organize_valid_indices'):
+  with tf.compat.v1.name_scope(name='organize_valid_indices'):
     is_valid = tf.convert_to_tensor(value=is_valid)
     is_valid.get_shape().assert_has_rank(2)
     output_shape = tf.shape(input=is_valid)
@@ -111,7 +111,7 @@ def organize_valid_indices(is_valid, shuffle=True, seed=None):
           tf.ones_like(is_valid, tf.float32) * tf.reverse(
               tf.cast(tf.range(output_shape[1]), dtype=tf.float32), [-1]))
 
-    rand = tf.where(is_valid, values, tf.ones(output_shape) * -1e-6)
+    rand = tf.compat.v1.where(is_valid, values, tf.ones(output_shape) * -1e-6)
     # shape(indices) = [batch_size, list_size]
     indices = tf.argsort(rand, direction='DESCENDING', stable=True)
     return _to_nd_indices(indices)
@@ -194,18 +194,18 @@ def inverse_max_dcg(labels,
       tf.cast(rank, dtype=tf.float32))
   discounted_gain = tf.reduce_sum(
       input_tensor=discounted_gain, axis=1, keepdims=True)
-  return tf.where(
+  return tf.compat.v1.where(
       tf.greater(discounted_gain, 0.), 1. / discounted_gain,
       tf.zeros_like(discounted_gain))
 
 
 def reshape_to_2d(tensor):
   """Converts the given `tensor` to a 2-D `Tensor`."""
-  with tf.name_scope(name='reshape_to_2d'):
+  with tf.compat.v1.name_scope(name='reshape_to_2d'):
     rank = tensor.shape.rank if tensor.shape is not None else None
     if rank is not None and rank != 2:
       if rank >= 3:
-        tensor = tf.reshape(tensor, tf.shape(tensor)[0:2])
+        tensor = tf.reshape(tensor, tf.shape(input=tensor)[0:2])
       else:
         while tensor.shape.rank < 2:
           tensor = tf.expand_dims(tensor, -1)
