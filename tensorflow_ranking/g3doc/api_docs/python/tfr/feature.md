@@ -5,10 +5,16 @@
 
 # Module: tfr.feature
 
-Feature transformations for ranking library.
+<table class="tfo-notebook-buttons tfo-api" align="left">
 
-Defined in
-[`python/feature.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/feature.py).
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/feature.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
+Feature transformations for ranking library.
 
 <!-- Placeholder for "Used in" -->
 

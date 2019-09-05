@@ -5,10 +5,16 @@
 
 # Module: tfr.model
 
-Tensorflow Ranking model library.
+<table class="tfo-notebook-buttons tfo-api" align="left">
 
-Defined in
-[`python/model.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/model.py).
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/model.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
+Tensorflow Ranking model library.
 
 <!-- Placeholder for "Used in" -->
 

@@ -5,6 +5,15 @@
 
 # tfr.data.build_ranking_dataset_with_parsing_fn
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Builds a ranking tf.dataset using the provided `parsing_fn`.
 
 ```python
@@ -21,12 +30,10 @@ tfr.data.build_ranking_dataset_with_parsing_fn(
     prefetch_buffer_size=32,
     reader_num_threads=10,
     sloppy_ordering=True,
-    drop_final_batch=False
+    drop_final_batch=False,
+    num_parser_threads=None
 )
 ```
-
-Defined in
-[`python/data.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py).
 
 <!-- Placeholder for "Used in" -->
 
@@ -64,6 +71,8 @@ Defined in
     evenly divide the input dataset size, the final smaller batch will be
     dropped. Defaults to `True`. If `True`, the batch_size can be statically
     inferred.
+*   <b>`num_parser_threads`</b>: (int) Optional number of threads to be used
+    with dataset.map() when invoking parsing_fn.
 
 #### Returns:
 

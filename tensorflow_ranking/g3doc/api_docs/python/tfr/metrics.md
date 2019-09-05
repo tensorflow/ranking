@@ -5,10 +5,16 @@
 
 # Module: tfr.metrics
 
-Defines ranking metrics as TF ops.
+<table class="tfo-notebook-buttons tfo-api" align="left">
 
-Defined in
-[`python/metrics.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py).
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
+Defines ranking metrics as TF ops.
 
 <!-- Placeholder for "Used in" -->
 

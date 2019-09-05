@@ -5,6 +5,15 @@
 
 # tfr.metrics.mean_reciprocal_rank
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Computes mean reciprocal rank (MRR).
 
 ```python
@@ -15,9 +24,6 @@ tfr.metrics.mean_reciprocal_rank(
     name=None
 )
 ```
-
-Defined in
-[`python/metrics.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py).
 
 <!-- Placeholder for "Used in" -->
 

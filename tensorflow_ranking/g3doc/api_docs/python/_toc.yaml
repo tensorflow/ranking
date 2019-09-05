@@ -46,6 +46,8 @@ toc:
       path: /ranking/api_docs/python/tfr/head
     - title: create_ranking_head
       path: /ranking/api_docs/python/tfr/head/create_ranking_head
+    - title: LossSpec
+      path: /ranking/api_docs/python/tfr/head/LossSpec
   - title: tfr.losses
     section:
     - title: Overview

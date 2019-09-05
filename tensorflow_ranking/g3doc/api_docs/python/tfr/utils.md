@@ -5,10 +5,16 @@
 
 # Module: tfr.utils
 
-Utility functions for ranking library.
+<table class="tfo-notebook-buttons tfo-api" align="left">
 
-Defined in
-[`python/utils.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py).
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
+Utility functions for ranking library.
 
 <!-- Placeholder for "Used in" -->
 

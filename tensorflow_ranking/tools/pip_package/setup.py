@@ -28,7 +28,7 @@ DOCLINES = __doc__.split('\n')
 # This version string is semver compatible, but incompatible with pip.
 # For pip, we will remove all '-' characters from this string, and use the
 # result for pip.
-_VERSION = '0.1.3'
+_VERSION = '0.1.4'
 
 REQUIRED_PACKAGES = [
     'absl-py >= 0.1.6', 'numpy >= 1.13.3', 'six >= 1.10.0',

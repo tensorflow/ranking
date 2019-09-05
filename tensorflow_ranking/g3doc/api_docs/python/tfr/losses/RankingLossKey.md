@@ -1,6 +1,7 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.losses.RankingLossKey" />
 <meta itemprop="path" content="Stable" />
+<meta itemprop="property" content="APPROX_MRR_LOSS"/>
 <meta itemprop="property" content="APPROX_NDCG_LOSS"/>
 <meta itemprop="property" content="LIST_MLE_LOSS"/>
 <meta itemprop="property" content="MEAN_SQUARED_LOSS"/>
@@ -13,17 +14,24 @@
 
 # tfr.losses.RankingLossKey
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 ## Class `RankingLossKey`
 
 Ranking loss key strings.
-
-Defined in
-[`python/losses.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py).
 
 <!-- Placeholder for "Used in" -->
 
 ## Class Members
 
+*   `APPROX_MRR_LOSS = 'approx_mrr_loss'` <a id="APPROX_MRR_LOSS"></a>
 *   `APPROX_NDCG_LOSS = 'approx_ndcg_loss'` <a id="APPROX_NDCG_LOSS"></a>
 *   `LIST_MLE_LOSS = 'list_mle_loss'` <a id="LIST_MLE_LOSS"></a>
 *   `MEAN_SQUARED_LOSS = 'mean_squared_loss'` <a id="MEAN_SQUARED_LOSS"></a>

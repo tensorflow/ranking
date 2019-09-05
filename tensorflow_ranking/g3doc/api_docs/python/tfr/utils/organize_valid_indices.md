@@ -5,6 +5,15 @@
 
 # tfr.utils.organize_valid_indices
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Organizes indices in such a way that valid items appear first.
 
 ```python
@@ -14,9 +23,6 @@ tfr.utils.organize_valid_indices(
     seed=None
 )
 ```
-
-Defined in
-[`python/utils.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py).
 
 <!-- Placeholder for "Used in" -->
 

@@ -5,18 +5,25 @@
 
 # tfr.utils.sort_by_scores
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Sorts example features according to per-example scores.
 
 ```python
 tfr.utils.sort_by_scores(
     scores,
     features_list,
-    topn=None
+    topn=None,
+    shuffle_ties=True
 )
 ```
-
-Defined in
-[`python/utils.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py).
 
 <!-- Placeholder for "Used in" -->
 
@@ -27,6 +34,8 @@ Defined in
 *   <b>`features_list`</b>: A list of `Tensor`s with the same shape as scores to
     be sorted.
 *   <b>`topn`</b>: An integer as the cutoff of examples in the sorted list.
+*   <b>`shuffle_ties`</b>: A boolean. If True, randomly shuffle before the
+    sorting.
 
 #### Returns:
 

@@ -7,10 +7,16 @@
 
 # Module: tfr.data
 
-Input data parsing for tf-ranking library.
+<table class="tfo-notebook-buttons tfo-api" align="left">
 
-Defined in
-[`python/data.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py).
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
+Input data parsing for tf-ranking library.
 
 <!-- Placeholder for "Used in" -->
 

@@ -5,14 +5,20 @@
 
 # tfr.losses.create_p_list_mle_lambda_weight
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Creates _LambdaWeight based on Position-Aware ListMLE paper.
 
 ```python
 tfr.losses.create_p_list_mle_lambda_weight(list_size)
 ```
-
-Defined in
-[`python/losses.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py).
 
 <!-- Placeholder for "Used in" -->
 

@@ -1,5 +1,7 @@
 # All symbols in TensorFlow Ranking
 
+## Primary symbols
+
 *   <a href="./tfr.md"><code>tfr</code></a>
 *   <a href="./tfr/data.md"><code>tfr.data</code></a>
 *   <a href="./tfr/data/build_ranking_dataset.md"><code>tfr.data.build_ranking_dataset</code></a>
@@ -18,6 +20,7 @@
 *   <a href="./tfr/feature/encode_pointwise_features.md"><code>tfr.feature.encode_pointwise_features</code></a>
 *   <a href="./tfr/feature/make_identity_transform_fn.md"><code>tfr.feature.make_identity_transform_fn</code></a>
 *   <a href="./tfr/head.md"><code>tfr.head</code></a>
+*   <a href="./tfr/head/LossSpec.md"><code>tfr.head.LossSpec</code></a>
 *   <a href="./tfr/head/create_ranking_head.md"><code>tfr.head.create_ranking_head</code></a>
 *   <a href="./tfr/losses.md"><code>tfr.losses</code></a>
 *   <a href="./tfr/losses/DCGLambdaWeight.md"><code>tfr.losses.DCGLambdaWeight</code></a>

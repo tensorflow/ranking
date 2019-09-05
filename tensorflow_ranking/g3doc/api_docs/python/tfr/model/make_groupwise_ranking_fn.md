@@ -5,6 +5,15 @@
 
 # tfr.model.make_groupwise_ranking_fn
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/model.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Builds an `Estimator` model_fn for groupwise comparison ranking models.
 
 ```python
@@ -15,9 +24,6 @@ tfr.model.make_groupwise_ranking_fn(
     transform_fn=None
 )
 ```
-
-Defined in
-[`python/model.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/model.py).
 
 <!-- Placeholder for "Used in" -->
 
@@ -30,7 +36,4 @@ Defined in
 
 #### Returns:
 
-An `Estimator` `model_fn` with the following signature: * Args: `features`: The
-raw features from input_fn. `labels`: A Tensor with shape [batch_size,
-list_size]. `mode`: No difference. `params`: No difference. `config`: No
-difference.. * Returns: `EstimatorSpec`.
+See `_make_model_fn`.

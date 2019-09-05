@@ -8,16 +8,25 @@
 
 # tfr.losses.ListMLELambdaWeight
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 ## Class `ListMLELambdaWeight`
 
 LambdaWeight for ListMLE cost function.
 
-Defined in
-[`python/losses.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py).
-
 <!-- Placeholder for "Used in" -->
 
 <h2 id="__init__"><code>__init__</code></h2>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">View
+source</a>
 
 ```python
 __init__(rank_discount_fn)
@@ -35,6 +44,9 @@ Ranks are 1-based, not 0-based.
 
 <h3 id="individual_weights"><code>individual_weights</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">View
+source</a>
+
 ```python
 individual_weights(sorted_labels)
 ```
@@ -42,6 +54,9 @@ individual_weights(sorted_labels)
 See `_LambdaWeight`.
 
 <h3 id="pair_weights"><code>pair_weights</code></h3>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">View
+source</a>
 
 ```python
 pair_weights(sorted_labels)

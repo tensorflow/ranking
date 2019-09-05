@@ -5,6 +5,15 @@
 
 # tfr.data.build_ranking_serving_input_receiver_fn
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Returns a serving input receiver fn for a standard data format.
 
 ```python
@@ -17,9 +26,6 @@ tfr.data.build_ranking_serving_input_receiver_fn(
     default_batch_size=None
 )
 ```
-
-Defined in
-[`python/data.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py).
 
 <!-- Placeholder for "Used in" -->
 

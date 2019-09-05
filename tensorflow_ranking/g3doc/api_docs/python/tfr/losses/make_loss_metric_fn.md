@@ -5,6 +5,15 @@
 
 # tfr.losses.make_loss_metric_fn
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Factory method to create a metric based on a loss.
 
 ```python
@@ -15,9 +24,6 @@ tfr.losses.make_loss_metric_fn(
     name=None
 )
 ```
-
-Defined in
-[`python/losses.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py).
 
 <!-- Placeholder for "Used in" -->
 

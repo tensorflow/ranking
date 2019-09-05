@@ -5,6 +5,15 @@
 
 # tfr.data.libsvm_generator
 
+<table class="tfo-notebook-buttons tfo-api" align="left">
+
+<td>
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py">
+    <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
+    View source on GitHub
+  </a>
+</td></table>
+
 Parses a LibSVM-formatted input file and aggregates data points by qid.
 
 ```python
@@ -15,9 +24,6 @@ tfr.data.libsvm_generator(
     seed=None
 )
 ```
-
-Defined in
-[`python/data.py`](https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py).
 
 <!-- Placeholder for "Used in" -->
 
