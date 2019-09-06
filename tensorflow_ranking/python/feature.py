@@ -107,9 +107,9 @@ def encode_features(features,
 
 
 def encode_listwise_features(features,
-                             input_size,
                              context_feature_columns,
                              example_feature_columns,
+                             input_size=None,
                              mode=tf.estimator.ModeKeys.TRAIN,
                              scope=None):
   """Returns dense tensors from features using feature columns.
@@ -119,11 +119,12 @@ def encode_listwise_features(features,
       or `tf.SparseTensor`), possibly obtained from input_fn. For context
       features, the tensors are 2-D, while for example features the tensors are
       3-D.
-    input_size: (int) number of examples per query. This is the size of second
-      dimension of the Tensor corresponding to one of the example feature
-      columns.
     context_feature_columns: (dict) context feature names to columns.
     example_feature_columns: (dict) example feature names to columns.
+    input_size: [DEPRECATED: Use without this argument.] (int) number of
+      examples per query. If this is None, input_size is inferred as the size
+      of second dimension of the Tensor corresponding to one of the example
+      feature columns.
     mode: (`estimator.ModeKeys`) Specifies if this is training, evaluation or
       inference. See `ModeKeys`.
     scope: (str) variable scope for the per column input layers.
@@ -155,15 +156,17 @@ def encode_listwise_features(features,
   if example_feature_columns:
     example_specs = tf.feature_column.make_parse_example_spec(
         example_feature_columns.values())
+    example_name = next(six.iterkeys(example_specs))
+    batch_size = tf.shape(input=features[example_name])[0]
+    if input_size is None:
+      input_size = tf.shape(input=features[example_name])[1]
     # Reshape [batch_size, input_size] to [batch * input_size] so that
     # features are encoded.
-    batch_size = None
     reshaped_features = {}
     for name in example_specs:
       if name not in features:
         tf.compat.v1.logging.warn("Feature {} is not found.".format(name))
         continue
-      batch_size = tf.shape(input=features[name])[0]
       try:
         reshaped_features[name] = utils.reshape_first_ndims(
             features[name], 2, [batch_size * input_size])

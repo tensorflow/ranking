@@ -231,6 +231,56 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
                             example_features["utility"])
 
+  def test_encode_listwise_features_infer_input_size(self):
+    with tf.Graph().as_default():
+      # Batch size = 2, list_size = 2.
+      features = {
+          "query_length":
+              tf.convert_to_tensor(value=[[1], [2]]),
+          "utility":
+              tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
+          "unigrams":
+              tf.SparseTensor(
+                  indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
+                  values=["ranking", "regression", "classification", "ordinal"],
+                  dense_shape=[2, 2, 1])
+      }
+      context_feature_columns = {
+          "query_length":
+              feature_column.numeric_column(
+                  "query_length", shape=(1,), default_value=0, dtype=tf.int64)
+      }
+      example_feature_columns = {
+          "utility":
+              feature_column.numeric_column(
+                  "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
+          "unigrams":
+              feature_column.embedding_column(
+                  feature_column.categorical_column_with_vocabulary_list(
+                      "unigrams",
+                      vocabulary_list=[
+                          "ranking", "regression", "classification", "ordinal"
+                      ]),
+                  dimension=10)
+      }
+
+      context_features, example_features = feature_lib.encode_listwise_features(
+          features,
+          context_feature_columns=context_feature_columns,
+          example_feature_columns=example_feature_columns)
+      self.assertAllEqual(["query_length"], sorted(context_features))
+      self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
+      self.assertAllEqual([2, 2, 10],
+                          example_features["unigrams"].get_shape().as_list())
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
+        sess.run(tf.compat.v1.tables_initializer())
+        context_features, example_features = sess.run(
+            [context_features, example_features])
+        self.assertAllEqual([[1], [2]], context_features["query_length"])
+        self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
+                            example_features["utility"])
+
   def test_encode_listwise_features_renaming(self):
     """Tests for using different names in feature columns vs features."""
     with tf.Graph().as_default():

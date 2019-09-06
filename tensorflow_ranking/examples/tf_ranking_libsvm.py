@@ -252,11 +252,8 @@ def make_transform_fn():
               mode=mode,
               scope="transform_layer"))
     else:
-      example_name = next(six.iterkeys(example_feature_columns()))
-      input_size = tf.shape(input=features[example_name])[1]
       context_features, example_features = tfr.feature.encode_listwise_features(
           features=features,
-          input_size=input_size,
           context_feature_columns=None,
           example_feature_columns=example_feature_columns(),
           mode=mode,
