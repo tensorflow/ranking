@@ -439,7 +439,8 @@ class _MultiTaskGroupwiseRankingModel(_GroupwiseRankingModel):
     # examples are scored by `_score_fn` and scores for individual examples are
     # accumulated into logits.
     with tf.compat.v1.name_scope('groupwise_dnn_v2'):
-      batch_size, list_size, is_valid = _infer_sizes(example_features, labels)
+      label_name = next(six.iterkeys(labels))
+      batch_size, list_size, is_valid = _infer_sizes(example_features, labels[label_name])
       # For each example feature, assuming the shape is [batch_size, list_size,
       # feature_size], the groups are formed along the 2nd dim. Each group has a
       # 'group_size' number of indices in [0, list_size). Based on these
@@ -477,7 +478,7 @@ class _MultiTaskGroupwiseRankingModel(_GroupwiseRankingModel):
             tf.expand_dims(self._indices_mask, 2),
             tf.zeros([tf.shape(input=scores[task_name])[2]], tf.int32),
             axis=2)
-          scores[task_name] = tf.compat.v1.where(scores_mask, scores, tf.zeros_like(scores[task_name]))
+          scores[task_name] = tf.compat.v1.where(scores_mask, scores[task_name], tf.zeros_like(scores[task_name]))
           # Scatter scores from [batch_size, num_groups, logits_size] to
           # [batch_size, list_size].
           logits[task_name] = tf.scatter_nd(self._score_scatter_indices, scores[task_name],
@@ -592,5 +593,5 @@ def make_multi_task_groupwise_ranking_fn(group_score_fn,
 
   tf.compat.v1.logging.info('Building multi-task groupwise ranking model.')
   ranking_model = _MultiTaskGroupwiseRankingModel(group_score_fn, group_size,
-                                                  transform_fn, multi_task_config)
+                                                  multi_task_config, transform_fn)
   return _make_multi_task_model_fn(ranking_model, ranking_head, train_op_fn)

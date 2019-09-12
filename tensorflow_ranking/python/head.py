@@ -188,13 +188,16 @@ class _RankingHead(object):
       ValueError: If, in TRAIN mode, both `train_op_fn` and `optimizer`
         specified in the init function are `None` or if both are set.
     """
+    if train_op_fn:
+      self._train_op_fn = train_op_fn
     logits = tf.convert_to_tensor(value=logits)
+    predictions = {'logits': tf.convert_to_tensor(value=logits)}
     # Predict.
     with tf.compat.v1.name_scope(self._name, 'head'):
       if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(
             mode=mode,
-            predictions=logits,
+            predictions=predictions,
             export_outputs={
                 _DEFAULT_SERVING_KEY:
                     tf.estimator.export.RegressionOutput(logits),
@@ -222,7 +225,7 @@ class _RankingHead(object):
         eval_metric_ops.update(self._labels_and_logits_metrics(labels, logits))
         return tf.estimator.EstimatorSpec(
             mode=mode,
-            predictions=logits,
+            predictions=predictions,
             loss=regularized_training_loss,
             eval_metric_ops=eval_metric_ops)
 
@@ -240,6 +243,6 @@ class _RankingHead(object):
         raise ValueError('train_op_fn and optimizer cannot both be None.')
       return tf.estimator.EstimatorSpec(
           mode=mode,
-          predictions=logits,
+          predictions=predictions,
           loss=regularized_training_loss,
           train_op=train_op)

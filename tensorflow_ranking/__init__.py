@@ -19,3 +19,4 @@
 
 from tensorflow_ranking.python import *  # pylint: disable=wildcard-import
 from tensorflow_ranking.python.version import __version__
+from tensorflow_ranking.examples import *  # pylint: disable=wildcard-import

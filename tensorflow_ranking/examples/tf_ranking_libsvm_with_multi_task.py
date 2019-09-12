@@ -80,6 +80,11 @@ flags.DEFINE_float("learning_rate", 0.01, "Learning rate for optimizer.")
 flags.DEFINE_float("dropout_rate", 0.5, "The dropout rate before output layer.")
 flags.DEFINE_list("hidden_layer_dims", ["256", "128", "64"],
                   "Sizes for hidden layers.")
+flags.DEFINE_list("shared_layer_dims", ["256"],
+                  "Sizes for hidden layers.")
+flags.DEFINE_list("exclusive_layer_dims", ["128", "64"],
+                  "Sizes for hidden layers.")
+
 
 flags.DEFINE_integer("num_features", 136, "Number of features per document.")
 flags.DEFINE_integer("list_size", 100, "List size used for training.")
@@ -125,7 +130,7 @@ def load_libsvm_data(path, list_size):
     qid = tokens[1]
     kv_pairs = [kv.split(":") for kv in tokens[2:]]
     features = {k: float(v) for (k, v) in kv_pairs}
-    return qid, features, {'label': label} # multi_task accept label as dict
+    return qid, features, label
 
   tf.compat.v1.logging.info("Loading data from {}".format(path))
 
@@ -172,7 +177,12 @@ def load_libsvm_data(path, list_size):
   # Convert everything to np.array.
   for k in feature_map:
     feature_map[k] = np.array(feature_map[k])
-  return feature_map, np.array(label_list)
+  # multi_task accept label as dict
+  label_dict = {
+      'ctr': np.array(label_list),
+      'cvr': np.array(label_list),
+  }
+  return feature_map, label_dict
 
 
 def get_train_inputs(features, labels, batch_size):
@@ -186,13 +196,16 @@ def get_train_inputs(features, labels, batch_size):
         for k, v in six.iteritems(features)
     }
     labels_placeholder = {
-        'label' : tf.compat.v1.placeholder(labels.dtype, labels.shape)
+        k : tf.compat.v1.placeholder(v.dtype, v.shape)
+        for k, v in six.iteritems(labels)
     }
     dataset = tf.data.Dataset.from_tensor_slices(
         (features_placeholder, labels_placeholder))
     dataset = dataset.shuffle(1000).repeat().batch(batch_size)
     iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
-    feed_dict = {labels_placeholder: labels}
+    feed_dict = {}
+    feed_dict.update(
+        {labels_placeholder[k]: labels[k] for k in labels_placeholder})
     feed_dict.update(
         {features_placeholder[k]: features[k] for k in features_placeholder})
     iterator_initializer_hook.iterator_initializer_fn = (
@@ -213,12 +226,15 @@ def get_eval_inputs(features, labels):
         for k, v in six.iteritems(features)
     }
     labels_placeholder = {
-        'label' : tf.compat.v1.placeholder(labels.dtype, labels.shape)
+        k : tf.compat.v1.placeholder(v.dtype, v.shape)
+        for k, v in six.iteritems(labels)
     }
     dataset = tf.data.Dataset.from_tensors(
         (features_placeholder, labels_placeholder))
     iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
-    feed_dict = {labels_placeholder: labels}
+    feed_dict = {}
+    feed_dict.update(
+        {labels_placeholder[k]: labels[k] for k in labels_placeholder})
     feed_dict.update(
         {features_placeholder[k]: features[k] for k in features_placeholder})
     iterator_initializer_hook.iterator_initializer_fn = (
@@ -268,8 +284,20 @@ def make_transform_fn():
   return _transform_fn
 
 
-def make_score_fn():
+def make_score_fn(multi_task_config):
   """Returns a groupwise score fn to build `EstimatorSpec`."""
+
+  def build_layers(x, layer_config, is_training):
+      cur_layer = x
+      with tf.name_scope("nn_layers"):
+          for i, layer_width in enumerate(int(d) for d in layer_config):
+              cur_layer = tf.layers.dense(cur_layer,
+                                          kernel_initializer=tf.glorot_normal_initializer(),
+                                          units=layer_width)
+              cur_layer = tf.nn.relu(cur_layer)
+              tf.summary.scalar("fully_connected_{}_sparsity".format(i),
+                                tf.nn.zero_fraction(cur_layer))
+      return cur_layer
 
   def _score_fn(unused_context_features, group_features, mode, unused_params,
                 unused_config):
@@ -288,19 +316,23 @@ def make_score_fn():
                                   tf.reduce_min(input_tensor=input_layer))
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+
     cur_layer = tf.compat.v1.layers.batch_normalization(
         input_layer, training=is_training)
-    for i, layer_width in enumerate(int(d) for d in FLAGS.hidden_layer_dims):
-      cur_layer = tf.compat.v1.layers.dense(cur_layer, units=layer_width)
-      cur_layer = tf.compat.v1.layers.batch_normalization(
-          cur_layer, training=is_training)
-      cur_layer = tf.nn.relu(cur_layer)
-      tf.compat.v1.summary.scalar("fully_connected_{}_sparsity".format(i),
-                                  tf.nn.zero_fraction(cur_layer))
-    cur_layer = tf.compat.v1.layers.dropout(
-        cur_layer, rate=FLAGS.dropout_rate, training=is_training)
-    logits = tf.compat.v1.layers.dense(cur_layer, units=FLAGS.group_size)
-    return logits
+    shared_layers = build_layers(cur_layer, FLAGS.shared_layer_dims, is_training)
+
+    logits_dict = {}
+    for task_conf in multi_task_config:
+        task_name = task_conf['name']
+        with tf.name_scope("{}_exclusive_layer".format(task_name)):
+            cur_layer = build_layers(shared_layers, FLAGS.exclusive_layer_dims, is_training)
+        cur_layer = tf.layers.dropout(
+            cur_layer, rate=FLAGS.dropout_rate, training=is_training)
+        logits = tf.layers.dense(cur_layer,
+                                 kernel_initializer=tf.glorot_normal_initializer(),
+                                 units=FLAGS.group_size, name=task_name + "_logit")
+        logits_dict.update({task_name: logits})
+    return logits_dict
 
   return _score_fn
 
@@ -352,18 +384,14 @@ def train_and_eval():
       {
           'name': 'ctr',
           'loss': 'pairwise_logistic_loss',
-          'pred_weight': 0.8,
           'weight': 1.0,
           'use_lambda': True,
-          'label_key': 'label',
           'loss_variable': 'pairwise_logistic_loss/weighted_loss/value:0'
       },
       {
           'name': 'cvr',
           'loss': 'pairwise_logistic_loss',
-          'pred_weight': 1.0,
           'weight': 1.0,
-          'label_key': 'label',
           'use_lambda': True,
           'loss_variable': 'pairwise_logistic_loss/weighted_loss/value:0'
       }
@@ -374,7 +402,7 @@ def train_and_eval():
 
   estimator = tf.estimator.Estimator(
       model_fn=tfr.model.make_multi_task_groupwise_ranking_fn(
-          group_score_fn=make_score_fn(),
+          group_score_fn=make_score_fn(multi_task_config),
           group_size=FLAGS.group_size,
           train_op_fn=_train_op_fn,
           multi_task_config=multi_task_config,
