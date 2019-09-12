@@ -25,11 +25,12 @@ from tensorflow_ranking.python import losses
 from tensorflow_ranking.python import metrics
 from tensorflow_ranking.python import model
 from tensorflow_ranking.python import utils
+from tensorflow_ranking.python import multi_head
 
 from tensorflow.python.util.all_util import remove_undocumented  # pylint: disable=g-bad-import-order
 
 _allowed_symbols = [
-    'data', 'feature', 'head', 'losses', 'metrics', 'model', 'utils'
+    'data', 'feature', 'head', 'losses', 'metrics', 'model', 'utils', 'multi_head'
 ]
 
 remove_undocumented(__name__, _allowed_symbols)

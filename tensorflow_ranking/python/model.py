@@ -327,6 +327,30 @@ class _GroupwiseRankingModel(_RankingModel):
     self._indices_mask = tf.concat(indices_mask_list, 1)
     self._score_scatter_indices = self._feature_gather_indices
 
+  def _prepare_group_features(self, context_features, example_features, num_groups, batch_size):
+
+    with tf.compat.v1.name_scope('group_features'):
+      large_batch_context_features = {}
+      for name, value in six.iteritems(context_features):
+        # [batch_size, 1, ...].
+        value = tf.expand_dims(value, axis=1)
+        # [batch_size, num_groups, ...].
+        value = tf.gather(value, tf.zeros([num_groups], tf.int32), axis=1)
+        # [batch_size * num_groups, ...]
+        large_batch_context_features[name] = utils.reshape_first_ndims(
+          value, 2, [batch_size * num_groups])
+
+      # For example feature, we have shape [batch_size * num_groups,
+      # group_size, ...].
+      large_batch_group_features = {}
+      for name, value in six.iteritems(example_features):
+        # [batch_size, num_groups, group_size, ...].
+        value = tf.gather_nd(value, self._feature_gather_indices)
+        # [batch_size * num_groups, group_size, ...].
+        large_batch_group_features[name] = utils.reshape_first_ndims(
+          value, 3, [batch_size * num_groups, self._group_size])
+      return large_batch_context_features, large_batch_group_features
+
   def _compute_logits_impl(self, context_features, example_features, labels,
                            mode, params, config):
     # Scatter/Gather per-example scores through groupwise comparison. Each
@@ -345,28 +369,10 @@ class _GroupwiseRankingModel(_RankingModel):
       self._update_scatter_gather_indices(is_valid, mode, params)
       num_groups = tf.shape(input=self._indices_mask)[1]
 
-      with tf.compat.v1.name_scope('group_features'):
-        # For context features, We have shape [batch_size * num_groups, ...].
-        large_batch_context_features = {}
-        for name, value in six.iteritems(context_features):
-          # [batch_size, 1, ...].
-          value = tf.expand_dims(value, axis=1)
-          # [batch_size, num_groups, ...].
-          value = tf.gather(value, tf.zeros([num_groups], tf.int32), axis=1)
-          # [batch_size * num_groups, ...]
-          large_batch_context_features[name] = utils.reshape_first_ndims(
-              value, 2, [batch_size * num_groups])
-
-        # For example feature, we have shape [batch_size * num_groups,
-        # group_size, ...].
-        large_batch_group_features = {}
-        for name, value in six.iteritems(example_features):
-          # [batch_size, num_groups, group_size, ...].
-          value = tf.gather_nd(value, self._feature_gather_indices)
-          # [batch_size * num_groups, group_size, ...].
-          large_batch_group_features[name] = utils.reshape_first_ndims(
-              value, 3, [batch_size * num_groups, self._group_size])
-
+      large_batch_context_features, large_batch_group_features = self._prepare_group_features(context_features,
+                                                                                              example_features,
+                                                                                              num_groups,
+                                                                                              batch_size)
       # Do the inference and get scores for the large batch of [batch_size *
       # num_groups, logits_size] and reshape them to [batch_size, num_groups,
       # logits_size].
@@ -393,6 +399,94 @@ class _GroupwiseRankingModel(_RankingModel):
                                [batch_size, list_size])
         # Use average.
         logits = tf.compat.v1.div_no_nan(logits, counts)
+    return logits
+
+
+class _MultiTaskGroupwiseRankingModel(_GroupwiseRankingModel):
+  """Multi-Task Ranking model for groupwise scoring functions."""
+
+  def __init__(self, group_score_fn, group_size, multi_task_config, transform_fn=None):
+    """Constructor for groupwise ranking model.
+
+    Args:
+      group_score_fn: A scoring function for a `group_size` number of examples
+        with the following signature:
+        * Args:
+          `context_features`: see `_GrouwiseRankingModel`
+          `group_features`: see `_GrouwiseRankingModel`
+          `mode`: see `_GroupwiseRankingModel`
+          `params`: see `_GroupwiseRankingModel`
+          `config`: see `_GroupwiseRankingModel`
+        * Returns: Tensor of shape [batch_size, group_size] that contains a
+          score for each example.
+      group_size: see `_GroupwiseRankingModel`
+      transform_fn: See `_RankingModel`.
+      multi_task_config: A dict describe multi-class information
+
+    Raises:
+      ValueError: when group_size is invalid.
+    """
+    super(_MultiTaskGroupwiseRankingModel, self).__init__(group_score_fn, group_size, transform_fn)
+
+    if multi_task_config == {}:
+      raise ValueError('multi_task config is empty')
+    self._multi_task_config = multi_task_config
+
+  def _compute_logits_impl(self, context_features, example_features, labels,
+                           mode, params, config):
+    # Scatter/Gather per-example scores through groupwise comparison. Each
+    # instance in a mini-batch will form a number of groups. Each group of
+    # examples are scored by `_score_fn` and scores for individual examples are
+    # accumulated into logits.
+    with tf.compat.v1.name_scope('groupwise_dnn_v2'):
+      batch_size, list_size, is_valid = _infer_sizes(example_features, labels)
+      # For each example feature, assuming the shape is [batch_size, list_size,
+      # feature_size], the groups are formed along the 2nd dim. Each group has a
+      # 'group_size' number of indices in [0, list_size). Based on these
+      # indices, we can gather the example feature into a sub-tensor for each
+      # group. The total number of groups we have for a mini-batch is batch_size
+      # * num_groups. Inside each group, we have a 'group_size' number of
+      # examples.
+      self._update_scatter_gather_indices(is_valid, mode, params)
+      num_groups = tf.shape(input=self._indices_mask)[1]
+
+      large_batch_context_features, large_batch_group_features = self._prepare_group_features(context_features,
+                                                                                              example_features,
+                                                                                              num_groups,
+                                                                                              batch_size)
+
+      # Do the inference and get scores for the large batch of [batch_size *
+      # num_groups, logits_size] and reshape them to [batch_size, num_groups,
+      # logits_size].
+      with tf.compat.v1.variable_scope('group_score'):
+        scores = self._score_fn(large_batch_context_features,
+                                large_batch_group_features, mode, params,
+                                config)
+        if not isinstance(scores, dict):
+          raise ValueError("return value of _score_fn should be dict "
+                           "for multi-task model")
+        for k,v in scores.iteritems():
+          scores[k] = tf.reshape(v, tf.shape(input=self._score_scatter_indices)[0:3])
+
+      logits = {}
+      for task_config in self._multi_task_config:
+        task_name = task_config['name']
+        with tf.compat.v1.name_scope('accumulate_scores'):
+          # Reset invalid scores to 0 based on mask.
+          scores_mask = tf.gather(
+            tf.expand_dims(self._indices_mask, 2),
+            tf.zeros([tf.shape(input=scores[task_name])[2]], tf.int32),
+            axis=2)
+          scores[task_name] = tf.compat.v1.where(scores_mask, scores, tf.zeros_like(scores[task_name]))
+          # Scatter scores from [batch_size, num_groups, logits_size] to
+          # [batch_size, list_size].
+          logits[task_name] = tf.scatter_nd(self._score_scatter_indices, scores[task_name],
+                                            [batch_size, list_size])
+          counts = tf.scatter_nd(self._score_scatter_indices,
+                                 tf.cast(scores_mask, tf.float32),
+                                 [batch_size, list_size])
+          # Use average.
+          logits[task_name] = tf.compat.v1.div_no_nan(logits[task_name], counts)
     return logits
 
 
@@ -445,3 +539,58 @@ def make_groupwise_ranking_fn(group_score_fn,
   ranking_model = _GroupwiseRankingModel(group_score_fn, group_size,
                                          transform_fn)
   return _make_model_fn(ranking_model, ranking_head)
+
+
+def _make_multi_task_model_fn(ranking_model, ranking_head, train_op_fn):
+  """A helper function to make an `Estimator` model_fn.
+
+  Args:
+    ranking_model: A `_RankingModel` object.
+    ranking_head: A `head._RankingHead` object.
+
+  Returns:
+    An `Estimator` `model_fn` with the following signature:
+    * Args:
+      `features`: The raw features from input_fn.
+      `labels`: A Tensor with shape [batch_size, list_size].
+      `mode`: No difference.
+      `params`: No difference.
+      `config`: No difference..
+    * Returns:
+      `EstimatorSpec`.
+  """
+
+  def _model_fn(features, labels, mode, params, config):
+    """Defines an `Estimator` `model_fn`."""
+    logits = ranking_model.compute_logits(features, labels, mode, params,
+                                          config)
+    return ranking_head.create_estimator_spec(
+      features=features, mode=mode, logits=logits, labels=labels, train_op_fn=train_op_fn)
+
+  return _model_fn
+
+
+def make_multi_task_groupwise_ranking_fn(group_score_fn,
+                                         group_size,
+                                         ranking_head,
+                                         train_op_fn,
+                                         multi_task_config,
+                                         transform_fn=None):
+  """Builds an `Estimator` model_fn for groupwise comparison ranking models.
+
+  Args:
+    group_score_fn: See `_GroupwiseRankingModel`.
+    group_size: See `_GroupwiseRankingModel`.
+    ranking_head: A `head._RankingHead` object.
+    train_op_fn:  A train_op function.
+    multi_task_config: See `_MultiTaskGroupwiseRankingModel`.
+    transform_fn: See `_GroupwiseRankingModel`.
+
+  Returns:
+    See `_make_model_fn`.
+  """
+
+  tf.compat.v1.logging.info('Building multi-task groupwise ranking model.')
+  ranking_model = _MultiTaskGroupwiseRankingModel(group_score_fn, group_size,
+                                                  transform_fn, multi_task_config)
+  return _make_multi_task_model_fn(ranking_model, ranking_head, train_op_fn)

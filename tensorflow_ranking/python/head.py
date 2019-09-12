@@ -47,7 +47,8 @@ def create_ranking_head(loss_fn,
                         eval_metric_fns=None,
                         optimizer=None,
                         train_op_fn=None,
-                        name=None):
+                        name=None,
+                        logits_dim=1):
   """A factory method to create `_RankingHead`.
 
   Args:
@@ -92,7 +93,8 @@ def create_ranking_head(loss_fn,
       eval_metric_fns=eval_metric_fns,
       optimizer=optimizer,
       train_op_fn=train_op_fn,
-      name=name)
+      name=name,
+      logits_dim=1)
 
 
 class _RankingHead(object):
@@ -103,13 +105,15 @@ class _RankingHead(object):
                eval_metric_fns=None,
                optimizer=None,
                train_op_fn=None,
-               name=None):
+               name=None,
+               logits_dim=1):
     """Constructor. See `create_ranking_head`."""
     self._loss_fn = loss_fn
     self._eval_metric_fns = eval_metric_fns or {}
     self._optimizer = optimizer
     self._train_op_fn = train_op_fn
     self._name = name
+    self.logits_dimension = logits_dim
 
   @property
   def name(self):
@@ -159,7 +163,8 @@ class _RankingHead(object):
                             mode,
                             logits,
                             labels=None,
-                            regularization_losses=None):
+                            regularization_losses=None,
+                            train_op_fn=None):
     """Returns an `EstimatorSpec`.
 
     Args:
