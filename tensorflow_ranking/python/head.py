@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import abc
 import collections
 import six
 import tensorflow as tf
@@ -95,7 +96,61 @@ def create_ranking_head(loss_fn,
       name=name)
 
 
-class _RankingHead(object):
+class _AbstractRankingHead(object):
+  """Interface for ranking head."""
+
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractproperty
+  def name(self):
+    """The head name."""
+    raise NotImplementedError('Calling an abstract method.')
+
+  @abc.abstractmethod
+  def create_estimator_spec(self,
+                            features,
+                            mode,
+                            logits,
+                            labels=None,
+                            regularization_losses=None):
+    """Returns an `EstimatorSpec`.
+
+    Args:
+      features: Input `dict` of `Tensor` or `SparseTensor` objects.
+      mode: Estimator's `ModeKeys`.
+      logits: A `Tensor` or a dict of (name, `Tensor`). Each `Tensor` has the
+        shape of [batch_size, D]. Each value is the ranking score of the
+        corresponding item. `D` is usually the `list_size`. It might be changed
+        when `mode` is `PREDICT`. When `logits` is a dict, it is for multi-task
+        setting.
+      labels: A `Tensor` or a dict of (name, `Tensor`) representing relevance
+        labels. Each `Tensor` has the same shape as `logits`. `labels` is
+        required argument when `mode` equals `TRAIN` or `EVAL`.
+      regularization_losses: A list of additional scalar losses to be added to
+        the training loss, such as regularization losses. These losses are
+        usually expressed as a batch average, so for best results users need to
+        set `loss_reduction=SUM_OVER_BATCH_SIZE` or
+        `loss_reduction=SUM_OVER_NONZERO_WEIGHTS` when creating the head to
+        avoid scaling errors.
+
+    Returns:
+      `EstimatorSpec`.
+    """
+    raise NotImplementedError('Calling an abstract method.')
+
+
+def _labels_and_logits_metrics(labels, logits, prefix=None):
+  """Returns metrics for labels and logits."""
+  is_label_valid = tf.reshape(tf.greater_equal(labels, 0.), [-1])
+  metrics_dict = {}
+  for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]:
+    metric_name = name if not prefix else '{}_{}'.format(prefix, name)
+    metrics_dict[metric_name] = tf.compat.v1.metrics.mean(
+        tf.boolean_mask(tensor=tf.reshape(tensor, [-1]), mask=is_label_valid))
+  return metrics_dict
+
+
+class _RankingHead(_AbstractRankingHead):
   """Interface for the head/top of a ranking model."""
 
   def __init__(self,
@@ -114,16 +169,6 @@ class _RankingHead(object):
   @property
   def name(self):
     return self._name
-
-  def _labels_and_logits_metrics(self, labels, logits):
-    """Returns metrics for labels and logits."""
-    is_label_valid = tf.reshape(tf.greater_equal(labels, 0.), [-1])
-    metrics_dict = {}
-    for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]:
-      metrics_dict[name] = tf.compat.v1.metrics.mean(
-          tf.boolean_mask(tensor=tf.reshape(tensor, [-1]), mask=is_label_valid))
-
-    return metrics_dict
 
   def create_loss(self, features, mode, logits, labels):
     """Returns a loss Tensor from provided logits.
@@ -160,29 +205,7 @@ class _RankingHead(object):
                             logits,
                             labels=None,
                             regularization_losses=None):
-    """Returns an `EstimatorSpec`.
-
-    Args:
-      features: Input `dict` of `Tensor` or `SparseTensor` objects.
-      mode: Estimator's `ModeKeys`.
-      logits: A `Tensor` with shape [batch_size, D]. Each value is the ranking
-        score of the corresponding item. `D` is usually the `list_size`. It
-        might be changed when `mode` is `PREDICT`.
-      labels: A `Tensor` of the same shape as `logits` representing relevance.
-        `labels` is required argument when `mode` equals `TRAIN` or `EVAL`.
-      regularization_losses: A list of additional scalar losses to be added to
-        the training loss, such as regularization losses. These losses are
-        usually expressed as a batch average, so for best results users need to
-        set `loss_reduction=SUM_OVER_BATCH_SIZE` or
-        `loss_reduction=SUM_OVER_NONZERO_WEIGHTS` when creating the head to
-        avoid scaling errors.
-
-    Returns:
-      `EstimatorSpec`.
-    Raises:
-      ValueError: If, in TRAIN mode, both `train_op_fn` and `optimizer`
-        specified in the init function are `None` or if both are set.
-    """
+    """See `_AbstractRankingHead`."""
     logits = tf.convert_to_tensor(value=logits)
     # Predict.
     with tf.compat.v1.name_scope(self._name, 'head'):
@@ -214,7 +237,8 @@ class _RankingHead(object):
             metric_fn(labels=labels, predictions=logits, features=features)
             for name, metric_fn in six.iteritems(self._eval_metric_fns)
         }
-        eval_metric_ops.update(self._labels_and_logits_metrics(labels, logits))
+        eval_metric_ops.update(
+            _labels_and_logits_metrics(labels, logits, self.name))
         return tf.estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,
