@@ -98,20 +98,21 @@ class _RankingModel(object):
     should be implemented in `_compute_logits_impl`. For example, in the
     simplest case, the logits contain a float value for each example and we also
     have a single label for each example. In a more advanced multi-task setting,
-    logits can contain a vector of floats for each example and so do the labels.
+    logits are a `dict` that maps task name to task-specific logits.
 
     Args:
       features: (dict) A dict of Tensors or SparseTensors of shape [batch_size,
         list_size, ...] for example features and shape [batch_size, ...] for
         context features.
-      labels: (Tensor) A dense Tensor representing relevance for the ranking
-        problem.
+      labels: (Tensor or dict) A dense Tensor representing relevance for the
+        ranking problem or a `dict` of Tensors in the multi-task setting.
       mode: See tf.estimator.ModeKeys.
       params: See tf.estimator model_fn. Hyperparameters for the model.
       config: See tf.estimator model_fn.
 
     Returns:
-      A Tensor representing the logits.
+      A dict of Tensors for multi-task or a Tensor for single task that
+      represents the logits.
     """
     with tf.compat.v1.name_scope('transform'):
       context_features, example_features = self._call_transform_fn(
@@ -245,6 +246,8 @@ def _infer_sizes(example_features, labels):
   """Infers batch_size, list_size, and is_valid based on inputs."""
   with tf.compat.v1.name_scope('infer_sizes'):
     if labels is not None:
+      if isinstance(labels, dict):
+        labels = next(six.itervalues(labels))
       batch_size, list_size = tf.unstack(tf.shape(input=labels))
       is_valid = utils.is_label_valid(labels)
     else:
@@ -284,8 +287,9 @@ class _GroupwiseRankingModel(_RankingModel):
             `Estimator` constructor.
           `config`: Optional configuration object, same value passed in the
             `Estimator` constructor.
-        * Returns: Tensor of shape [batch_size, group_size] that contains a
-          score for each example.
+        * Returns: A Tensor of shape [batch_size, group_size] that contains a
+          score for each example, or a `dict` of Tensors with the above shape in
+          multi-task setting.
       group_size: An integer denoting the number of examples in
         `group_score_fn`.
       transform_fn: See `_RankingModel`.
@@ -298,9 +302,11 @@ class _GroupwiseRankingModel(_RankingModel):
       raise ValueError('Invalid group_size %d' % group_size)
     self._group_size = group_size
     self._score_fn = group_score_fn
-    self._feature_gather_indices = None  # Internal.
-    self._score_scatter_indices = None  # Internal.
-    self._indices_mask = None  # Internal.
+
+    # Internal variables.
+    self._feature_gather_indices = None
+    self._score_scatter_indices = None
+    self._indices_mask = None
 
   def _update_scatter_gather_indices(self, is_valid, mode, params):
     """Updates the internal scatter/gather indices."""
@@ -374,25 +380,40 @@ class _GroupwiseRankingModel(_RankingModel):
         scores = self._score_fn(large_batch_context_features,
                                 large_batch_group_features, mode, params,
                                 config)
-        scores = tf.reshape(scores,
-                            tf.shape(input=self._score_scatter_indices)[0:3])
 
       with tf.compat.v1.name_scope('accumulate_scores'):
         # Reset invalid scores to 0 based on mask.
-        scores_mask = tf.gather(
+        scores_mask = tf.tile(
             tf.expand_dims(self._indices_mask, 2),
-            tf.zeros([tf.shape(input=scores)[2]], tf.int32),
-            axis=2)
-        scores = tf.compat.v1.where(scores_mask, scores, tf.zeros_like(scores))
-        # Scatter scores from [batch_size, num_groups, logits_size] to
-        # [batch_size, list_size].
-        logits = tf.scatter_nd(self._score_scatter_indices, scores,
-                               [batch_size, list_size])
+            tf.stack([1, 1,
+                      tf.shape(input=self._score_scatter_indices)[2]]),
+            'tile_scores_mask')
         counts = tf.scatter_nd(self._score_scatter_indices,
                                tf.cast(scores_mask, tf.float32),
                                [batch_size, list_size])
-        # Use average.
-        logits = tf.compat.v1.div_no_nan(logits, counts)
+
+        def _accumulate_scores(task_scores):
+          """A subroutine to accumulate scores for a single Tensor."""
+          task_scores = tf.reshape(
+              task_scores,
+              tf.shape(input=self._score_scatter_indices)[0:3])
+          task_scores = tf.compat.v1.where(scores_mask, task_scores,
+                                           tf.zeros_like(task_scores))
+          # Scatter scores from [batch_size, num_groups, group_size] to
+          # [batch_size, list_size].
+          task_logits = tf.scatter_nd(self._score_scatter_indices, task_scores,
+                                      [batch_size, list_size])
+          # Use average.
+          task_logits = tf.compat.v1.div_no_nan(task_logits, counts)
+          return task_logits
+
+        if isinstance(scores, dict):
+          logits = {}
+          for name, task_scores in six.iteritems(scores):
+            logits[name] = _accumulate_scores(task_scores)
+        else:
+          logits = _accumulate_scores(scores)
+
     return logits
 
 
@@ -407,7 +428,8 @@ def _make_model_fn(ranking_model, ranking_head):
     An `Estimator` `model_fn` with the following signature:
     * Args:
       `features`: The raw features from input_fn.
-      `labels`: A Tensor with shape [batch_size, list_size].
+      `labels`: A Tensor with shape [batch_size, list_size] or a dict of Tensors
+        in multi-task setting.
       `mode`: No difference.
       `params`: No difference.
       `config`: No difference..

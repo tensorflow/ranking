@@ -306,6 +306,53 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
             [1, 6, 2, 2])
         self.assertAllEqual(logits, [[8., 9., 7.]])
 
+  @parameterized.named_parameters(
+      ('mode_train', tf.estimator.ModeKeys.TRAIN),
+      ('mode_eval', tf.estimator.ModeKeys.EVAL),
+      ('mode_predict', tf.estimator.ModeKeys.PREDICT))
+  def test_compute_logits_multi_task(self, mode):
+    group_size = 2
+
+    def _multi_task_score_fn(context_features, group_features, mode, params,
+                             config):
+      del [mode, params, config]
+      # 'context': [batch_size * num_groups, 1]
+      # 'example_f1': [batch_size * num_groups, group_size, 1]
+      logits = tf.expand_dims(
+          context_features['context'], axis=1) + group_features['example_f1']
+      logits = tf.reshape(logits, [-1, group_size])
+      # Add the shape of the logits to differentiate number of shuffles.
+      return {
+          'task1': logits + tf.cast(tf.shape(input=logits)[0], tf.float32),
+          'task2': logits + tf.cast(tf.shape(input=logits)[0], tf.float32) + 1,
+      }
+
+    with tf.Graph().as_default():
+      tf.compat.v1.set_random_seed(1)
+      with tf.compat.v1.Session() as sess:
+        ranking_model = model._GroupwiseRankingModel(
+            _multi_task_score_fn,
+            group_size=group_size,
+            transform_fn=feature.make_identity_transform_fn(['context']),
+        )
+
+        # batch_size = 1, list_size = 3, is_valid = [True, True, False]
+        features = {
+            'context': [[1.]],
+            'example_f1': [[[1.], [2.], [3.]]],
+        }
+        labels = {
+            'task1': [[1., 0, -1]],
+            'task2': [[0., 1, -1]],
+        }
+        logits = sess.run(
+            ranking_model.compute_logits(features, labels, mode, None, None))
+        self.assertEqual(
+            ranking_model._feature_gather_indices.get_shape().as_list(),
+            [1, 3, 2, 2])
+        self.assertAllEqual(logits['task1'], [[5., 6., 0.]])
+        self.assertAllEqual(logits['task2'], [[6., 7., 0.]])
+
 
 class GroupwiseRankingEstimatorTest(tf.test.TestCase):
   """Groupwise RankingEstimator tests."""
