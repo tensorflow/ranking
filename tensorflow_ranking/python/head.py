@@ -23,18 +23,8 @@ from __future__ import division
 from __future__ import print_function
 
 import abc
-import collections
 import six
 import tensorflow as tf
-
-# A LossSpec contains
-# * a scalar `Tensor` representing reduced weighted training loss
-# * a `Tensor` representing the unreduced unweighted loss
-# * a `Tensor` representing the example weights
-# * possibly processed labels (e.g. vocabulary lookup, shape manipulation, etc)
-LossSpec = collections.namedtuple(
-    'LossSpec',
-    ['training_loss', 'unreduced_loss', 'weights', 'processed_labels'])
 
 _DEFAULT_SERVING_KEY = tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
 
@@ -139,15 +129,28 @@ class _AbstractRankingHead(object):
     raise NotImplementedError('Calling an abstract method.')
 
 
-def _labels_and_logits_metrics(labels, logits, prefix=None):
+def _labels_and_logits_metrics(labels, logits):
   """Returns metrics for labels and logits."""
   is_label_valid = tf.reshape(tf.greater_equal(labels, 0.), [-1])
   metrics_dict = {}
   for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]:
-    metric_name = name if not prefix else '{}_{}'.format(prefix, name)
-    metrics_dict[metric_name] = tf.compat.v1.metrics.mean(
+    metrics_dict[name] = tf.compat.v1.metrics.mean(
         tf.boolean_mask(tensor=tf.reshape(tensor, [-1]), mask=is_label_valid))
   return metrics_dict
+
+
+def _get_train_op(loss, train_op_fn=None, optimizer=None):
+  """Returns a train op."""
+  if optimizer is not None:
+    if train_op_fn is not None:
+      raise ValueError('train_op_fn and optimizer cannot both be set.')
+    train_op = optimizer.minimize(
+        loss, global_step=tf.compat.v1.train.get_global_step())
+  elif train_op_fn is not None:
+    train_op = train_op_fn(loss)
+  else:
+    raise ValueError('train_op_fn and optimizer cannot both be None.')
+  return train_op
 
 
 class _RankingHead(_AbstractRankingHead):
@@ -193,11 +196,7 @@ class _RankingHead(_AbstractRankingHead):
 
     training_loss = self._loss_fn(labels, logits, features)
 
-    return LossSpec(
-        training_loss=training_loss,
-        unreduced_loss=None,
-        weights=None,
-        processed_labels=labels)
+    return training_loss
 
   def create_estimator_spec(self,
                             features,
@@ -222,7 +221,7 @@ class _RankingHead(_AbstractRankingHead):
                     tf.estimator.export.PredictOutput(logits),
             })
 
-      training_loss, _, _, _ = self.create_loss(
+      training_loss = self.create_loss(
           features=features, mode=mode, logits=logits, labels=labels)
       if regularization_losses:
         regularization_loss = tf.add_n(regularization_losses)
@@ -237,8 +236,7 @@ class _RankingHead(_AbstractRankingHead):
             metric_fn(labels=labels, predictions=logits, features=features)
             for name, metric_fn in six.iteritems(self._eval_metric_fns)
         }
-        eval_metric_ops.update(
-            _labels_and_logits_metrics(labels, logits, self.name))
+        eval_metric_ops.update(_labels_and_logits_metrics(labels, logits))
         return tf.estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,
@@ -246,19 +244,11 @@ class _RankingHead(_AbstractRankingHead):
             eval_metric_ops=eval_metric_ops)
 
       # Train.
-      assert mode == tf.estimator.ModeKeys.TRAIN
-      if self._optimizer is not None:
-        if self._train_op_fn is not None:
-          raise ValueError('train_op_fn and optimizer cannot both be set.')
-        train_op = self._optimizer.minimize(
-            regularized_training_loss,
-            global_step=tf.compat.v1.train.get_global_step())
-      elif self._train_op_fn is not None:
-        train_op = self._train_op_fn(regularized_training_loss)
-      else:
-        raise ValueError('train_op_fn and optimizer cannot both be None.')
-      return tf.estimator.EstimatorSpec(
-          mode=mode,
-          predictions=logits,
-          loss=regularized_training_loss,
-          train_op=train_op)
+      if mode == tf.estimator.ModeKeys.TRAIN:
+        return tf.estimator.EstimatorSpec(
+            mode=mode,
+            loss=regularized_training_loss,
+            train_op=_get_train_op(regularized_training_loss, self._train_op_fn,
+                                   self._optimizer),
+            predictions=logits)
+      raise ValueError('mode={} unrecognized'.format(mode))

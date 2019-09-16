@@ -65,41 +65,66 @@ class UtilTest(tf.test.TestCase):
       labels = [[0., 0., 1.], [0., 0., 2.]]
       metrics_dict = ranking_head._labels_and_logits_metrics(labels, logits)
       self.assertCountEqual(['labels_mean', 'logits_mean'], metrics_dict)
-      # With prefix
-      metrics_dict = ranking_head._labels_and_logits_metrics(
-          labels, logits, prefix='head')
-      self.assertCountEqual(['head_labels_mean', 'head_logits_mean'],
-                            metrics_dict)
-
       with self.cached_session() as sess:
         sess.run(tf.compat.v1.local_variables_initializer())
         for (metric_op,
-             update_op), value in [(metrics_dict['head_labels_mean'], 0.5),
-                                   (metrics_dict['head_logits_mean'], 2.0)]:
+             update_op), value in [(metrics_dict['labels_mean'], 0.5),
+                                   (metrics_dict['logits_mean'], 2.0)]:
           sess.run(update_op)
           self.assertAlmostEqual(sess.run(metric_op), value, places=5)
+
+  def test_get_train_op(self):
+    with tf.Graph().as_default():
+      logits = tf.cast([[1.]], tf.float32)
+      labels = tf.cast([[0.]], tf.float32)
+      loss = tf.abs(tf.reduce_sum(logits - labels))
+
+      def _train_op_fn(loss):
+        with tf.control_dependencies((tf.compat.v1.assert_near(
+            tf.cast(loss, dtype=tf.float32), 1.0, name='assert_loss'),)):
+          return tf.constant(b'train_op_fn')
+
+      class _Optimizer(object):
+
+        def minimize(self, loss, global_step):
+          del global_step
+          with tf.control_dependencies((tf.compat.v1.assert_equal(
+              tf.cast(loss, dtype=tf.float32), 1.0, name='assert_loss'),)):
+            return tf.constant(b'optimizer')
+
+      train_op = ranking_head._get_train_op(loss, _train_op_fn, None)
+      self.assertIsNotNone(train_op)
+      with self.cached_session() as sess:
+        train_result = sess.run(train_op)
+        self.assertEqual(b'train_op_fn', train_result)
+
+      train_op = ranking_head._get_train_op(loss, None, _Optimizer())
+      self.assertIsNotNone(train_op)
+      with self.cached_session() as sess:
+        train_result = sess.run(train_op)
+        self.assertEqual(b'optimizer', train_result)
+
+      with self.assertRaisesRegexp(
+          ValueError, r'train_op_fn and optimizer cannot both be set.'):
+        ranking_head._get_train_op(loss, _train_op_fn, _Optimizer())
+      with self.assertRaisesRegexp(
+          ValueError, r'train_op_fn and optimizer cannot both be None.'):
+        ranking_head._get_train_op(loss, None, None)
 
 
 class RankingHeadTest(tf.test.TestCase):
 
   def setUp(self):
-    tf.compat.v1.reset_default_graph()
-    self._default_features_dict = {}
-    self._default_signature = (tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
-    logits = [[1., 3., 2.], [1., 2., 3.]]
-    labels = [[0., 0., 1.], [0., 0., 2.]]
-    weights = [1.] * 3
-    self._default_logits = logits
-    self._default_labels = labels
+    self._default_logits = [[1., 3., 2.], [1., 2., 3.]]
+    self._default_labels = [[0., 0., 1.], [0., 0., 2.]]
     self._default_loss = 9.
-    self._default_weights = weights
+    self._default_weights = [1.] * 3
     self._default_weights_feature_name = 'weights'
     self._default_weighted_loss = 27
 
   def test_name(self):
     head = ranking_head.create_ranking_head(
         loss_fn=_make_loss_fn(), name='fake_head')
-
     self.assertEqual('fake_head', head.name)
 
   def test_predict(self):
@@ -107,16 +132,15 @@ class RankingHeadTest(tf.test.TestCase):
       head = ranking_head.create_ranking_head(loss_fn=_make_loss_fn())
       logits = [[1., 3.], [1., 2.]]
       spec = head.create_estimator_spec(
-          features=self._default_features_dict,
-          mode=tf.estimator.ModeKeys.PREDICT,
-          logits=logits)
+          features={}, mode=tf.estimator.ModeKeys.PREDICT, logits=logits)
 
       # Assert spec contains expected tensors.
       self.assertIsNone(spec.loss)
       self.assertEqual({}, spec.eval_metric_ops)
       self.assertIsNone(spec.train_op)
-      self.assertItemsEqual((self._default_signature, 'regression', 'predict'),
-                            spec.export_outputs.keys())
+      self.assertItemsEqual(
+          (ranking_head._DEFAULT_SERVING_KEY, 'regression', 'predict'),
+          spec.export_outputs.keys())
 
       # Assert predictions.
       with self.cached_session() as sess:
@@ -126,7 +150,8 @@ class RankingHeadTest(tf.test.TestCase):
         self.assertAllClose(logits, predictions)
         self.assertAllClose(
             logits,
-            sess.run(spec.export_outputs[self._default_signature].value))
+            sess.run(
+                spec.export_outputs[ranking_head._DEFAULT_SERVING_KEY].value))
 
   def test_eval(self):
     with tf.Graph().as_default():
@@ -140,7 +165,7 @@ class RankingHeadTest(tf.test.TestCase):
 
       # Create estimator spec.
       spec = head.create_estimator_spec(
-          features=self._default_features_dict,
+          features={},
           mode=tf.estimator.ModeKeys.EVAL,
           logits=self._default_logits,
           labels=self._default_labels)
@@ -173,10 +198,10 @@ class RankingHeadTest(tf.test.TestCase):
       head = ranking_head.create_ranking_head(loss_fn=_make_loss_fn())
       # Create loss.
       training_loss = head.create_loss(
-          features=self._default_features_dict,
+          features={},
           mode=tf.estimator.ModeKeys.TRAIN,
           logits=self._default_logits,
-          labels=self._default_labels)[0]
+          labels=self._default_labels)
       with self.cached_session():
         _initialize_variables(self, tf.compat.v1.train.Scaffold())
         self.assertAllClose(self._default_loss, training_loss.eval())
@@ -196,7 +221,7 @@ class RankingHeadTest(tf.test.TestCase):
           loss_fn=_make_loss_fn(), train_op_fn=_train_op_fn)
       # Create estimator spec.
       spec = head.create_estimator_spec(
-          features=self._default_features_dict,
+          features={},
           mode=tf.estimator.ModeKeys.TRAIN,
           logits=self._default_logits,
           labels=self._default_labels)
@@ -212,37 +237,6 @@ class RankingHeadTest(tf.test.TestCase):
         _initialize_variables(self, spec.scaffold)
         loss, train_result = sess.run((spec.loss, spec.train_op))
         self.assertAllClose(self._default_loss, loss)
-        self.assertEqual(expected_train_result, train_result)
-
-  def test_train_with_optimizer(self):
-    with tf.Graph().as_default():
-      expected_train_result = b'my_train_op'
-      expected_loss = self._default_loss
-
-      class _Optimizer(object):
-
-        def minimize(self, loss, global_step):
-          del global_step
-          with tf.control_dependencies((tf.compat.v1.assert_equal(
-              tf.cast(expected_loss, dtype=tf.float32),
-              tf.cast(loss, dtype=tf.float32),
-              name='assert_loss'),)):
-            return tf.constant(expected_train_result)
-
-      head = ranking_head.create_ranking_head(
-          loss_fn=_make_loss_fn(), optimizer=_Optimizer())
-
-      # Create estimator spec.
-      spec = head.create_estimator_spec(
-          features=self._default_features_dict,
-          mode=tf.estimator.ModeKeys.TRAIN,
-          logits=self._default_logits,
-          labels=self._default_labels)
-
-      with self.cached_session() as sess:
-        _initialize_variables(self, spec.scaffold)
-        loss, train_result = sess.run((spec.loss, spec.train_op))
-        self.assertAllClose(expected_loss, loss)
         self.assertEqual(expected_train_result, train_result)
 
   def test_train_with_regularization_losses(self):
@@ -265,7 +259,7 @@ class RankingHeadTest(tf.test.TestCase):
 
       # Create estimator spec.
       spec = head.create_estimator_spec(
-          features=self._default_features_dict,
+          features={},
           mode=tf.estimator.ModeKeys.TRAIN,
           logits=self._default_logits,
           labels=self._default_labels,
