@@ -47,6 +47,7 @@ py_test(
         ":tf_ranking_libsvm_lib",
         # py/absl/flags dep,
         # py/absl/testing:flagsaver dep,
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
     ],
 )

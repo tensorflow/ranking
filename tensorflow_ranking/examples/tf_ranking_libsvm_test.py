@@ -18,6 +18,7 @@ import os
 
 from absl import flags
 from absl.testing import flagsaver
+from absl.testing import parameterized
 
 import tensorflow as tf
 
@@ -33,9 +34,11 @@ LIBSVM_DATA = """1 qid:10 32:0.14 48:0.97  51:0.45
 """
 
 
-class TfRankingLibSVMTest(tf.test.TestCase):
+class TfRankingLibSVMTest(tf.test.TestCase, parameterized.TestCase):
 
-  def test_train_and_eval(self):
+  @parameterized.named_parameters(("single_head", None),
+                                  ("multi_head", "softmax_loss"))
+  def test_train_and_eval(self, secondary_loss):
     data_dir = tf.compat.v1.test.get_temp_dir()
     data_file = os.path.join(data_dir, "libvsvm.txt")
     if tf.io.gfile.exists(data_file):
@@ -44,22 +47,23 @@ class TfRankingLibSVMTest(tf.test.TestCase):
     with open(data_file, "wt") as writer:
       writer.write(LIBSVM_DATA)
 
-    self._data_file = data_file
-    self._output_dir = data_dir
+    output_dir = os.path.join(data_dir, secondary_loss or "")
 
     with flagsaver.flagsaver(
-        train_path=self._data_file,
-        vali_path=self._data_file,
-        test_path=self._data_file,
-        output_dir=self._output_dir,
+        train_path=data_file,
+        vali_path=data_file,
+        test_path=data_file,
+        output_dir=output_dir,
+        loss="pairwise_logistic_loss",
+        secondary_loss=secondary_loss,
         num_train_steps=10,
         list_size=10,
         group_size=2,
         num_features=100):
       tf_ranking_libsvm.train_and_eval()
 
-    if tf.io.gfile.exists(self._output_dir):
-      tf.io.gfile.rmtree(self._output_dir)
+    if tf.io.gfile.exists(output_dir):
+      tf.io.gfile.rmtree(output_dir)
 
 
 if __name__ == "__main__":

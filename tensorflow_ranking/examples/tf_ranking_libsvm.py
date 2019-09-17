@@ -59,6 +59,11 @@ tensorflow_ranking/examples/tf_ranking_libsvm_py_binary && \
 --num_features=136
 
 You can use TensorBoard to display the training results stored in $OUTPUT_DIR.
+
+Notes:
+  * Use --alsologtostderr if the output is not printed into screen.
+  * In addition, you can enable multi-objective learning by adding the following
+  flags: --secondary_loss=<the secondary loss key>.
 """
 
 from absl import flags
@@ -86,9 +91,23 @@ flags.DEFINE_integer("list_size", 100, "List size used for training.")
 flags.DEFINE_integer("group_size", 1, "Group size used in score function.")
 
 flags.DEFINE_string("loss", "pairwise_logistic_loss",
-                    "The RankingLossKey for loss function.")
+                    "The RankingLossKey for the primary loss function.")
+flags.DEFINE_string(
+    "secondary_loss", None, "The RankingLossKey for the secondary loss for "
+    "multi-objective learning.")
+flags.DEFINE_float(
+    "secondary_loss_weight", 0.5, "The weight for the secondary loss in "
+    "multi-objective learning.")
 
 FLAGS = flags.FLAGS
+
+_PRIMARY_HEAD = "primary_head"
+_SECONDARY_HEAD = "secondary_head"
+
+
+def _use_multi_head():
+  """Returns True if using multi-head."""
+  return FLAGS.secondary_loss is not None
 
 
 class IteratorInitializerHook(tf.estimator.SessionRunHook):
@@ -185,12 +204,25 @@ def get_train_inputs(features, labels, batch_size):
         k: tf.compat.v1.placeholder(v.dtype, v.shape)
         for k, v in six.iteritems(features)
     }
-    labels_placeholder = tf.compat.v1.placeholder(labels.dtype, labels.shape)
+    if _use_multi_head():
+      placeholder = tf.compat.v1.placeholder(labels.dtype, labels.shape)
+      labels_placeholder = {
+          _PRIMARY_HEAD: placeholder,
+          _SECONDARY_HEAD: placeholder,
+      }
+    else:
+      labels_placeholder = tf.compat.v1.placeholder(labels.dtype, labels.shape)
     dataset = tf.data.Dataset.from_tensor_slices(
         (features_placeholder, labels_placeholder))
     dataset = dataset.shuffle(1000).repeat().batch(batch_size)
     iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
-    feed_dict = {labels_placeholder: labels}
+    if _use_multi_head():
+      feed_dict = {
+          labels_placeholder[head_name]: labels
+          for head_name in labels_placeholder
+      }
+    else:
+      feed_dict = {labels_placeholder: labels}
     feed_dict.update(
         {features_placeholder[k]: features[k] for k in features_placeholder})
     iterator_initializer_hook.iterator_initializer_fn = (
@@ -210,11 +242,24 @@ def get_eval_inputs(features, labels):
         k: tf.compat.v1.placeholder(v.dtype, v.shape)
         for k, v in six.iteritems(features)
     }
-    labels_placeholder = tf.compat.v1.placeholder(labels.dtype, labels.shape)
+    if _use_multi_head():
+      placeholder = tf.compat.v1.placeholder(labels.dtype, labels.shape)
+      labels_placeholder = {
+          _PRIMARY_HEAD: placeholder,
+          _SECONDARY_HEAD: placeholder,
+      }
+    else:
+      labels_placeholder = tf.compat.v1.placeholder(labels.dtype, labels.shape)
     dataset = tf.data.Dataset.from_tensors(
         (features_placeholder, labels_placeholder))
     iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
-    feed_dict = {labels_placeholder: labels}
+    if _use_multi_head():
+      feed_dict = {
+          labels_placeholder[head_name]: labels
+          for head_name in labels_placeholder
+      }
+    else:
+      feed_dict = {labels_placeholder: labels}
     feed_dict.update(
         {features_placeholder[k]: features[k] for k in features_placeholder})
     iterator_initializer_hook.iterator_initializer_fn = (
@@ -296,7 +341,11 @@ def make_score_fn():
     cur_layer = tf.compat.v1.layers.dropout(
         cur_layer, rate=FLAGS.dropout_rate, training=is_training)
     logits = tf.compat.v1.layers.dense(cur_layer, units=FLAGS.group_size)
-    return logits
+    if _use_multi_head():
+      # Duplicate the logits for both heads.
+      return {_PRIMARY_HEAD: logits, _SECONDARY_HEAD: logits}
+    else:
+      return logits
 
   return _score_fn
 
@@ -344,10 +393,24 @@ def train_and_eval():
     train_op = tf.group([minimize_op, update_ops])
     return train_op
 
-  ranking_head = tfr.head.create_ranking_head(
-      loss_fn=tfr.losses.make_loss_fn(FLAGS.loss),
-      eval_metric_fns=get_eval_metric_fns(),
-      train_op_fn=_train_op_fn)
+  if _use_multi_head():
+    primary_head = tfr.head.create_ranking_head(
+        loss_fn=tfr.losses.make_loss_fn(FLAGS.loss),
+        eval_metric_fns=get_eval_metric_fns(),
+        train_op_fn=_train_op_fn,
+        name=_PRIMARY_HEAD)
+    secondary_head = tfr.head.create_ranking_head(
+        loss_fn=tfr.losses.make_loss_fn(FLAGS.secondary_loss),
+        eval_metric_fns=get_eval_metric_fns(),
+        train_op_fn=_train_op_fn,
+        name=_SECONDARY_HEAD)
+    ranking_head = tfr.head.create_multi_ranking_head(
+        [primary_head, secondary_head], [1.0, FLAGS.secondary_loss_weight])
+  else:
+    ranking_head = tfr.head.create_ranking_head(
+        loss_fn=tfr.losses.make_loss_fn(FLAGS.loss),
+        eval_metric_fns=get_eval_metric_fns(),
+        train_op_fn=_train_op_fn)
 
   estimator = tf.estimator.Estimator(
       model_fn=tfr.model.make_groupwise_ranking_fn(
