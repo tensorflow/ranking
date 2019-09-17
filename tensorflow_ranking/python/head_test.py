@@ -332,5 +332,172 @@ class RankingHeadTest(tf.test.TestCase):
         self.assertItemsEqual(expected_metrics, metrics.keys())
 
 
+class MultiRankingHeadTest(tf.test.TestCase):
+
+  def test_predict(self):
+    with tf.Graph().as_default():
+      head1 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), name='head1')
+      head2 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), name='head2')
+      multi_head = ranking_head.create_multi_ranking_head([head1, head2])
+      logits = {
+          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+      }
+      spec = multi_head.create_estimator_spec(
+          features={}, mode=tf.estimator.ModeKeys.PREDICT, logits=logits)
+
+      # Assert spec contains expected tensors.
+      self.assertIsNone(spec.loss)
+      self.assertEqual({}, spec.eval_metric_ops)
+      self.assertIsNone(spec.train_op)
+      self.assertCountEqual([
+          ranking_head._DEFAULT_SERVING_KEY, 'predict', 'head1',
+          'head1/regression', 'head1/predict', 'head2', 'head2/regression',
+          'head2/predict'
+      ], spec.export_outputs.keys())
+
+      # Assert predictions.
+      with self.cached_session() as sess:
+        _initialize_variables(self, spec.scaffold)
+        self.assertIsNone(spec.scaffold.summary_op)
+        predictions = sess.run(spec.predictions)
+        self.assertAllClose(logits['head1'], predictions['head1'])
+        self.assertAllClose(logits['head2'], predictions['head2'])
+        self.assertAllClose(
+            logits['head1'],
+            sess.run(
+                spec.export_outputs[ranking_head._DEFAULT_SERVING_KEY].value))
+
+  def test_eval(self):
+    with tf.Graph().as_default():
+      metric_fns = {
+          'metric/precision@1':
+              metrics_lib.make_ranking_metric_fn(
+                  metrics_lib.RankingMetricKey.PRECISION, topn=1),
+      }
+      head1 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), eval_metric_fns=metric_fns, name='head1')
+      head2 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), eval_metric_fns=metric_fns, name='head2')
+      multi_head = ranking_head.create_multi_ranking_head([head1, head2])
+
+      logits = {
+          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+      }
+      labels = {
+          'head1': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+          'head2': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+      }
+      spec = multi_head.create_estimator_spec(
+          features={},
+          mode=tf.estimator.ModeKeys.EVAL,
+          logits=logits,
+          labels=labels)
+
+      expected_metrics = [
+          'head1/labels_mean',
+          'head1/logits_mean',
+          'head1/metric/precision@1',
+          'head2/labels_mean',
+          'head2/logits_mean',
+          'head2/metric/precision@1',
+      ]
+
+      # Assert spec contains expected tensors.
+      self.assertIsNotNone(spec.loss)
+      self.assertIsNone(spec.train_op)
+      self.assertIsNone(spec.export_outputs)
+      self.assertCountEqual(spec.eval_metric_ops.keys(), expected_metrics)
+
+      # Assert predictions, loss, and metrics.
+      with self.cached_session() as sess:
+        _initialize_variables(self, spec.scaffold)
+        self.assertIsNone(spec.scaffold.summary_op)
+        update_ops = {
+            k: spec.eval_metric_ops[k][1] for k in spec.eval_metric_ops
+        }
+        loss, metrics = sess.run((spec.loss, update_ops))
+        self.assertAllClose(loss, 10.)
+        self.assertItemsEqual(metrics.keys(), expected_metrics)
+
+  def test_train(self):
+    with tf.Graph().as_default():
+      expected_train_result = b'my_train_op'
+
+      def _train_op_fn(loss):
+        with tf.control_dependencies((tf.compat.v1.assert_near(
+            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss'),)):
+          return tf.constant(expected_train_result)
+
+      head1 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), train_op_fn=_train_op_fn, name='head1')
+      head2 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), train_op_fn=_train_op_fn, name='head2')
+      multi_head = ranking_head.create_multi_ranking_head([head1, head2],
+                                                          [1.0, 2.0])
+
+      logits = {
+          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+      }
+      labels = {
+          'head1': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+          'head2': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+      }
+      # Create estimator spec.
+      spec = multi_head.create_estimator_spec(
+          features={},
+          mode=tf.estimator.ModeKeys.TRAIN,
+          logits=logits,
+          labels=labels)
+
+      # Assert spec contains expected tensors.
+      self.assertIsNotNone(spec.loss)
+      self.assertEqual(spec.eval_metric_ops, {})
+      self.assertIsNotNone(spec.train_op)
+      self.assertIsNone(spec.export_outputs)
+
+      # Assert predictions, loss, and train_op.
+      with self.cached_session() as sess:
+        _initialize_variables(self, spec.scaffold)
+        loss, train_result = sess.run((spec.loss, spec.train_op))
+        self.assertAllClose(loss, 16.)
+        self.assertEqual(expected_train_result, train_result)
+
+  def test_merge_loss(self):
+    """Tests for merging losses from mult-head and regularizition loss."""
+    with tf.Graph().as_default():
+      head1 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), name='head1')
+      head2 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), name='head2')
+      multi_head = ranking_head.create_multi_ranking_head([head1, head2],
+                                                          [1.0, 2.0])
+      logits = {
+          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+      }
+      labels = {
+          'head1': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+          'head2': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+      }
+      regularization_losses = [1.5, 0.5]
+      expected_loss = 1. * 4. + 2. * 6. + 1.5 + 0.5
+
+      # Create loss.
+      training_loss = multi_head._merge_loss(
+          features={},
+          mode=tf.estimator.ModeKeys.TRAIN,
+          logits=logits,
+          labels=labels,
+          regularization_losses=regularization_losses)
+      with self.cached_session():
+        _initialize_variables(self, tf.compat.v1.train.Scaffold())
+        self.assertAllClose(training_loss.eval(), expected_loss)
+
+
 if __name__ == '__main__':
   tf.test.main()
