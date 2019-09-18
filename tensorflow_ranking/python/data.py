@@ -309,12 +309,14 @@ class _SequenceExampleParser(_RankingDataParser):
     padding_values = {}
     non_trivial_padding_values = {}
     for k, s in six.iteritems(example_feature_spec):
+      if isinstance(s, tf.io.FixedLenFeature
+                   ) or isinstance(s, tf.io.FixedLenSequenceFeature):
+        scalar = _get_scalar_default_value(s.dtype, s.default_value)
+        padding_values[k] = scalar
       if not isinstance(s, tf.io.FixedLenFeature):
         continue
       fixed_len_sequence_features[k] = tf.io.FixedLenSequenceFeature(
           s.shape, s.dtype, allow_missing=True)
-      scalar = _get_scalar_default_value(s.dtype, s.default_value)
-      padding_values[k] = scalar
       if scalar:
         non_trivial_padding_values[k] = scalar
 
