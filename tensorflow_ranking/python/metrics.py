@@ -260,10 +260,13 @@ class _MRRMetric(_RankingMetric):
     # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
     relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
     reciprocal_rank = 1.0 / tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
-    # MRR has a shape of [batch_size, 1]
+    # MRR has a shape of [batch_size, 1].
     mrr = tf.reduce_max(
         input_tensor=relevance * reciprocal_rank, axis=1, keepdims=True)
-    return tf.compat.v1.metrics.mean(mrr * tf.ones_like(weights), weights)
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights=weights,
+        relevance=tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
+    return tf.compat.v1.metrics.mean(mrr, per_list_weights)
 
 
 def mean_reciprocal_rank(labels, predictions, weights=None, name=None):

@@ -108,7 +108,8 @@ class MetricsTest(tf.test.TestCase):
       self._check_metrics([
           (m([labels[0]], [scores[0]]), 0.5),
           (m(labels, scores), (0.5 + 1.0) / 2),
-          (m(labels, scores, weights), (6. * 0.5 + 15. * 1.) / (6. + 15.)),
+          (m(labels, scores,
+             weights), (3. * 0.5 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5) / 2.)),
       ])
 
   def test_make_mean_reciprocal_rank_fn(self):
@@ -125,7 +126,8 @@ class MetricsTest(tf.test.TestCase):
       self._check_metrics([
           (m([labels[0]], [scores[0]], features), 0.5),
           (m(labels, scores, features), (0.5 + 1.0) / 2),
-          (m_w(labels, scores, features), (6. * 0.5 + 15. * 1.) / (6. + 15.)),
+          (m_w(labels, scores, features),
+           (3. * 0.5 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5.) / 2.)),
       ])
 
   def test_average_relevance_position(self):
