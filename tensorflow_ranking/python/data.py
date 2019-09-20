@@ -102,10 +102,31 @@ class _ExampleInExampleParser(_RankingDataParser):
         return tf.slice(serialized_list, [0, 0], [batch_size, list_size])
 
       def pad_fn():
-        return tf.pad(
-            tensor=serialized_list,
-            paddings=[[0, 0], [0, list_size - cur_list_size]],
-            constant_values="")
+          # Create feature spec for tf.train.Example to append
+          pad_spec = {}
+          # Default values are 0 or an empty byte string depending on 
+          # original serialized data type
+          dtype_map = {tf.float32:tf.train.Feature(
+                    float_list=tf.train.FloatList(value=[0.0])), 
+                         tf.int32:tf.train.Feature(
+                                 int64_list=tf.train.Int64List(value=[0])), 
+                         tf.string:tf.train.Feature(
+                                 bytes_list=tf.train.BytesList(
+                                         value=[bytes('', encoding='UTF-8')]))}
+          # Create the feature spec
+          for key, item in self._example_feature_spec.items():
+              dtype = item.dtype
+              pad_spec[key] = dtype_map[dtype]
+          # Make and serialize example to append
+          constant_values = tf.train.Example(
+                features=tf.train.Features(feature=pad_spec))
+          constant_val_str = constant_values.SerializeToString()
+            
+          # Add serialized padding to end of list
+          return tf.pad(
+              tensor=serialized_list,
+              paddings=[[0, 0], [0, list_size - cur_list_size]],
+              constant_values=constant_val_str)
 
       serialized_list = tf.cond(
           pred=cur_list_size > list_size, true_fn=truncate_fn, false_fn=pad_fn)
