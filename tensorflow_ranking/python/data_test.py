@@ -296,7 +296,12 @@ class SequenceExampleTest(tf.test.TestCase):
         sess.run(tf.compat.v1.local_variables_initializer())
         with self.assertRaisesRegexp(
             tf.errors.InvalidArgumentError,
-            r"Unexpected number of elements in feature utility"):
+            # Error from ParseSingleExample:
+            r"Unexpected number of elements in feature utility"
+            # Error from ParseSequenceExampleV2:
+            r"|Name: <unknown>, Key: utility, Index: 1.  "
+            r"Number of values != expected.  "
+            r"values size: 0 but output shape: \[1\]"):
           sess.run(features)
 
   def test_parse_from_sequence_example_missing_feature_list(self):
