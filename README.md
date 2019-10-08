@@ -18,6 +18,12 @@ hosting and advancing state-of-the-art ranking models based on deep learning
 techniques, and thus facilitate both academic research as well as industrial
 applications.
 
+## Tutorial slides.
+TF-Ranking was presented at premier conferences in Information Retrieval,
+[SIGIR 2019](https://sigir.org/sigir2019/program/tutorials/) and
+[ICTIR 2019](http://ictir2019.org/program/#tutorials)! The slides are available
+[here](http://bendersky.github.io/res/TF-Ranking-ICTIR-2019.pdf).
+
 ## 1-Click Demos
 
 We provide two demos, with no installation required, to get started on using
