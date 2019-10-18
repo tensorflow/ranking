@@ -30,6 +30,7 @@ import six
 
 import tensorflow as tf
 
+from google.protobuf import descriptor_pb2 as pb
 from tensorflow_ranking.python import utils
 
 # The document relevance label.
@@ -40,10 +41,53 @@ _LABEL_FEATURE = "label"
 _PADDING_LABEL = -1.
 
 ### RankingDataFormat. ###
+# For ExampleListWithContext.
+ELWC = "example_list_with_context"
 # For ExampleInExample.
 EIE = "example_in_example"
 # For SequenceExample.
 SEQ = "sequence_example"
+
+# Constants for tensorflow.ranking.internal.SerializedExampleListWithContext.
+_FILE_NAME = "serialized_example_list.proto"
+_PACKAGE = "tensorflow.ranking.internal"
+_MESSAGE_NAME = "SerializedExampleListWithContext"
+_EXAMPLES_FIELD_NAME = "examples"
+_CONTEXT_FIELD_NAME = "context"
+
+
+def _get_descriptor_set():
+  """Returns a FileDescriptorSet proto to be used by tf.io.decode_proto."""
+  proto = pb.FileDescriptorSet()
+
+  # The FileDescriptor for tensorflow.ranking.internal.ExampleListWithContext.
+  file_proto = proto.file.add(
+      name=_FILE_NAME, package=_PACKAGE, syntax="proto3")
+  message_proto = file_proto.message_type.add(name=_MESSAGE_NAME)
+  message_proto.field.add(
+      name=_EXAMPLES_FIELD_NAME,
+      number=1,
+      type=pb.FieldDescriptorProto.TYPE_BYTES,
+      label=pb.FieldDescriptorProto.LABEL_REPEATED)
+  message_proto.field.add(
+      name=_CONTEXT_FIELD_NAME,
+      number=2,
+      type=pb.FieldDescriptorProto.TYPE_BYTES)
+
+  return proto
+
+
+def _decode_as_serialized_example_list(serialized):
+  """Decodes as `SerializedExampleListWithContext`."""
+  serialized = tf.convert_to_tensor(value=serialized)
+  _, (serialized_context, serialized_list) = tf.io.decode_proto(
+      serialized,
+      message_type="{}.{}".format(_PACKAGE, _MESSAGE_NAME),
+      field_names=[_CONTEXT_FIELD_NAME, _EXAMPLES_FIELD_NAME],
+      output_types=[tf.string, tf.string],
+      descriptor_source=(b"bytes://" +
+                         _get_descriptor_set().SerializeToString()))
+  return serialized_context, serialized_list
 
 
 class _RankingDataParser(object):
@@ -273,6 +317,143 @@ def parse_from_example_in_example(serialized,
   """
   parser = _ExampleInExampleParser(list_size, context_feature_spec,
                                    example_feature_spec)
+  return parser.parse(serialized)
+
+
+class _ExampleListParser(_ExampleInExampleParser):
+  """Parser for ExampleListWithContext."""
+
+  def _decode_as_serialized_example_list(self, serialized):
+    """Decodes into serialized context and examples."""
+    return _decode_as_serialized_example_list(serialized)
+
+
+def parse_from_example_list(serialized,
+                            list_size=None,
+                            context_feature_spec=None,
+                            example_feature_spec=None):
+  """Parses an `ExampleListWithContext` batch to a feature map.
+
+  Example:
+
+  ```
+  serialized = [
+    example_list_with_context = {
+      context {
+        features {
+          feature {
+            key: "query_length"
+            value { int64_list { value: 3 } }
+          }
+        }
+      }
+      examples {
+        features {
+          feature {
+            key: "unigrams"
+            value { bytes_list { value: "tensorflow" } }
+          }
+          feature {
+            key: "utility"
+            value { float_list { value: 0.0 } }
+          }
+        }
+      }
+      examples {
+        features {
+          feature {
+            key: "unigrams"
+            value { bytes_list { value: ["learning" "to" "rank" } }
+          }
+          feature {
+            key: "utility"
+            value { float_list { value: 1.0 } }
+          }
+        }
+      }
+    }
+    example_list_with_context = {
+      context {
+        features {
+          feature {
+            key: "query_length"
+            value { int64_list { value: 2 } }
+          }
+        }
+      }
+      examples {
+        features {
+          feature {
+            key: "unigrams"
+            value { bytes_list { value: ["gbdt"] } }
+          }
+          feature {
+            key: "utility"
+            value { float_list { value: 0.0 } }
+          }
+        }
+      }
+      examples {
+        features {
+          feature {
+            key: "unigrams"
+            value { bytes_list { value: ["neural", "networks"] } }
+          }
+          feature {
+            key: "utility"
+            value { float_list { value: 1.0 } }
+          }
+        }
+      }
+    }
+  ]
+  ```
+
+  We can use arguments:
+
+  ```
+  context_feature_spec: {
+    "query_length": tf.io.FixedenFeature([1], dtypes.int64),
+  }
+  example_feature_spec: {
+    "unigrams": tf.io.VarLenFeature(dtypes.string),
+    "utility": tf.io.FixedLenFeature([1], dtypes.float32),
+  }
+  ```
+
+  And the expected output is:
+
+  ```python
+  {
+    "unigrams": SparseTensor(
+      indices=array([[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0],
+        [1, 1, 0], [1, 1, 1]]),
+      values=["tensorflow", "learning", "to", "rank", "gbdt", "neural" ,
+        "network"],
+      dense_shape=array([2, 2, 3])),
+    "utility": [[[ 0.], [ 1.]], [[ 0.], [ 1.]]],
+    "query_length": [[3], [2]],
+  }
+  ```
+
+  Args:
+    serialized: (Tensor) 1-D Tensor and each entry is a serialized
+      `ExampleListWithContext` proto that contains context and example list.
+    list_size: (int) The number of examples for each list. If specified,
+      truncation or padding is applied to make 2nd dim of output Tensors aligned
+      to `list_size`. Otherwise, the 2nd dim of the output Tensors is dynamic.
+    context_feature_spec: (dict) A mapping from feature keys to
+      `FixedLenFeature` or `VarLenFeature` values for context in
+      `ExampleListWithContext` proto.
+    example_feature_spec: (dict) A mapping from feature keys to
+      `FixedLenFeature` or `VarLenFeature` values for examples in
+      `ExampleListWithContext` proto.
+
+  Returns:
+    A mapping from feature keys to `Tensor` or `SparseTensor`.
+  """
+  parser = _ExampleListParser(list_size, context_feature_spec,
+                              example_feature_spec)
   return parser.parse(serialized)
 
 
@@ -546,6 +727,7 @@ def make_parsing_fn(data_format,
   fns_dict = {
       EIE: parse_from_example_in_example,
       SEQ: parse_from_sequence_example,
+      ELWC: parse_from_example_list,
   }
   if data_format in fns_dict:
     return functools.partial(fns_dict[data_format], **kwargs)

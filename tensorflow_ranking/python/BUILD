@@ -155,6 +155,7 @@ py_test(
         ":data",
         # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
 

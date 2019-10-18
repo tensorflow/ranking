@@ -15,42 +15,45 @@ TensorFlow platform. It contains the following components:
 
 We envision that this library will provide a convenient open platform for
 hosting and advancing state-of-the-art ranking models based on deep learning
-techniques, and thus facilitate both academic research as well as industrial
+techniques, and thus facilitate both academic research and industrial
 applications.
 
-## Tutorial slides.
+## Tutorial Slides
+
 TF-Ranking was presented at premier conferences in Information Retrieval,
 [SIGIR 2019](https://sigir.org/sigir2019/program/tutorials/) and
 [ICTIR 2019](http://ictir2019.org/program/#tutorials)! The slides are available
 [here](http://bendersky.github.io/res/TF-Ranking-ICTIR-2019.pdf).
 
-## 1-Click Demos
+## Demos
 
 We provide two demos, with no installation required, to get started on using
 TF-Ranking. These demos run on a
-[colaboratory notebook](https://research.google.com/colaboratory/faq.html),
-an interactive Python environment.
+[colaboratory notebook](https://research.google.com/colaboratory/faq.html), an
+interactive Python environment.
 
-
-
-1.  TF-Ranking on a dummy data set with dense features in
-    [the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format):
-    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.ipynb)
-
-2.  Using sparse features and embeddings in TF-Ranking.
-    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/handling_sparse_features.ipynb)
-
+1.  Using sparse features and embeddings in TF-Ranking
+    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/handling_sparse_features.ipynb).
     This demo demonstrates how to:
 
     *   Use sparse/embedding features
     *   Process data in TFRecord format
     *   Tensorboard integration in colab notebook, for Estimator API
 
+2.  **Deprecated**. TF-Ranking on a dummy data set with dense features in
+    [the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format):
+    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.ipynb).
+
+In addition, we have a simple script version for
+[the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format)
+is available at [Running Script](#running-script).
+
 ## Linux Installation
 
 ### Stable Builds
 
-To install the latest version from [PyPI](https://pypi.org/project/tensorflow-ranking/), run the following:
+To install the latest version from
+[PyPI](https://pypi.org/project/tensorflow-ranking/), run the following:
 
 ```shell
 # Installing with the `--upgrade` flag ensures you'll get the latest version.
@@ -59,13 +62,18 @@ pip install --user --upgrade tensorflow_ranking
 
 To force a Python 3-specific install, replace `pip` with `pip3` in the above
 commands. For additional installation help, guidance installing prerequisites,
-and (optionally) setting up virtual environments, see the [TensorFlow
-installation guide](https://www.tensorflow.org/install).
+and (optionally) setting up virtual environments, see the
+[TensorFlow installation guide](https://www.tensorflow.org/install).
 
-Note: Since TensorFlow is *not* included as a dependency of the TensorFlow
-Ranking package (in `setup.py`), you must explicitly install the TensorFlow
-package (`tensorflow` or `tensorflow-gpu`). This allows us to maintain one
-package instead of separate packages for CPU and GPU-enabled TensorFlow.
+Note: Since TensorFlow is now included as a dependency of the TensorFlow Ranking
+package (in `setup.py`). If you wish to use different versions of TensorFlow
+(e.g., `tensorflow-gpu`), you may need to uninstall the existing verison and
+then install your desired version:
+
+```shell
+$ pip uninstall tensorflow
+$ pip install tensorflow-gpu
+```
 
 ### Installing from Source
 
@@ -112,8 +120,22 @@ package instead of separate packages for CPU and GPU-enabled TensorFlow.
     ```shell
     $ ~/.local/bin/virtualenv -p python3 /tmp/tfr
     $ source /tmp/tfr/bin/activate
-    (tfr) $ pip install tensorflow  #  or tensorflow-gpu, if GPU support is needed.
     (tfr) $ pip install /tmp/ranking_pip/tensorflow_ranking*.whl
+    ```
+
+    In some cases, you may want to install a specific version of tensorflow,
+    e.g., `tensorflow-gpu` or `tensorflow==2.0.0`. To do so you can either
+
+    ```shell
+    (tfr) $ pip uninstall tensorflow
+    (tfr) $ pip install tensorflow==2.0.0
+    ```
+
+    or
+
+    ```shell
+    (tfr) $ pip uninstall tensorflow
+    (tfr) $ pip install tensorflow-gpu
     ```
 
 5.  Run all TensorFlow Ranking tests.
@@ -226,19 +248,16 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
     Wolf. _TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank._
     [KDD 2019.](https://ai.google/research/pubs/pub48160)
 
-
 +   Qingyao Ai, Xuanhui Wang, Nadav Golbandi, Michael Bendersky, Marc Najork.
     _Learning Groupwise Scoring Functions Using Deep Neural Networks._
     [CoRR abs/1811.04415 (2018)](https://arxiv.org/abs/1811.04415)
 
-
-+   Xuanhui Wang, Michael Bendersky, Donald Metzler, and Marc Najork.
-    _Learning to Rank with Selection Bias in Personal Search._
++   Xuanhui Wang, Michael Bendersky, Donald Metzler, and Marc Najork. _Learning
+    to Rank with Selection Bias in Personal Search._
     [SIGIR 2016.](https://ai.google/research/pubs/pub45286)
 
-
-+   Xuanhui Wang, Cheng Li, Nadav Golbandi, Mike Bendersky, Marc Najork.
-    _The LambdaLoss Framework for Ranking Metric Optimization_.
++   Xuanhui Wang, Cheng Li, Nadav Golbandi, Mike Bendersky, Marc Najork. _The
+    LambdaLoss Framework for Ranking Metric Optimization_.
     [CIKM 2018.](https://ai.google/research/pubs/pub47258)
 
 ### Citation
@@ -251,6 +270,6 @@ suggest you use the following citation:
        title = {TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank},
        booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
        year = {2019},
-       pages = {(to appear)}
+       pages = {2970--2978},
        location = {Anchorage, AK}
     }

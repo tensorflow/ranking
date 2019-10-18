@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
 import os
 from absl.testing import parameterized
 import numpy as np
@@ -26,15 +27,76 @@ import tensorflow as tf
 
 from google.protobuf import text_format
 from tensorflow_ranking.python import data as data_lib
+from tensorflow_serving.apis import input_pb2
+
+EXAMPLE_LIST_PROTO_1 = text_format.Parse(
+    """
+    context {
+      features {
+        feature {
+          key: "query_length"
+          value { int64_list { value: 3 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: "tensorflow" } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 0.0 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: ["learning", "to", "rank"] } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 1.0 } }
+        }
+      }
+    }
+    """, input_pb2.ExampleListWithContext())
+
+EXAMPLE_LIST_PROTO_2 = text_format.Parse(
+    """
+    context {
+      features {
+        feature {
+          key: "query_length"
+          value { int64_list { value: 2 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: "gbdt" } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 0.0 } }
+        }
+      }
+    }
+    """, input_pb2.ExampleListWithContext())
 
 CONTEXT_1 = text_format.Parse(
     """
-features {
-  feature {
-    key: "query_length"
-    value { int64_list { value: 3 } }
-  }
-}""", tf.train.Example())
+    features {
+      feature {
+        key: "query_length"
+        value { int64_list { value: 3 } }
+      }
+    }""", tf.train.Example())
 
 EXAMPLES_1 = [
     text_format.Parse(
@@ -65,12 +127,13 @@ EXAMPLES_1 = [
 
 CONTEXT_2 = text_format.Parse(
     """
-features {
-  feature {
-    key: "query_length"
-    value { int64_list { value: 2 } }
-  }
-}""", tf.train.Example())
+    features {
+      feature {
+        key: "query_length"
+        value { int64_list { value: 2 } }
+      }
+    }""", tf.train.Example())
+
 EXAMPLES_2 = [
     text_format.Parse(
         """
@@ -149,6 +212,154 @@ LIBSVM_DATA = """2 qid:1 1:0.1 3:0.3 4:-0.4
 1 qid:1 1:0.12 4:0.24 5:0.5
 0 qid:1 2:0.13
 """
+
+
+def make_example_list_input_fn():
+  """example_list input fn."""
+
+  def _example_list_proto_generator():
+    return [
+        EXAMPLE_LIST_PROTO_1.SerializeToString(),
+        EXAMPLE_LIST_PROTO_2.SerializeToString()
+    ] * 100
+
+  def example_list_input_fn():
+    dataset = tf.data.Dataset.from_generator(_example_list_proto_generator,
+                                             (tf.string), (tf.TensorShape([])))
+    kwargs = {
+        "list_size": 2,
+        "context_feature_spec": CONTEXT_FEATURE_SPEC,
+        "example_feature_spec": EXAMPLE_FEATURE_SPEC,
+    }
+    dataset = dataset.map(
+        functools.partial(data_lib.parse_single_example_list,
+                          **kwargs)).batch(2)
+
+    return tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
+
+  return example_list_input_fn
+
+
+class ExampleListTest(tf.test.TestCase):
+
+  def test_decode_as_serialized_example_list(self):
+    with tf.Graph().as_default():
+      context_tensor, list_tensor = (
+          data_lib._decode_as_serialized_example_list(
+              [EXAMPLE_LIST_PROTO_1.SerializeToString()]))
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        context_, list_ = sess.run([context_tensor, list_tensor])
+        self.assertAllEqual(
+            tf.convert_to_tensor(value=context_).get_shape().as_list(), [1, 1])
+        self.assertAllEqual(
+            tf.convert_to_tensor(value=list_).get_shape().as_list(), [1, 2])
+
+  def test_parse_from_example_list(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        # Test dense_shape, indices and values for a SparseTensor.
+        self.assertAllEqual(features["unigrams"].dense_shape, [2, 2, 3])
+        self.assertAllEqual(
+            features["unigrams"].indices,
+            [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+        self.assertAllEqual(
+            features["unigrams"].values,
+            [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
+  def test_parse_from_example_list_padding(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      # Padding since list_size 3 is larger than 2.
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          list_size=3,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        # Test dense_shape, indices and values for a SparseTensor.
+        self.assertAllEqual(features["unigrams"].dense_shape, [2, 3, 3])
+        self.assertAllEqual(
+            features["unigrams"].indices,
+            [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+        self.assertAllEqual(
+            features["unigrams"].values,
+            [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"],
+                            [[[0.], [1.0], [-1.]], [[0.], [-1.], [-1.]]])
+
+  def test_parse_from_example_list_truncate(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      # Trunate number of examples from 2 to 1.
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          list_size=1,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        # Test dense_shape, indices and values for a SparseTensor.
+        self.assertAllEqual(features["unigrams"].dense_shape, [2, 1, 1])
+        self.assertAllEqual(features["unigrams"].indices,
+                            [[0, 0, 0], [1, 0, 0]])
+        self.assertAllEqual(features["unigrams"].values,
+                            [b"tensorflow", b"gbdt"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[0.]], [[0.]]])
+
+  def test_parse_from_example_list_static_shape(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      feature_map_list = []
+      for list_size in [None, 100, 1]:
+        feature_map_list.append(
+            data_lib.parse_from_example_list(
+                serialized_example_lists,
+                list_size=list_size,
+                context_feature_spec=CONTEXT_FEATURE_SPEC,
+                example_feature_spec=EXAMPLE_FEATURE_SPEC))
+      for features in feature_map_list:
+        self.assertAllEqual([2, 1],
+                            features["query_length"].get_shape().as_list())
+      for features, static_shape in zip(feature_map_list, [
+          [2, 2, 1],
+          [2, 100, 1],
+          [2, 1, 1],
+      ]):
+        self.assertAllEqual(static_shape,
+                            features["utility"].get_shape().as_list())
 
 
 def _example_in_example(context, examples):
