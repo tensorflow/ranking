@@ -44,9 +44,7 @@ interactive Python environment.
     [the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format):
     [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.ipynb).
 
-In addition, we have a simple script version for
-[the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format)
-is available at [Running Script](#running-script).
+Also see [Running Scripts](#running-scripts) for executable scripts.
 
 ## Linux Installation
 
@@ -150,18 +148,47 @@ $ pip install tensorflow-gpu
     (tfr) $ python -c "import tensorflow_ranking"
     ```
 
-## Running Script
+## Running Scripts
 
-For ease of experimentation, we also provide the LIBSVM demo in the form of an
-executable
-[script](https://github.com/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.py).
-This is particularly useful for hyperparameter tuning, where the hyperparameters
-are supplied as flags to the script.
+For ease of experimentation, we also provide
+[a TFRecord example](https://github.com/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_tfrecord.py)
+and
+[a LIBSVM example](https://github.com/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.py)
+in the form of executable scripts. This is particularly useful for
+hyperparameter tuning, where the hyperparameters are supplied as flags to the
+script.
+
+### TFRecord Example
 
 1.  Set up the data and directory.
 
     ```shell
-    OUTPUT_DIR=/tmp/output && \
+    MODEL_DIR=/tmp/tf_record_model && \
+    TRAIN=tensorflow_ranking/examples/data/train_elwc.tfrecord && \
+    EVAL=tensorflow_ranking/examples/data/eval_elwc.tfrecord && \
+    VOCAB=tensorflow_ranking/examples/data/vocab.txt
+    ```
+
+2.  Build and run.
+
+    ```shell
+    rm -rf $MODEL_DIR && \
+    bazel build -c opt \
+    tensorflow_ranking/examples/tf_ranking_tfrecord_py_binary && \
+    ./bazel-bin/tensorflow_ranking/examples/tf_ranking_tfrecord_py_binary \
+    --train_path=$TRAIN \
+    --eval_path=$EVAL \
+    --vocab_path=$VOCAB \
+    --model_dir=$MODEL_DIR \
+    --data_format=example_list_with_context
+    ```
+
+### LIBSVM Example
+
+1.  Set up the data and directory.
+
+    ```shell
+    OUTPUT_DIR=/tmp/libsvm && \
     TRAIN=tensorflow_ranking/examples/data/train.txt && \
     VALI=tensorflow_ranking/examples/data/vali.txt && \
     TEST=tensorflow_ranking/examples/data/test.txt
@@ -248,9 +275,9 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
     Wolf. _TF-Ranking: Scalable TensorFlow Library for Learning-to-Rank._
     [KDD 2019.](https://ai.google/research/pubs/pub48160)
 
-+   Qingyao Ai, Xuanhui Wang, Nadav Golbandi, Michael Bendersky, Marc Najork.
-    _Learning Groupwise Scoring Functions Using Deep Neural Networks._
-    [CoRR abs/1811.04415 (2018)](https://arxiv.org/abs/1811.04415)
++   Qingyao Ai, Xuanhui Wang, Sebastian Bruch, Nadav Golbandi, Michael
+    Bendersky, Marc Najork. _Learning Groupwise Scoring Functions Using Deep
+    Neural Networks._ [ICTIR 2019](https://ai.google/research/pubs/pub48348)
 
 +   Xuanhui Wang, Michael Bendersky, Donald Metzler, and Marc Najork. _Learning
     to Rank with Selection Bias in Personal Search._
