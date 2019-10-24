@@ -101,33 +101,75 @@ class MetricsTest(tf.test.TestCase):
 
   def test_mean_reciprocal_rank(self):
     with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 1., 2.]]
-      weights = [[1., 2., 3.], [4., 5., 6.]]
+      scores = [[1., 3., 2.], [1., 2., 3.], [3., 1., 2.]]
+      # Note that scores are ranked in descending order.
+      # ranks = [[3, 1, 2], [3, 2, 1], [1, 3, 2]]
+      labels = [[0., 0., 1.], [0., 1., 2.], [0., 1., 0.]]
+      # Note that the definition of MRR only uses the highest ranked
+      # relevant item, where an item is relevant if its label is > 0.
+      rel_rank = [2, 1, 3]
+      weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
+      mean_relevant_weights = [weights[0][2], sum(weights[1][1:]) / 2,
+                               weights[2][1]]
+      num_queries = len(scores)
+      self.assertAlmostEqual(num_queries, 3)
       m = metrics_lib.mean_reciprocal_rank
       self._check_metrics([
-          (m([labels[0]], [scores[0]]), 0.5),
-          (m(labels, scores), (0.5 + 1.0) / 2),
-          (m(labels, scores,
-             weights), (3. * 0.5 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5) / 2.)),
+          (m([labels[0]], [scores[0]]), 1. / rel_rank[0]),
+          (m([labels[0]], [scores[0]], topn=1), 0.),
+          (m([labels[0]], [scores[0]], topn=2), 1. / rel_rank[0]),
+          (m([labels[1]], [scores[1]]), 1. / rel_rank[1]),
+          (m([labels[1]], [scores[1]], topn=1), 1. / rel_rank[1]),
+          (m([labels[1]], [scores[1]], topn=6), 1. / rel_rank[1]),
+          (m([labels[2]], [scores[2]]), 1. / rel_rank[2]),
+          (m([labels[2]], [scores[2]], topn=1), 0.),
+          (m([labels[2]], [scores[2]], topn=2), 0.),
+          (m([labels[2]], [scores[2]], topn=3), 1. / rel_rank[2]),
+          (m(labels[:2], scores[:2]), (0.5 + 1.0) / 2),
+          (m(labels[:2], scores[:2], weights[:2]),
+           (3. * 0.5 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5) / 2.)),
+          (m(labels, scores),
+           sum([1. / rel_rank[ind] for ind in range(num_queries)])
+           / num_queries),
+          (m(labels, scores, topn=1),
+           sum([0., 1. / rel_rank[1], 0.]) / num_queries),
+          (m(labels, scores, topn=2),
+           sum([1. / rel_rank[0], 1. / rel_rank[1], 0.]) / num_queries),
+          (m(labels, scores, weights),
+           sum([mean_relevant_weights[ind] / rel_rank[ind]
+                for ind in range(num_queries)]) / sum(mean_relevant_weights)),
+          (m(labels, scores, weights, topn=1),
+           sum([0., mean_relevant_weights[1] / rel_rank[1], 0.])
+           / sum(mean_relevant_weights)),
       ])
 
   def test_make_mean_reciprocal_rank_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      # ranks = [[3, 1, 2], [3, 2, 1]]
       labels = [[0., 0., 1.], [0., 1., 2.]]
+      # Note that the definition of MRR only uses the highest ranked
+      # relevant item, where an item is relevant if its label is > 0.
+      rel_rank = [2, 1]
       weights = [[1., 2., 3.], [4., 5., 6.]]
+      num_queries = len(scores)
       weights_feature_name = 'weights'
       features = {weights_feature_name: weights}
       m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.MRR)
       m_w = metrics_lib.make_ranking_metric_fn(
           metrics_lib.RankingMetricKey.MRR,
           weights_feature_name=weights_feature_name)
+      m_2 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.MRR,
+          topn=1)
       self._check_metrics([
           (m([labels[0]], [scores[0]], features), 0.5),
           (m(labels, scores, features), (0.5 + 1.0) / 2),
           (m_w(labels, scores, features),
            (3. * 0.5 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5.) / 2.)),
+          (m_2(labels, scores, features),
+           (sum([0., 1. / rel_rank[1], 0.]) / num_queries)),
       ])
 
   def test_average_relevance_position(self):

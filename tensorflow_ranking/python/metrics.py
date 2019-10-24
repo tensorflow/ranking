@@ -90,7 +90,11 @@ def make_ranking_metric_fn(metric_key,
   def _mean_reciprocal_rank_fn(labels, predictions, features):
     """Returns mean reciprocal rank as the metric."""
     return mean_reciprocal_rank(
-        labels, predictions, weights=_get_weights(features), name=name)
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name)
 
   def _normalized_discounted_cumulative_gain_fn(labels, predictions, features):
     """Returns normalized discounted cumulative gain as the metric."""
@@ -242,9 +246,10 @@ class _RankingMetric(object):
 class _MRRMetric(_RankingMetric):
   """Implements mean reciprocal rank (MRR)."""
 
-  def __init__(self, name):
+  def __init__(self, name, topn):
     """Constructor."""
     self._name = name
+    self._topn = topn
 
   @property
   def name(self):
@@ -253,13 +258,14 @@ class _MRRMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
-    list_size = tf.shape(input=predictions)[1]
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, list_size)
+        labels, predictions, weights, self._topn)
     sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn)
+    sorted_list_size = tf.shape(input=sorted_labels)[1]
     # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
     relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
-    reciprocal_rank = 1.0 / tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
+    reciprocal_rank = 1.0 / tf.cast(tf.range(1, sorted_list_size + 1),
+                                    dtype=tf.float32)
     # MRR has a shape of [batch_size, 1].
     mrr = tf.reduce_max(
         input_tensor=relevance * reciprocal_rank, axis=1, keepdims=True)
@@ -269,7 +275,11 @@ class _MRRMetric(_RankingMetric):
     return tf.compat.v1.metrics.mean(mrr, per_list_weights)
 
 
-def mean_reciprocal_rank(labels, predictions, weights=None, name=None):
+def mean_reciprocal_rank(labels,
+                         predictions,
+                         weights=None,
+                         topn=None,
+                         name=None):
   """Computes mean reciprocal rank (MRR).
 
   Args:
@@ -279,12 +289,14 @@ def mean_reciprocal_rank(labels, predictions, weights=None, name=None):
       the ranking score of the corresponding example.
     weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
       former case is per-example and the latter case is per-list.
+    topn: An integer cutoff specifying how many examples to consider for this
+      metric. If None, the whole list is considered.
     name: A string used as the name for this metric.
 
   Returns:
     A metric for the weighted mean reciprocal rank of the batch.
   """
-  metric = _MRRMetric(name)
+  metric = _MRRMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'mean_reciprocal_rank',
                                (labels, predictions, weights)):
     return metric.compute(labels, predictions, weights)
