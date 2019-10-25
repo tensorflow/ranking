@@ -93,6 +93,32 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
     if tf.io.gfile.exists(model_dir):
       tf.io.gfile.rmtree(model_dir)
 
+  def test_train_and_eval_with_document_interactions(self):
+    data_dir = tf.compat.v1.test.get_temp_dir()
+    data_file = os.path.join(data_dir, "elwc.tfrecord")
+    if tf.io.gfile.exists(data_file):
+      tf.io.gfile.remove(data_file)
+
+    with tf.io.TFRecordWriter(data_file) as writer:
+      for elwc in [ELWC] * 10:
+        writer.write(elwc.SerializeToString())
+
+    model_dir = os.path.join(data_dir, "model")
+
+    with flagsaver.flagsaver(
+        train_path=data_file,
+        eval_path=data_file,
+        data_format="example_list_with_context",
+        model_dir=model_dir,
+        num_train_steps=10,
+        listwise_inference=True,
+        use_document_interactions=True,
+        group_size=1):
+      tf_ranking_tfrecord.train_and_eval()
+
+    if tf.io.gfile.exists(model_dir):
+      tf.io.gfile.rmtree(model_dir)
+
 
 if __name__ == "__main__":
   tf.test.main()

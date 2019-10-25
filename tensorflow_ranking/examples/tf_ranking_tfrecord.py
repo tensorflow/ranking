@@ -52,30 +52,30 @@ flags.DEFINE_string("eval_path", None, "Input file path used for eval.")
 flags.DEFINE_string("vocab_path", None,
                     "Vocabulary path for query and document tokens.")
 flags.DEFINE_string("model_dir", None, "Output directory for models.")
-
 flags.DEFINE_integer("batch_size", 32, "The batch size for train.")
-flags.DEFINE_integer("num_train_steps", 1000, "Number of steps for train.")
-
+flags.DEFINE_integer("num_train_steps", 15000, "Number of steps for train.")
 flags.DEFINE_float("learning_rate", 0.05, "Learning rate for optimizer.")
 flags.DEFINE_float("dropout_rate", 0.8, "The dropout rate before output layer.")
-flags.DEFINE_list("hidden_layer_dims", ["64", "8"], "Sizes for hidden layers.")
-
+flags.DEFINE_list("hidden_layer_dims", ["64", "32", "16"],
+                  "Sizes for hidden layers.")
 flags.DEFINE_integer(
     "list_size", None,
     "List size used for training. Use None for dynamic list size.")
 flags.DEFINE_integer("group_size", 1, "Group size used in score function.")
-
 flags.DEFINE_string("loss", "approx_ndcg_loss",
                     "The RankingLossKey for the loss function.")
-
 flags.DEFINE_bool("listwise_inference", False,
                   "If true, exports accept `data_format` while serving.")
+flags.DEFINE_bool(
+    "use_document_interactions", False,
+    "If true, uses cross-document interactions to generate scores.")
 
 FLAGS = flags.FLAGS
 
 _LABEL_FEATURE = "relevance"
 _PADDING_LABEL = -1
 _EMBEDDING_DIMENSION = 20
+_DOCUMENT_MASK = "__document_mask__"
 
 
 def context_feature_columns():
@@ -144,6 +144,12 @@ def make_input_fn(file_pattern,
     features = tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
     label = tf.squeeze(features.pop(_LABEL_FEATURE), axis=2)
     label = tf.cast(label, tf.float32)
+
+    # Add document_mask to features, which is True for valid documents and False
+    # for invalid documents.
+    if FLAGS.use_document_interactions:
+      features[_DOCUMENT_MASK] = tf.not_equal(label, _PADDING_LABEL)
+
     return features, label
 
   return _input_fn
@@ -174,12 +180,59 @@ def make_serving_input_fn():
                          FLAGS.group_size))
 
 
+def _document_interaction_layer(context_features,
+                                example_features,
+                                document_mask=None):
+  """A simplified demo version of Document Interaction Networks.
+
+  Document Interaction Networks can capture cross-document interactions using
+  self-attention mechanism. This simplified implementation (for demo purposes)
+  uses a single-layer of self-attention, with a single head.
+
+  For more details, please refer to the paper, "Self-Attentive Document
+  Interaction Networks for Permutation Equivariant Ranking".
+  https://arxiv.org/pdf/1910.09676.pdf
+
+  Args:
+    context_features: (dict) A mapping from feature name to 2D tensors of shape
+      [batch_size, feature_dims].
+    example_features: (dict) A mapping from feature name to 3D tensors of shape
+      [batch_size, input_length, feature_dims].
+    document_mask: A tensor of shape [batch_size, input_size], indicating the
+      number of valid documents per query.
+
+  Returns:
+     document_interaction_embedding: A 3D tensor of size [batch_size,
+     input_length, hidden_size].
+  """
+  sorted_example_keys = sorted(example_features.keys())
+  example_inputs = tf.concat(
+      [example_features[name] for name in sorted_example_keys], axis=2)
+
+  outputs = [example_inputs]
+  if context_features:
+    sorted_context_keys = sorted(context_features.keys())
+    context_inputs = tf.concat(
+        [context_features[name] for name in sorted_context_keys], axis=1)
+    context_inputs = tf.expand_dims(input=context_inputs, axis=1)
+    length = tf.shape(example_inputs)[1]
+    context_inputs = tf.tile(input=context_inputs, multiples=[1, length, 1])
+    outputs.append(context_inputs)
+
+  document_embedding = tf.concat(outputs, axis=2)
+  document_interaction_embedding = tf.keras.layers.Attention()(
+      [document_embedding, document_embedding],
+      [document_mask, document_mask])
+
+  return document_interaction_embedding
+
+
 def make_transform_fn():
   """Returns a transform_fn that converts features to dense Tensors."""
 
   def _transform_fn(features, mode):
     """Defines transform_fn."""
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf.estimator.ModeKeys.PREDICT and not FLAGS.listwise_inference:
       # We expect tf.Example as input during serving. In this case, group_size
       # must be set to 1.
       if FLAGS.group_size != 1:
@@ -200,6 +253,23 @@ def make_transform_fn():
           example_feature_columns=example_feature_columns(),
           mode=mode,
           scope="transform_layer")
+
+    # Document Interactions Layer.
+    if FLAGS.use_document_interactions:
+      if mode == tf.estimator.ModeKeys.PREDICT:
+        if not FLAGS.listwise_inference:
+          raise ValueError("Only listwise inference is compatible for networks "
+                           "with document interactions.")
+        else:
+          # Set document mask to None. This assumes document list for each
+          # query has no padding. It is recommended to pass batches of queries
+          # with the same number of documents during inference.
+          features[_DOCUMENT_MASK] = None
+      document_mask = features.pop(_DOCUMENT_MASK)
+      document_interaction_embedding = _document_interaction_layer(
+          context_features, example_features, document_mask=document_mask)
+      example_features[
+          "document_interaction_embedding"] = document_interaction_embedding
     return context_features, example_features
 
   return _transform_fn
@@ -220,6 +290,10 @@ def make_score_fn():
           tf.compat.v1.layers.flatten(group_features[name])
           for name in sorted(example_feature_columns())
       ]
+      if FLAGS.use_document_interactions:
+        group_input.append(
+            tf.compat.v1.layers.flatten(
+                group_features["document_interaction_embedding"]))
       input_layer = tf.concat(context_input + group_input, 1)
       tf.compat.v1.summary.scalar("input_sparsity",
                                   tf.nn.zero_fraction(input_layer))
@@ -298,21 +372,23 @@ def train_and_eval():
   train_spec = tf.estimator.TrainSpec(
       input_fn=train_input_fn, max_steps=FLAGS.num_train_steps)
 
+  exporters = tf.estimator.LatestExporter(
+      "saved_model_exporter", serving_input_receiver_fn=make_serving_input_fn())
+
   eval_spec = tf.estimator.EvalSpec(
       name="eval",
       input_fn=eval_input_fn,
       steps=1,
-      exporters=tf.estimator.LatestExporter(
-          "saved_model_exporter",
-          serving_input_receiver_fn=make_serving_input_fn()),
+      exporters=exporters,
       start_delay_secs=0,
       throttle_secs=15)
 
-  # Train and validate
+  # Train and validate.
   tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 def main(_):
+  tf.compat.v1.set_random_seed(1234)
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
   train_and_eval()
 
