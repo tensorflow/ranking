@@ -24,18 +24,24 @@ import tensorflow as tf
 from tensorflow_ranking.python import metrics as metrics_lib
 
 
-def _dcg(label, rank, weight=1.0):
+def _dcg(label,
+         rank,
+         weight=1.0,
+         gain_fn=lambda l: math.pow(2.0, l) - 1.0,
+         rank_discount_fn=lambda r: math.log(r + 1.0, 2.0)):
   """Returns a single dcg addend.
 
   Args:
     label: The document label.
     rank: The document rank starting from 1.
     weight: The document weight.
+    gain_fn: (function) Transforms labels.
+    rank_discount_fn: (function) The rank discount function.
 
   Returns:
     A single dcg addend. e.g. weight*(2^relevance-1)/log2(rank+1).
   """
-  return weight * (math.pow(2.0, label) - 1.0) / math.log(rank + 1.0, 2.0)
+  return weight * gain_fn(label) / rank_discount_fn(rank)
 
 
 def _label_boost(boost_form, label):
@@ -260,6 +266,8 @@ class MetricsTest(tf.test.TestCase):
   def test_normalized_discounted_cumulative_gain(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      ranks = [[3, 1, 2], [3, 2, 1]]
       labels = [[0., 0., 1.], [0., 1., 2.]]
       m = metrics_lib.normalized_discounted_cumulative_gain
       expected_ndcg = (_dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)) / (
@@ -273,6 +281,25 @@ class MetricsTest(tf.test.TestCase):
       expected_ndcg = (expected_ndcg_1 + expected_ndcg_2) / 2.0
       self._check_metrics([
           (m(labels, scores), expected_ndcg),
+      ])
+      # Testing different gain and discount functions
+      gain_fn = lambda rel: rel
+      rank_discount_fn = lambda rank: rank
+      def mod_dcg_fn(l, r):
+        return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+      list_size = len(scores[0])
+      ideal_labels = sorted(labels[0], reverse=True)
+      list_dcgs = [mod_dcg_fn(labels[0][ind], ranks[0][ind])
+                   for ind in range(list_size)]
+      ideal_dcgs = [mod_dcg_fn(ideal_labels[ind], ind+1)
+                    for ind in range(list_size)]
+      expected_modified_ndcg_1 = sum(list_dcgs) / sum(ideal_dcgs)
+      self._check_metrics([
+          (m([labels[0]],
+             [scores[0]],
+             gain_fn=gain_fn,
+             rank_discount_fn=rank_discount_fn),
+           expected_modified_ndcg_1),
       ])
 
   def test_normalized_discounted_cumulative_gain_with_weights(self):
@@ -332,6 +359,8 @@ class MetricsTest(tf.test.TestCase):
   def test_make_normalized_discounted_cumulative_gain_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      ranks = [[3, 1, 2], [3, 2, 1]]
       labels = [[0., 0., 1.], [0., 1., 2.]]
       weights = [[1., 2., 3.], [4., 5., 6.]]
       weights_3d = [[[1.], [2.], [3.]], [[4.], [5.], [6.]]]
@@ -407,9 +436,27 @@ class MetricsTest(tf.test.TestCase):
            (_dcg(1., 1, 3.) + _dcg(0., 2, 1.) + _dcg(0., 3, 2.))),
       ])
 
+      # Testing different gain and discount functions
+      gain_fn = lambda rel: rel
+      rank_discount_fn = lambda rank: rank
+      def mod_dcg_fn(l, r):
+        return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+      m_mod = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.NDCG,
+          gain_fn=gain_fn,
+          rank_discount_fn=rank_discount_fn)
+      list_size = len(scores[0])
+      expected_modified_dcg_1 = sum([mod_dcg_fn(labels[0][ind], ranks[0][ind])
+                                     for ind in range(list_size)])
+      self._check_metrics([
+          (m_mod([labels[0]], [scores[0]], features), expected_modified_dcg_1),
+      ])
+
   def test_discounted_cumulative_gain(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      ranks = [[3, 1, 2], [3, 2, 1]]
       labels = [[0., 0., 1.], [0., 1., 2.]]
       weights = [[1., 1., 1.], [2., 2., 1.]]
       m = metrics_lib.discounted_cumulative_gain
@@ -426,10 +473,27 @@ class MetricsTest(tf.test.TestCase):
              weights), (expected_dcg_1 + expected_dcg_2_weighted) /
            (1. + expected_weight_2)),
       ])
+      # Testing different gain and discount functions
+      gain_fn = lambda rel: rel
+      rank_discount_fn = lambda rank: rank
+      def mod_dcg_fn(l, r):
+        return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+      list_size = len(scores[0])
+      expected_modified_dcg_1 = sum([mod_dcg_fn(labels[0][ind], ranks[0][ind])
+                                     for ind in range(list_size)])
+      self._check_metrics([
+          (m([labels[0]],
+             [scores[0]],
+             gain_fn=gain_fn,
+             rank_discount_fn=rank_discount_fn),
+           expected_modified_dcg_1),
+      ])
 
   def test_make_discounted_cumulative_gain_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      ranks = [[3, 1, 2], [3, 2, 1]]
       labels = [[0., 0., 1.], [0., 1., 2.]]
       weights = [[1., 1., 1.], [2., 2., 1.]]
       weights_feature_name = 'weights'
@@ -451,6 +515,21 @@ class MetricsTest(tf.test.TestCase):
           (m_w(labels, scores,
                features), (expected_dcg_1 + expected_dcg_2_weighted) /
            (1. + expected_weight_2)),
+      ])
+      # Testing different gain and discount functions
+      gain_fn = lambda rel: rel
+      rank_discount_fn = lambda rank: rank
+      def mod_dcg_fn(l, r):
+        return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+      m_mod = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.DCG,
+          gain_fn=gain_fn,
+          rank_discount_fn=rank_discount_fn)
+      list_size = len(scores[0])
+      expected_modified_dcg_1 = sum([mod_dcg_fn(labels[0][ind], ranks[0][ind])
+                                     for ind in range(list_size)])
+      self._check_metrics([
+          (m_mod([labels[0]], [scores[0]], features), expected_modified_dcg_1),
       ])
 
   def test_ordered_pair_accuracy(self):

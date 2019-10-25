@@ -29,6 +29,12 @@ import tensorflow as tf
 from tensorflow_ranking.python import utils
 
 
+_DEFAULT_GAIN_FN = lambda label: tf.pow(2.0, label) - 1
+
+
+_DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log1p(rank) / tf.math.log(2.)
+
+
 class RankingMetricKey(object):
   """Ranking metric key strings."""
   # Mean Receiprocal Rank. For binary relevance.
@@ -50,10 +56,13 @@ class RankingMetricKey(object):
   ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'
 
 
-def make_ranking_metric_fn(metric_key,
-                           weights_feature_name=None,
-                           topn=None,
-                           name=None):
+def make_ranking_metric_fn(
+    metric_key,
+    weights_feature_name=None,
+    topn=None,
+    name=None,
+    gain_fn=_DEFAULT_GAIN_FN,
+    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
   """Factory method to create a ranking metric function.
 
   Args:
@@ -63,6 +72,14 @@ def make_ranking_metric_fn(metric_key,
     topn: An `integer` specifying the cutoff of how many items are considered in
       the metric.
     name: A `string` used as the name for this metric.
+    gain_fn: (function) Transforms labels. A method to calculate gain
+      parameters used in the definitions of the DCG and NDCG metrics, where the
+      input is the relevance label of the item. The gain is often defined to be
+      of the form 2^label-1.
+    rank_discount_fn: (function) The rank discount function. A method to define
+      the dicount parameters used in the definitions of DCG and NDCG metrics,
+      where the input in the rank of item. The discount function is commonly
+      defined to be of the form log(rank+1).
 
   Returns:
     A metric fn with the following Args:
@@ -103,7 +120,9 @@ def make_ranking_metric_fn(metric_key,
         predictions,
         weights=_get_weights(features),
         topn=topn,
-        name=name)
+        name=name,
+        gain_fn=gain_fn,
+        rank_discount_fn=rank_discount_fn)
 
   def _discounted_cumulative_gain_fn(labels, predictions, features):
     """Returns discounted cumulative gain as the metric."""
@@ -112,7 +131,9 @@ def make_ranking_metric_fn(metric_key,
         predictions,
         weights=_get_weights(features),
         topn=topn,
-        name=name)
+        name=name,
+        gain_fn=gain_fn,
+        rank_discount_fn=rank_discount_fn)
 
   def _precision_fn(labels, predictions, features):
     """Returns precision as the metric."""
@@ -157,25 +178,32 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   return per_list_weights
 
 
-def _discounted_cumulative_gain(labels, weights=None):
+def _discounted_cumulative_gain(
+    labels,
+    weights=None,
+    gain_fn=_DEFAULT_GAIN_FN,
+    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
   """Computes discounted cumulative gain (DCG).
 
-  DCG =  SUM((2^label -1) / (log(1+rank))).
+  DCG = SUM(gain_fn(label) / rank_discount_fn(rank)). Using the default values
+  of the gain and discount functions, we get the following commonly used
+  formula for DCG: SUM((2^label -1) / log(1+rank)).
 
   Args:
-   labels: The relevance `Tensor` of shape [batch_size, list_size]. For the
-     ideal ranking, the examples are sorted by relevance in reverse order.
+    labels: The relevance `Tensor` of shape [batch_size, list_size]. For the
+      ideal ranking, the examples are sorted by relevance in reverse order.
     weights: A `Tensor` of the same shape as labels or [batch_size, 1]. The
       former case is per-example and the latter case is per-list.
-
+    gain_fn: (function) Transforms labels.
+    rank_discount_fn: (function) The rank discount function.
   Returns:
     A `Tensor` as the weighted discounted cumulative gain per-list. The
     tensor shape is [batch_size, 1].
   """
   list_size = tf.shape(input=labels)[1]
   position = tf.cast(tf.range(1, list_size + 1), dtype=tf.float32)
-  denominator = tf.math.log(position + 1)
-  numerator = tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0
+  numerator = gain_fn(tf.cast(labels, dtype=tf.float32))
+  denominator = rank_discount_fn(position)
   return tf.reduce_sum(
       input_tensor=weights * numerator / denominator, axis=1, keepdims=True)
 
@@ -413,69 +441,17 @@ def precision(labels, predictions, weights=None, topn=None, name=None):
 class _NDCGMetric(_RankingMetric):
   """Implements normalized discounted cumulative gain (NDCG)."""
 
-  def __init__(self, name, topn):
+  def __init__(
+      self,
+      name,
+      topn,
+      gain_fn=_DEFAULT_GAIN_FN,
+      rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
     """Constructor."""
     self._name = name
     self._topn = topn
-
-  @property
-  def name(self):
-    """The metric name."""
-    return self._name
-
-  def compute(self, labels, predictions, weights):
-    """See `_RankingMetric`."""
-    labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
-    sorted_labels, sorted_weights = utils.sort_by_scores(
-        predictions, [labels, weights], topn=topn)
-    dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights)
-    # Sorting over the weighted labels to get ideal ranking.
-    ideal_sorted_labels, ideal_sorted_weights = utils.sort_by_scores(
-        weights * labels, [labels, weights], topn=topn)
-    ideal_dcg = _discounted_cumulative_gain(ideal_sorted_labels,
-                                            ideal_sorted_weights)
-    per_list_ndcg = tf.compat.v1.math.divide_no_nan(dcg, ideal_dcg)
-    per_list_weights = _per_example_weights_to_per_list_weights(
-        weights=weights,
-        relevance=tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0)
-    return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
-
-
-def normalized_discounted_cumulative_gain(labels,
-                                          predictions,
-                                          weights=None,
-                                          topn=None,
-                                          name=None):
-  """Computes normalized discounted cumulative gain (NDCG).
-
-  Args:
-    labels: A `Tensor` of the same shape as `predictions`.
-    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
-      the ranking score of the corresponding example.
-    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
-      former case is per-example and the latter case is per-list.
-    topn: A cutoff for how many examples to consider for this metric.
-    name: A string used as the name for this metric.
-
-  Returns:
-    A metric for the weighted normalized discounted cumulative gain of the
-    batch.
-  """
-  metric = _NDCGMetric(name, topn)
-  with tf.compat.v1.name_scope(metric.name,
-                               'normalized_discounted_cumulative_gain',
-                               (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
-
-
-class _DCGMetric(_RankingMetric):
-  """Implements discounted cumulative gain (DCG)."""
-
-  def __init__(self, name, topn):
-    """Constructor."""
-    self._name = name
-    self._topn = topn
+    self._gain_fn = gain_fn
+    self._rank_discount_fn = rank_discount_fn
 
   @property
   def name(self):
@@ -489,20 +465,101 @@ class _DCGMetric(_RankingMetric):
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
     dcg = _discounted_cumulative_gain(sorted_labels,
-                                      sorted_weights) * tf.math.log1p(1.0)
+                                      sorted_weights,
+                                      self._gain_fn,
+                                      self._rank_discount_fn)
+    # Sorting over the weighted labels to get ideal ranking.
+    ideal_sorted_labels, ideal_sorted_weights = utils.sort_by_scores(
+        weights * labels, [labels, weights], topn=topn)
+    ideal_dcg = _discounted_cumulative_gain(ideal_sorted_labels,
+                                            ideal_sorted_weights,
+                                            self._gain_fn,
+                                            self._rank_discount_fn)
+    per_list_ndcg = tf.compat.v1.math.divide_no_nan(dcg, ideal_dcg)
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights=weights,
-        relevance=tf.pow(2.0, tf.cast(labels, dtype=tf.float32)) - 1.0)
+        relevance=self._gain_fn(tf.cast(labels, dtype=tf.float32)))
+    return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
+
+
+def normalized_discounted_cumulative_gain(
+    labels,
+    predictions,
+    weights=None,
+    topn=None,
+    name=None,
+    gain_fn=_DEFAULT_GAIN_FN,
+    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
+  """Computes normalized discounted cumulative gain (NDCG).
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: A cutoff for how many examples to consider for this metric.
+    name: A string used as the name for this metric.
+    gain_fn: (function) Transforms labels.
+    rank_discount_fn: (function) The rank discount function.
+
+  Returns:
+    A metric for the weighted normalized discounted cumulative gain of the
+    batch.
+  """
+  metric = _NDCGMetric(name, topn, gain_fn, rank_discount_fn)
+  with tf.compat.v1.name_scope(metric.name,
+                               'normalized_discounted_cumulative_gain',
+                               (labels, predictions, weights)):
+    return metric.compute(labels, predictions, weights)
+
+
+class _DCGMetric(_RankingMetric):
+  """Implements discounted cumulative gain (DCG)."""
+
+  def __init__(
+      self,
+      name,
+      topn,
+      gain_fn=_DEFAULT_GAIN_FN,
+      rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
+    """Constructor."""
+    self._name = name
+    self._topn = topn
+    self._gain_fn = gain_fn
+    self._rank_discount_fn = rank_discount_fn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+    labels, predictions, weights, topn = _prepare_and_validate_params(
+        labels, predictions, weights, self._topn)
+    sorted_labels, sorted_weights = utils.sort_by_scores(
+        predictions, [labels, weights], topn=topn)
+    dcg = _discounted_cumulative_gain(sorted_labels,
+                                      sorted_weights,
+                                      self._gain_fn,
+                                      self._rank_discount_fn)
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights=weights,
+        relevance=self._gain_fn(tf.cast(labels, dtype=tf.float32)))
     return tf.compat.v1.metrics.mean(
         tf.compat.v1.math.divide_no_nan(dcg, per_list_weights),
         per_list_weights)
 
 
-def discounted_cumulative_gain(labels,
-                               predictions,
-                               weights=None,
-                               topn=None,
-                               name=None):
+def discounted_cumulative_gain(
+    labels,
+    predictions,
+    weights=None,
+    topn=None,
+    name=None,
+    gain_fn=_DEFAULT_GAIN_FN,
+    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
   """Computes discounted cumulative gain (DCG).
 
   Args:
@@ -513,11 +570,13 @@ def discounted_cumulative_gain(labels,
       former case is per-example and the latter case is per-list.
     topn: A cutoff for how many examples to consider for this metric.
     name: A string used as the name for this metric.
+    gain_fn: (function) Transforms labels.
+    rank_discount_fn: (function) The rank discount function.
 
   Returns:
     A metric for the weighted discounted cumulative gain of the batch.
   """
-  metric = _DCGMetric(name, topn)
+  metric = _DCGMetric(name, topn, gain_fn, rank_discount_fn)
   with tf.compat.v1.name_scope(name, 'discounted_cumulative_gain',
                                (labels, predictions, weights)):
     return metric.compute(labels, predictions, weights)
