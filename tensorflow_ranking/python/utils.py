@@ -210,3 +210,89 @@ def reshape_to_2d(tensor):
         while tensor.shape.rank < 2:
           tensor = tf.expand_dims(tensor, -1)
     return tensor
+
+
+def _circular_indices(size, num_valid_entries):
+  """Creates circular indices with padding and mask for non-padded ones.
+
+  This returns a indices and a mask Tensor, where the mask is True for valid
+  entries and False for padded entries.
+
+  The returned indices have the shape of [batch_size, size], where the
+  batch_size is obtained from the 1st dim of `num_valid_entries`. For a
+  batch_size = 1, when size = 3, returns [[0, 1, 2]], when num_valid_entries =
+  2, returns [[0, 1, 0]]. The first 2 are valid and the returned mask is [True,
+  True, False].
+
+  Args:
+    size: A scalar int `Tensor` for the size.
+    num_valid_entries: A 1-D `Tensor` with shape [batch_size] representing the
+      number of valid entries for each instance in a batch.
+
+  Returns:
+    A tuple of Tensors (batch_indices, batch_indices_mask). The first has
+    shape [batch_size, size] and the second has shape [batch_size, size].
+  """
+  with tf.compat.v1.name_scope(name='circular_indices'):
+    # shape = [batch_size, size] with value [[0, 1, ...], [0, 1, ...], ...].
+    batch_indices = tf.tile(
+        tf.expand_dims(tf.range(size), 0), [tf.shape(num_valid_entries)[0], 1])
+    num_valid_entries = tf.reshape(num_valid_entries, [-1, 1])
+    batch_indices_mask = tf.less(batch_indices, num_valid_entries)
+    # Use mod to make the indices to the ranges of valid entries.
+    num_valid_entries = tf.compat.v1.where(
+        tf.less(num_valid_entries, 1), tf.ones_like(num_valid_entries),
+        num_valid_entries)
+    batch_indices = tf.math.mod(batch_indices, num_valid_entries)
+    return batch_indices, batch_indices_mask
+
+
+def padded_nd_indices(is_valid, shuffle=False, seed=None):
+  """Pads the invalid entries by valid ones and returns the nd_indices.
+
+  For example, when we have a batch_size = 1 and list_size = 3. Only the first 2
+  entries are valid. We have:
+  ```
+  is_valid = [[True, True, False]]
+  nd_indices, mask = padded_nd_indices(is_valid)
+  ```
+  nd_indices has a shape [1, 3, 2] and mask has a shape [1, 3].
+
+  ```
+  nd_indices = [[[0, 0], [0, 1], [0, 0]]]
+  mask = [[True, True, False]]
+  ```
+  nd_indices can be used by gather_nd on a Tensor t
+  ```
+  padded_t = tf.gather_nd(t, nd_indices)
+  ```
+  and get the following Tensor with first 2 dims are [1, 3]:
+  ```
+  padded_t = [[t(0, 0), t(0, 1), t(0, 0)]]
+  ```
+
+  Args:
+    is_valid: A boolean `Tensor` for entry validity with shape [batch_size,
+      list_size].
+    shuffle: A boolean that indicates whether valid indices should be shuffled.
+    seed: Random seed for shuffle.
+
+  Returns:
+    A tuple of Tensors (nd_indices, mask). The first has shape [batch_size,
+    list_size, 2] and it can be used in gather_nd or scatter_nd. The second has
+    the shape of [batch_size, list_size] with value True for valid indices.
+  """
+  with tf.compat.v1.name_scope(name='nd_indices_with_padding'):
+    is_valid = tf.convert_to_tensor(value=is_valid)
+    list_size = tf.shape(input=is_valid)[1]
+    num_valid_entries = tf.reduce_sum(
+        input_tensor=tf.cast(is_valid, dtype=tf.int32), axis=1)
+    indices, mask = _circular_indices(list_size, num_valid_entries)
+    # Valid indices of the tensor are shuffled and put on the top.
+    # [batch_size, list_size, 2].
+    shuffled_indices = organize_valid_indices(
+        is_valid, shuffle=shuffle, seed=seed)
+    # Construct indices for gather_nd [batch_size, list_size, 2].
+    nd_indices = _to_nd_indices(indices)
+    nd_indices = tf.gather_nd(shuffled_indices, nd_indices)
+    return nd_indices, mask

@@ -160,6 +160,70 @@ class UtilsTest(tf.test.TestCase):
             sess.run(tensor_3d_reshaped), [[1, 2, 3], [4, 5, 6]])
         self.assertAllEqual(sess.run(tensor_1d_reshaped), [[1], [2], [3]])
 
+  def test_circular_indices(self):
+    with tf.Graph().as_default():
+      with tf.compat.v1.Session() as sess:
+        # All valid.
+        indices, mask = sess.run(utils._circular_indices(3, [3]))
+        self.assertAllEqual(indices, [[0, 1, 2]])
+        self.assertAllEqual(mask, [[True, True, True]])
+        # One invalid.
+        indices, mask = sess.run(utils._circular_indices(3, [2]))
+        self.assertAllEqual(indices, [[0, 1, 0]])
+        self.assertAllEqual(mask, [[True, True, False]])
+        # All invalid.
+        indices, mask = sess.run(utils._circular_indices(3, [0]))
+        self.assertAllEqual(indices, [[0, 0, 0]])
+        self.assertAllEqual(mask, [[False, False, False]])
+        # batch_size = 2
+        indices, mask = sess.run(utils._circular_indices(3, [3, 2]))
+        self.assertAllEqual(indices, [[0, 1, 2], [0, 1, 0]])
+        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+
+  def test_padded_nd_indices(self):
+    with tf.Graph().as_default():
+      tf.compat.v1.set_random_seed(1)
+      # batch_size, list_size = 2, 3.
+      is_valid = [[True, True, True], [True, True, False]]
+      # Disable shuffling.
+      indices, mask = utils.padded_nd_indices(is_valid, shuffle=False)
+
+      with tf.compat.v1.Session() as sess:
+        indices, mask = sess.run([indices, mask])
+        # shape = [2, 3, 2] = [batch_size, list_size, 2].
+        self.assertAllEqual(
+            indices,
+            [  # batch_size = 2.
+                [  # list_size = 3.
+                    [0, 0], [0, 1], [0, 2]
+                ],
+                [  # list_size = 3.
+                    [1, 0], [1, 1], [1, 0]
+                ]
+            ])
+        # shape = [2, 3] = [batch_size, list_size]
+        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+
+      # Enable shuffling.
+      indices, mask = utils.padded_nd_indices(
+          is_valid, shuffle=True, seed=87124)
+
+      with tf.compat.v1.Session() as sess:
+        indices, mask = sess.run([indices, mask])
+        # shape = [2, 3, 2] = [batch_size, list_size, 2].
+        self.assertAllEqual(
+            indices,
+            [  # batch_size = 2.
+                [  # list_size = 3.
+                    [0, 0], [0, 1], [0, 2]
+                ],
+                [  # list_size = 3
+                    [1, 1], [1, 0], [1, 1]
+                ]
+            ])
+        # shape = [2, 3] = [batch_size, list_size]
+        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+
 
 if __name__ == '__main__':
   tf.test.main()
