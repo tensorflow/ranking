@@ -32,7 +32,7 @@ from tensorflow_ranking.python import utils
 _DEFAULT_GAIN_FN = lambda label: tf.pow(2.0, label) - 1
 
 
-_DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log1p(rank) / tf.math.log(2.)
+_DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
 
 
 class RankingMetricKey(object):
@@ -202,10 +202,10 @@ def _discounted_cumulative_gain(
   """
   list_size = tf.shape(input=labels)[1]
   position = tf.cast(tf.range(1, list_size + 1), dtype=tf.float32)
-  numerator = gain_fn(tf.cast(labels, dtype=tf.float32))
-  denominator = rank_discount_fn(position)
+  gain = gain_fn(tf.cast(labels, dtype=tf.float32))
+  discount = rank_discount_fn(position)
   return tf.reduce_sum(
-      input_tensor=weights * numerator / denominator, axis=1, keepdims=True)
+      input_tensor=weights * gain * discount, axis=1, keepdims=True)
 
 
 def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):

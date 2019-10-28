@@ -28,7 +28,7 @@ def _dcg(label,
          rank,
          weight=1.0,
          gain_fn=lambda l: math.pow(2.0, l) - 1.0,
-         rank_discount_fn=lambda r: math.log(r + 1.0, 2.0)):
+         rank_discount_fn=lambda r: 1. / math.log(r + 1.0, 2.0)):
   """Returns a single dcg addend.
 
   Args:
@@ -41,7 +41,7 @@ def _dcg(label,
   Returns:
     A single dcg addend. e.g. weight*(2^relevance-1)/log2(rank+1).
   """
-  return weight * gain_fn(label) / rank_discount_fn(rank)
+  return weight * gain_fn(label) * rank_discount_fn(rank)
 
 
 def _label_boost(boost_form, label):
@@ -438,7 +438,7 @@ class MetricsTest(tf.test.TestCase):
 
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
-      rank_discount_fn = lambda rank: rank
+      rank_discount_fn = lambda rank: 1. / rank
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
       m_mod = metrics_lib.make_ranking_metric_fn(
@@ -475,7 +475,7 @@ class MetricsTest(tf.test.TestCase):
       ])
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
-      rank_discount_fn = lambda rank: rank
+      rank_discount_fn = lambda rank: 1. / rank
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
       list_size = len(scores[0])
