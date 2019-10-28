@@ -52,7 +52,6 @@ def make_loss_fn(loss_keys,
                  lambda_weight=None,
                  reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
                  name=None,
-                 seed=None,
                  extra_args=None):
   """Makes a loss function using a single loss or multiple losses.
 
@@ -71,8 +70,6 @@ def make_loss_fn(loss_keys,
     reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
       reduce training loss over batch.
     name: A string used as the name for this loss.
-    seed: A randomization seed used in computation of some loss functions such
-      as ListMLE and pListMLE.
     extra_args: A string-keyed dictionary that contains any other loss-specific
       arguments.
 
@@ -134,10 +131,6 @@ def make_loss_fn(loss_keys,
     loss_kwargs_with_lambda_weight = loss_kwargs.copy()
     loss_kwargs_with_lambda_weight['lambda_weight'] = lambda_weight
 
-    loss_kwargs_with_lambda_weight_and_seed = (
-        loss_kwargs_with_lambda_weight.copy())
-    loss_kwargs_with_lambda_weight_and_seed['seed'] = seed
-
     key_to_fn = {
         RankingLossKey.PAIRWISE_HINGE_LOSS:
             (_pairwise_hinge_loss, loss_kwargs_with_lambda_weight),
@@ -151,7 +144,7 @@ def make_loss_fn(loss_keys,
             (_sigmoid_cross_entropy_loss, loss_kwargs),
         RankingLossKey.MEAN_SQUARED_LOSS: (_mean_squared_loss, loss_kwargs),
         RankingLossKey.LIST_MLE_LOSS:
-            (_list_mle_loss, loss_kwargs_with_lambda_weight_and_seed),
+            (_list_mle_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.APPROX_NDCG_LOSS: (_approx_ndcg_loss, loss_kwargs),
         RankingLossKey.APPROX_MRR_LOSS: (_approx_mrr_loss, loss_kwargs),
     }
@@ -874,12 +867,7 @@ def _pairwise_soft_zero_one_loss(
 class _ListwiseLoss(_RankingLoss):
   """Interface for listwise loss."""
 
-  def __init__(self,
-               name,
-               reduction,
-               lambda_weight=None,
-               seed=None,
-               params=None):
+  def __init__(self, name, reduction, lambda_weight=None, params=None):
     """Constructor.
 
     Args:
@@ -887,13 +875,11 @@ class _ListwiseLoss(_RankingLoss):
       reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
         reduce training loss over batch.
       lambda_weight: A `_LambdaWeight` object.
-      seed: A randomization seed used when shuffling ground truth permutations.
       params: A dict for params used in loss computation.
     """
     self._name = name
     self._reduction = reduction
     self._lambda_weight = lambda_weight
-    self._seed = seed
     self._params = params or {}
 
   @property
@@ -1118,18 +1104,12 @@ class _ListMLELoss(_ListwiseLoss):
     labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(is_label_valid, logits,
                                 tf.math.log(_EPSILON) * tf.ones_like(logits))
-    weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
-    weights = tf.squeeze(weights)
-
-    # Shuffle labels and logits to add randomness to sort.
-    shuffled_indices = utils.shuffle_valid_indices(is_label_valid, self._seed)
-    shuffled_labels = tf.gather_nd(labels, shuffled_indices)
-    shuffled_logits = tf.gather_nd(logits, shuffled_indices)
-
-    # TODO: Remove the shuffling above and use
-    # shuffle_ties=True.
+    scores = tf.compat.v1.where(
+        is_label_valid, labels,
+        tf.reduce_min(labels, axis=1, keepdims=True) -
+        1e-6 * tf.ones_like(labels))
     sorted_labels, sorted_logits = utils.sort_by_scores(
-        shuffled_labels, [shuffled_labels, shuffled_logits], shuffle_ties=False)
+        scores, [labels, logits], shuffle_ties=True)
 
     raw_max = tf.reduce_max(input_tensor=sorted_logits, axis=1, keepdims=True)
     sorted_logits = sorted_logits - raw_max
@@ -1141,6 +1121,10 @@ class _ListMLELoss(_ListwiseLoss):
       sums *= self._lambda_weight.individual_weights(sorted_labels)
 
     negative_log_likelihood = tf.reduce_sum(input_tensor=sums, axis=1)
+
+    weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
+    weights = tf.squeeze(weights)
+
     return negative_log_likelihood, weights
 
 
@@ -1150,8 +1134,7 @@ def _list_mle_loss(
     weights=None,
     lambda_weight=None,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
-    name=None,
-    seed=None):
+    name=None):
   """Computes the ListMLE loss [Xia et al.
 
   2008] for a list.
@@ -1176,12 +1159,11 @@ def _list_mle_loss(
     reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
       reduce training loss over batch.
     name: A string used as the name for this loss.
-    seed: A randomization seed used when shuffling ground truth permutations.
 
   Returns:
     An op for the ListMLE loss.
   """
-  loss = _ListMLELoss(name, reduction, lambda_weight, seed)
+  loss = _ListMLELoss(name, reduction, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'list_mle_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights)
