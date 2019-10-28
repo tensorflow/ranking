@@ -66,11 +66,26 @@ class UtilsTest(tf.test.TestCase):
       names = [['a', 'b', 'c']]
       with tf.compat.v1.Session() as sess:
         sorted_names = sess.run(
-            utils.sort_by_scores(scores, [names], shuffle_ties=True))[0]
+            utils.sort_by_scores(scores, [names], shuffle_ties=False))[0]
         self.assertAllEqual(sorted_names, [[b'a', b'b', b'c']])
         sorted_names = sess.run(
             utils.sort_by_scores(scores, [names], shuffle_ties=True))[0]
         self.assertAllEqual(sorted_names, [[b'a', b'c', b'b']])
+
+  def test_sorted_ranks(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      with tf.compat.v1.Session() as sess:
+        ranks = sess.run(utils.sorted_ranks(scores))
+        self.assertAllEqual(ranks, [[3, 1, 2]])
+
+      tf.compat.v1.set_random_seed(3)
+      scores = [[1., 2., 1.]]
+      with tf.compat.v1.Session() as sess:
+        ranks = sess.run(utils.sorted_ranks(scores, shuffle_ties=False))
+        self.assertAllEqual(ranks, [[2, 1, 3]])
+        ranks = sess.run(utils.sorted_ranks(scores, shuffle_ties=True))
+        self.assertAllEqual(ranks, [[3, 1, 2]])
 
   def test_organize_valid_indices(self):
     with tf.Graph().as_default():
