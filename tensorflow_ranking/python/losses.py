@@ -272,6 +272,15 @@ def create_p_list_mle_lambda_weight(list_size):
       rank_discount_fn=lambda rank: tf.pow(2., list_size - rank) - 1.)
 
 
+def _check_tensor_shapes(tensors):
+  """Checks the tensor shapes to be compatible."""
+  for tensor in tensors:
+    tensor = tf.convert_to_tensor(value=tensor)
+    tensor.get_shape().assert_has_rank(2)
+    tensor.get_shape().assert_is_compatible_with(
+        tf.convert_to_tensor(value=tensors[0]).get_shape())
+
+
 class _LambdaWeight(object):
   """Interface for ranking metric optimization.
 
@@ -283,41 +292,44 @@ class _LambdaWeight(object):
 
   __metaclass__ = abc.ABCMeta
 
-  def _get_valid_pairs_and_clean_labels(self, sorted_labels):
+  # TODO: Put this outside of the class as a util function.
+  def _get_valid_pairs_and_clean_labels(self, labels):
     """Returns a boolean Tensor for valid pairs and cleaned labels."""
-    sorted_labels = tf.convert_to_tensor(value=sorted_labels)
-    sorted_labels.get_shape().assert_has_rank(2)
-    is_label_valid = utils.is_label_valid(sorted_labels)
+    labels = tf.convert_to_tensor(value=labels)
+    labels.get_shape().assert_has_rank(2)
+    is_valid = utils.is_label_valid(labels)
     valid_pairs = tf.logical_and(
-        tf.expand_dims(is_label_valid, 2), tf.expand_dims(is_label_valid, 1))
-    sorted_labels = tf.compat.v1.where(is_label_valid, sorted_labels,
-                                       tf.zeros_like(sorted_labels))
-    return valid_pairs, sorted_labels
+        tf.expand_dims(is_valid, 2), tf.expand_dims(is_valid, 1))
+    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+    return valid_pairs, labels
 
   @abc.abstractmethod
-  def pair_weights(self, sorted_labels):
+  def pair_weights(self, labels, ranks):
     """Returns the weight adjustment `Tensor` for example pairs.
 
     Args:
-      sorted_labels: A dense `Tensor` of labels with shape [batch_size,
-        list_size] that are sorted by logits.
+      labels: A dense `Tensor` of labels with shape [batch_size, list_size].
+      ranks: A dense `Tensor` of ranks with the same shape as `labels` that are
+        sorted by logits.
 
     Returns:
       A `Tensor` that can weight example pairs.
     """
     raise NotImplementedError('Calling an abstract method.')
 
-  def individual_weights(self, sorted_labels):
+  def individual_weights(self, labels, ranks):
     """Returns the weight `Tensor` for individual examples.
 
     Args:
-      sorted_labels: A dense `Tensor` of labels with shape [batch_size,
-        list_size] that are sorted by logits.
+      labels: A dense `Tensor` of labels with shape [batch_size, list_size].
+      ranks: A dense `Tensor` of ranks with the same shape as `labels` that are
+        sorted by logits.
 
     Returns:
       A `Tensor` that can weight individual examples.
     """
-    return sorted_labels
+    del ranks
+    return labels
 
 
 class DCGLambdaWeight(_LambdaWeight):
@@ -357,24 +369,23 @@ class DCGLambdaWeight(_LambdaWeight):
         'smooth_fraction %s should be in range [0, 1].' % smooth_fraction)
     self._smooth_fraction = smooth_fraction
 
-  def pair_weights(self, sorted_labels):
+  def pair_weights(self, labels, ranks):
     """See `_LambdaWeight`."""
     with tf.compat.v1.name_scope(name='dcg_lambda_weight'):
-      valid_pair, sorted_labels = self._get_valid_pairs_and_clean_labels(
-          sorted_labels)
-      gain = self._gain_fn(sorted_labels)
+      _check_tensor_shapes([labels, ranks])
+      valid_pair, labels = self._get_valid_pairs_and_clean_labels(labels)
+      gain = self._gain_fn(labels)
       if self._normalized:
         gain *= utils.inverse_max_dcg(
-            sorted_labels,
+            labels,
             gain_fn=self._gain_fn,
             rank_discount_fn=self._rank_discount_fn,
             topn=self._topn)
       pair_gain = tf.expand_dims(gain, 2) - tf.expand_dims(gain, 1)
       pair_gain *= tf.cast(valid_pair, dtype=tf.float32)
 
-      list_size = tf.shape(input=sorted_labels)[1]
+      list_size = tf.shape(input=labels)[1]
       topn = self._topn or list_size
-      rank = tf.range(list_size) + 1
 
       def _discount_for_relative_rank_diff():
         """Rank-based discount in the LambdaLoss paper."""
@@ -383,12 +394,12 @@ class DCGLambdaWeight(_LambdaWeight):
         # differene is capped to topn. This is just a convenient upperbound
         # when topn is active. We need to revisit this.
         capped_rank = tf.compat.v1.where(
-            tf.greater(rank, topn),
-            tf.ones_like(rank) * (topn + 1), rank)
+            tf.greater(ranks, topn),
+            tf.ones_like(ranks) * (topn + 1), ranks)
         rank_diff = tf.cast(
             tf.abs(
-                tf.expand_dims(capped_rank, 1) -
-                tf.expand_dims(capped_rank, 0)),
+                tf.expand_dims(capped_rank, 2) -
+                tf.expand_dims(capped_rank, 1)),
             dtype=tf.float32)
         pair_discount = tf.compat.v1.where(
             tf.greater(rank_diff, 0),
@@ -403,11 +414,11 @@ class DCGLambdaWeight(_LambdaWeight):
         # When the rank discount is (1 / rank) for example, the discount is
         # |1 / r_i - 1 / r_j|. When i or j > topn, the discount becomes 0.
         rank_discount = tf.compat.v1.where(
-            tf.greater(rank, topn),
-            tf.zeros_like(tf.cast(rank, dtype=tf.float32)),
-            self._rank_discount_fn(tf.cast(rank, dtype=tf.float32)))
+            tf.greater(ranks, topn),
+            tf.zeros_like(tf.cast(ranks, dtype=tf.float32)),
+            self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32)))
         pair_discount = tf.abs(
-            tf.expand_dims(rank_discount, 1) - tf.expand_dims(rank_discount, 0))
+            tf.expand_dims(rank_discount, 2) - tf.expand_dims(rank_discount, 1))
         return pair_discount
 
       u = _discount_for_relative_rank_diff()
@@ -418,27 +429,25 @@ class DCGLambdaWeight(_LambdaWeight):
       if self._topn is None:
         return pair_weight
       pair_mask = tf.logical_or(
-          tf.expand_dims(tf.less_equal(rank, self._topn), 1),
-          tf.expand_dims(tf.less_equal(rank, self._topn), 0))
+          tf.expand_dims(tf.less_equal(ranks, self._topn), 2),
+          tf.expand_dims(tf.less_equal(ranks, self._topn), 1))
       return pair_weight * tf.cast(pair_mask, dtype=tf.float32)
 
-  def individual_weights(self, sorted_labels):
+  def individual_weights(self, labels, ranks):
     """See `_LambdaWeight`."""
     with tf.compat.v1.name_scope(name='dcg_lambda_weight'):
-      sorted_labels = tf.convert_to_tensor(value=sorted_labels)
-      sorted_labels = tf.compat.v1.where(
-          utils.is_label_valid(sorted_labels), sorted_labels,
-          tf.zeros_like(sorted_labels))
-      gain = self._gain_fn(sorted_labels)
+      _check_tensor_shapes([labels, ranks])
+      labels = tf.convert_to_tensor(value=labels)
+      labels = tf.compat.v1.where(
+          utils.is_label_valid(labels), labels, tf.zeros_like(labels))
+      gain = self._gain_fn(labels)
       if self._normalized:
         gain *= utils.inverse_max_dcg(
-            sorted_labels,
+            labels,
             gain_fn=self._gain_fn,
             rank_discount_fn=self._rank_discount_fn,
             topn=self._topn)
-      rank_discount = self._rank_discount_fn(
-          tf.cast(
-              tf.range(tf.shape(input=sorted_labels)[1]) + 1, dtype=tf.float32))
+      rank_discount = self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32))
       return gain * rank_discount
 
 
@@ -458,7 +467,7 @@ class PrecisionLambdaWeight(_LambdaWeight):
     self._topn = topn
     self._positive_fn = positive_fn
 
-  def pair_weights(self, sorted_labels):
+  def pair_weights(self, labels, ranks):
     """See `_LambdaWeight`.
 
     The current implementation here is that for any pairs of documents i and j,
@@ -469,27 +478,25 @@ class PrecisionLambdaWeight(_LambdaWeight):
     the gain of swapping a pair of documents.
 
     Args:
-      sorted_labels: A dense `Tensor` of labels with shape [batch_size,
-        list_size] that are sorted by logits.
+      labels: A dense `Tensor` of labels with shape [batch_size, list_size].
+      ranks: A dense `Tensor` of ranks with the same shape as `labels` that are
+        sorted by logits.
 
     Returns:
       A `Tensor` that can weight example pairs.
     """
     with tf.compat.v1.name_scope(name='precision_lambda_weight'):
-      valid_pair, sorted_labels = self._get_valid_pairs_and_clean_labels(
-          sorted_labels)
-      binary_labels = tf.cast(
-          self._positive_fn(sorted_labels), dtype=tf.float32)
+      _check_tensor_shapes([labels, ranks])
+      valid_pair, labels = self._get_valid_pairs_and_clean_labels(labels)
+      binary_labels = tf.cast(self._positive_fn(labels), dtype=tf.float32)
       label_diff = tf.abs(
           tf.expand_dims(binary_labels, 2) - tf.expand_dims(binary_labels, 1))
       label_diff *= tf.cast(valid_pair, dtype=tf.float32)
       # i <= topn and j > topn or i > topn and j <= topn, i.e., xor(i <= topn, j
       # <= topn).
-      list_size = tf.shape(input=sorted_labels)[1]
-      rank = tf.range(list_size) + 1
       rank_mask = tf.math.logical_xor(
-          tf.expand_dims(tf.less_equal(rank, self._topn), 1),
-          tf.expand_dims(tf.less_equal(rank, self._topn), 0))
+          tf.expand_dims(tf.less_equal(ranks, self._topn), 2),
+          tf.expand_dims(tf.less_equal(ranks, self._topn), 1))
       return label_diff * tf.cast(rank_mask, dtype=tf.float32)
 
 
@@ -506,55 +513,40 @@ class ListMLELambdaWeight(_LambdaWeight):
     """
     self._rank_discount_fn = rank_discount_fn
 
-  def pair_weights(self, sorted_labels):
+  def pair_weights(self, labels, ranks):
     """See `_LambdaWeight`."""
-    return sorted_labels
+    pass
 
-  def individual_weights(self, sorted_labels):
+  def individual_weights(self, labels, ranks):
     """See `_LambdaWeight`."""
     with tf.compat.v1.name_scope(name='p_list_mle_lambda_weight'):
-      sorted_labels = tf.convert_to_tensor(value=sorted_labels)
-      rank_discount = self._rank_discount_fn(
-          tf.cast(
-              tf.range(tf.shape(input=sorted_labels)[1]) + 1, dtype=tf.float32))
-      return tf.ones_like(sorted_labels) * rank_discount
+      _check_tensor_shapes([labels, ranks])
+      labels = tf.convert_to_tensor(value=labels)
+      rank_discount = self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32))
+      return tf.ones_like(labels) * rank_discount
 
 
-def _sort_and_normalize(labels, logits, weights=None):
-  """Sorts `labels` and `logits` and normalize `weights`.
+def _compute_ranks(logits, is_valid):
+  """Computes ranks by sorting valid logits.
 
   Args:
-    labels: A `Tensor` of the same shape as `logits` representing graded
-      relevance.
     logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
       ranking score of the corresponding item.
-    weights: A scalar, a `Tensor` with shape [batch_size, 1], or a `Tensor` with
-      the same shape as `labels`.
+    is_valid: A `Tensor` of the same shape as `logits` representing validity of
+      each entry.
 
   Returns:
-    A tuple of (sorted_labels, sorted_logits, sorted_weights).
+    The `ranks` Tensor.
   """
-  labels = tf.convert_to_tensor(value=labels)
-  logits = tf.convert_to_tensor(value=logits)
-  logits.get_shape().assert_has_rank(2)
-  logits.get_shape().assert_is_compatible_with(labels.get_shape())
-  weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
-  weights = tf.ones_like(labels) * weights
-  topn = tf.shape(input=logits)[1]
-
-  # Only sort entries with valid labels that are >= 0.
+  _check_tensor_shapes([logits, is_valid])
+  # Only sort entries with is_valid = True.
   scores = tf.compat.v1.where(
-      tf.greater_equal(labels, 0.), logits, -1e-6 * tf.ones_like(logits) +
+      is_valid, logits, -1e-6 * tf.ones_like(logits) +
       tf.reduce_min(input_tensor=logits, axis=1, keepdims=True))
-  sorted_labels, sorted_logits, sorted_weights = utils.sort_by_scores(
-      scores, [labels, logits, weights], topn=topn)
-  return sorted_labels, sorted_logits, sorted_weights
+  return utils.sorted_ranks(scores)
 
 
-def _pairwise_comparison(sorted_labels,
-                         sorted_logits,
-                         sorted_weights,
-                         lambda_weight=None):
+def _pairwise_comparison(labels, logits, weights, ranks, lambda_weight=None):
   r"""Returns pairwise comparison `Tensor`s.
 
   Given a list of n items, the labels of graded relevance l_i and the logits
@@ -569,23 +561,22 @@ def _pairwise_comparison(sorted_labels,
   * `pairwise_logits` = s_i - s_j
                          /
                          | 0              if l_i <= l_j,
-  * `pairwise_weights` = | |l_i - l_j|    if lambda_weight is None,
+  * `pairwise_weights` = | 1              if lambda_weight is None,
                          | lambda_weight  otherwise.
                          \
 
-  The `sorted_weights` is item-wise and is applied non-symmetrically to update
+  The `weights` is item-wise and is applied non-symmetrically to update
   pairwise_weights as
     pairwise_weights(i, j) = w_i * pairwise_weights(i, j).
   This effectively applies to all pairs with l_i > l_j. Note that it is actually
-  symmetric when `sorted_weights` are constant per list, i.e., listwise weights.
+  symmetric when `weights` are constant per list, i.e., listwise weights.
 
   Args:
-    sorted_labels: A `Tensor` with shape [batch_size, list_size] of labels
-      sorted.
-    sorted_logits: A `Tensor` with shape [batch_size, list_size] of logits
-      sorted.
-    sorted_weights: A `Tensor` with shape [batch_size, list_size] of item-wise
-      weights sorted.
+    labels: A `Tensor` with shape [batch_size, list_size].
+    logits: A `Tensor` with shape [batch_size, list_size].
+    weights: A `Tensor` with shape [batch_size, list_size] of item-wise weights.
+    ranks: A `Tensor` with shape [batch_size, list_size] of the ranks sorted by
+      logits.
     lambda_weight: A `_LambdaWeight` object.
 
   Returns:
@@ -595,21 +586,20 @@ def _pairwise_comparison(sorted_labels,
   # Compute the difference for all pairs in a list. The output is a Tensor with
   # shape [batch_size, list_size, list_size] where the entry [-1, i, j] stores
   # the information for pair (i, j).
-  pairwise_label_diff = tf.expand_dims(sorted_labels, 2) - tf.expand_dims(
-      sorted_labels, 1)
-  pairwise_logits = tf.expand_dims(sorted_logits, 2) - tf.expand_dims(
-      sorted_logits, 1)
+  pairwise_label_diff = tf.expand_dims(labels, 2) - tf.expand_dims(labels, 1)
+  pairwise_logits = tf.expand_dims(logits, 2) - tf.expand_dims(logits, 1)
   pairwise_labels = tf.cast(
       tf.greater(pairwise_label_diff, 0), dtype=tf.float32)
-  is_label_valid = utils.is_label_valid(sorted_labels)
+  is_valid = utils.is_label_valid(labels)
   valid_pair = tf.logical_and(
-      tf.expand_dims(is_label_valid, 2), tf.expand_dims(is_label_valid, 1))
+      tf.expand_dims(is_valid, 2), tf.expand_dims(is_valid, 1))
   # Only keep the case when l_i > l_j.
   pairwise_weights = pairwise_labels * tf.cast(valid_pair, dtype=tf.float32)
   # Apply the item-wise weights along l_i.
-  pairwise_weights *= tf.expand_dims(sorted_weights, 2)
+  if weights is not None:
+    pairwise_weights *= tf.expand_dims(weights, 2)
   if lambda_weight is not None:
-    pairwise_weights *= lambda_weight.pair_weights(sorted_labels)
+    pairwise_weights *= lambda_weight.pair_weights(labels, ranks)
   pairwise_weights = tf.stop_gradient(
       pairwise_weights, name='weights_stop_gradient')
   return pairwise_labels, pairwise_logits, pairwise_weights
@@ -713,17 +703,16 @@ class _PairwiseLoss(_RankingLoss):
 
   def compute_unreduced_loss(self, labels, logits, weights):
     """See `_RankingLoss`."""
-    sorted_labels, sorted_logits, sorted_weights = _sort_and_normalize(
-        labels, logits, weights)
+    is_valid = utils.is_label_valid(labels)
+    ranks = _compute_ranks(logits, is_valid)
     _, pairwise_logits, pairwise_weights = _pairwise_comparison(
-        sorted_labels, sorted_logits, sorted_weights, self._lambda_weight)
+        labels, logits, weights, ranks, self._lambda_weight)
     if self._lambda_weight is not None:
       # For LambdaLoss with relative rank difference, the scale of loss becomes
       # much smaller when applying LambdaWeight. This affects the training can
       # make the optimal learning rate become much larger. We use a heuristic to
       # scale it up to the same magnitude as standard pairwise loss.
-      pairwise_weights *= tf.cast(
-          tf.shape(input=sorted_labels)[1], dtype=tf.float32)
+      pairwise_weights *= tf.cast(tf.shape(input=labels)[1], dtype=tf.float32)
     return self._pairwise_loss(pairwise_logits), pairwise_weights
 
 
@@ -893,28 +882,27 @@ class _SoftmaxLoss(_ListwiseLoss):
 
   def _precompute(self, labels, logits, weights):
     """Precomputes Tensors for softmax cross entropy inputs."""
-    sorted_labels, sorted_logits, sorted_weights = _sort_and_normalize(
-        labels, logits, weights)
-    is_label_valid = utils.is_label_valid(sorted_labels)
+    is_valid = utils.is_label_valid(labels)
+    ranks = _compute_ranks(logits, is_valid)
     # Reset the invalid labels to 0 and reset the invalid logits to a logit with
     # ~= 0 contribution in softmax.
-    sorted_labels = tf.compat.v1.where(is_label_valid, sorted_labels,
-                                       tf.zeros_like(sorted_labels))
-    sorted_logits = tf.compat.v1.where(
-        is_label_valid, sorted_logits,
-        tf.math.log(_EPSILON) * tf.ones_like(sorted_logits))
+    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(is_valid, logits,
+                                tf.math.log(_EPSILON) * tf.ones_like(logits))
     if self._lambda_weight is not None and isinstance(self._lambda_weight,
                                                       DCGLambdaWeight):
-      sorted_labels = self._lambda_weight.individual_weights(sorted_labels)
-    sorted_labels *= sorted_weights
-    label_sum = tf.reduce_sum(input_tensor=sorted_labels, axis=1, keepdims=True)
+      labels = self._lambda_weight.individual_weights(labels, ranks)
+    if weights is not None:
+      labels *= weights
+    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    # Padding for rows with label_sum = 0.
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
-    padded_sorted_labels = tf.compat.v1.where(
-        nonzero_mask, sorted_labels, _EPSILON * tf.ones_like(sorted_labels))
+    padded_labels = tf.compat.v1.where(nonzero_mask, labels,
+                                       _EPSILON * tf.ones_like(labels))
     padded_label_sum = tf.reduce_sum(
-        input_tensor=padded_sorted_labels, axis=1, keepdims=True)
-    labels_for_softmax = padded_sorted_labels / padded_label_sum
-    logits_for_softmax = sorted_logits
+        input_tensor=padded_labels, axis=1, keepdims=True)
+    labels_for_softmax = padded_labels / padded_label_sum
+    logits_for_softmax = logits
     # Padded labels have 0 weights in label_sum.
     weights_for_softmax = tf.reshape(label_sum, [-1])
     return labels_for_softmax, logits_for_softmax, weights_for_softmax
@@ -1098,14 +1086,14 @@ class _ListMLELoss(_ListwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits, weights):
     """See `_RankingLoss`."""
-    is_label_valid = utils.is_label_valid(labels)
+    is_valid = utils.is_label_valid(labels)
     # Reset the invalid labels to 0 and reset the invalid logits to a logit with
     # ~= 0 contribution.
-    labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(is_label_valid, logits,
+    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(is_valid, logits,
                                 tf.math.log(_EPSILON) * tf.ones_like(logits))
     scores = tf.compat.v1.where(
-        is_label_valid, labels,
+        is_valid, labels,
         tf.reduce_min(labels, axis=1, keepdims=True) -
         1e-6 * tf.ones_like(labels))
     sorted_labels, sorted_logits = utils.sort_by_scores(
@@ -1118,7 +1106,10 @@ class _ListMLELoss(_ListwiseLoss):
 
     if self._lambda_weight is not None and isinstance(self._lambda_weight,
                                                       ListMLELambdaWeight):
-      sums *= self._lambda_weight.individual_weights(sorted_labels)
+      batch_size, list_size = tf.unstack(tf.shape(sorted_labels))
+      sums *= self._lambda_weight.individual_weights(
+          sorted_labels,
+          tf.tile(tf.expand_dims(tf.range(list_size) + 1, 0), [batch_size, 1]))
 
     negative_log_likelihood = tf.reduce_sum(input_tensor=sums, axis=1)
 
@@ -1175,10 +1166,10 @@ class _ApproxNDCGLoss(_ListwiseLoss):
   def compute_unreduced_loss(self, labels, logits, weights):
     """See `_RankingLoss`."""
     alpha = self._params.get('alpha', 10.0)
-    is_label_valid = utils.is_label_valid(labels)
-    labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
+    is_valid = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(
-        is_label_valid, logits, -1e3 * tf.ones_like(logits) +
+        is_valid, logits, -1e3 * tf.ones_like(logits) +
         tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
 
     label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
@@ -1242,10 +1233,10 @@ class _ApproxMRRLoss(_ListwiseLoss):
   def compute_unreduced_loss(self, labels, logits, weights):
     """See `_RankingLoss`."""
     alpha = self._params.get('alpha', 10.0)
-    is_label_valid = utils.is_label_valid(labels)
-    labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
+    is_valid = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(
-        is_label_valid, logits, -1e3 * tf.ones_like(logits) +
+        is_valid, logits, -1e3 * tf.ones_like(logits) +
         tf.math.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
 
     label_sum = tf.math.reduce_sum(input_tensor=labels, axis=1, keepdims=True)

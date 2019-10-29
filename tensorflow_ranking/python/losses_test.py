@@ -38,110 +38,120 @@ class DCGLambdaWeightTest(tf.test.TestCase):
   def test_default(self):
     """For the weight using rank diff."""
     with tf.Graph().as_default():
-      sorted_labels = [[2.0, 1.0, 0.0]]
+      labels = [[2.0, 1.0, 0.0]]
+      ranks = [[1, 2, 3]]
       lambda_weight = ranking_losses.DCGLambdaWeight()
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1. / 2., 2. * 1. / 6.], [1. / 2., 0., 1. / 2.],
               [2. * 1. / 6., 1. / 2., 0.]]])
 
   def test_smooth_fraction(self):
     """For the weights using absolute rank."""
     with tf.Graph().as_default():
-      sorted_labels = [[2.0, 1.0, 0.0]]
+      labels = [[2.0, 1.0, 0.0]]
+      ranks = [[1, 2, 3]]
       lambda_weight = ranking_losses.DCGLambdaWeight(smooth_fraction=1.0)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1. / 2., 2. * 2. / 3.], [1. / 2., 0., 1. / 6.],
               [2. * 2. / 3., 1. / 6., 0.]]])
       lambda_weight = ranking_losses.DCGLambdaWeight(
           topn=1, smooth_fraction=1.0)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1., 2.], [1., 0., 0.], [2., 0., 0.]]])
 
   def test_topn(self):
     with tf.Graph().as_default():
-      sorted_labels = [[2.0, 1.0, 0.0]]
+      labels = [[2.0, 1.0, 0.0]]
+      ranks = [[1, 2, 3]]
       lambda_weight = ranking_losses.DCGLambdaWeight(topn=1)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1. / 2., 2. * 1. / 2.], [1. / 2., 0., 0.],
               [2. * 1. / 2., 0., 0.]]])
 
   def test_invalid_labels(self):
     with tf.Graph().as_default():
-      sorted_labels = [[2.0, 1.0, -1.0]]
+      labels = [[2.0, 1.0, -1.0]]
+      ranks = [[1, 2, 3]]
       lambda_weight = ranking_losses.DCGLambdaWeight()
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1. / 2., 0.], [1. / 2., 0., 0.], [0., 0., 0.]]])
 
   def test_gain_and_discount(self):
     with tf.Graph().as_default():
-      sorted_labels = [[2.0, 1.0]]
+      labels = [[2.0, 1.0]]
+      ranks = [[1, 2]]
       lambda_weight = ranking_losses.DCGLambdaWeight(
           gain_fn=lambda x: tf.pow(2., x) - 1.,
           rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 2. * (1. / math.log(2.) - 1. / math.log(3.))],
               [2. * (1. / math.log(2.) - 1. / math.log(3.)), 0.]]])
 
   def test_normalized(self):
     with tf.Graph().as_default():
-      sorted_labels = [[1.0, 2.0]]
+      labels = [[1.0, 2.0]]
+      ranks = [[1, 2]]
       lambda_weight = ranking_losses.DCGLambdaWeight(normalized=True)
       max_dcg = 2.5
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1. / 2. / max_dcg], [1. / 2. / max_dcg, 0.]]])
 
   def test_individual_weights(self):
     with tf.Graph().as_default():
-      sorted_labels = [[1.0, 2.0]]
+      labels = [[1.0, 2.0]]
+      ranks = [[1, 2]]
       lambda_weight = ranking_losses.DCGLambdaWeight(normalized=True)
       max_dcg = 2.5
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.individual_weights(sorted_labels).eval(),
+            lambda_weight.individual_weights(labels, ranks).eval(),
             [[1. / max_dcg / 1., 2. / max_dcg / 2.]])
 
   def test_create_ndcg_lambda_weight(self):
     with tf.Graph().as_default():
-      sorted_labels = [[2.0, 1.0]]
+      labels = [[2.0, 1.0]]
+      ranks = [[1, 2]]
       lambda_weight = ranking_losses.create_ndcg_lambda_weight()
       max_dcg = 3.0 / math.log(2.) + 1.0 / math.log(3.)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 2. * (1. / math.log(2.) - 1. / math.log(3.)) / max_dcg],
               [2. * (1. / math.log(2.) - 1. / math.log(3.)) / max_dcg, 0.]]])
 
   def test_create_reciprocal_rank_lambda_weight(self):
     with tf.Graph().as_default():
-      sorted_labels = [[1.0, 2.0]]
+      labels = [[1.0, 2.0]]
+      ranks = [[1, 2]]
       lambda_weight = ranking_losses.create_reciprocal_rank_lambda_weight()
       max_dcg = 2.5
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1. / 2. / max_dcg], [1. / 2. / max_dcg, 0.]]])
 
   def test_create_p_list_mle_lambda_weight(self):
     with tf.Graph().as_default():
-      sorted_labels = [[1.0, 2.0]]
+      labels = [[1.0, 2.0]]
+      ranks = [[1, 2]]
       lambda_weight = ranking_losses.create_p_list_mle_lambda_weight(2)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.individual_weights(sorted_labels).eval(),
+            lambda_weight.individual_weights(labels, ranks).eval(),
             [[1.0, 0.0]])
 
 
@@ -154,17 +164,18 @@ class PrecisionLambdaWeightTest(tf.test.TestCase):
 
   def test_default(self):
     with tf.Graph().as_default():
-      sorted_labels = [[2.0, 1.0, 0.0]]
+      labels = [[2.0, 1.0, 0.0]]
+      ranks = [[1, 2, 3]]
       lambda_weight = ranking_losses.PrecisionLambdaWeight(topn=5)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]])
 
       lambda_weight = ranking_losses.PrecisionLambdaWeight(topn=1)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(sorted_labels).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 0., 1.], [0., 0., 0.], [1., 0., 0.]]])
 
 
@@ -684,7 +695,7 @@ class LossesTest(tf.test.TestCase):
 
   def test_list_mle_loss_tie(self):
     with tf.Graph().as_default():
-      tf.compat.v1.random.set_random_seed(3)
+      tf.compat.v1.set_random_seed(3)
       scores = [[0., ln(2), ln(3)]]
       labels = [[0., 0., 0.]]
       with self.cached_session():
