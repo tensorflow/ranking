@@ -281,6 +281,17 @@ def _check_tensor_shapes(tensors):
         tf.convert_to_tensor(value=tensors[0]).get_shape())
 
 
+def _get_valid_pairs_and_clean_labels(labels):
+  """Returns a boolean Tensor for valid pairs and cleaned labels."""
+  labels = tf.convert_to_tensor(value=labels)
+  labels.get_shape().assert_has_rank(2)
+  is_valid = utils.is_label_valid(labels)
+  valid_pairs = tf.logical_and(
+      tf.expand_dims(is_valid, 2), tf.expand_dims(is_valid, 1))
+  labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+  return valid_pairs, labels
+
+
 class _LambdaWeight(object):
   """Interface for ranking metric optimization.
 
@@ -291,17 +302,6 @@ class _LambdaWeight(object):
   """
 
   __metaclass__ = abc.ABCMeta
-
-  # TODO: Put this outside of the class as a util function.
-  def _get_valid_pairs_and_clean_labels(self, labels):
-    """Returns a boolean Tensor for valid pairs and cleaned labels."""
-    labels = tf.convert_to_tensor(value=labels)
-    labels.get_shape().assert_has_rank(2)
-    is_valid = utils.is_label_valid(labels)
-    valid_pairs = tf.logical_and(
-        tf.expand_dims(is_valid, 2), tf.expand_dims(is_valid, 1))
-    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
-    return valid_pairs, labels
 
   @abc.abstractmethod
   def pair_weights(self, labels, ranks):
@@ -373,7 +373,7 @@ class DCGLambdaWeight(_LambdaWeight):
     """See `_LambdaWeight`."""
     with tf.compat.v1.name_scope(name='dcg_lambda_weight'):
       _check_tensor_shapes([labels, ranks])
-      valid_pair, labels = self._get_valid_pairs_and_clean_labels(labels)
+      valid_pair, labels = _get_valid_pairs_and_clean_labels(labels)
       gain = self._gain_fn(labels)
       if self._normalized:
         gain *= utils.inverse_max_dcg(
@@ -487,7 +487,7 @@ class PrecisionLambdaWeight(_LambdaWeight):
     """
     with tf.compat.v1.name_scope(name='precision_lambda_weight'):
       _check_tensor_shapes([labels, ranks])
-      valid_pair, labels = self._get_valid_pairs_and_clean_labels(labels)
+      valid_pair, labels = _get_valid_pairs_and_clean_labels(labels)
       binary_labels = tf.cast(self._positive_fn(labels), dtype=tf.float32)
       label_diff = tf.abs(
           tf.expand_dims(binary_labels, 2) - tf.expand_dims(binary_labels, 1))
