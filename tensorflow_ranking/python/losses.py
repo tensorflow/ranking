@@ -281,13 +281,18 @@ def _check_tensor_shapes(tensors):
         tf.convert_to_tensor(value=tensors[0]).get_shape())
 
 
+def _apply_pairwise_op(op, tensor):
+  """Applies the op on tensor in the pairwise manner."""
+  _check_tensor_shapes([tensor])
+  return op(tf.expand_dims(tensor, 2), tf.expand_dims(tensor, 1))
+
+
 def _get_valid_pairs_and_clean_labels(labels):
   """Returns a boolean Tensor for valid pairs and cleaned labels."""
   labels = tf.convert_to_tensor(value=labels)
   labels.get_shape().assert_has_rank(2)
   is_valid = utils.is_label_valid(labels)
-  valid_pairs = tf.logical_and(
-      tf.expand_dims(is_valid, 2), tf.expand_dims(is_valid, 1))
+  valid_pairs = _apply_pairwise_op(tf.logical_and, is_valid)
   labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
   return valid_pairs, labels
 
@@ -381,7 +386,7 @@ class DCGLambdaWeight(_LambdaWeight):
             gain_fn=self._gain_fn,
             rank_discount_fn=self._rank_discount_fn,
             topn=self._topn)
-      pair_gain = tf.expand_dims(gain, 2) - tf.expand_dims(gain, 1)
+      pair_gain = _apply_pairwise_op(tf.subtract, gain)
       pair_gain *= tf.cast(valid_pair, dtype=tf.float32)
 
       list_size = tf.shape(input=labels)[1]
@@ -397,9 +402,7 @@ class DCGLambdaWeight(_LambdaWeight):
             tf.greater(ranks, topn),
             tf.ones_like(ranks) * (topn + 1), ranks)
         rank_diff = tf.cast(
-            tf.abs(
-                tf.expand_dims(capped_rank, 2) -
-                tf.expand_dims(capped_rank, 1)),
+            tf.abs(_apply_pairwise_op(tf.subtract, capped_rank)),
             dtype=tf.float32)
         pair_discount = tf.compat.v1.where(
             tf.greater(rank_diff, 0),
@@ -417,8 +420,7 @@ class DCGLambdaWeight(_LambdaWeight):
             tf.greater(ranks, topn),
             tf.zeros_like(tf.cast(ranks, dtype=tf.float32)),
             self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32)))
-        pair_discount = tf.abs(
-            tf.expand_dims(rank_discount, 2) - tf.expand_dims(rank_discount, 1))
+        pair_discount = tf.abs(_apply_pairwise_op(tf.subtract, rank_discount))
         return pair_discount
 
       u = _discount_for_relative_rank_diff()
@@ -428,9 +430,8 @@ class DCGLambdaWeight(_LambdaWeight):
       pair_weight = tf.abs(pair_gain) * pair_discount
       if self._topn is None:
         return pair_weight
-      pair_mask = tf.logical_or(
-          tf.expand_dims(tf.less_equal(ranks, self._topn), 2),
-          tf.expand_dims(tf.less_equal(ranks, self._topn), 1))
+      pair_mask = _apply_pairwise_op(tf.logical_or,
+                                     tf.less_equal(ranks, self._topn))
       return pair_weight * tf.cast(pair_mask, dtype=tf.float32)
 
   def individual_weights(self, labels, ranks):
@@ -489,14 +490,12 @@ class PrecisionLambdaWeight(_LambdaWeight):
       _check_tensor_shapes([labels, ranks])
       valid_pair, labels = _get_valid_pairs_and_clean_labels(labels)
       binary_labels = tf.cast(self._positive_fn(labels), dtype=tf.float32)
-      label_diff = tf.abs(
-          tf.expand_dims(binary_labels, 2) - tf.expand_dims(binary_labels, 1))
+      label_diff = tf.abs(_apply_pairwise_op(tf.subtract, binary_labels))
       label_diff *= tf.cast(valid_pair, dtype=tf.float32)
       # i <= topn and j > topn or i > topn and j <= topn, i.e., xor(i <= topn, j
       # <= topn).
-      rank_mask = tf.math.logical_xor(
-          tf.expand_dims(tf.less_equal(ranks, self._topn), 2),
-          tf.expand_dims(tf.less_equal(ranks, self._topn), 1))
+      rank_mask = _apply_pairwise_op(tf.math.logical_xor,
+                                     tf.less_equal(ranks, self._topn))
       return label_diff * tf.cast(rank_mask, dtype=tf.float32)
 
 
@@ -546,63 +545,39 @@ def _compute_ranks(logits, is_valid):
   return utils.sorted_ranks(scores)
 
 
-def _pairwise_comparison(labels, logits, weights, ranks, lambda_weight=None):
+def _pairwise_comparison(labels, logits):
   r"""Returns pairwise comparison `Tensor`s.
 
   Given a list of n items, the labels of graded relevance l_i and the logits
-  s_i, we sort the items in a list based on s_i and obtain ranks r_i. We form
-  n^2 pairs of items. For each pair, we have the following:
+  s_i, we form n^2 pairs. For each pair, we have the following:
 
                         /
-                        | 1   if l_i > l_j
+                        | 1   if l_i > l_j for valid l_i and l_j.
   * `pairwise_labels` = |
-                        | 0   if l_i <= l_j
+                        | 0   otherwise
                         \
   * `pairwise_logits` = s_i - s_j
-                         /
-                         | 0              if l_i <= l_j,
-  * `pairwise_weights` = | 1              if lambda_weight is None,
-                         | lambda_weight  otherwise.
-                         \
-
-  The `weights` is item-wise and is applied non-symmetrically to update
-  pairwise_weights as
-    pairwise_weights(i, j) = w_i * pairwise_weights(i, j).
-  This effectively applies to all pairs with l_i > l_j. Note that it is actually
-  symmetric when `weights` are constant per list, i.e., listwise weights.
 
   Args:
     labels: A `Tensor` with shape [batch_size, list_size].
     logits: A `Tensor` with shape [batch_size, list_size].
-    weights: A `Tensor` with shape [batch_size, list_size] of item-wise weights.
-    ranks: A `Tensor` with shape [batch_size, list_size] of the ranks sorted by
-      logits.
-    lambda_weight: A `_LambdaWeight` object.
 
   Returns:
-    A tuple of (pairwise_labels, pairwise_logits, pairwise_weights) with each
-    having the shape [batch_size, list_size, list_size].
+    A tuple of (pairwise_labels, pairwise_logits) with each having the shape
+    [batch_size, list_size, list_size].
   """
   # Compute the difference for all pairs in a list. The output is a Tensor with
   # shape [batch_size, list_size, list_size] where the entry [-1, i, j] stores
   # the information for pair (i, j).
-  pairwise_label_diff = tf.expand_dims(labels, 2) - tf.expand_dims(labels, 1)
-  pairwise_logits = tf.expand_dims(logits, 2) - tf.expand_dims(logits, 1)
+  pairwise_label_diff = _apply_pairwise_op(tf.subtract, labels)
+  pairwise_logits = _apply_pairwise_op(tf.subtract, logits)
+  # Only keep the case when l_i > l_j.
   pairwise_labels = tf.cast(
       tf.greater(pairwise_label_diff, 0), dtype=tf.float32)
   is_valid = utils.is_label_valid(labels)
-  valid_pair = tf.logical_and(
-      tf.expand_dims(is_valid, 2), tf.expand_dims(is_valid, 1))
-  # Only keep the case when l_i > l_j.
-  pairwise_weights = pairwise_labels * tf.cast(valid_pair, dtype=tf.float32)
-  # Apply the item-wise weights along l_i.
-  if weights is not None:
-    pairwise_weights *= tf.expand_dims(weights, 2)
-  if lambda_weight is not None:
-    pairwise_weights *= lambda_weight.pair_weights(labels, ranks)
-  pairwise_weights = tf.stop_gradient(
-      pairwise_weights, name='weights_stop_gradient')
-  return pairwise_labels, pairwise_logits, pairwise_weights
+  valid_pair = _apply_pairwise_op(tf.logical_and, is_valid)
+  pairwise_labels *= tf.cast(valid_pair, dtype=tf.float32)
+  return pairwise_labels, pairwise_logits
 
 
 class _RankingLoss(object):
@@ -705,14 +680,27 @@ class _PairwiseLoss(_RankingLoss):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     ranks = _compute_ranks(logits, is_valid)
-    _, pairwise_logits, pairwise_weights = _pairwise_comparison(
-        labels, logits, weights, ranks, self._lambda_weight)
+    pairwise_labels, pairwise_logits = _pairwise_comparison(labels, logits)
+    pairwise_weights = pairwise_labels
     if self._lambda_weight is not None:
+      pairwise_weights *= self._lambda_weight.pair_weights(labels, ranks)
       # For LambdaLoss with relative rank difference, the scale of loss becomes
       # much smaller when applying LambdaWeight. This affects the training can
       # make the optimal learning rate become much larger. We use a heuristic to
       # scale it up to the same magnitude as standard pairwise loss.
       pairwise_weights *= tf.cast(tf.shape(input=labels)[1], dtype=tf.float32)
+
+    # The `weights` is item-wise and is applied non-symmetrically to update
+    # pairwise_weights as
+    #   pairwise_weights(i, j) = w_i * pairwise_weights(i, j).
+    # This effectively applies to all pairs with l_i > l_j. Note that it is
+    # actually symmetric when `weights` are constant per list, i.e., listwise
+    # weights.
+    if weights is not None:
+      pairwise_weights *= tf.expand_dims(weights, 2)
+    pairwise_weights = tf.stop_gradient(
+        pairwise_weights, name='weights_stop_gradient')
+
     return self._pairwise_loss(pairwise_logits), pairwise_weights
 
 

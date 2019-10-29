@@ -40,7 +40,7 @@ class RankingMetricKey(object):
   # Mean Receiprocal Rank. For binary relevance.
   MRR = 'mrr'
 
-  # Average Relevance Position.
+  # Average Relvance Position.
   ARP = 'arp'
 
   # Normalized Discounted Culmulative Gain.
