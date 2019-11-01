@@ -22,6 +22,7 @@ import math
 import tensorflow as tf
 
 from tensorflow_ranking.python import losses as ranking_losses
+from tensorflow_ranking.python import losses_impl
 
 
 def ln(x):
@@ -40,7 +41,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
-      lambda_weight = ranking_losses.DCGLambdaWeight()
+      lambda_weight = losses_impl.DCGLambdaWeight()
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
@@ -52,13 +53,13 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
-      lambda_weight = ranking_losses.DCGLambdaWeight(smooth_fraction=1.0)
+      lambda_weight = losses_impl.DCGLambdaWeight(smooth_fraction=1.0)
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 1. / 2., 2. * 2. / 3.], [1. / 2., 0., 1. / 6.],
               [2. * 2. / 3., 1. / 6., 0.]]])
-      lambda_weight = ranking_losses.DCGLambdaWeight(
+      lambda_weight = losses_impl.DCGLambdaWeight(
           topn=1, smooth_fraction=1.0)
       with self.cached_session():
         self.assertAllClose(
@@ -69,7 +70,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
-      lambda_weight = ranking_losses.DCGLambdaWeight(topn=1)
+      lambda_weight = losses_impl.DCGLambdaWeight(topn=1)
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
@@ -80,7 +81,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, -1.0]]
       ranks = [[1, 2, 3]]
-      lambda_weight = ranking_losses.DCGLambdaWeight()
+      lambda_weight = losses_impl.DCGLambdaWeight()
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
@@ -90,7 +91,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0]]
       ranks = [[1, 2]]
-      lambda_weight = ranking_losses.DCGLambdaWeight(
+      lambda_weight = losses_impl.DCGLambdaWeight(
           gain_fn=lambda x: tf.pow(2., x) - 1.,
           rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
       with self.cached_session():
@@ -103,7 +104,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[1.0, 2.0]]
       ranks = [[1, 2]]
-      lambda_weight = ranking_losses.DCGLambdaWeight(normalized=True)
+      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
       max_dcg = 2.5
       with self.cached_session():
         self.assertAllClose(
@@ -114,7 +115,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[1.0, 2.0]]
       ranks = [[1, 2]]
-      lambda_weight = ranking_losses.DCGLambdaWeight(normalized=True)
+      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
       max_dcg = 2.5
       with self.cached_session():
         self.assertAllClose(
@@ -166,13 +167,13 @@ class PrecisionLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
-      lambda_weight = ranking_losses.PrecisionLambdaWeight(topn=5)
+      lambda_weight = losses_impl.PrecisionLambdaWeight(topn=5)
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
             [[[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]])
 
-      lambda_weight = ranking_losses.PrecisionLambdaWeight(topn=1)
+      lambda_weight = losses_impl.PrecisionLambdaWeight(topn=1)
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
@@ -347,7 +348,7 @@ class LossesTest(tf.test.TestCase):
             places=5)
 
         # Test LambdaWeight.
-        lambda_weight = ranking_losses.DCGLambdaWeight(
+        lambda_weight = losses_impl.DCGLambdaWeight(
             rank_discount_fn=lambda r: 1. / tf.math.log1p(r),
             smooth_fraction=1.)
         self.assertAlmostEqual(
@@ -453,7 +454,7 @@ class LossesTest(tf.test.TestCase):
             places=5)
 
         # Test LambdaWeight.
-        lambda_weight = ranking_losses.DCGLambdaWeight(
+        lambda_weight = losses_impl.DCGLambdaWeight(
             rank_discount_fn=lambda r: 1. / tf.math.log1p(r),
             smooth_fraction=1.)
         loss_fn = ranking_losses.make_loss_fn(
@@ -517,7 +518,7 @@ class LossesTest(tf.test.TestCase):
               math.log(_softmax(scores[1])[2]) * 2. * 1.) / 2.,
             places=5)
         # Test LambdaWeight.
-        lambda_weight = ranking_losses.DCGLambdaWeight(
+        lambda_weight = losses_impl.DCGLambdaWeight(
             rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
         self.assertAlmostEqual(
             ranking_losses._softmax_loss(

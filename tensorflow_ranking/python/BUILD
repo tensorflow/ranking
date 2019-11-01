@@ -83,10 +83,21 @@ py_test(
 )
 
 py_library(
+    name = "losses_impl",
+    srcs = ["losses_impl.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":utils",
+        # py/tensorflow dep,
+    ],
+)
+
+py_library(
     name = "losses",
     srcs = ["losses.py"],
     srcs_version = "PY2AND3",
     deps = [
+        ":losses_impl",
         ":utils",
         # py/tensorflow dep,
     ],
