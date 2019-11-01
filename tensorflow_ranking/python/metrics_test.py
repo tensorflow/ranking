@@ -44,6 +44,43 @@ def _dcg(label,
   return weight * gain_fn(label) * rank_discount_fn(rank)
 
 
+def _ap(relevances, scores, topn=None):
+  """Returns the average precision (AP) of a single ranked list.
+
+  The implementation here is copied from Equation (1.7) in
+  Liu, T-Y "Learning to Rank for Information Retrieval" found at
+  https://www.nowpublishers.com/article/DownloadSummary/INR-016
+
+  Args:
+    relevances: A `list` of document relevances, which are binary.
+    scores: A `list` of document scores.
+    topn: An `integer` specifying the number of items to be considered in the
+      average precision computation.
+
+  Returns:
+    The MAP of the list as a float computed using the formula
+    sum([P@k * rel for k, rel in enumerate(relevance)]) / sum(relevance)
+    where P@k is the precision of the list at the cut off k.
+  """
+  def argsort(arr, reverse=True):
+    arr_ind = sorted([(a, i) for i, a in enumerate(arr)], reverse=reverse)
+    return list(zip(*arr_ind))[1]
+
+  num_docs = len(relevances)
+  if isinstance(topn, int) and topn > 0:
+    num_docs = min(num_docs, topn)
+  inds = argsort(scores)[:num_docs]
+  ranked_rels = [1. * relevances[i] for i in inds]
+  prec = {}
+  l = {}
+  for k in range(1, num_docs+1):
+    prec[k] = sum(ranked_rels[:k]) / k
+    l[k] = ranked_rels[k-1]
+  num_rel = sum(l.values())
+  ap = sum(prec[k] * l[k] for k in prec) / num_rel if num_rel else 0
+  return ap
+
+
 def _label_boost(boost_form, label):
   """Returns the label boost.
 
@@ -57,6 +94,7 @@ def _label_boost(boost_form, label):
   boost = {
       'NDCG': math.pow(2.0, label) - 1.0,
       'PRECISION': 1.0 if label >= 1.0 else 0.0,
+      'MAP': 1.0 if label >= 1.0 else 0.0,
   }
   return boost[boost_form]
 
@@ -261,6 +299,91 @@ class MetricsTest(tf.test.TestCase):
           (m_top_1([labels[0]], [scores[0]], features), 0. / 1.),
           (m_top_2([labels[0]], [scores[0]], features), 1. / 2.),
           (m(labels, scores, features), (1. / 3. + 2. / 3.) / 2.),
+      ])
+
+  def test_mean_average_precision(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order, so the ranks are
+      # [[3, 1, 2], [3, 2, 1]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      rels = [[0, 0, 1], [0, 1, 1]]
+      m = metrics_lib.mean_average_precision
+      self._check_metrics([
+          (m([labels[0]], [scores[0]]), _ap(rels[0], scores[0])),
+          (m([labels[0]], [scores[0]], topn=1),
+           _ap(rels[0], scores[0], topn=1)),
+          (m([labels[0]], [scores[0]], topn=2),
+           _ap(rels[0], scores[0], topn=2)),
+          (m(labels, scores),
+           sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
+          (m(labels, scores, topn=1),
+           sum(_ap(rels[i], scores[i], topn=1) for i in range(2)) / 2.),
+      ])
+
+  def test_mean_average_precision_with_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order, so the ranks are
+      # [[3, 1, 2], [3, 2, 1]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      rels = [[0, 0, 1], [0, 1, 1]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      list_weights = [[1.], [2.]]
+      m = metrics_lib.mean_average_precision
+      as_list_weights = _example_weights_to_list_weights(
+          weights, labels, 'MAP')
+      # See Equation (1.7) in the following reference to make sense of
+      # the formulas that appear in the following expression:
+      # Liu, T-Y "Learning to Rank for Information Retrieval" found at
+      # https://www.nowpublishers.com/article/DownloadSummary/INR-016
+      self._check_metrics([
+          (m([labels[0]], [scores[0]],
+             [weights[0]]), ((1. / 2.) * 3.) / (0 * 1 + 0 * 2 + 1 * 3)),
+          (m([labels[1]], [scores[1]], [weights[1]]),
+           ((1. / 1.) * 6. + (2. / 2.) * 5.) / (0 * 4 + 1 * 5 + 1 * 6)),
+          (m(labels, scores, weights),
+           (((1. / 2.) * 3.) / (0 * 1 + 0 * 2 + 1 * 3) * as_list_weights[0] +
+            ((1. / 1.) * 6. +
+             (2. / 2.) * 5.) / (0 * 4 + 1 * 5 + 1 * 6) * as_list_weights[1]) /
+           sum(as_list_weights)),
+          (m(labels, scores, weights,
+             topn=1), ((0 * as_list_weights[0] + ((1. / 1.) * 6.) /
+                        (1 * 6) * as_list_weights[1]) / sum(as_list_weights))),
+          (m(labels, scores, weights, topn=2),
+           (((1. / 2.) * 3.) / (0 * 1 + 1 * 3) * as_list_weights[0] +
+            ((1. / 1.) * 6. + (2. / 2.) * 5.) /
+            (1 * 5 + 1 * 6) * as_list_weights[1]) / sum(as_list_weights)),
+          # Per list weight.
+          (m(labels, scores, list_weights),
+           sum(_ap(rels[i], scores[i]) * list_weights[i][0] for i in range(2)) /
+           sum(list_weights[i][0] for i in range(2))),
+          # Zero precision case.
+          (m(labels, scores, [0., 0., 0.], topn=2), 0.),
+      ])
+
+  def test_make_mean_average_precision_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order, so the ranks are
+      # [[3, 1, 2], [3, 2, 1]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      rels = [[0, 0, 1], [0, 1, 1]]
+      features = {}
+      m = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.MAP)
+      m_top_1 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.MAP, topn=1)
+      m_top_2 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.MAP, topn=2)
+      self._check_metrics([
+          (m([labels[0]], [scores[0]], features), _ap(rels[0], scores[0])),
+          (m_top_1([labels[0]], [scores[0]], features),
+           _ap(rels[0], scores[0], topn=1)),
+          (m_top_2([labels[0]], [scores[0]], features),
+           _ap(rels[0], scores[0], topn=2)),
+          (m(labels, scores, features),
+           sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
       ])
 
   def test_normalized_discounted_cumulative_gain(self):

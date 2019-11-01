@@ -52,6 +52,9 @@ class RankingMetricKey(object):
   # Precision. For binary relevance.
   PRECISION = 'precision'
 
+  # Mean Average Precision. For binary relevance.
+  MAP = 'map'
+
   # Ordered Pair Accuracy.
   ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'
 
@@ -144,6 +147,15 @@ def make_ranking_metric_fn(
         topn=topn,
         name=name)
 
+  def _mean_average_precision_fn(labels, predictions, features):
+    """Returns mean average precision as the metric."""
+    return mean_average_precision(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name)
+
   def _ordered_pair_accuracy_fn(labels, predictions, features):
     """Returns ordered pair accuracy as the metric."""
     return ordered_pair_accuracy(
@@ -155,6 +167,7 @@ def make_ranking_metric_fn(
       RankingMetricKey.NDCG: _normalized_discounted_cumulative_gain_fn,
       RankingMetricKey.DCG: _discounted_cumulative_gain_fn,
       RankingMetricKey.PRECISION: _precision_fn,
+      RankingMetricKey.MAP: _mean_average_precision_fn,
       RankingMetricKey.ORDERED_PAIR_ACCURACY: _ordered_pair_accuracy_fn,
   }
   assert metric_key in metric_fn_dict, ('metric_key %s not supported.' %
@@ -206,6 +219,36 @@ def _discounted_cumulative_gain(
   discount = rank_discount_fn(position)
   return tf.reduce_sum(
       input_tensor=weights * gain * discount, axis=1, keepdims=True)
+
+
+def _per_list_precision(labels, predictions, weights, topn):
+  """Computes the precision for each query in the batch.
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: A cutoff for how many examples to consider for this metric.
+
+  Returns:
+    A `Tensor` of size [batch_size, 1] containing the percision of each query
+    respectively.
+  """
+  sorted_labels, sorted_weights = utils.sort_by_scores(
+      predictions, [labels, weights], topn=topn)
+  # Relevance = 1.0 when labels >= 1.0.
+  relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
+  per_list_precision = tf.compat.v1.math.divide_no_nan(
+      tf.reduce_sum(
+          input_tensor=relevance * sorted_weights, axis=1, keepdims=True),
+      tf.reduce_sum(
+          input_tensor=tf.ones_like(relevance) * sorted_weights,
+          axis=1,
+          keepdims=True))
+  return per_list_precision
 
 
 def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
@@ -382,7 +425,7 @@ def average_relevance_position(labels, predictions, weights=None, name=None):
 
 
 class _PrecisionMetric(_RankingMetric):
-  """Implements average relevance position (ARP)."""
+  """Implements precision@k (P@k)."""
 
   def __init__(self, name, topn):
     """Constructor."""
@@ -398,17 +441,7 @@ class _PrecisionMetric(_RankingMetric):
     """See `_RankingMetric`."""
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, self._topn)
-    sorted_labels, sorted_weights = utils.sort_by_scores(
-        predictions, [labels, weights], topn=topn)
-    # Relevance = 1.0 when labels >= 1.0.
-    relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
-    per_list_precision = tf.compat.v1.math.divide_no_nan(
-        tf.reduce_sum(
-            input_tensor=relevance * sorted_weights, axis=1, keepdims=True),
-        tf.reduce_sum(
-            input_tensor=tf.ones_like(relevance) * sorted_weights,
-            axis=1,
-            keepdims=True))
+    per_list_precision = _per_list_precision(labels, predictions, weights, topn)
     # per_list_weights are computed from the whole list to avoid the problem of
     # 0 when there is no relevant example in topn.
     per_list_weights = _per_example_weights_to_per_list_weights(
@@ -434,6 +467,76 @@ def precision(labels, predictions, weights=None, topn=None, name=None):
   """
   metric = _PrecisionMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'precision',
+                               (labels, predictions, weights)):
+    return metric.compute(labels, predictions, weights)
+
+
+class _MeanAveragePrecisionMetric(_RankingMetric):
+  """Implements mean average precision (MAP)."""
+
+  def __init__(self, name, topn):
+    """Constructor."""
+    self._name = name
+    self._topn = topn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+    labels, predictions, weights, topn = _prepare_and_validate_params(
+        labels, predictions, weights, self._topn)
+    sorted_labels, sorted_weights = utils.sort_by_scores(
+        predictions, [labels, weights], topn=topn)
+    # Relevance = 1.0 when labels >= 1.0.
+    sorted_relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0),
+                               dtype=tf.float32)
+    per_list_relevant_counts = tf.cumsum(sorted_relevance, axis=1)
+    per_list_cutoffs = tf.cumsum(tf.ones_like(sorted_relevance), axis=1)
+    per_list_precisions = tf.math.divide_no_nan(per_list_relevant_counts,
+                                                per_list_cutoffs)
+    total_precision = tf.reduce_sum(
+        input_tensor=per_list_precisions * sorted_weights * sorted_relevance,
+        axis=1,
+        keepdims=True)
+    total_relevance = tf.reduce_sum(
+        input_tensor=sorted_weights * sorted_relevance, axis=1, keepdims=True)
+    per_list_map = tf.math.divide_no_nan(total_precision, total_relevance)
+    # per_list_weights are computed from the whole list to avoid the problem of
+    # 0 when there is no relevant example in topn.
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights, tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
+    return tf.compat.v1.metrics.mean(per_list_map, per_list_weights)
+
+
+def mean_average_precision(labels,
+                           predictions,
+                           weights=None,
+                           topn=None,
+                           name=None):
+  """Computes mean average precision (MAP).
+
+  The implementation of MAP is based on Equation (1.7) in the following:
+  Liu, T-Y "Learning to Rank for Information Retrieval" found at
+  https://www.nowpublishers.com/article/DownloadSummary/INR-016
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: A cutoff for how many examples to consider for this metric.
+    name: A string used as the name for this metric.
+
+  Returns:
+    A metric for the mean average precision.
+  """
+  metric = _MeanAveragePrecisionMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name, 'mean_average_precision',
                                (labels, predictions, weights)):
     return metric.compute(labels, predictions, weights)
 
