@@ -364,7 +364,7 @@ class _RankingLoss(object):
     """
     raise NotImplementedError('Calling an abstract method.')
 
-  def weights_adjuster(self, labels, weights):
+  def normalize_weights(self, labels, weights):
     """Computes the weights adjuster.
 
     Args:
@@ -380,8 +380,10 @@ class _RankingLoss(object):
     del labels
     return 1.0 if weights is None else weights
 
-  def compute(self, labels, logits, weights):
-    """Computes the reduced loss for training and eval.
+  def compute(self, labels, logits, weights, reduction):
+    """Computes the reduced loss for non-tf.keras usage.
+
+    Note that this function is not compatible with keras.
 
     Args:
       labels: A `Tensor` of the same shape as `logits` representing graded
@@ -391,14 +393,16 @@ class _RankingLoss(object):
       weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
         weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
         weights.
+      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+        reduce training loss over batch.
 
     Returns:
       Reduced loss for training and eval.
     """
     losses, loss_weights = self.compute_unreduced_loss(labels, logits)
-    weights = tf.multiply(self.weights_adjuster(labels, weights), loss_weights)
+    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
     return tf.compat.v1.losses.compute_weighted_loss(
-        losses, weights, reduction=self._reduction)
+        losses, weights, reduction=reduction)
 
   def eval_metric(self, labels, logits, weights):
     """Computes the eval metric for the loss.
@@ -416,7 +420,7 @@ class _RankingLoss(object):
       A metric op.
     """
     losses, loss_weights = self.compute_unreduced_loss(labels, logits)
-    weights = tf.multiply(self.weights_adjuster(labels, weights), loss_weights)
+    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
     return tf.compat.v1.metrics.mean(losses, weights)
 
 
@@ -425,18 +429,15 @@ class _PairwiseLoss(_RankingLoss):
 
   __metaclass__ = abc.ABCMeta
 
-  def __init__(self, name, reduction, lambda_weight=None, params=None):
+  def __init__(self, name, lambda_weight=None, params=None):
     """Constructor.
 
     Args:
       name: A string used as the name for this loss.
-      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
-        reduce training loss over batch.
       lambda_weight: A `_LambdaWeight` object.
       params: A dict for params used in loss computation.
     """
     self._name = name
-    self._reduction = reduction
     self._lambda_weight = lambda_weight
     self._params = params or {}
 
@@ -468,7 +469,7 @@ class _PairwiseLoss(_RankingLoss):
         pairwise_weights, name='weights_stop_gradient')
     return self._pairwise_loss(pairwise_logits), pairwise_weights
 
-  def weights_adjuster(self, labels, weights):
+  def normalize_weights(self, labels, weights):
     """See _RankingLoss."""
     # The `weights` is item-wise and is applied non-symmetrically to update
     # pairwise_weights as
@@ -515,18 +516,15 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
 class _ListwiseLoss(_RankingLoss):
   """Interface for listwise loss."""
 
-  def __init__(self, name, reduction, lambda_weight=None, params=None):
+  def __init__(self, name, lambda_weight=None, params=None):
     """Constructor.
 
     Args:
       name: A string used as the name for this loss.
-      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
-        reduce training loss over batch.
       lambda_weight: A `_LambdaWeight` object.
       params: A dict for params used in loss computation.
     """
     self._name = name
-    self._reduction = reduction
     self._lambda_weight = lambda_weight
     self._params = params or {}
 
@@ -539,7 +537,7 @@ class _ListwiseLoss(_RankingLoss):
 class SoftmaxLoss(_ListwiseLoss):
   """Implements softmax loss."""
 
-  def _precompute(self, labels, logits, weights):
+  def precompute(self, labels, logits, weights):
     """Precomputes Tensors for softmax cross entropy inputs."""
     is_valid = utils.is_label_valid(labels)
     ranks = _compute_ranks(logits, is_valid)
@@ -572,16 +570,16 @@ class SoftmaxLoss(_ListwiseLoss):
         labels_for_softmax, logits_for_softmax)
     return losses, weights_for_softmax
 
-  def compute(self, labels, logits, weights):
+  def compute(self, labels, logits, weights, reduction):
     """See `_RankingLoss`."""
-    labels, logits = self._precompute(labels, logits, weights)
+    labels, logits = self.precompute(labels, logits, weights)
     losses, weights = self.compute_unreduced_loss(labels, logits)
     return tf.compat.v1.losses.compute_weighted_loss(
-        losses, weights, reduction=self._reduction)
+        losses, weights, reduction=reduction)
 
   def eval_metric(self, labels, logits, weights):
     """See `_RankingLoss`."""
-    labels, logits = self._precompute(labels, logits, weights)
+    labels, logits = self.precompute(labels, logits, weights)
     losses, weights = self.compute_unreduced_loss(labels, logits)
     return tf.compat.v1.metrics.mean(losses, weights)
 
@@ -589,17 +587,14 @@ class SoftmaxLoss(_ListwiseLoss):
 class _PointwiseLoss(_RankingLoss):
   """Interface for pointwise loss."""
 
-  def __init__(self, name, reduction, params=None):
+  def __init__(self, name, params=None):
     """Constructor.
 
     Args:
       name: A string used as the name for this loss.
-      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
-        reduce training loss over batch.
       params: A dict for params used in loss computation.
     """
     self._name = name
-    self._reduction = reduction
     self._params = params or {}
 
   @property
@@ -607,7 +602,7 @@ class _PointwiseLoss(_RankingLoss):
     """The loss name."""
     return self._name
 
-  def weights_adjuster(self, labels, weights):
+  def normalize_weights(self, labels, weights):
     if weights is None:
       weights = 1.
     return tf.compat.v1.where(

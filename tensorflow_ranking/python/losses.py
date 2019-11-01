@@ -190,28 +190,24 @@ def make_loss_metric_fn(loss_key,
 
   metric_dict = {
       RankingLossKey.PAIRWISE_HINGE_LOSS:
-          losses_impl.PairwiseHingeLoss(
-              name, reduction=None, lambda_weight=lambda_weight),
+          losses_impl.PairwiseHingeLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.PAIRWISE_LOGISTIC_LOSS:
-          losses_impl.PairwiseLogisticLoss(
-              name, reduction=None, lambda_weight=lambda_weight),
+          losses_impl.PairwiseLogisticLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
           losses_impl.PairwiseSoftZeroOneLoss(
-              name, reduction=None, lambda_weight=lambda_weight),
+              name, lambda_weight=lambda_weight),
       RankingLossKey.SOFTMAX_LOSS:
-          losses_impl.SoftmaxLoss(
-              name, reduction=None, lambda_weight=lambda_weight),
+          losses_impl.SoftmaxLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
-          losses_impl.SigmoidCrossEntropyLoss(name, reduction=None),
+          losses_impl.SigmoidCrossEntropyLoss(name),
       RankingLossKey.MEAN_SQUARED_LOSS:
-          losses_impl.MeanSquaredLoss(name, reduction=None),
+          losses_impl.MeanSquaredLoss(name),
       RankingLossKey.LIST_MLE_LOSS:
-          losses_impl.ListMLELoss(
-              name, reduction=None, lambda_weight=lambda_weight),
+          losses_impl.ListMLELoss(name, lambda_weight=lambda_weight),
       RankingLossKey.APPROX_NDCG_LOSS:
-          losses_impl.ApproxNDCGLoss(name, reduction=None),
+          losses_impl.ApproxNDCGLoss(name),
       RankingLossKey.APPROX_MRR_LOSS:
-          losses_impl.ApproxMRRLoss(name, reduction=None),
+          losses_impl.ApproxMRRLoss(name),
   }
 
   def _get_weights(features):
@@ -301,10 +297,10 @@ def _pairwise_hinge_loss(
   Returns:
     An op for the pairwise hinge loss.
   """
-  loss = losses_impl.PairwiseHingeLoss(name, reduction, lambda_weight)
+  loss = losses_impl.PairwiseHingeLoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'pairwise_hinge_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _pairwise_logistic_loss(
@@ -336,10 +332,10 @@ def _pairwise_logistic_loss(
   Returns:
     An op for the pairwise logistic loss.
   """
-  loss = losses_impl.PairwiseLogisticLoss(name, reduction, lambda_weight)
+  loss = losses_impl.PairwiseLogisticLoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'pairwise_logistic_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _pairwise_soft_zero_one_loss(
@@ -374,10 +370,10 @@ def _pairwise_soft_zero_one_loss(
   Returns:
     An op for the pairwise soft zero one loss.
   """
-  loss = losses_impl.PairwiseSoftZeroOneLoss(name, reduction, lambda_weight)
+  loss = losses_impl.PairwiseSoftZeroOneLoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'pairwise_soft_zero_one_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _softmax_loss(
@@ -418,10 +414,10 @@ def _softmax_loss(
   Returns:
     An op for the softmax cross entropy as a loss.
   """
-  loss = losses_impl.SoftmaxLoss(name, reduction, lambda_weight)
+  loss = losses_impl.SoftmaxLoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'softmax_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _sigmoid_cross_entropy_loss(
@@ -451,10 +447,10 @@ def _sigmoid_cross_entropy_loss(
   Returns:
     An op for the sigmoid cross entropy as a loss.
   """
-  loss = losses_impl.SigmoidCrossEntropyLoss(name, reduction)
+  loss = losses_impl.SigmoidCrossEntropyLoss(name)
   with tf.compat.v1.name_scope(loss.name, 'sigmoid_cross_entropy_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _mean_squared_loss(
@@ -484,10 +480,10 @@ def _mean_squared_loss(
   Returns:
     An op for the mean squared error as a loss.
   """
-  loss = losses_impl.MeanSquaredLoss(name, reduction)
+  loss = losses_impl.MeanSquaredLoss(name)
   with tf.compat.v1.name_scope(loss.name, 'mean_squared_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _list_mle_loss(
@@ -525,10 +521,10 @@ def _list_mle_loss(
   Returns:
     An op for the ListMLE loss.
   """
-  loss = losses_impl.ListMLELoss(name, reduction, lambda_weight)
+  loss = losses_impl.ListMLELoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'list_mle_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _approx_ndcg_loss(labels,
@@ -562,10 +558,10 @@ def _approx_ndcg_loss(labels,
   Returns:
     An op for the ApproxNDCG loss.
   """
-  loss = losses_impl.ApproxNDCGLoss(name, reduction, params={'alpha': alpha})
+  loss = losses_impl.ApproxNDCGLoss(name, params={'alpha': alpha})
   with tf.compat.v1.name_scope(loss.name, 'approx_ndcg_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
 
 
 def _approx_mrr_loss(labels,
@@ -597,7 +593,7 @@ def _approx_mrr_loss(labels,
   Returns:
     An op for the ApproxMRR loss.
   """
-  loss = losses_impl.ApproxMRRLoss(name, reduction, params={'alpha': alpha})
+  loss = losses_impl.ApproxMRRLoss(name, params={'alpha': alpha})
   with tf.compat.v1.name_scope(loss.name, 'approx_mrr_loss',
                                (labels, logits, weights)):
-    return loss.compute(labels, logits, weights)
+    return loss.compute(labels, logits, weights, reduction)
