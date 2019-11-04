@@ -25,7 +25,6 @@ from __future__ import print_function
 
 import abc
 import functools
-import numpy as np
 import six
 
 import tensorflow as tf
@@ -1136,96 +1135,3 @@ def _libsvm_parse_line(libsvm_line):
 
   return qid, features
 
-
-def _libsvm_generate(num_features, list_size, doc_list):
-  """Unpacks a list of document features into `Tensor`s.
-
-  Args:
-    num_features: An integer representing the number of features per instance.
-    list_size: Size of the document list per query.
-    doc_list: A list of dictionaries (one per document) where each dictionary is
-      a mapping from feature ID (string) to feature value (float).
-
-  Returns:
-    A tuple consisting of a dictionary (feature ID to `Tensor`s) and a label
-    `Tensor`.
-  """
-  # Construct output variables.
-  features = {}
-  for fid in range(num_features):
-    features[str(fid + 1)] = np.zeros([list_size, 1], dtype=np.float32)
-  labels = np.ones([list_size], dtype=np.float32) * (_PADDING_LABEL)
-
-  # Shuffle the document list and trim to a prescribed list_size.
-  np.random.shuffle(doc_list)
-
-  if len(doc_list) > list_size:
-    doc_list = doc_list[:list_size]
-
-  # Fill in the output Tensors with feature and label values.
-  for idx, doc in enumerate(doc_list):
-    for feature_id, value in six.iteritems(doc):
-      if feature_id == _LABEL_FEATURE:
-        labels[idx] = value
-      else:
-        features.get(feature_id)[idx, 0] = value
-
-  return features, labels
-
-
-def libsvm_generator(path, num_features, list_size, seed=None):
-  """Parses a LibSVM-formatted input file and aggregates data points by qid.
-
-  Args:
-    path: (string) path to dataset in the LibSVM format.
-    num_features: An integer representing the number of features per instance.
-    list_size: Size of the document list per query.
-    seed: Randomization seed used when shuffling the document list.
-
-  Returns:
-    A generator function that can be passed to tf.data.Dataset.from_generator().
-  """
-  if seed is not None:
-    np.random.seed(seed)
-
-  def inner_generator():
-    """Produces a generator ready for tf.data.Dataset.from_generator.
-
-    It is assumed that data points in a LibSVM-formatted input file are
-    sorted by query ID before being presented to this function. This
-    assumption simplifies the parsing and aggregation logic: We consume
-    lines sequentially and accumulate query-document features until a
-    new query ID is observed, at which point the accumulated data points
-    are massaged into a tf.data.Dataset compatible representation.
-
-    Yields:
-      A tuple of feature and label `Tensor`s.
-    """
-    # A buffer where observed query-document features will be stored.
-    # It is a list of dictionaries, one per query-document pair, where
-    # each dictionary is a mapping from a feature ID to a feature value.
-    doc_list = []
-
-    with tf.io.gfile.GFile(path, "r") as f:
-      # cur indicates the current query ID.
-      cur = -1
-
-      for line in f:
-        qid, doc = _libsvm_parse_line(line)
-        if cur < 0:
-          cur = qid
-
-        # If qid is not new store the data and move onto the next line.
-        if qid == cur:
-          doc_list.append(doc)
-          continue
-
-        yield _libsvm_generate(num_features, list_size, doc_list)
-
-        # Reset current pointer and re-initialize document list.
-        cur = qid
-        doc_list = [doc]
-
-    yield _libsvm_generate(num_features, list_size, doc_list)
-
-  return inner_generator

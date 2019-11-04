@@ -21,7 +21,6 @@ from __future__ import print_function
 import functools
 import os
 from absl.testing import parameterized
-import numpy as np
 
 import tensorflow as tf
 
@@ -207,11 +206,6 @@ EXAMPLE_FEATURE_SPEC = {
     "unigrams": tf.io.VarLenFeature(tf.string),
     "utility": tf.io.FixedLenFeature([1], tf.float32, default_value=[-1.])
 }
-
-LIBSVM_DATA = """2 qid:1 1:0.1 3:0.3 4:-0.4
-1 qid:1 1:0.12 4:0.24 5:0.5
-0 qid:1 2:0.13
-"""
 
 
 def make_example_list_input_fn():
@@ -840,68 +834,6 @@ class LibSVMUnitTest(tf.test.TestCase, parameterized.TestCase):
         "51": 0.45,
         "label": 1.0
     })
-
-  def test_libsvm_generate(self):
-    doc_list = [
-        {
-            "1": 0.1,
-            "3": 0.3,
-            "4": -0.4,
-            "label": 2.0
-        },
-        {
-            "1": 0.12,
-            "4": 0.24,
-            "5": 0.5,
-            "label": 1.0
-        },
-        {
-            "2": 0.13,
-            "label": 0.0
-        },
-    ]
-    want = {
-        "1": np.array([[0.1], [0.], [0.12], [0.]], dtype=np.float32),
-        "2": np.array([[0.], [0.13], [0.], [0.]], dtype=np.float32),
-        "3": np.array([[0.3], [0.], [0.], [0.]], dtype=np.float32),
-        "4": np.array([[-0.4], [0.], [0.24], [0.]], dtype=np.float32),
-        "5": np.array([[0.], [0.], [0.5], [0.]], dtype=np.float32),
-    }
-
-    np.random.seed(10)
-    features, labels = data_lib._libsvm_generate(
-        num_features=5, list_size=4, doc_list=doc_list)
-
-    self.assertAllEqual(labels, [2.0, 0.0, 1.0, -1.0])
-    self.assertAllEqual(sorted(features.keys()), sorted(want.keys()))
-    for k in sorted(want):
-      self.assertAllEqual(features.get(k), want.get(k))
-
-  def test_libsvm_generator(self):
-    data_dir = tf.compat.v1.test.get_temp_dir()
-    data_file = os.path.join(data_dir, "test_libvsvm.txt")
-    if tf.io.gfile.exists(data_file):
-      tf.io.gfile.remove(data_file)
-
-    with open(data_file, "wt") as writer:
-      writer.write(LIBSVM_DATA)
-
-    want = {
-        "1": np.array([[0.1], [0.], [0.12], [0.]], dtype=np.float32),
-        "2": np.array([[0.], [0.13], [0.], [0.]], dtype=np.float32),
-        "3": np.array([[0.3], [0.], [0.], [0.]], dtype=np.float32),
-        "4": np.array([[-0.4], [0.], [0.24], [0.]], dtype=np.float32),
-        "5": np.array([[0.], [0.], [0.5], [0.]], dtype=np.float32),
-    }
-
-    reader = data_lib.libsvm_generator(data_file, 5, 4, seed=10)
-
-    for features, labels in reader():
-      self.assertAllEqual(labels, [2.0, 0., 1.0, -1.0])
-      self.assertAllEqual(sorted(features.keys()), sorted(want.keys()))
-      for k in sorted(want):
-        self.assertAllEqual(features.get(k), want.get(k))
-      break
 
 
 if __name__ == "__main__":

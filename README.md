@@ -27,22 +27,17 @@ TF-Ranking was presented at premier conferences in Information Retrieval,
 
 ## Demos
 
-We provide two demos, with no installation required, to get started on using
-TF-Ranking. These demos run on a
+We provide a demo, with no installation required, to get started on using
+TF-Ranking. This demo runs on a
 [colaboratory notebook](https://research.google.com/colaboratory/faq.html), an
-interactive Python environment.
-
-1.  Using sparse features and embeddings in TF-Ranking
-    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/handling_sparse_features.ipynb).
-    This demo demonstrates how to:
+interactive Python environment. Using sparse features and embeddings in
+TF-Ranking
+[![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/handling_sparse_features.ipynb).
+This demo demonstrates how to:
 
     *   Use sparse/embedding features
     *   Process data in TFRecord format
     *   Tensorboard integration in colab notebook, for Estimator API
-
-2.  **Deprecated**. TF-Ranking on a dummy data set with dense features in
-    [the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format):
-    [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/tf_ranking_libsvm.ipynb).
 
 Also see [Running Scripts](#running-scripts) for executable scripts.
 
@@ -230,9 +225,8 @@ The training results such as loss and metrics can be visualized using
 
 ### Jupyter Notebook
 
-An example jupyter notebook using
-[the LIBSVM format](https://sourceforge.net/p/lemur/wiki/RankLib%20File%20Format)
-is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
+An example jupyter notebook is available in
+`third_party/tensorflow_ranking/examples/handling_sparse_features.ipynb`.
 
 1.  To run this notebook, first follow the steps in installation to set up
     `virtualenv` environment with tensorflow_ranking package installed.
@@ -246,7 +240,7 @@ is available in `tensorflow_ranking/examples/tf_ranking_libsvm.ipynb`.
 3.  Start a jupyter notebook instance on remote server.
 
     ```shell
-    (tfr) $ jupyter notebook tensorflow_ranking/examples/tf_ranking_libsvm.ipynb \
+    (tfr) $ jupyter notebook third_party/tensorflow_ranking/examples/handling_sparse_features.ipynb \
             --NotebookApp.allow_origin='https://colab.research.google.com' \
             --port=8888
     ```
