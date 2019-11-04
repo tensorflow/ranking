@@ -365,7 +365,11 @@ class _RankingLoss(object):
     raise NotImplementedError('Calling an abstract method.')
 
   def normalize_weights(self, labels, weights):
-    """Computes the weights adjuster.
+    """Normalizes weights needed for tf.estimator (not tf.keras).
+
+    This is needed for `tf.estimator` given that the reduction may be
+    `SUM_OVER_NONZERO_WEIGHTS`. This function is not needed after we migrate
+    from the deprecated reduction to `SUM` or `SUM_OVER_BATCH_SIZE`.
 
     Args:
       labels: A `Tensor` of shape [batch_size, list_size] representing graded
@@ -375,13 +379,13 @@ class _RankingLoss(object):
         weights.
 
     Returns:
-      The weights adjuster.
+      The normalized weights.
     """
     del labels
     return 1.0 if weights is None else weights
 
   def compute(self, labels, logits, weights, reduction):
-    """Computes the reduced loss for non-tf.keras usage.
+    """Computes the reduced loss for tf.estimator (not tf.keras).
 
     Note that this function is not compatible with keras.
 
@@ -405,7 +409,9 @@ class _RankingLoss(object):
         losses, weights, reduction=reduction)
 
   def eval_metric(self, labels, logits, weights):
-    """Computes the eval metric for the loss.
+    """Computes the eval metric for the loss in tf.estimator (not tf.keras).
+
+    Note that this function is not compatible with keras.
 
     Args:
       labels: A `Tensor` of the same shape as `logits` representing graded
@@ -603,6 +609,7 @@ class _PointwiseLoss(_RankingLoss):
     return self._name
 
   def normalize_weights(self, labels, weights):
+    """See _RankingLoss."""
     if weights is None:
       weights = 1.
     return tf.compat.v1.where(
