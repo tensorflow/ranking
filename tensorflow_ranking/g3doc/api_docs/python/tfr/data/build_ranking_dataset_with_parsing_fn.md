@@ -5,6 +5,8 @@
 
 # tfr.data.build_ranking_dataset_with_parsing_fn
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Builds a ranking tf.dataset using the provided `parsing_fn`.
 

@@ -1,9 +1,9 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.data.parse_from_example_in_example" />
+<meta itemprop="name" content="tfr.data.parse_from_example_list" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.data.parse_from_example_in_example
+# tfr.data.parse_from_example_list
 
 <!-- Insert buttons -->
 
@@ -18,10 +18,10 @@
 
 <!-- Start diff -->
 
-Parses an ExampleInExample batch to a feature map.
+Parses an `ExampleListWithContext` batch to a feature map.
 
 ```python
-tfr.data.parse_from_example_in_example(
+tfr.data.parse_from_example_list(
     serialized,
     list_size=None,
     context_feature_spec=None,
@@ -31,98 +31,78 @@ tfr.data.parse_from_example_in_example(
 
 <!-- Placeholder for "Used in" -->
 
-An ExampleInExample is a tf.train.Example that has two fields: -
-`serialized_context` is a scalar of bytes. The value is a serialized
-tf.train.Example that contains context features. - `serialized_examples` is a
-repeated field of bytes. The value is a list of serialized tf.train.Example with
-each representing an example that contains example features.
-
-#### For example:
+#### Example:
 
 ```
-serialized_context_string = Serialize({
-  features {
-    feature {
-      key: "query_length"
-      value { int64_list { value: 3 } }
-    }
-  }
-})
-
-serialized_examples_string = [
-  Serialize({
-    features {
-      feature {
-        key: "unigrams"
-        value { bytes_list { value: "tensorflow" } }
-      }
-      feature {
-        key: "utility"
-        value { float_list { value: 0.0 } }
-      }
-    }
-  }),
-
-  Serialize({
-    features {
-      feature {
-        key: "unigrams"
-        value { bytes_list { value: ["learning" "to" "rank" } }
-      }
-      feature {
-        key: "utility"
-        value { float_list { value: 1.0 } }
-      }
-    }
-  })
-]
-
-serialized_context_string_2 = Serialize({
-  features {
-    feature {
-      key: "query_length"
-      value { int64_list { value: 2 } }
-    }
-  }
-})
-
-serialized_examples_string_2 = [
-  Serialize({
-    features {
-      feature {
-        key: "unigrams"
-        value { bytes_list { value: "gbdt" } }
-      }
-      feature {
-        key: "utility"
-        value { float_list { value: 0.0 } }
-      }
-    }
-  }),
-
-  Serialize({
-    features {
-      feature {
-        key: "unigrams"
-        value { bytes_list { value: ["neural" "network" } }
-      }
-      feature {
-        key: "utility"
-        value { float_list { value: 1.0 } }
-      }
-    }
-  })
-]
-
 serialized = [
-  {
-    serialized_context: serialized_context_string,
-    serialized_examples: serialized_examples_string,
-  },
-  {
-    serialized_context: serialized_context_string_2,
-    serialized_examples: serialized_examples_string_2,
-  },
+  example_list_with_context = {
+    context {
+      features {
+        feature {
+          key: "query_length"
+          value { int64_list { value: 3 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: "tensorflow" } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 0.0 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: ["learning" "to" "rank" } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 1.0 } }
+        }
+      }
+    }
+  }
+  example_list_with_context = {
+    context {
+      features {
+        feature {
+          key: "query_length"
+          value { int64_list { value: 2 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: ["gbdt"] } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 0.0 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: ["neural", "networks"] } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 1.0 } }
+        }
+      }
+    }
+  }
 ]
 ```
 

@@ -5,6 +5,8 @@
 
 # tfr.feature.encode_listwise_features
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -14,14 +16,16 @@
   </a>
 </td></table>
 
+<!-- Start diff -->
+
 Returns dense tensors from features using feature columns.
 
 ```python
 tfr.feature.encode_listwise_features(
     features,
-    input_size,
     context_feature_columns,
     example_feature_columns,
+    input_size=None,
     mode=tf.estimator.ModeKeys.TRAIN,
     scope=None
 )
@@ -35,11 +39,12 @@ tfr.feature.encode_listwise_features(
     (`tf.Tensor` or `tf.SparseTensor`), possibly obtained from input_fn. For
     context features, the tensors are 2-D, while for example features the
     tensors are 3-D.
-*   <b>`input_size`</b>: (int) number of examples per query. This is the size of
-    second dimension of the Tensor corresponding to one of the example feature
-    columns.
 *   <b>`context_feature_columns`</b>: (dict) context feature names to columns.
 *   <b>`example_feature_columns`</b>: (dict) example feature names to columns.
+*   <b>`input_size`</b>: (int) [DEPRECATED: Use without this argument.] number
+    of examples per query. If this is None, input_size is inferred as the size
+    of second dimension of the Tensor corresponding to one of the example
+    feature columns.
 *   <b>`mode`</b>: (`estimator.ModeKeys`) Specifies if this is training,
     evaluation or inference. See `ModeKeys`.
 *   <b>`scope`</b>: (str) variable scope for the per column input layers.

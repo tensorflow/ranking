@@ -5,6 +5,8 @@
 
 # tfr.losses.make_loss_fn
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Makes a loss function using a single loss or multiple losses.
 
@@ -24,7 +28,6 @@ tfr.losses.make_loss_fn(
     lambda_weight=None,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     name=None,
-    seed=None,
     extra_args=None
 )
 ```
@@ -47,8 +50,6 @@ tfr.losses.make_loss_fn(
 *   <b>`reduction`</b>: One of `tf.losses.Reduction` except `NONE`. Describes
     how to reduce training loss over batch.
 *   <b>`name`</b>: A string used as the name for this loss.
-*   <b>`seed`</b>: A randomization seed used in computation of some loss
-    functions such as ListMLE and pListMLE.
 *   <b>`extra_args`</b>: A string-keyed dictionary that contains any other
     loss-specific arguments.
 

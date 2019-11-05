@@ -5,6 +5,8 @@
 
 # tfr.losses.make_loss_metric_fn
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Factory method to create a metric based on a loss.
 

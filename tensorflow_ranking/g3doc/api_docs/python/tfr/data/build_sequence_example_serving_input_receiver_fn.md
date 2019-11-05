@@ -5,6 +5,8 @@
 
 # tfr.data.build_sequence_example_serving_input_receiver_fn
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Creates a serving_input_receiver_fn for `SequenceExample` inputs.
 

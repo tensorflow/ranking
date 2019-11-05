@@ -5,6 +5,8 @@
 
 # tfr.metrics.precision
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Computes precision as weighted average of relevant examples.
 

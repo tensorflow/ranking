@@ -5,6 +5,8 @@
 
 # tfr.data.build_ranking_serving_input_receiver_fn_with_parsing_fn
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Returns a receiver function with the provided `parsing_fn`.
 

@@ -16,17 +16,13 @@
 
 Defines `Head`s of TF ranking models.
 
-<!-- Placeholder for "Used in" -->
-
 Given logits (or output of a hidden layer), a `Head` computes predictions, loss,
 train_op, metrics and exports outputs.
 
-## Classes
-
-[`class LossSpec`](../tfr/head/LossSpec.md): LossSpec(training_loss,
-unreduced_loss, weights, processed_labels)
-
 ## Functions
+
+[`create_multi_ranking_head(...)`](../tfr/head/create_multi_ranking_head.md): A
+factory method to create `_MultiRankingHead`.
 
 [`create_ranking_head(...)`](../tfr/head/create_ranking_head.md): A factory
 method to create `_RankingHead`.

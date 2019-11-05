@@ -1,9 +1,9 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.metrics.average_relevance_position" />
+<meta itemprop="name" content="tfr.metrics.mean_average_precision" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.metrics.average_relevance_position
+# tfr.metrics.mean_average_precision
 
 <!-- Insert buttons -->
 
@@ -18,33 +18,36 @@
 
 <!-- Start diff -->
 
-Computes average relevance position (ARP).
+Computes mean average precision (MAP).
 
 ```python
-tfr.metrics.average_relevance_position(
+tfr.metrics.mean_average_precision(
     labels,
     predictions,
     weights=None,
+    topn=None,
     name=None
 )
 ```
 
 <!-- Placeholder for "Used in" -->
 
-This can also be named as average_relevance_rank, but this can be confusing with
-mean_reciprocal_rank in acronyms. This name is more distinguishing and has been
-used historically for binary relevance as average_click_position.
+The implementation of MAP is based on Equation (1.7) in the following: Liu, T-Y
+"Learning to Rank for Information Retrieval" found at
+https://www.nowpublishers.com/article/DownloadSummary/INR-016
 
 #### Args:
 
-*   <b>`labels`</b>: A `Tensor` of the same shape as `predictions`.
+*   <b>`labels`</b>: A `Tensor` of the same shape as `predictions`. A value >= 1
+    means a relevant example.
 *   <b>`predictions`</b>: A `Tensor` with shape [batch_size, list_size]. Each
     value is the ranking score of the corresponding example.
 *   <b>`weights`</b>: A `Tensor` of the same shape of predictions or
     [batch_size, 1]. The former case is per-example and the latter case is
     per-list.
+*   <b>`topn`</b>: A cutoff for how many examples to consider for this metric.
 *   <b>`name`</b>: A string used as the name for this metric.
 
 #### Returns:
 
-A metric for the weighted average relevance position.
+A metric for the mean average precision.

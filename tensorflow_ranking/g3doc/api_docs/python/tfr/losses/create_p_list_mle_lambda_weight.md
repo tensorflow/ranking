@@ -5,6 +5,8 @@
 
 # tfr.losses.create_p_list_mle_lambda_weight
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Creates _LambdaWeight based on Position-Aware ListMLE paper.
 

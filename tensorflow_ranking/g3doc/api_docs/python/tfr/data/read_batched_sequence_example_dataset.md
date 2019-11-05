@@ -5,6 +5,8 @@
 
 # tfr.data.read_batched_sequence_example_dataset
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Returns a `Dataset` of features from `SequenceExample`.
 

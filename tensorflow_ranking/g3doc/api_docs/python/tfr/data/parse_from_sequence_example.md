@@ -5,6 +5,8 @@
 
 # tfr.data.parse_from_sequence_example
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Parses SequenceExample to feature maps.
 

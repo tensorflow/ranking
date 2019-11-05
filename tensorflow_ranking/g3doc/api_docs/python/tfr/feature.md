@@ -16,8 +16,6 @@
 
 Feature transformations for ranking library.
 
-<!-- Placeholder for "Used in" -->
-
 ## Functions
 
 [`encode_features(...)`](../tfr/feature/encode_features.md): Returns dense

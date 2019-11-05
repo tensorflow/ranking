@@ -3,6 +3,7 @@
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="ARP"/>
 <meta itemprop="property" content="DCG"/>
+<meta itemprop="property" content="MAP"/>
 <meta itemprop="property" content="MRR"/>
 <meta itemprop="property" content="NDCG"/>
 <meta itemprop="property" content="ORDERED_PAIR_ACCURACY"/>
@@ -10,6 +11,8 @@
 </div>
 
 # tfr.metrics.RankingMetricKey
+
+<!-- Insert buttons -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -22,6 +25,8 @@
 
 ## Class `RankingMetricKey`
 
+<!-- Start diff -->
+
 Ranking metric key strings.
 
 <!-- Placeholder for "Used in" -->
@@ -30,6 +35,7 @@ Ranking metric key strings.
 
 *   `ARP = 'arp'` <a id="ARP"></a>
 *   `DCG = 'dcg'` <a id="DCG"></a>
+*   `MAP = 'map'` <a id="MAP"></a>
 *   `MRR = 'mrr'` <a id="MRR"></a>
 *   `NDCG = 'ndcg'` <a id="NDCG"></a>
 *   `ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'`

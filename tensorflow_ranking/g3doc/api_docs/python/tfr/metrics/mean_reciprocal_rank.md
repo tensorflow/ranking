@@ -5,6 +5,8 @@
 
 # tfr.metrics.mean_reciprocal_rank
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -14,6 +16,8 @@
   </a>
 </td></table>
 
+<!-- Start diff -->
+
 Computes mean reciprocal rank (MRR).
 
 ```python
@@ -21,6 +25,7 @@ tfr.metrics.mean_reciprocal_rank(
     labels,
     predictions,
     weights=None,
+    topn=None,
     name=None
 )
 ```
@@ -36,6 +41,8 @@ tfr.metrics.mean_reciprocal_rank(
 *   <b>`weights`</b>: A `Tensor` of the same shape of predictions or
     [batch_size, 1]. The former case is per-example and the latter case is
     per-list.
+*   <b>`topn`</b>: An integer cutoff specifying how many examples to consider
+    for this metric. If None, the whole list is considered.
 *   <b>`name`</b>: A string used as the name for this metric.
 
 #### Returns:

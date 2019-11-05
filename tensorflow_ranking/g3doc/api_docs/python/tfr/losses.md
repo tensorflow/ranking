@@ -16,21 +16,16 @@
 
 Defines ranking losses as TF ops.
 
-<!-- Placeholder for "Used in" -->
 
 The losses here are used to learn TF ranking models. It works with listwise
 Tensors only.
 
+## Modules
+
+[`losses_impl`](../tfr/losses/losses_impl.md) module: Implements the losses for
+TF-Ranking.
+
 ## Classes
-
-[`class DCGLambdaWeight`](../tfr/losses/DCGLambdaWeight.md): LambdaWeight for
-Discounted Cumulative Gain metric.
-
-[`class ListMLELambdaWeight`](../tfr/losses/ListMLELambdaWeight.md):
-LambdaWeight for ListMLE cost function.
-
-[`class PrecisionLambdaWeight`](../tfr/losses/PrecisionLambdaWeight.md):
-LambdaWeight for Precision metric.
 
 [`class RankingLossKey`](../tfr/losses/RankingLossKey.md): Ranking loss key
 strings.

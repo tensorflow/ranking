@@ -16,7 +16,6 @@
 
 Tensorflow Ranking model library.
 
-<!-- Placeholder for "Used in" -->
 
 This provides functions to build `model_fn` used in `tf.estimator`.
 

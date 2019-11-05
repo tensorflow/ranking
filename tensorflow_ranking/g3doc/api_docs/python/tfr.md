@@ -1,6 +1,7 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr" />
 <meta itemprop="path" content="Stable" />
+<meta itemprop="property" content="__version__"/>
 </div>
 
 # Module: tfr
@@ -15,8 +16,6 @@
 </td></table>
 
 TensorFlow Ranking, the project to build ranking models on TensorFlow.
-
-<!-- Placeholder for "Used in" -->
 
 ## Modules
 
@@ -34,3 +33,7 @@ library.
 [`model`](./tfr/model.md) module: Tensorflow Ranking model library.
 
 [`utils`](./tfr/utils.md) module: Utility functions for ranking library.
+
+## Other Members
+
+*   `__version__ = '0.2.0.dev'` <a id="__version__"></a>

@@ -2,6 +2,7 @@
 <meta itemprop="name" content="tfr.data" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="EIE"/>
+<meta itemprop="property" content="ELWC"/>
 <meta itemprop="property" content="SEQ"/>
 </div>
 
@@ -17,8 +18,6 @@
 </td></table>
 
 Input data parsing for tf-ranking library.
-
-<!-- Placeholder for "Used in" -->
 
 Supports the following data formats: - tf.train.SequenceExample -
 tf.train.Example in tf.train.Example.
@@ -40,14 +39,14 @@ Returns a receiver function with the provided `parsing_fn`.
 [`build_sequence_example_serving_input_receiver_fn(...)`](../tfr/data/build_sequence_example_serving_input_receiver_fn.md):
 Creates a serving_input_receiver_fn for `SequenceExample` inputs.
 
-[`libsvm_generator(...)`](../tfr/data/libsvm_generator.md): Parses a
-LibSVM-formatted input file and aggregates data points by qid.
-
 [`make_parsing_fn(...)`](../tfr/data/make_parsing_fn.md): Returns a parsing fn
 for a standard data format.
 
 [`parse_from_example_in_example(...)`](../tfr/data/parse_from_example_in_example.md):
 Parses an ExampleInExample batch to a feature map.
+
+[`parse_from_example_list(...)`](../tfr/data/parse_from_example_list.md): Parses
+an `ExampleListWithContext` batch to a feature map.
 
 [`parse_from_sequence_example(...)`](../tfr/data/parse_from_sequence_example.md):
 Parses SequenceExample to feature maps.
@@ -58,4 +57,5 @@ Returns a `Dataset` of features from `SequenceExample`.
 ## Other Members
 
 *   `EIE = 'example_in_example'` <a id="EIE"></a>
+*   `ELWC = 'example_list_with_context'` <a id="ELWC"></a>
 *   `SEQ = 'sequence_example'` <a id="SEQ"></a>

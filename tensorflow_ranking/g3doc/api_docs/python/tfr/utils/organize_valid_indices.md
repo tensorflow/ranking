@@ -5,6 +5,8 @@
 
 # tfr.utils.organize_valid_indices
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Organizes indices in such a way that valid items appear first.
 

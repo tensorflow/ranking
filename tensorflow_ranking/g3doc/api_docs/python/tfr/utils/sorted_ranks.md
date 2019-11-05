@@ -1,9 +1,9 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.utils.sort_by_scores" />
+<meta itemprop="name" content="tfr.utils.sorted_ranks" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.utils.sort_by_scores
+# tfr.utils.sorted_ranks
 
 <!-- Insert buttons -->
 
@@ -18,29 +18,27 @@
 
 <!-- Start diff -->
 
-Sorts example features according to per-example scores.
+Returns an int `Tensor` as the ranks (1-based) after sorting scores.
 
 ```python
-tfr.utils.sort_by_scores(
+tfr.utils.sorted_ranks(
     scores,
-    features_list,
-    topn=None,
     shuffle_ties=True
 )
 ```
 
 <!-- Placeholder for "Used in" -->
 
+Example: Given scores = [[1.0, 3.5, 2.1]], the returned ranks will be [[3, 1,
+2]]. It means that scores 1.0 will be ranked at position 3, 3.5 will be ranked
+at position 1, and 2.1 will be ranked at position 2.
+
 #### Args:
 
 *   <b>`scores`</b>: A `Tensor` of shape [batch_size, list_size] representing
     the per-example scores.
-*   <b>`features_list`</b>: A list of `Tensor`s with the same shape as scores to
-    be sorted.
-*   <b>`topn`</b>: An integer as the cutoff of examples in the sorted list.
-*   <b>`shuffle_ties`</b>: A boolean. If True, randomly shuffle before the
-    sorting.
+*   <b>`shuffle_ties`</b>: See `sort_by_scores`.
 
 #### Returns:
 
-A list of `Tensor`s as the list of sorted features by `scores`.
+A 1-based int `Tensor`s as the ranks.

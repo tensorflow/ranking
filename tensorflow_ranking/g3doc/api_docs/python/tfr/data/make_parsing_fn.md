@@ -5,6 +5,8 @@
 
 # tfr.data.make_parsing_fn
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Returns a parsing fn for a standard data format.
 

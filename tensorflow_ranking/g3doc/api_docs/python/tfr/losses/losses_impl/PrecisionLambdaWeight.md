@@ -1,17 +1,19 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.losses.PrecisionLambdaWeight" />
+<meta itemprop="name" content="tfr.losses.losses_impl.PrecisionLambdaWeight" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__init__"/>
 <meta itemprop="property" content="individual_weights"/>
 <meta itemprop="property" content="pair_weights"/>
 </div>
 
-# tfr.losses.PrecisionLambdaWeight
+# tfr.losses.losses_impl.PrecisionLambdaWeight
+
+<!-- Insert buttons -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -19,13 +21,15 @@
 
 ## Class `PrecisionLambdaWeight`
 
+<!-- Start diff -->
+
 LambdaWeight for Precision metric.
 
 <!-- Placeholder for "Used in" -->
 
 <h2 id="__init__"><code>__init__</code></h2>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py">View
 source</a>
 
 ```python
@@ -47,19 +51,24 @@ Constructor.
 
 <h3 id="individual_weights"><code>individual_weights</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py">View
 source</a>
 
 ```python
-individual_weights(sorted_labels)
+individual_weights(
+    labels,
+    ranks
+)
 ```
 
 Returns the weight `Tensor` for individual examples.
 
 #### Args:
 
-*   <b>`sorted_labels`</b>: A dense `Tensor` of labels with shape [batch_size,
-    list_size] that are sorted by logits.
+*   <b>`labels`</b>: A dense `Tensor` of labels with shape [batch_size,
+    list_size].
+*   <b>`ranks`</b>: A dense `Tensor` of ranks with the same shape as `labels`
+    that are sorted by logits.
 
 #### Returns:
 
@@ -67,11 +76,14 @@ A `Tensor` that can weight individual examples.
 
 <h3 id="pair_weights"><code>pair_weights</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py">View
 source</a>
 
 ```python
-pair_weights(sorted_labels)
+pair_weights(
+    labels,
+    ranks
+)
 ```
 
 See `_LambdaWeight`.
@@ -83,8 +95,10 @@ LambdaRank method. The weight is the gain of swapping a pair of documents.
 
 #### Args:
 
-*   <b>`sorted_labels`</b>: A dense `Tensor` of labels with shape [batch_size,
-    list_size] that are sorted by logits.
+*   <b>`labels`</b>: A dense `Tensor` of labels with shape [batch_size,
+    list_size].
+*   <b>`ranks`</b>: A dense `Tensor` of ranks with the same shape as `labels`
+    that are sorted by logits.
 
 #### Returns:
 

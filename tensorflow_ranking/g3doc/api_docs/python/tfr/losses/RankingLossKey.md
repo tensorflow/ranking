@@ -14,6 +14,8 @@
 
 # tfr.losses.RankingLossKey
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -24,6 +26,8 @@
 </td></table>
 
 ## Class `RankingLossKey`
+
+<!-- Start diff -->
 
 Ranking loss key strings.
 

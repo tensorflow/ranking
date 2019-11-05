@@ -5,6 +5,8 @@
 
 # tfr.metrics.ordered_pair_accuracy
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Computes the percentage of correctedly ordered pair.
 

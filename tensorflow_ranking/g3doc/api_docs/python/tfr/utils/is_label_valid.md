@@ -5,6 +5,8 @@
 
 # tfr.utils.is_label_valid
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Returns a boolean `Tensor` for label validity.
 

@@ -5,6 +5,8 @@
 
 # tfr.utils.shuffle_valid_indices
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -13,6 +15,8 @@
     View source on GitHub
   </a>
 </td></table>
+
+<!-- Start diff -->
 
 Returns a shuffle of indices with valid ones on top.
 

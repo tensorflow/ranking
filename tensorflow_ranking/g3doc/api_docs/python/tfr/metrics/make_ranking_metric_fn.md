@@ -5,6 +5,8 @@
 
 # tfr.metrics.make_ranking_metric_fn
 
+<!-- Insert buttons -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -14,6 +16,8 @@
   </a>
 </td></table>
 
+<!-- Start diff -->
+
 Factory method to create a ranking metric function.
 
 ```python
@@ -21,7 +25,9 @@ tfr.metrics.make_ranking_metric_fn(
     metric_key,
     weights_feature_name=None,
     topn=None,
-    name=None
+    name=None,
+    gain_fn=_DEFAULT_GAIN_FN,
+    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
 )
 ```
 
@@ -35,6 +41,14 @@ tfr.metrics.make_ranking_metric_fn(
 *   <b>`topn`</b>: An `integer` specifying the cutoff of how many items are
     considered in the metric.
 *   <b>`name`</b>: A `string` used as the name for this metric.
+*   <b>`gain_fn`</b>: (function) Transforms labels. A method to calculate gain
+    parameters used in the definitions of the DCG and NDCG metrics, where the
+    input is the relevance label of the item. The gain is often defined to be of
+    the form 2^label-1.
+*   <b>`rank_discount_fn`</b>: (function) The rank discount function. A method
+    to define the dicount parameters used in the definitions of DCG and NDCG
+    metrics, where the input in the rank of item. The discount function is
+    commonly defined to be of the form log(rank+1).
 
 #### Returns:
 

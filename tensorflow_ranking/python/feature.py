@@ -121,7 +121,7 @@ def encode_listwise_features(features,
       3-D.
     context_feature_columns: (dict) context feature names to columns.
     example_feature_columns: (dict) example feature names to columns.
-    input_size: [DEPRECATED: Use without this argument.] (int) number of
+    input_size: (int) [DEPRECATED: Use without this argument.] number of
       examples per query. If this is None, input_size is inferred as the size
       of second dimension of the Tensor corresponding to one of the example
       feature columns.

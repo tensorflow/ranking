@@ -16,8 +16,6 @@
 
 Utility functions for ranking library.
 
-<!-- Placeholder for "Used in" -->
-
 ## Functions
 
 [`approx_ranks(...)`](../tfr/utils/approx_ranks.md): Computes approximate ranks
@@ -32,6 +30,9 @@ of max DCG.
 [`organize_valid_indices(...)`](../tfr/utils/organize_valid_indices.md):
 Organizes indices in such a way that valid items appear first.
 
+[`padded_nd_indices(...)`](../tfr/utils/padded_nd_indices.md): Pads the invalid
+entries by valid ones and returns the nd_indices.
+
 [`reshape_first_ndims(...)`](../tfr/utils/reshape_first_ndims.md): Reshapes the
 first n dims of the input `tensor` to `new shape`.
 
@@ -43,3 +44,6 @@ shuffle of indices with valid ones on top.
 
 [`sort_by_scores(...)`](../tfr/utils/sort_by_scores.md): Sorts example features
 according to per-example scores.
+
+[`sorted_ranks(...)`](../tfr/utils/sorted_ranks.md): Returns an int `Tensor` as
+the ranks (1-based) after sorting scores.

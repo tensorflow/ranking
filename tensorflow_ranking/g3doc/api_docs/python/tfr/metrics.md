@@ -16,7 +16,6 @@
 
 Defines ranking metrics as TF ops.
 
-<!-- Placeholder for "Used in" -->
 
 The metrics here are meant to be used during the TF training. That is, a batch
 of instances in the Tensor format are evaluated by ops. It works with listwise
@@ -37,6 +36,9 @@ Computes discounted cumulative gain (DCG).
 
 [`make_ranking_metric_fn(...)`](../tfr/metrics/make_ranking_metric_fn.md):
 Factory method to create a ranking metric function.
+
+[`mean_average_precision(...)`](../tfr/metrics/mean_average_precision.md):
+Computes mean average precision (MAP).
 
 [`mean_reciprocal_rank(...)`](../tfr/metrics/mean_reciprocal_rank.md): Computes
 mean reciprocal rank (MRR).
