@@ -683,6 +683,48 @@ class MetricsTest(tf.test.TestCase):
           (m(labels, scores, {}), (1. + 3.) / (2. + 3.)),
       ])
 
+  def test_eval_metric(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.], [3., 1., 2.]]
+      labels = [[0., 0., 1.], [0., 1., 2.], [0., 1., 0.]]
+      weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
+      gain_fn = lambda rel: rel
+      rank_discount_fn = lambda rank: 1. / rank
+      self._check_metrics([
+          (metrics_lib.mean_reciprocal_rank(labels, scores),
+           metrics_lib.eval_metric(
+               metric_fn=metrics_lib.mean_reciprocal_rank,
+               labels=labels,
+               predictions=scores)
+          ),
+          (metrics_lib.mean_reciprocal_rank(labels, scores, topn=1),
+           metrics_lib.eval_metric(
+               metric_fn=metrics_lib.mean_reciprocal_rank,
+               labels=labels,
+               predictions=scores,
+               topn=1)
+          ),
+          (metrics_lib.mean_reciprocal_rank(labels, scores, weights),
+           metrics_lib.eval_metric(
+               metric_fn=metrics_lib.mean_reciprocal_rank,
+               labels=labels,
+               predictions=scores,
+               weights=weights)
+          ),
+          (metrics_lib.discounted_cumulative_gain(
+              labels,
+              scores,
+              gain_fn=gain_fn,
+              rank_discount_fn=rank_discount_fn),
+           metrics_lib.eval_metric(
+               metric_fn=metrics_lib.discounted_cumulative_gain,
+               labels=labels,
+               predictions=scores,
+               gain_fn=gain_fn,
+               rank_discount_fn=rank_discount_fn)
+          ),
+      ])
+
 
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()
