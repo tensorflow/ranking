@@ -539,6 +539,18 @@ class _ListwiseLoss(_RankingLoss):
     """The loss name."""
     return self._name
 
+  def normalize_weights(self, labels, weights):
+    """See `_RankingLoss`."""
+    if weights is None:
+      return 1.0
+    else:
+      weights = tf.convert_to_tensor(value=weights)
+      labels = tf.convert_to_tensor(value=labels)
+      return tf.compat.v1.math.divide_no_nan(
+          tf.reduce_sum(input_tensor=(weights * labels),
+                        axis=1, keepdims=True),
+          tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True))
+
 
 class SoftmaxLoss(_ListwiseLoss):
   """Implements softmax loss."""
