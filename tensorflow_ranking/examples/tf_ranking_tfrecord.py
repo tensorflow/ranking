@@ -22,6 +22,7 @@ MODEL_DIR=/tmp/output && \
 TRAIN=tensorflow_ranking/examples/data/train_elwc.tfrecord && \
 EVAL=tensorflow_ranking/examples/data/eval_elwc.tfrecord && \
 VOCAB=tensorflow_ranking/examples/data/vocab.txt && \
+WEIGHT_FEATURE_NAME="doc_weight" && \
 rm -rf $MODEL_DIR && \
 bazel build -c opt \
 tensorflow_ranking/examples/tf_ranking_tfrecord_py_binary && \
@@ -30,7 +31,8 @@ tensorflow_ranking/examples/tf_ranking_tfrecord_py_binary && \
 --eval_path=$EVAL \
 --vocab_path=$VOCAB \
 --model_dir=$MODEL_DIR \
---data_format=example_list_with_context
+--data_format=example_list_with_context \
+--weights_feature_name=$WEIGHT_FEATURE_NAME
 
 You can use TensorBoard to display the training results stored in $MODEL_DIR.
 
@@ -64,6 +66,9 @@ flags.DEFINE_integer(
 flags.DEFINE_integer("group_size", 1, "Group size used in score function.")
 flags.DEFINE_string("loss", "approx_ndcg_loss",
                     "The RankingLossKey for the loss function.")
+flags.DEFINE_string("weights_feature_name", "",
+                    "The name of the feature where unbiased learning-to-rank "
+                    "weights are stored.")
 flags.DEFINE_bool("listwise_inference", False,
                   "If true, exports accept `data_format` while serving.")
 flags.DEFINE_bool(
@@ -91,7 +96,7 @@ def context_feature_columns():
   return {"query_tokens": query_embedding_column}
 
 
-def example_feature_columns():
+def example_feature_columns(use_weight_feature=True):
   """Returns the example feature columns."""
   if FLAGS.vocab_path:
     sparse_column = tf.feature_column.categorical_column_with_vocabulary_file(
@@ -101,7 +106,12 @@ def example_feature_columns():
         key="document_tokens", hash_bucket_size=100)
   document_embedding_column = tf.feature_column.embedding_column(
       sparse_column, _EMBEDDING_DIMENSION)
-  return {"document_tokens": document_embedding_column}
+  feature_columns = {"document_tokens": document_embedding_column}
+  if use_weight_feature and FLAGS.weights_feature_name:
+    feature_columns[FLAGS.weights_feature_name] = (
+        tf.feature_column.numeric_column(FLAGS.weights_feature_name,
+                                         default_value=1.))
+  return feature_columns
 
 
 def make_input_fn(file_pattern,
@@ -288,7 +298,7 @@ def make_score_fn():
       ]
       group_input = [
           tf.compat.v1.layers.flatten(group_features[name])
-          for name in sorted(example_feature_columns())
+          for name in sorted(example_feature_columns(use_weight_feature=False))
       ]
       if FLAGS.use_document_interactions:
         group_input.append(
@@ -335,6 +345,11 @@ def eval_metric_fns():
           tfr.metrics.RankingMetricKey.NDCG, topn=topn)
       for topn in [1, 3, 5, 10]
   })
+  for topn in [1, 3, 5, 10]:
+    metric_fns["metric/weighted_ndcg@%d" % topn] = (
+        tfr.metrics.make_ranking_metric_fn(
+            tfr.metrics.RankingMetricKey.NDCG,
+            weights_feature_name=FLAGS.weights_feature_name, topn=topn))
   return metric_fns
 
 
@@ -356,7 +371,9 @@ def train_and_eval():
     return train_op
 
   ranking_head = tfr.head.create_ranking_head(
-      loss_fn=tfr.losses.make_loss_fn(FLAGS.loss),
+      loss_fn=tfr.losses.make_loss_fn(
+          FLAGS.loss,
+          weights_feature_name=FLAGS.weights_feature_name),
       eval_metric_fns=eval_metric_fns(),
       train_op_fn=_train_op_fn)
 

@@ -48,6 +48,10 @@ ELWC = text_format.Parse(
           key: "relevance"
           value { int64_list { value: 1 } }
         }
+        feature {
+          key: "doc_weight"
+          value { float_list { value: 0.5 } }
+        }
       }
     }
     examples {
@@ -59,6 +63,10 @@ ELWC = text_format.Parse(
         feature {
           key: "relevance"
           value { int64_list { value: 0 } }
+        }
+        feature {
+          key: "doc_weight"
+          value { float_list { value: 2.0 } }
         }
       }
     }""", input_pb2.ExampleListWithContext())
@@ -87,7 +95,8 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
         model_dir=model_dir,
         num_train_steps=10,
         listwise_inference=listwise_inference,
-        group_size=1):
+        group_size=1,
+        weights_feature_name="doc_weight"):
       tf_ranking_tfrecord.train_and_eval()
 
     if tf.io.gfile.exists(model_dir):
@@ -113,7 +122,8 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
         num_train_steps=10,
         listwise_inference=True,
         use_document_interactions=True,
-        group_size=1):
+        group_size=1,
+        weights_feature_name="doc_weight"):
       tf_ranking_tfrecord.train_and_eval()
 
     if tf.io.gfile.exists(model_dir):
