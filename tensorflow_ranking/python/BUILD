@@ -1,5 +1,7 @@
 # Description:
 # TensorFlow Ranking, the project to build ranking models on TensorFlow.
+# Placeholder for internal Python version compatibility macro.
+
 package(
     default_visibility = [
         "//tensorflow_ranking:__subpackages__",
@@ -9,8 +11,6 @@ package(
 licenses(["notice"])  # Apache 2.0
 
 exports_files(["LICENSE"])
-
-# Placeholder for internal Python version compatibility macro.
 
 py_library(
     name = "python",
@@ -34,10 +34,21 @@ py_library(
 )
 
 py_library(
+    name = "metrics_impl",
+    srcs = ["metrics_impl.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":utils",
+        # py/tensorflow dep,
+    ],
+)
+
+py_library(
     name = "metrics",
     srcs = ["metrics.py"],
     srcs_version = "PY2AND3",
     deps = [
+        ":metrics_impl",
         ":utils",
         # py/tensorflow dep,
     ],
@@ -54,6 +65,7 @@ py_test(
     ],
     deps = [
         ":metrics",
+        ":metrics_impl",
         # py/tensorflow dep,
     ],
 )
