@@ -344,7 +344,7 @@ class _MRRMetric(_RankingMetric):
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights=weights,
         relevance=tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
-    return tf.compat.v1.metrics.mean(mrr, per_list_weights)
+    return mrr, per_list_weights
 
 
 def mean_reciprocal_rank(labels,
@@ -371,7 +371,8 @@ def mean_reciprocal_rank(labels,
   metric = _MRRMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'mean_reciprocal_rank',
                                (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
+    mrr, per_list_weights = metric.compute(labels, predictions, weights)
+    return tf.compat.v1.metrics.mean(mrr, per_list_weights)
 
 
 class _ARPMetric(_RankingMetric):
@@ -397,8 +398,7 @@ class _ARPMetric(_RankingMetric):
     position = tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
     # TODO: Consider to add a cap poistion topn + 1 when there is no
     # relevant examples.
-    return tf.compat.v1.metrics.mean(position * tf.ones_like(relevance),
-                                     relevance)
+    return position * tf.ones_like(relevance), relevance
 
 
 def average_relevance_position(labels, predictions, weights=None, name=None):
@@ -422,7 +422,8 @@ def average_relevance_position(labels, predictions, weights=None, name=None):
   metric = _ARPMetric(name)
   with tf.compat.v1.name_scope(metric.name, 'average_relevance_position',
                                (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
+    arp, per_list_weights = metric.compute(labels, predictions, weights)
+  return tf.compat.v1.metrics.mean(arp, per_list_weights)
 
 
 class _PrecisionMetric(_RankingMetric):
@@ -447,7 +448,7 @@ class _PrecisionMetric(_RankingMetric):
     # 0 when there is no relevant example in topn.
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights, tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
-    return tf.compat.v1.metrics.mean(per_list_precision, per_list_weights)
+    return per_list_precision, per_list_weights
 
 
 def precision(labels, predictions, weights=None, topn=None, name=None):
@@ -469,7 +470,9 @@ def precision(labels, predictions, weights=None, topn=None, name=None):
   metric = _PrecisionMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'precision',
                                (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
+    precision_at_k, per_list_weights = metric.compute(labels, predictions,
+                                                      weights)
+  return tf.compat.v1.metrics.mean(precision_at_k, per_list_weights)
 
 
 class _MeanAveragePrecisionMetric(_RankingMetric):
@@ -509,7 +512,7 @@ class _MeanAveragePrecisionMetric(_RankingMetric):
     # 0 when there is no relevant example in topn.
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights, tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
-    return tf.compat.v1.metrics.mean(per_list_map, per_list_weights)
+    return per_list_map, per_list_weights
 
 
 def mean_average_precision(labels,
@@ -539,7 +542,9 @@ def mean_average_precision(labels,
   metric = _MeanAveragePrecisionMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'mean_average_precision',
                                (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
+    per_list_map, per_list_weights = metric.compute(labels, predictions,
+                                                    weights)
+  return tf.compat.v1.metrics.mean(per_list_map, per_list_weights)
 
 
 class _NDCGMetric(_RankingMetric):
@@ -583,7 +588,7 @@ class _NDCGMetric(_RankingMetric):
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights=weights,
         relevance=self._gain_fn(tf.cast(labels, dtype=tf.float32)))
-    return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
+    return per_list_ndcg, per_list_weights
 
 
 def normalized_discounted_cumulative_gain(
@@ -615,7 +620,9 @@ def normalized_discounted_cumulative_gain(
   with tf.compat.v1.name_scope(metric.name,
                                'normalized_discounted_cumulative_gain',
                                (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
+    per_list_ndcg, per_list_weights = metric.compute(labels, predictions,
+                                                     weights)
+  return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
 
 
 class _DCGMetric(_RankingMetric):
@@ -651,9 +658,8 @@ class _DCGMetric(_RankingMetric):
     per_list_weights = _per_example_weights_to_per_list_weights(
         weights=weights,
         relevance=self._gain_fn(tf.cast(labels, dtype=tf.float32)))
-    return tf.compat.v1.metrics.mean(
-        tf.compat.v1.math.divide_no_nan(dcg, per_list_weights),
-        per_list_weights)
+    per_list_dcg = tf.compat.v1.math.divide_no_nan(dcg, per_list_weights)
+    return per_list_dcg, per_list_weights
 
 
 def discounted_cumulative_gain(
@@ -683,7 +689,8 @@ def discounted_cumulative_gain(
   metric = _DCGMetric(name, topn, gain_fn, rank_discount_fn)
   with tf.compat.v1.name_scope(name, 'discounted_cumulative_gain',
                                (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
+    dcg, per_list_weights = metric.compute(labels, predictions, weights)
+  return tf.compat.v1.metrics.mean(dcg, per_list_weights)
 
 
 class _OPAMetric(_RankingMetric):
@@ -718,7 +725,7 @@ class _OPAMetric(_RankingMetric):
         pair_label_diff > 0, dtype=tf.float32) * tf.expand_dims(
             weights, 2) * tf.cast(
                 valid_pair, dtype=tf.float32)
-    return tf.compat.v1.metrics.mean(correct_pairs, pair_weights)
+    return correct_pairs, pair_weights
 
 
 def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
@@ -743,7 +750,8 @@ def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
   metric = _OPAMetric(name)
   with tf.compat.v1.name_scope(metric.name, 'ordered_pair_accuracy',
                                (labels, predictions, weights)):
-    return metric.compute(labels, predictions, weights)
+    correct_pairs, pair_weights = metric.compute(labels, predictions, weights)
+  return tf.compat.v1.metrics.mean(correct_pairs, pair_weights)
 
 
 def eval_metric(metric_fn, **kwargs):
