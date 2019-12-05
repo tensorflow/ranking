@@ -547,8 +547,7 @@ class _ListwiseLoss(_RankingLoss):
       weights = tf.convert_to_tensor(value=weights)
       labels = tf.convert_to_tensor(value=labels)
       return tf.compat.v1.math.divide_no_nan(
-          tf.reduce_sum(input_tensor=(weights * labels),
-                        axis=1, keepdims=True),
+          tf.reduce_sum(input_tensor=(weights * labels), axis=1, keepdims=True),
           tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True))
 
 
@@ -668,8 +667,10 @@ class ListMLELoss(_ListwiseLoss):
         is_valid, labels,
         tf.reduce_min(labels, axis=1, keepdims=True) -
         1e-6 * tf.ones_like(labels))
+    # Use a fixed ops-level seed and the randomness is controlled by the
+    # graph-level seed.
     sorted_labels, sorted_logits = utils.sort_by_scores(
-        scores, [labels, logits], shuffle_ties=True)
+        scores, [labels, logits], shuffle_ties=True, seed=37)
 
     raw_max = tf.reduce_max(input_tensor=sorted_logits, axis=1, keepdims=True)
     sorted_logits = sorted_logits - raw_max

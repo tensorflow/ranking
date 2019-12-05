@@ -46,7 +46,11 @@ def is_label_valid(labels):
   return tf.greater_equal(labels, 0.)
 
 
-def sort_by_scores(scores, features_list, topn=None, shuffle_ties=True):
+def sort_by_scores(scores,
+                   features_list,
+                   topn=None,
+                   shuffle_ties=True,
+                   seed=None):
   """Sorts example features according to per-example scores.
 
   Args:
@@ -56,6 +60,7 @@ def sort_by_scores(scores, features_list, topn=None, shuffle_ties=True):
       sorted.
     topn: An integer as the cutoff of examples in the sorted list.
     shuffle_ties: A boolean. If True, randomly shuffle before the sorting.
+    seed: The ops-level random seed used when `shuffle_ties` is True.
 
   Returns:
     A list of `Tensor`s as the list of sorted features by `scores`.
@@ -70,7 +75,9 @@ def sort_by_scores(scores, features_list, topn=None, shuffle_ties=True):
     shuffle_ind = None
     if shuffle_ties:
       shuffle_ind = _to_nd_indices(
-          tf.argsort(tf.random.uniform(tf.shape(input=scores)), stable=True))
+          tf.argsort(
+              tf.random.uniform(tf.shape(input=scores), seed=seed),
+              stable=True))
       scores = tf.gather_nd(scores, shuffle_ind)
     _, indices = tf.math.top_k(scores, topn, sorted=True)
     nd_indices = _to_nd_indices(indices)

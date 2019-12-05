@@ -325,9 +325,12 @@ class _GroupwiseRankingModel(_RankingModel):
     if shuffle:
       tf.compat.v1.logging.info('Number of shuffles: {}'.format(num_shuffles))
     indices_shuffled = []
-    for _ in range(num_shuffles):
+    # Use fixed ops-level seeds so that the randomness is controlled by the
+    # graph-level seed.
+    for i in range(num_shuffles):
       indices_shuffled.append(
-          _form_group_indices_nd(is_valid, self._group_size, shuffle=shuffle))
+          _form_group_indices_nd(
+              is_valid, self._group_size, shuffle=shuffle, seed=i + 77))
     feature_gather_indices_list, indices_mask_list = zip(*indices_shuffled)
     self._feature_gather_indices = tf.concat(feature_gather_indices_list, 1)
     self._indices_mask = tf.concat(indices_mask_list, 1)
