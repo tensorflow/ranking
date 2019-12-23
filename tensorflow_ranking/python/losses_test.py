@@ -1045,6 +1045,42 @@ class LossesTest(tf.test.TestCase):
             (1. + 1.) / 2,
             places=5)
 
+  def test_gumbel_softmax_sample(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4],
+                [0., 1.8, 10.2],
+                [1., 1.2, -3.2]]
+      labels = [[0., 0., 1.],
+                [1., 0., 1.],
+                [0., 0., -1.]]
+      weights = [[2.],
+                 [1.],
+                 [1.]]
+
+      sampled_scores = [[-.291, -1.643, -2.826],
+                        [-.0866, -2.924, -3.530],
+                        [-12.42, -9.492, -7.939e-5],
+                        [-8.859, -6.830, -1.223e-3],
+                        [-.8930, -.5266, -45.80183],
+                        [-.6650, -.7220, -45.94149]]
+
+      expanded_labels = [[0., 0., 1.],
+                         [0., 0., 1.],
+                         [1., 0., 1.],
+                         [1., 0., 1.],
+                         [0., 0., -1.],
+                         [0., 0., -1.]]
+      expanded_weights = [[2.], [2.],
+                          [1.], [1.],
+                          [1.], [1.]]
+
+      with self.cached_session():
+        l, s, w = ranking_losses._gumbel_softmax_sample(
+            labels, scores, weights, sample_size=2, seed=1)
+        self.assertAllEqual(l.eval(), expanded_labels)
+        self.assertAllClose(s.eval(), sampled_scores, rtol=1e-3)
+        self.assertAllEqual(w.eval(), expanded_weights)
+
 
 class LossMetricTest(tf.test.TestCase):
 
