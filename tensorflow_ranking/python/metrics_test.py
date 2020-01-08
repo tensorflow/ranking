@@ -63,6 +63,7 @@ def _ap(relevances, scores, topn=None):
     sum([P@k * rel for k, rel in enumerate(relevance)]) / sum(relevance)
     where P@k is the precision of the list at the cut off k.
   """
+
   def argsort(arr, reverse=True):
     arr_ind = sorted([(a, i) for i, a in enumerate(arr)], reverse=reverse)
     return list(zip(*arr_ind))[1]
@@ -74,9 +75,9 @@ def _ap(relevances, scores, topn=None):
   ranked_rels = [1. * relevances[i] for i in inds]
   prec = {}
   l = {}
-  for k in range(1, num_docs+1):
+  for k in range(1, num_docs + 1):
     prec[k] = sum(ranked_rels[:k]) / k
-    l[k] = ranked_rels[k-1]
+    l[k] = ranked_rels[k - 1]
   num_rel = sum(l.values())
   ap = sum(prec[k] * l[k] for k in prec) / num_rel if num_rel else 0
   return ap
@@ -154,8 +155,9 @@ class MetricsTest(tf.test.TestCase):
       # relevant item, where an item is relevant if its label is > 0.
       rel_rank = [2, 1, 3]
       weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-      mean_relevant_weights = [weights[0][2], sum(weights[1][1:]) / 2,
-                               weights[2][1]]
+      mean_relevant_weights = [
+          weights[0][2], sum(weights[1][1:]) / 2, weights[2][1]
+      ]
       num_queries = len(scores)
       self.assertAlmostEqual(num_queries, 3)
       m = metrics_lib.mean_reciprocal_rank
@@ -173,19 +175,21 @@ class MetricsTest(tf.test.TestCase):
           (m(labels[:2], scores[:2]), (0.5 + 1.0) / 2),
           (m(labels[:2], scores[:2], weights[:2]),
            (3. * 0.5 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5) / 2.)),
-          (m(labels, scores),
-           sum([1. / rel_rank[ind] for ind in range(num_queries)])
-           / num_queries),
-          (m(labels, scores, topn=1),
-           sum([0., 1. / rel_rank[1], 0.]) / num_queries),
+          (m(labels,
+             scores), sum([1. / rel_rank[ind] for ind in range(num_queries)]) /
+           num_queries),
+          (m(labels, scores,
+             topn=1), sum([0., 1. / rel_rank[1], 0.]) / num_queries),
           (m(labels, scores, topn=2),
            sum([1. / rel_rank[0], 1. / rel_rank[1], 0.]) / num_queries),
           (m(labels, scores, weights),
-           sum([mean_relevant_weights[ind] / rel_rank[ind]
-                for ind in range(num_queries)]) / sum(mean_relevant_weights)),
-          (m(labels, scores, weights, topn=1),
-           sum([0., mean_relevant_weights[1] / rel_rank[1], 0.])
-           / sum(mean_relevant_weights)),
+           sum([
+               mean_relevant_weights[ind] / rel_rank[ind]
+               for ind in range(num_queries)
+           ]) / sum(mean_relevant_weights)),
+          (m(labels, scores, weights,
+             topn=1), sum([0., mean_relevant_weights[1] / rel_rank[1], 0.]) /
+           sum(mean_relevant_weights)),
       ])
 
   def test_make_mean_reciprocal_rank_fn(self):
@@ -206,15 +210,14 @@ class MetricsTest(tf.test.TestCase):
           metrics_lib.RankingMetricKey.MRR,
           weights_feature_name=weights_feature_name)
       m_2 = metrics_lib.make_ranking_metric_fn(
-          metrics_lib.RankingMetricKey.MRR,
-          topn=1)
+          metrics_lib.RankingMetricKey.MRR, topn=1)
       self._check_metrics([
           (m([labels[0]], [scores[0]], features), 0.5),
           (m(labels, scores, features), (0.5 + 1.0) / 2),
           (m_w(labels, scores, features),
            (3. * 0.5 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5.) / 2.)),
-          (m_2(labels, scores, features),
-           (sum([0., 1. / rel_rank[1], 0.]) / num_queries)),
+          (m_2(labels, scores,
+               features), (sum([0., 1. / rel_rank[1], 0.]) / num_queries)),
       ])
 
   def test_average_relevance_position(self):
@@ -270,16 +273,16 @@ class MetricsTest(tf.test.TestCase):
       as_list_weights = _example_weights_to_list_weights(
           weights, labels, 'PRECISION')
       self._check_metrics([
-          (m(labels, scores, weights),
-           ((3. / 6.) * as_list_weights[0] +
-            (11. / 15.) * as_list_weights[1]) / sum(as_list_weights)),
-          (m(labels, scores, weights, topn=2),
-           ((3. / 5.) * as_list_weights[0] +
-            (11. / 11.) * as_list_weights[1]) / sum(as_list_weights)),
+          (m(labels, scores,
+             weights), ((1. / 3.) * as_list_weights[0] +
+                        (2. / 3.) * as_list_weights[1]) / sum(as_list_weights)),
+          (m(labels, scores, weights,
+             topn=2), ((1. / 2.) * as_list_weights[0] +
+                       (2. / 2.) * as_list_weights[1]) / sum(as_list_weights)),
           # Per list weight.
           (m(labels, scores,
              list_weights), ((1. / 3.) * list_weights[0][0] +
-                             (4. / 6.) * list_weights[1][0]) / 3.0),
+                             (2. / 3.) * list_weights[1][0]) / 3.0),
           # Zero precision case.
           (m(labels, scores, [0., 0., 0.], topn=2), 0.),
       ])
@@ -312,12 +315,12 @@ class MetricsTest(tf.test.TestCase):
       m = metrics_lib.mean_average_precision
       self._check_metrics([
           (m([labels[0]], [scores[0]]), _ap(rels[0], scores[0])),
-          (m([labels[0]], [scores[0]], topn=1),
-           _ap(rels[0], scores[0], topn=1)),
-          (m([labels[0]], [scores[0]], topn=2),
-           _ap(rels[0], scores[0], topn=2)),
-          (m(labels, scores),
-           sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
+          (m([labels[0]], [scores[0]], topn=1), _ap(rels[0], scores[0],
+                                                    topn=1)),
+          (m([labels[0]], [scores[0]], topn=2), _ap(rels[0], scores[0],
+                                                    topn=2)),
+          (m(labels,
+             scores), sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
           (m(labels, scores, topn=1),
            sum(_ap(rels[i], scores[i], topn=1) for i in range(2)) / 2.),
       ])
@@ -332,8 +335,7 @@ class MetricsTest(tf.test.TestCase):
       weights = [[1., 2., 3.], [4., 5., 6.]]
       list_weights = [[1.], [2.]]
       m = metrics_lib.mean_average_precision
-      as_list_weights = _example_weights_to_list_weights(
-          weights, labels, 'MAP')
+      as_list_weights = _example_weights_to_list_weights(weights, labels, 'MAP')
       # See Equation (1.7) in the following reference to make sense of
       # the formulas that appear in the following expression:
       # Liu, T-Y "Learning to Rank for Information Retrieval" found at
@@ -371,20 +373,19 @@ class MetricsTest(tf.test.TestCase):
       labels = [[0., 0., 1.], [0., 1., 2.]]
       rels = [[0, 0, 1], [0, 1, 1]]
       features = {}
-      m = metrics_lib.make_ranking_metric_fn(
-          metrics_lib.RankingMetricKey.MAP)
+      m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.MAP)
       m_top_1 = metrics_lib.make_ranking_metric_fn(
           metrics_lib.RankingMetricKey.MAP, topn=1)
       m_top_2 = metrics_lib.make_ranking_metric_fn(
           metrics_lib.RankingMetricKey.MAP, topn=2)
       self._check_metrics([
           (m([labels[0]], [scores[0]], features), _ap(rels[0], scores[0])),
-          (m_top_1([labels[0]], [scores[0]], features),
-           _ap(rels[0], scores[0], topn=1)),
-          (m_top_2([labels[0]], [scores[0]], features),
-           _ap(rels[0], scores[0], topn=2)),
-          (m(labels, scores, features),
-           sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
+          (m_top_1([labels[0]], [scores[0]],
+                   features), _ap(rels[0], scores[0], topn=1)),
+          (m_top_2([labels[0]], [scores[0]],
+                   features), _ap(rels[0], scores[0], topn=2)),
+          (m(labels, scores,
+             features), sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
       ])
 
   def test_normalized_discounted_cumulative_gain(self):
@@ -409,21 +410,23 @@ class MetricsTest(tf.test.TestCase):
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: rank
+
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+
       list_size = len(scores[0])
       ideal_labels = sorted(labels[0], reverse=True)
-      list_dcgs = [mod_dcg_fn(labels[0][ind], ranks[0][ind])
-                   for ind in range(list_size)]
-      ideal_dcgs = [mod_dcg_fn(ideal_labels[ind], ind+1)
-                    for ind in range(list_size)]
+      list_dcgs = [
+          mod_dcg_fn(labels[0][ind], ranks[0][ind]) for ind in range(list_size)
+      ]
+      ideal_dcgs = [
+          mod_dcg_fn(ideal_labels[ind], ind + 1) for ind in range(list_size)
+      ]
       expected_modified_ndcg_1 = sum(list_dcgs) / sum(ideal_dcgs)
       self._check_metrics([
-          (m([labels[0]],
-             [scores[0]],
+          (m([labels[0]], [scores[0]],
              gain_fn=gain_fn,
-             rank_discount_fn=rank_discount_fn),
-           expected_modified_ndcg_1),
+             rank_discount_fn=rank_discount_fn), expected_modified_ndcg_1),
       ])
 
   def test_normalized_discounted_cumulative_gain_with_weights(self):
@@ -563,15 +566,18 @@ class MetricsTest(tf.test.TestCase):
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: 1. / rank
+
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+
       m_mod = metrics_lib.make_ranking_metric_fn(
           metrics_lib.RankingMetricKey.NDCG,
           gain_fn=gain_fn,
           rank_discount_fn=rank_discount_fn)
       list_size = len(scores[0])
-      expected_modified_dcg_1 = sum([mod_dcg_fn(labels[0][ind], ranks[0][ind])
-                                     for ind in range(list_size)])
+      expected_modified_dcg_1 = sum([
+          mod_dcg_fn(labels[0][ind], ranks[0][ind]) for ind in range(list_size)
+      ])
       self._check_metrics([
           (m_mod([labels[0]], [scores[0]], features), expected_modified_dcg_1),
       ])
@@ -600,17 +606,18 @@ class MetricsTest(tf.test.TestCase):
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: 1. / rank
+
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+
       list_size = len(scores[0])
-      expected_modified_dcg_1 = sum([mod_dcg_fn(labels[0][ind], ranks[0][ind])
-                                     for ind in range(list_size)])
+      expected_modified_dcg_1 = sum([
+          mod_dcg_fn(labels[0][ind], ranks[0][ind]) for ind in range(list_size)
+      ])
       self._check_metrics([
-          (m([labels[0]],
-             [scores[0]],
+          (m([labels[0]], [scores[0]],
              gain_fn=gain_fn,
-             rank_discount_fn=rank_discount_fn),
-           expected_modified_dcg_1),
+             rank_discount_fn=rank_discount_fn), expected_modified_dcg_1),
       ])
 
   def test_make_discounted_cumulative_gain_fn(self):
@@ -643,15 +650,18 @@ class MetricsTest(tf.test.TestCase):
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: rank
+
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+
       m_mod = metrics_lib.make_ranking_metric_fn(
           metrics_lib.RankingMetricKey.DCG,
           gain_fn=gain_fn,
           rank_discount_fn=rank_discount_fn)
       list_size = len(scores[0])
-      expected_modified_dcg_1 = sum([mod_dcg_fn(labels[0][ind], ranks[0][ind])
-                                     for ind in range(list_size)])
+      expected_modified_dcg_1 = sum([
+          mod_dcg_fn(labels[0][ind], ranks[0][ind]) for ind in range(list_size)
+      ])
       self._check_metrics([
           (m_mod([labels[0]], [scores[0]], features), expected_modified_dcg_1),
       ])
@@ -696,22 +706,19 @@ class MetricsTest(tf.test.TestCase):
            metrics_lib.eval_metric(
                metric_fn=metrics_lib.mean_reciprocal_rank,
                labels=labels,
-               predictions=scores)
-          ),
+               predictions=scores)),
           (metrics_lib.mean_reciprocal_rank(labels, scores, topn=1),
            metrics_lib.eval_metric(
                metric_fn=metrics_lib.mean_reciprocal_rank,
                labels=labels,
                predictions=scores,
-               topn=1)
-          ),
+               topn=1)),
           (metrics_lib.mean_reciprocal_rank(labels, scores, weights),
            metrics_lib.eval_metric(
                metric_fn=metrics_lib.mean_reciprocal_rank,
                labels=labels,
                predictions=scores,
-               weights=weights)
-          ),
+               weights=weights)),
           (metrics_lib.discounted_cumulative_gain(
               labels,
               scores,
@@ -722,8 +729,7 @@ class MetricsTest(tf.test.TestCase):
                labels=labels,
                predictions=scores,
                gain_fn=gain_fn,
-               rank_discount_fn=rank_discount_fn)
-          ),
+               rank_discount_fn=rank_discount_fn)),
       ])
 
 
