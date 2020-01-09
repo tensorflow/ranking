@@ -35,6 +35,26 @@ _DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
 def _per_example_weights_to_per_list_weights(weights, relevance):
   """Computes per list weight from per example weight.
 
+  The per-list weights are computed as:
+    per_list_weights = sum(weights * relevance) / sum(relevance).
+
+  For the list with sum(relevance) = 0, we set a default weight as the following
+  average weight:
+    sum(per_list_weights) / num(sum(relevance) != 0)
+
+  Such a computation is good for the following scenarios:
+    - When all the weights are 1.0, the per list weights will be 1.0 everywhere,
+      even for lists without any relevant examples because
+        sum(per_list_weights) ==  num(sum(relevance) != 0)
+      This handles the standard ranking metrics where the weights are all 1.0.
+    - When every list has a nonzero weight, the default weight is not used. This
+      handles the unbiased metrics well.
+    - For the mixture of the above 2 scenario, the weights for lists with
+      nonzero relevance is proportional to
+        per_list_weights / sum(per_list_weights) *
+        num(sum(relevance) != 0) / num(lists).
+      The rest have weights 1.0 / num(lists).
+
   Args:
     weights:  The weights `Tensor` of shape [batch_size, list_size].
     relevance:  The relevance `Tensor` of shape [batch_size, list_size].
@@ -42,10 +62,23 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   Returns:
     The per list `Tensor` of shape [batch_size, 1]
   """
+  per_list_relevance = tf.reduce_sum(
+      input_tensor=relevance, axis=1, keepdims=True)
+  nonzero_relevance = tf.cast(tf.greater(per_list_relevance, 0.0), tf.float32)
+  nonzero_relevance_count = tf.reduce_sum(
+      input_tensor=nonzero_relevance, axis=0, keepdims=True)
+
   per_list_weights = tf.compat.v1.math.divide_no_nan(
       tf.reduce_sum(input_tensor=weights * relevance, axis=1, keepdims=True),
-      tf.reduce_sum(input_tensor=relevance, axis=1, keepdims=True))
-  return per_list_weights
+      per_list_relevance)
+  sum_weights = tf.reduce_sum(
+      input_tensor=per_list_weights, axis=0, keepdims=True)
+
+  avg_weight = tf.compat.v1.math.divide_no_nan(sum_weights,
+                                               nonzero_relevance_count)
+  return tf.compat.v1.where(
+      tf.greater(per_list_relevance, 0.0), per_list_weights,
+      tf.ones_like(per_list_weights) * avg_weight)
 
 
 def _discounted_cumulative_gain(labels,

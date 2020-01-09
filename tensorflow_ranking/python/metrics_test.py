@@ -113,12 +113,24 @@ def _example_weights_to_list_weights(weights, relevances, boost_form):
     A list of per list weight.
   """
   list_weights = []
+  nonzero_relevance = 0.0
   for example_weights, labels in zip(weights, relevances):
     boosted_labels = [_label_boost(boost_form, label) for label in labels]
     numerator = sum((weight * boosted_labels[i])
                     for i, weight in enumerate(example_weights))
     denominator = sum(boosted_labels)
-    list_weights.append(0.0 if denominator == 0.0 else numerator / denominator)
+    if denominator == 0.0:
+      list_weights.append(0.0)
+    else:
+      list_weights.append(numerator / denominator)
+      nonzero_relevance += 1.0
+  list_weights_sum = sum(list_weights)
+  if list_weights_sum > 0.0:
+    list_weights = [
+        list_weights_sum / nonzero_relevance if w == 0.0 else w
+        for w in list_weights
+    ]
+
   return list_weights
 
 
@@ -263,6 +275,16 @@ class MetricsTest(tf.test.TestCase):
           (m(labels, scores), (1. / 3. + 2. / 3.) / 2.),
       ])
 
+  def test_precision_with_zero_relevance(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 0.], [0., 1., 2.]]
+      m = metrics_lib.precision
+      self._check_metrics([
+          (m([labels[0]], [scores[0]]), 0.),
+          (m(labels, scores), (0. + 2. / 3.) / 2.),
+      ])
+
   def test_precision_with_weights(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -284,7 +306,23 @@ class MetricsTest(tf.test.TestCase):
              list_weights), ((1. / 3.) * list_weights[0][0] +
                              (2. / 3.) * list_weights[1][0]) / 3.0),
           # Zero precision case.
-          (m(labels, scores, [0., 0., 0.], topn=2), 0.),
+          (m(labels, scores, [[0., 0., 0.], [0., 0., 0.]], topn=2), 0.),
+      ])
+
+  def test_precision_weights_with_zero_relevance(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 0.], [0., 0., 1.], [0., 1., 2.]]
+      weights = [[0., 0., 1.], [1., 2., 3.], [4., 5., 6.]]
+      m = metrics_lib.precision
+      as_list_weights = _example_weights_to_list_weights(
+          weights, labels, 'PRECISION')
+      self.assertAllClose(as_list_weights, [(3 + 5.5) / 2., 3, 5.5])
+      self._check_metrics([
+          (m(labels, scores, weights, topn=2), 0.0 * as_list_weights[0] +
+           ((1. / 2.) * as_list_weights[1] +
+            (2. / 2.) * as_list_weights[2]) / sum(as_list_weights)),
+          (m(labels[0:2], scores[0:2], [[0., 0., 0.], [0., 0., 0.]]), 0.),
       ])
 
   def test_make_precision_fn(self):
@@ -429,6 +467,14 @@ class MetricsTest(tf.test.TestCase):
              rank_discount_fn=rank_discount_fn), expected_modified_ndcg_1),
       ])
 
+  def test_normalized_discounted_cumulative_gain_with_zero_relevance(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 0.], [0., 1., 2.]]
+
+      m = metrics_lib.normalized_discounted_cumulative_gain
+      self._check_metrics([(m(labels, scores), (0. + 1.) / 2.0)])
+
   def test_normalized_discounted_cumulative_gain_with_weights(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -471,6 +517,26 @@ class MetricsTest(tf.test.TestCase):
           (m(labels, scores, [[0.], [0.]]), 0.),
           (m([[0., 0., 0.]], [scores[0]], weights[0], topn=1), 0.),
       ])
+
+  def test_normalized_discounted_cumulative_gain_with_weights_zero_relevance(
+      self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 0.], [0., 1., 2.]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      m = metrics_lib.normalized_discounted_cumulative_gain
+      expected_ndcg_1 = 0.0
+      expected_ndcg_2 = 1.0
+      as_list_weights = _example_weights_to_list_weights(
+          weights, labels, 'NDCG')
+      self.assertAllClose(as_list_weights, [5.75, 5.75])
+      expected_ndcg = (expected_ndcg_1 * as_list_weights[0] + expected_ndcg_2 *
+                       as_list_weights[1]) / sum(as_list_weights)
+      self._check_metrics([
+          (m(labels, scores, weights), expected_ndcg),
+      ])
+      # Test zero NDCG cases.
+      self._check_metrics([(m(labels, scores, [[0.], [0.]]), 0.)])
 
   def test_normalized_discounted_cumulative_gain_with_zero_weights(self):
     with tf.Graph().as_default():
