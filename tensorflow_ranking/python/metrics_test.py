@@ -47,14 +47,17 @@ def _dcg(label,
 
 def _ap(relevances, scores, topn=None):
   """Returns the average precision (AP) of a single ranked list.
+
   The implementation here is copied from Equation (1.7) in
   Liu, T-Y "Learning to Rank for Information Retrieval" found at
   https://www.nowpublishers.com/article/DownloadSummary/INR-016
+
   Args:
     relevances: A `list` of document relevances, which are binary.
     scores: A `list` of document scores.
     topn: An `integer` specifying the number of items to be considered in the
       average precision computation.
+
   Returns:
     The MAP of the list as a float computed using the formula
     sum([P@k * rel for k, rel in enumerate(relevance)]) / sum(relevance)
