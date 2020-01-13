@@ -71,16 +71,15 @@ def _ap(relevances, scores, topn=None):
   num_docs = len(relevances)
   if isinstance(topn, int) and topn > 0:
     num_docs = min(num_docs, topn)
-  inds = argsort(scores)[:num_docs]
-  ranked_rels = [1. * relevances[i] for i in inds]
-  prec = {}
-  l = {}
+  indices = argsort(scores)[:num_docs]
+  ranked_relevances = [1. * relevances[i] for i in indices]
+  precision = {}
   for k in range(1, num_docs + 1):
-    prec[k] = sum(ranked_rels[:k]) / k
-    l[k] = ranked_rels[k - 1]
-  num_rel = sum(l.values())
-  ap = sum(prec[k] * l[k] for k in prec) / num_rel if num_rel else 0
-  return ap
+    precision[k] = sum(ranked_relevances[:k]) / k
+  num_rel = sum(ranked_relevances[:num_docs])
+  average_precision = sum(precision[k] * ranked_relevances[k - 1]
+                          for k in precision) / num_rel if num_rel else 0
+  return average_precision
 
 
 def _label_boost(boost_form, label):
