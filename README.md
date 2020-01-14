@@ -5,8 +5,8 @@ TensorFlow platform. It contains the following components:
 
 *   Commonly used loss functions including pointwise, pairwise, and listwise
     losses.
-*   Commonly used ranking metrics like Mean Reciprocal Rank (MRR) and Normalized
-    Discounted Cumulative Gain (NDCG).
+*   Commonly used ranking metrics like [Mean Reciprocal Rank (MRR)](https://en.wikipedia.org/wiki/Mean_reciprocal_rank) and [Normalized
+    Discounted Cumulative Gain (NDCG)](https://en.wikipedia.org/wiki/Discounted_cumulative_gain).
 *   [Multi-item (also known as groupwise) scoring functions](https://arxiv.org/abs/1811.04415).
 *   [LambdaLoss](https://ai.google/research/pubs/pub47258) implementation for
     direct ranking metric optimization.
