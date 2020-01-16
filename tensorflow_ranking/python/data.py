@@ -798,9 +798,8 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
           cycle_length=reader_num_threads,
           sloppy=sloppy_ordering))
 
-  # Extract values if tensors are stored as key-value tuples. This happens when
-  # the reader is tf.data.SSTableDataset.
-  if dataset.output_types == (tf.string, tf.string):
+  # Extract values if tensors are stored as key-value tuples.
+  if tf.compat.v1.data.get_output_types(dataset) == (tf.string, tf.string):
     dataset = dataset.map(lambda _, v: v)
 
   # Repeat and shuffle, if needed.
