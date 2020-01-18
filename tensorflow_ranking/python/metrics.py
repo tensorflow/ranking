@@ -38,16 +38,16 @@ _DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
 
 class RankingMetricKey(object):
   """Ranking metric key strings."""
-  # Mean Receiprocal Rank. For binary relevance.
+  # Mean Reciprocal Rank. For binary relevance.
   MRR = 'mrr'
 
   # Average Relevance Position.
   ARP = 'arp'
 
-  # Normalized Discounted Culmulative Gain.
+  # Normalized Discounted Cumulative Gain.
   NDCG = 'ndcg'
 
-  # Discounted Culmulative Gain.
+  # Discounted Cumulative Gain.
   DCG = 'dcg'
 
   # Precision. For binary relevance.
@@ -81,7 +81,7 @@ def make_ranking_metric_fn(
       input is the relevance label of the item. The gain is often defined to be
       of the form 2^label-1.
     rank_discount_fn: (function) The rank discount function. A method to define
-      the dicount parameters used in the definitions of DCG and NDCG metrics,
+      the discount parameters used in the definitions of DCG and NDCG metrics,
       where the input in the rank of item. The discount function is commonly
       defined to be of the form log(rank+1).
 
@@ -351,7 +351,7 @@ def discounted_cumulative_gain(
 
 
 def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
-  """Computes the percentage of correctedly ordered pair.
+  """Computes the percentage of correctly ordered pair.
 
   For any pair of examples, we compare their orders determined by `labels` and
   `predictions`. They are correctly ordered if the two orders are compatible.
