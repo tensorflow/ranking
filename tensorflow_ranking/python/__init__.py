@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Ranking Authors.
+# Copyright 2020 The TensorFlow Ranking Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,8 +28,12 @@ from tensorflow_ranking.python import utils
 
 from tensorflow.python.util.all_util import remove_undocumented  # pylint: disable=g-bad-import-order
 
+# losses_impl and metrics_impl are added here, so that we can still depend on
+# them for tfr.keras.losses and metrics APIs. Note that these two are not
+# exposed via tfr.losses_impl, as there is no such import above.
 _allowed_symbols = [
-    'data', 'feature', 'head', 'losses', 'metrics', 'model', 'utils'
+    'data', 'feature', 'head', 'losses', 'metrics', 'model', 'utils',
+    'losses_impl', 'metrics_impl'
 ]
 
 remove_undocumented(__name__, _allowed_symbols)
