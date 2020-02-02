@@ -86,7 +86,7 @@ def sort_by_scores(scores,
     return [tf.gather_nd(f, nd_indices) for f in features_list]
 
 
-def sorted_ranks(scores, shuffle_ties=True):
+def sorted_ranks(scores, shuffle_ties=True, seed=None):
   """Returns an int `Tensor` as the ranks (1-based) after sorting scores.
 
   Example: Given scores = [[1.0, 3.5, 2.1]], the returned ranks will be [[3, 1,
@@ -97,6 +97,7 @@ def sorted_ranks(scores, shuffle_ties=True):
     scores: A `Tensor` of shape [batch_size, list_size] representing the
       per-example scores.
     shuffle_ties: See `sort_by_scores`.
+    seed: See `sort_by_scores`.
 
   Returns:
     A 1-based int `Tensor`s as the ranks.
@@ -109,7 +110,7 @@ def sorted_ranks(scores, shuffle_ties=True):
     # largest score is at poistion 1, the second is at postion 2 and third is at
     # position 0.
     sorted_positions = sort_by_scores(
-        scores, [positions], shuffle_ties=shuffle_ties)[0]
+        scores, [positions], shuffle_ties=shuffle_ties, seed=seed)[0]
     # The indices of sorting sorted_postions will be [[2, 0, 1]] and ranks are
     # 1-based and thus are [[3, 1, 2]].
     ranks = tf.argsort(sorted_positions) + 1
