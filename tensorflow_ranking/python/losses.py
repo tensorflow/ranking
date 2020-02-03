@@ -85,12 +85,12 @@ def make_loss_fn(loss_keys,
   if not loss_keys:
     raise ValueError('loss_keys cannot be None or empty.')
 
+  if not isinstance(loss_keys, list):
+    loss_keys = [loss_keys]
+
   if loss_weights:
     if len(loss_keys) != len(loss_weights):
       raise ValueError('loss_keys and loss_weights must have the same size.')
-
-  if not isinstance(loss_keys, list):
-    loss_keys = [loss_keys]
 
   def _loss_fn(labels, logits, features):
     """Computes a single loss or weighted combination of losses.
