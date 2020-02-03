@@ -185,8 +185,9 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
     rw_indices = tf.expand_dims(tf.range(rw_size), 0) + tf.expand_dims(
         tf.range(size), 1)
     # shape = [batch_size, size, rw_size]. Make batch_size copies.
-    batch_rw_indices = tf.gather(
-        tf.expand_dims(rw_indices, 0), tf.zeros_like(num_valid_entries), axis=0)
+    batch_size = tf.shape(input=num_valid_entries)[0]
+    batch_rw_indices = tf.tile(
+        tf.expand_dims(rw_indices, 0), multiples=[batch_size, 1, 1])
     # Mark the first n indices as valid where n = num_valid_entries.
     batch_indices_mask = tf.less(
         tf.reduce_min(input_tensor=batch_rw_indices, axis=2),
@@ -358,10 +359,9 @@ class _GroupwiseRankingModel(_RankingModel):
         # For context features, We have shape [batch_size * num_groups, ...].
         large_batch_context_features = {}
         for name, value in six.iteritems(context_features):
-          # [batch_size, 1, ...].
-          value = tf.expand_dims(value, axis=1)
           # [batch_size, num_groups, ...].
-          value = tf.gather(value, tf.zeros([num_groups], tf.int32), axis=1)
+          value = tf.repeat(
+              tf.expand_dims(value, axis=1), repeats=[num_groups], axis=1)
           # [batch_size * num_groups, ...]
           large_batch_context_features[name] = utils.reshape_first_ndims(
               value, 2, [batch_size * num_groups])
@@ -388,9 +388,9 @@ class _GroupwiseRankingModel(_RankingModel):
         # Reset invalid scores to 0 based on mask.
         scores_mask = tf.tile(
             tf.expand_dims(self._indices_mask, 2),
-            tf.stack([1, 1,
-                      tf.shape(input=self._score_scatter_indices)[2]]),
-            'tile_scores_mask')
+            multiples=[1, 1,
+                       tf.shape(input=self._score_scatter_indices)[2]],
+            name='tile_scores_mask')
         counts = tf.scatter_nd(self._score_scatter_indices,
                                tf.cast(scores_mask, tf.float32),
                                [batch_size, list_size])
