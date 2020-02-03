@@ -28,6 +28,9 @@ from google.protobuf import text_format
 from tensorflow_ranking.python import data as data_lib
 from tensorflow_serving.apis import input_pb2
 
+# Feature name for example list sizes.
+_SIZE = "__list_size__"
+
 EXAMPLE_LIST_PROTO_1 = text_format.Parse(
     """
     context {
@@ -238,16 +241,17 @@ class ExampleListTest(tf.test.TestCase):
 
   def test_decode_as_serialized_example_list(self):
     with tf.Graph().as_default():
-      context_tensor, list_tensor = (
+      context_tensor, list_tensor, sizes = (
           data_lib._decode_as_serialized_example_list(
               [EXAMPLE_LIST_PROTO_1.SerializeToString()]))
       with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.local_variables_initializer())
-        context_, list_ = sess.run([context_tensor, list_tensor])
+        context_, list_, sizes_ = sess.run([context_tensor, list_tensor, sizes])
         self.assertAllEqual(
             tf.convert_to_tensor(value=context_).get_shape().as_list(), [1, 1])
         self.assertAllEqual(
             tf.convert_to_tensor(value=list_).get_shape().as_list(), [1, 2])
+        self.assertAllEqual(sizes_, [2])
 
   def test_parse_from_example_list(self):
     with tf.Graph().as_default():
@@ -303,6 +307,25 @@ class ExampleListTest(tf.test.TestCase):
         self.assertAllEqual(features["query_length"], [[3], [2]])
         self.assertAllEqual(features["utility"],
                             [[[0.], [1.0], [-1.]], [[0.], [-1.], [-1.]]])
+
+  def test_parse_example_list_with_sizes(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      # Padding since list_size 3 is larger than 2.
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          list_size=3,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC,
+          size_feature_name=_SIZE)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(features[_SIZE], [2, 1])
 
   def test_parse_from_example_list_truncate(self):
     with tf.Graph().as_default():
@@ -395,6 +418,24 @@ class ExampleInExampleTest(tf.test.TestCase):
         self.assertAllEqual(features["query_length"], [[3], [2]])
         self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
 
+  def test_parse_example_in_example_with_sizes(self):
+    with tf.Graph().as_default():
+      serialized_example_in_example = [
+          _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+          _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+      ]
+      features = data_lib.parse_from_example_in_example(
+          serialized_example_in_example,
+          list_size=3,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC,
+          size_feature_name=_SIZE)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(features[_SIZE], [2, 1])
+
 
 class SequenceExampleTest(tf.test.TestCase):
 
@@ -426,6 +467,22 @@ class SequenceExampleTest(tf.test.TestCase):
         # Check static shapes for dense tensors.
         self.assertAllEqual([2, 1], feature_map["query_length"].shape)
         self.assertAllEqual([2, 2, 1], feature_map["utility"].shape)
+
+  def test_parse_from_sequence_example_with_sizes(self):
+    with tf.Graph().as_default():
+      features = data_lib.parse_from_sequence_example(
+          tf.convert_to_tensor(value=[
+              SEQ_EXAMPLE_PROTO_1.SerializeToString(),
+              SEQ_EXAMPLE_PROTO_2.SerializeToString(),
+          ]),
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC,
+          size_feature_name=_SIZE)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(features[_SIZE], [2, 1])
 
   def test_parse_from_sequence_example_with_large_list_size(self):
     with tf.Graph().as_default():

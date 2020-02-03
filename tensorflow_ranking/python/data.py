@@ -79,14 +79,20 @@ def _get_descriptor_set():
 def _decode_as_serialized_example_list(serialized):
   """Decodes as `SerializedExampleListWithContext`."""
   serialized = tf.convert_to_tensor(value=serialized)
-  _, (serialized_context, serialized_list) = tf.io.decode_proto(
+  sizes, (serialized_context, serialized_list) = tf.io.decode_proto(
       serialized,
       message_type="{}.{}".format(_PACKAGE, _MESSAGE_NAME),
       field_names=[_CONTEXT_FIELD_NAME, _EXAMPLES_FIELD_NAME],
       output_types=[tf.string, tf.string],
       descriptor_source=(b"bytes://" +
                          _get_descriptor_set().SerializeToString()))
-  return serialized_context, serialized_list
+  # For batched inputs, sizes is of shape [batch_size, 2], for both context and
+  # examples. We slice to obtain the size for example lists.
+  if sizes.get_shape().rank == 2:
+    sizes = sizes[:, 1]
+  elif sizes.get_shape().rank == 1:  # parsing single ELWC.
+    sizes = sizes[1]  # sizes is a tuple for context and examples.
+  return serialized_context, serialized_list, sizes
 
 
 class _RankingDataParser(object):
@@ -97,7 +103,8 @@ class _RankingDataParser(object):
   def __init__(self,
                list_size=None,
                context_feature_spec=None,
-               example_feature_spec=None):
+               example_feature_spec=None,
+               size_feature_name=None):
     """Constructor."""
     if not example_feature_spec:
       raise ValueError("example_feature_spec {} must not be empty.".format(
@@ -108,10 +115,11 @@ class _RankingDataParser(object):
       self._list_size = list_size
     self._context_feature_spec = context_feature_spec
     self._example_feature_spec = example_feature_spec
+    self._size_feature_name = size_feature_name
 
   @abc.abstractmethod
   def parse(self, serialized):
-    """Parses a serialzed proto into a feature map."""
+    """Parses a serialized proto into a feature map."""
     raise NotImplementedError("Calling an abstract method.")
 
 
@@ -125,13 +133,20 @@ class _ExampleInExampleParser(_RankingDataParser):
         "serialized_examples": tf.io.VarLenFeature(tf.string),
     }
     features = tf.compat.v1.io.parse_example(serialized, feature_spec)
+    # Generate sizes from `serialized_examples`.
+    lists = features["serialized_examples"]
+    mask = tf.scatter_nd(
+        indices=lists.indices,
+        updates=tf.ones_like(lists.values, dtype=tf.int32),
+        shape=lists.dense_shape)
+    sizes = tf.reduce_sum(mask, axis=1)
     return features["serialized_context"], tf.sparse.to_dense(
-        features["serialized_examples"], default_value="")
+        lists, default_value=""), sizes
 
   def parse(self, serialized):
     """See `_RankingDataParser`."""
-    (serialized_context,
-     serialized_list) = self._decode_as_serialized_example_list(serialized)
+    (serialized_context, serialized_list,
+     sizes) = self._decode_as_serialized_example_list(serialized)
     # Use static batch size whenever possible.
     batch_size = serialized_context.get_shape().as_list()[0] or tf.shape(
         input=serialized_list)[0]
@@ -166,13 +181,17 @@ class _ExampleInExampleParser(_RankingDataParser):
               tf.reshape(serialized_context, [batch_size]),
               self._context_feature_spec))
 
+    # Add example list sizes to features, if needed.
+    if self._size_feature_name:
+      features[self._size_feature_name] = sizes
     return features
 
 
 def parse_from_example_in_example(serialized,
                                   list_size=None,
                                   context_feature_spec=None,
-                                  example_feature_spec=None):
+                                  example_feature_spec=None,
+                                  size_feature_name=None):
   """Parses an ExampleInExample batch to a feature map.
 
   An ExampleInExample is a tf.train.Example that has two fields:
@@ -310,12 +329,19 @@ def parse_from_example_in_example(serialized,
     example_feature_spec: (dict) A mapping from feature keys to
       `FixedLenFeature` or `VarLenFeature` values for examples in
       `ExampleListWithContext` proto.
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+      this feature name. If None, which is default, this feature is not
+      generated.
 
   Returns:
     A mapping from feature keys to `Tensor` or `SparseTensor`.
   """
-  parser = _ExampleInExampleParser(list_size, context_feature_spec,
-                                   example_feature_spec)
+  parser = _ExampleInExampleParser(
+      list_size=list_size,
+      context_feature_spec=context_feature_spec,
+      example_feature_spec=example_feature_spec,
+      size_feature_name=size_feature_name)
   return parser.parse(serialized)
 
 
@@ -330,7 +356,8 @@ class _ExampleListParser(_ExampleInExampleParser):
 def parse_from_example_list(serialized,
                             list_size=None,
                             context_feature_spec=None,
-                            example_feature_spec=None):
+                            example_feature_spec=None,
+                            size_feature_name=None):
   """Parses an `ExampleListWithContext` batch to a feature map.
 
   Example:
@@ -447,12 +474,19 @@ def parse_from_example_list(serialized,
     example_feature_spec: (dict) A mapping from feature keys to
       `FixedLenFeature` or `VarLenFeature` values for examples in
       `ExampleListWithContext` proto.
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+      this feature name. If None, which is default, this feature is not
+      generated.
 
   Returns:
     A mapping from feature keys to `Tensor` or `SparseTensor`.
   """
-  parser = _ExampleListParser(list_size, context_feature_spec,
-                              example_feature_spec)
+  parser = _ExampleListParser(
+      list_size=list_size,
+      context_feature_spec=context_feature_spec,
+      example_feature_spec=example_feature_spec,
+      size_feature_name=size_feature_name)
   return parser.parse(serialized)
 
 
@@ -572,13 +606,18 @@ class _SequenceExampleParser(_RankingDataParser):
         tensor.set_shape(static_shape)
       features[k] = tensor
 
+    if self._size_feature_name:
+      example_sizes = tf.stack([sizes[k] for k in sorted(sizes.keys())], axis=1)
+      features[self._size_feature_name] = tf.reduce_max(example_sizes, axis=1)
+
     return features
 
 
 def parse_from_sequence_example(serialized,
                                 list_size=None,
                                 context_feature_spec=None,
-                                example_feature_spec=None):
+                                example_feature_spec=None,
+                                size_feature_name=None):
   """Parses SequenceExample to feature maps.
 
   The `FixedLenFeature` in `example_feature_spec` is converted to
@@ -688,19 +727,27 @@ def parse_from_sequence_example(serialized,
       `FixedLenFeature` is translated to `FixedLenSequenceFeature` to parse
       SequenceExample. Note that no missing value in the middle of a
       `feature_list` is allowed for frames.
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+      this feature name. If None, which is default, this feature is not
+      generated.
 
   Returns:
     A mapping from feature keys to `Tensor` or `SparseTensor`.
   """
-  parser = _SequenceExampleParser(list_size, context_feature_spec,
-                                  example_feature_spec)
+  parser = _SequenceExampleParser(
+      list_size=list_size,
+      context_feature_spec=context_feature_spec,
+      example_feature_spec=example_feature_spec,
+      size_feature_name=size_feature_name)
   return parser.parse(serialized)
 
 
 def make_parsing_fn(data_format,
                     list_size=None,
                     context_feature_spec=None,
-                    example_feature_spec=None):
+                    example_feature_spec=None,
+                    size_feature_name=None):
   """Returns a parsing fn for a standard data format.
 
   Args:
@@ -712,6 +759,10 @@ def make_parsing_fn(data_format,
       `FixedLenFeature` or `VarLenFeature` values for context.
     example_feature_spec: (dict) A mapping from feature keys to
       `FixedLenFeature` or `VarLenFeature` values for the list of examples.
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+      this feature name. If None, which is default, this feature is not
+      generated.
 
   Returns:
     A parsing function with signature parsing_fn(serialized), where serialized
@@ -722,6 +773,7 @@ def make_parsing_fn(data_format,
       "list_size": list_size,
       "context_feature_spec": context_feature_spec,
       "example_feature_spec": example_feature_spec,
+      "size_feature_name": size_feature_name,
   }
   fns_dict = {
       EIE: parse_from_example_in_example,
@@ -828,6 +880,7 @@ def build_ranking_dataset(file_pattern,
                           context_feature_spec,
                           example_feature_spec,
                           list_size=None,
+                          size_feature_name=None,
                           **kwargs):
   """Builds a ranking tf.dataset with a standard data format.
 
@@ -838,13 +891,22 @@ def build_ranking_dataset(file_pattern,
     context_feature_spec: See `make_parsing_fn`.
     example_feature_spec: See `make_parsing_fn`.
     list_size: See `make_parsing_fn`.
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+      this feature name. If None, which is default, this feature is not
+      generated.
     **kwargs: The kwargs passed to `build_ranking_dataset_with_parsing_fn`.
 
   Returns:
     See `build_ranking_dataset_with_parsing_fn`.
   """
-  parsing_fn = make_parsing_fn(data_format, list_size, context_feature_spec,
-                               example_feature_spec)
+  parsing_fn = make_parsing_fn(
+      data_format,
+      list_size,
+      context_feature_spec,
+      example_feature_spec,
+      size_feature_name=size_feature_name)
+
   return build_ranking_dataset_with_parsing_fn(
       file_pattern, parsing_fn=parsing_fn, batch_size=batch_size, **kwargs)
 
@@ -883,6 +945,7 @@ def build_ranking_serving_input_receiver_fn(data_format,
                                             context_feature_spec,
                                             example_feature_spec,
                                             list_size=None,
+                                            size_feature_name=None,
                                             receiver_name="input_ranking_data",
                                             default_batch_size=None):
   """Returns a serving input receiver fn for a standard data format.
@@ -896,6 +959,10 @@ def build_ranking_serving_input_receiver_fn(data_format,
     list_size: (int) The number of examples to keep. If specified, truncation or
       padding may happen. Otherwise, set it to None to allow dynamic list size
       (recommended).
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+      this feature name. If None, which is default, this feature is not
+      generated.
     receiver_name: (string) The name for the receiver tensor.
     default_batch_size: (int) Number of instances expected per batch. Leave
       unset for variable batch size (recommended).
@@ -908,6 +975,7 @@ def build_ranking_serving_input_receiver_fn(data_format,
   parsing_fn = make_parsing_fn(
       data_format,
       list_size=list_size,
+      size_feature_name=size_feature_name,
       context_feature_spec=context_feature_spec,
       example_feature_spec=example_feature_spec)
   return build_ranking_serving_input_receiver_fn_with_parsing_fn(
@@ -1133,4 +1201,3 @@ def _libsvm_parse_line(libsvm_line):
   features.update({key: float(value) for (key, value) in key_values})
 
   return qid, features
-
