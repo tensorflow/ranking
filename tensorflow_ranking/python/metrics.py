@@ -29,25 +29,23 @@ import tensorflow as tf
 from tensorflow_ranking.python import metrics_impl
 from tensorflow_ranking.python import utils
 
-
 _DEFAULT_GAIN_FN = lambda label: tf.pow(2.0, label) - 1
-
 
 _DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
 
 
 class RankingMetricKey(object):
   """Ranking metric key strings."""
-  # Mean Receiprocal Rank. For binary relevance.
+  # Mean Reciprocal Rank. For binary relevance.
   MRR = 'mrr'
 
   # Average Relevance Position.
   ARP = 'arp'
 
-  # Normalized Discounted Culmulative Gain.
+  # Normalized Discounted Cumulative Gain.
   NDCG = 'ndcg'
 
-  # Discounted Culmulative Gain.
+  # Discounted Cumulative Gain.
   DCG = 'dcg'
 
   # Precision. For binary relevance.
@@ -60,13 +58,12 @@ class RankingMetricKey(object):
   ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'
 
 
-def make_ranking_metric_fn(
-    metric_key,
-    weights_feature_name=None,
-    topn=None,
-    name=None,
-    gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
+def make_ranking_metric_fn(metric_key,
+                           weights_feature_name=None,
+                           topn=None,
+                           name=None,
+                           gain_fn=_DEFAULT_GAIN_FN,
+                           rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
   """Factory method to create a ranking metric function.
 
   Args:
@@ -76,12 +73,12 @@ def make_ranking_metric_fn(
     topn: An `integer` specifying the cutoff of how many items are considered in
       the metric.
     name: A `string` used as the name for this metric.
-    gain_fn: (function) Transforms labels. A method to calculate gain
-      parameters used in the definitions of the DCG and NDCG metrics, where the
-      input is the relevance label of the item. The gain is often defined to be
-      of the form 2^label-1.
+    gain_fn: (function) Transforms labels. A method to calculate gain parameters
+      used in the definitions of the DCG and NDCG metrics, where the input is
+      the relevance label of the item. The gain is often defined to be of the
+      form 2^label-1.
     rank_discount_fn: (function) The rank discount function. A method to define
-      the dicount parameters used in the definitions of DCG and NDCG metrics,
+      the discount parameters used in the definitions of DCG and NDCG metrics,
       where the input in the rank of item. The discount function is commonly
       defined to be of the form log(rank+1).
 
@@ -319,14 +316,13 @@ def normalized_discounted_cumulative_gain(
   return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
 
 
-def discounted_cumulative_gain(
-    labels,
-    predictions,
-    weights=None,
-    topn=None,
-    name=None,
-    gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
+def discounted_cumulative_gain(labels,
+                               predictions,
+                               weights=None,
+                               topn=None,
+                               name=None,
+                               gain_fn=_DEFAULT_GAIN_FN,
+                               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
   """Computes discounted cumulative gain (DCG).
 
   Args:
@@ -351,7 +347,7 @@ def discounted_cumulative_gain(
 
 
 def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
-  """Computes the percentage of correctedly ordered pair.
+  """Computes the percentage of correctly ordered pair.
 
   For any pair of examples, we compare their orders determined by `labels` and
   `predictions`. They are correctly ordered if the two orders are compatible.
@@ -395,8 +391,8 @@ def eval_metric(metric_fn, **kwargs):
         predictions=scores,
         weights=weights)
   Args:
-    metric_fn: (function) Metric definition. A metric appearing in
-      the TF-Ranking metrics module, e.g. tfr.metrics.mean_reciprocal_rank
+    metric_fn: (function) Metric definition. A metric appearing in the
+      TF-Ranking metrics module, e.g. tfr.metrics.mean_reciprocal_rank
     **kwargs: A collection of argument values to be passed to the metric, e.g.
       labels and predictions. See `_RankingMetric` and the various metric
       definitions in tfr.metrics for the specifics.
@@ -414,13 +410,13 @@ def eval_metric(metric_fn, **kwargs):
   required_metric_args = (metric_args[:-len(metric_spec.defaults)])
   for arg in required_metric_args:
     if arg not in kwargs:
-      raise ValueError('Metric %s requires argument %s.'
-                       % (metric_fn.__name__, arg))
+      raise ValueError('Metric %s requires argument %s.' %
+                       (metric_fn.__name__, arg))
   args = {}
   for arg in kwargs:
     if arg not in metric_args:
-      raise ValueError('Metric %s does not accept argument %s.'
-                       % (metric_fn.__name__, arg))
+      raise ValueError('Metric %s does not accept argument %s.' %
+                       (metric_fn.__name__, arg))
     args[arg] = kwargs[arg]
 
   with tf.compat.v1.Session() as sess:
