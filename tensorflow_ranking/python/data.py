@@ -599,7 +599,7 @@ class _SequenceExampleParser(_RankingDataParser):
       tensor = tf.cond(
           pred=num_frames > list_size, true_fn=truncate_fn, false_fn=pad_fn)
       # Infer static shape for Tensor. Set the 2nd dim to None and set_shape
-      # merges `static_shape` with the existing static shape of the thensor.
+      # merges `static_shape` with the existing static shape of the tensor.
       if not isinstance(tensor, tf.sparse.SparseTensor):
         static_shape = t.get_shape().as_list()
         static_shape[1] = list_size_arg
@@ -868,7 +868,7 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
   dataset = dataset.map(parsing_fn, num_parallel_calls=num_parser_threads)
 
   # Prefetching allows for data fetching to happen on host while model runs
-  # on the accelerator. When run on CPU, makes data fecthing asynchronous.
+  # on the accelerator. When run on CPU, makes data fetching asynchronous.
   dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
 
   return dataset
@@ -918,7 +918,7 @@ def build_ranking_serving_input_receiver_fn_with_parsing_fn(
   Args:
     parsing_fn: (function) It has a single argument parsing_fn(serialized).
       Users can customize this for their own data formats.
-    receiver_name: (string) The name for the reveiver Tensor that contains the
+    receiver_name: (string) The name for the receiver Tensor that contains the
       serialized data.
     default_batch_size: (int) Number of instances expected per batch. Leave
       unset for variable batch size (recommended).

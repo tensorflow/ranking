@@ -205,7 +205,7 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
 
       with self.assertRaisesRegexp(
           ValueError,
-          r"2nd dimesion of tensor must be equal to input size: 3, but found .*"
+          r"2nd dimension of tensor must be equal to input size: 3, but found .*"
       ):
         feature_lib.encode_listwise_features(
             features,

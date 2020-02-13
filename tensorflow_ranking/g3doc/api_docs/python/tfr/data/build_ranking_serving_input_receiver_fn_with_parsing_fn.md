@@ -34,7 +34,7 @@ tfr.data.build_ranking_serving_input_receiver_fn_with_parsing_fn(
 
 *   <b>`parsing_fn`</b>: (function) It has a single argument
     parsing_fn(serialized). Users can customize this for their own data formats.
-*   <b>`receiver_name`</b>: (string) The name for the reveiver Tensor that
+*   <b>`receiver_name`</b>: (string) The name for the receiver Tensor that
     contains the serialized data.
 *   <b>`default_batch_size`</b>: (int) Number of instances expected per batch.
     Leave unset for variable batch size (recommended).

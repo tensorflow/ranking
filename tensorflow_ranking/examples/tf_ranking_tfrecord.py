@@ -172,7 +172,7 @@ def make_serving_input_fn():
   example_feature_spec = tf.feature_column.make_parse_example_spec(
       example_feature_columns().values())
   if FLAGS.listwise_inference:
-    # Exports accept the specificed FLAGS.data_format during serving.
+    # Exports accept the specified FLAGS.data_format during serving.
     return tfr.data.build_ranking_serving_input_receiver_fn(
         data_format=FLAGS.data_format,
         context_feature_spec=context_feature_spec,

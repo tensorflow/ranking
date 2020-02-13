@@ -32,7 +32,7 @@ tfr.utils.organize_valid_indices(
 
 #### Args:
 
-*   <b>`is_valid`</b>: A boolen `Tensor` for entry validity with shape
+*   <b>`is_valid`</b>: A boolean `Tensor` for entry validity with shape
     [batch_size, list_size].
 *   <b>`shuffle`</b>: A boolean indicating whether valid items should be
     shuffled.

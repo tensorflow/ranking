@@ -46,7 +46,7 @@ tfr.metrics.make_ranking_metric_fn(
     input is the relevance label of the item. The gain is often defined to be of
     the form 2^label-1.
 *   <b>`rank_discount_fn`</b>: (function) The rank discount function. A method
-    to define the dicount parameters used in the definitions of DCG and NDCG
+    to define the discount parameters used in the definitions of DCG and NDCG
     metrics, where the input in the rank of item. The discount function is
     commonly defined to be of the form log(rank+1).
 

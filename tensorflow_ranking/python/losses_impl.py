@@ -129,7 +129,7 @@ class DCGLambdaWeight(_LambdaWeight):
     self._gain_fn = gain_fn
     self._rank_discount_fn = rank_discount_fn
     self._normalized = normalized
-    assert 0. <= smooth_fraction and smooth_fraction <= 1., (
+    assert 0. <= smooth_fraction <= 1., (
         'smooth_fraction %s should be in range [0, 1].' % smooth_fraction)
     self._smooth_fraction = smooth_fraction
 
@@ -155,7 +155,7 @@ class DCGLambdaWeight(_LambdaWeight):
         """Rank-based discount in the LambdaLoss paper."""
         # The LambdaLoss is not well defined when topn is active and topn <
         # list_size. We cap the rank of examples to topn + 1 so that the rank
-        # differene is capped to topn. This is just a convenient upperbound
+        # difference is capped to topn. This is just a convenient upper bound
         # when topn is active. We need to revisit this.
         capped_rank = tf.compat.v1.where(
             tf.greater(ranks, topn),

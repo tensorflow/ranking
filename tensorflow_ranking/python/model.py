@@ -171,7 +171,7 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
 
   Args:
     size: A scalar int `Tensor` for the size.
-    rw_size: A scalr int `Tensor` for the rw_size.
+    rw_size: A scalar int `Tensor` for the rw_size.
     num_valid_entries: A 1-D `Tensor` with shape [batch_size] representing the
       number of valid entries for each instance in a batch.
 
@@ -205,7 +205,7 @@ def _form_group_indices_nd(is_valid, group_size, shuffle=False, seed=None):
   """Forms the indices for groups for gather_nd or scatter_nd.
 
   Args:
-    is_valid: A boolen `Tensor` for entry validity with shape [batch_size,
+    is_valid: A boolean `Tensor` for entry validity with shape [batch_size,
       list_size].
     group_size: An scalar int `Tensor` for the number of examples in a group.
     shuffle: A boolean that indicates whether valid indices should be shuffled
@@ -226,7 +226,7 @@ def _form_group_indices_nd(is_valid, group_size, shuffle=False, seed=None):
     rw_indices, mask = _rolling_window_indices(list_size, group_size,
                                                num_valid_entries)
     # Valid indices of the tensor are shuffled and put on the top.
-    # [batch_size, list_size, 2]. A determinstic op-level seed is set mainly for
+    # [batch_size, list_size, 2]. A deterministic op-level seed is set mainly for
     # unittest purpose. We can find a better way to avoid setting this seed
     # explicitly.
     shuffled_indices = utils.organize_valid_indices(

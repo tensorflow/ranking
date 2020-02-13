@@ -18,7 +18,7 @@
 
 <!-- Start diff -->
 
-Computes the percentage of correctedly ordered pair.
+Computes the percentage of correctly ordered pair.
 
 ```python
 tfr.metrics.ordered_pair_accuracy(

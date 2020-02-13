@@ -46,5 +46,5 @@ tfr.feature.encode_pointwise_features(
 
 *   <b>`context_features`</b>: (dict) A mapping from context feature names to
     dense 2-D tensors of shape [batch_size, ...].
-*   <b>`example_features`</b>: (dict) A mapping frome example feature names to
+*   <b>`example_features`</b>: (dict) A mapping from example feature names to
     dense 3-D tensors of shape [batch_size, 1, ...].

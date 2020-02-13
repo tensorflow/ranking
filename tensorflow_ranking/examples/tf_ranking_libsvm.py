@@ -154,7 +154,7 @@ def load_libsvm_data(path, list_size):
   qid_to_ndoc = {}
   # Each feature is mapped an array with [num_queries, list_size, 1]. Label has
   # a shape of [num_queries, list_size]. We use list for each of them due to the
-  # unknown number of quries.
+  # unknown number of queries.
   feature_map = {k: [] for k in example_feature_columns()}
   label_list = []
   total_docs = 0

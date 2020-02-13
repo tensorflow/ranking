@@ -47,7 +47,7 @@ mean reciprocal rank (MRR).
 Computes normalized discounted cumulative gain (NDCG).
 
 [`ordered_pair_accuracy(...)`](../tfr/metrics/ordered_pair_accuracy.md):
-Computes the percentage of correctedly ordered pair.
+Computes the percentage of correctly ordered pair.
 
 [`precision(...)`](../tfr/metrics/precision.md): Computes precision as weighted
 average of relevant examples.

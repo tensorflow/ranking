@@ -107,11 +107,11 @@ def sorted_ranks(scores, shuffle_ties=True, seed=None):
     # The current position in the list for each score.
     positions = tf.tile(tf.expand_dims(tf.range(list_size), 0), [batch_size, 1])
     # For score [[1.0, 3.5, 2.1]], sorted_positions are [[1, 2, 0]], meaning the
-    # largest score is at poistion 1, the second is at postion 2 and third is at
+    # largest score is at position 1, the second is at position 2 and third is at
     # position 0.
     sorted_positions = sort_by_scores(
         scores, [positions], shuffle_ties=shuffle_ties, seed=seed)[0]
-    # The indices of sorting sorted_postions will be [[2, 0, 1]] and ranks are
+    # The indices of sorting sorted_positions will be [[2, 0, 1]] and ranks are
     # 1-based and thus are [[3, 1, 2]].
     ranks = tf.argsort(sorted_positions) + 1
     return ranks
@@ -126,7 +126,7 @@ def organize_valid_indices(is_valid, shuffle=True, seed=None):
   """Organizes indices in such a way that valid items appear first.
 
   Args:
-    is_valid: A boolen `Tensor` for entry validity with shape [batch_size,
+    is_valid: A boolean `Tensor` for entry validity with shape [batch_size,
       list_size].
     shuffle: A boolean indicating whether valid items should be shuffled.
     seed: An int for random seed at the op level. It works together with the
