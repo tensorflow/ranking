@@ -5,7 +5,7 @@
 
 # tfr.utils.padded_nd_indices
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,15 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Pads the invalid entries by valid ones and returns the nd_indices.
 
 ```python
 tfr.utils.padded_nd_indices(
-    is_valid,
-    shuffle=False,
-    seed=None
+    is_valid, shuffle=False, seed=None
 )
 ```
 

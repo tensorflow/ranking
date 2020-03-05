@@ -5,7 +5,7 @@
 
 # tfr.data.build_sequence_example_serving_input_receiver_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Creates a serving_input_receiver_fn for `SequenceExample` inputs.
 
 ```python
 tfr.data.build_sequence_example_serving_input_receiver_fn(
-    input_size,
-    context_feature_spec,
-    example_feature_spec,
-    default_batch_size=None
+    input_size, context_feature_spec, example_feature_spec, default_batch_size=None
 )
 ```
 

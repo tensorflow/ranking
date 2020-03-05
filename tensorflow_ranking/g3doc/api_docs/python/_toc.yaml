@@ -27,6 +27,22 @@ toc:
     path: /ranking/api_docs/python/tfr/data/parse_from_sequence_example
   - title: read_batched_sequence_example_dataset
     path: /ranking/api_docs/python/tfr/data/read_batched_sequence_example_dataset
+- title: tfr.estimator
+  section:
+  - title: Overview
+    path: /ranking/api_docs/python/tfr/estimator
+  - title: EstimatorBuilder
+    path: /ranking/api_docs/python/tfr/estimator/EstimatorBuilder
+- title: tfr.ext
+  section:
+  - title: Overview
+    path: /ranking/api_docs/python/tfr/ext
+  - title: pipeline
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/ext/pipeline
+    - title: RankingPipeline
+      path: /ranking/api_docs/python/tfr/ext/pipeline/RankingPipeline
 - title: tfr.feature
   section:
   - title: Overview
@@ -63,42 +79,18 @@ toc:
     path: /ranking/api_docs/python/tfr/losses/make_loss_metric_fn
   - title: RankingLossKey
     path: /ranking/api_docs/python/tfr/losses/RankingLossKey
-  - title: losses_impl
-    section:
-    - title: Overview
-      path: /ranking/api_docs/python/tfr/losses/losses_impl
-    - title: ApproxMRRLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ApproxMRRLoss
-    - title: ApproxNDCGLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ApproxNDCGLoss
-    - title: DCGLambdaWeight
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/DCGLambdaWeight
-    - title: ListMLELambdaWeight
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ListMLELambdaWeight
-    - title: ListMLELoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ListMLELoss
-    - title: MeanSquaredLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/MeanSquaredLoss
-    - title: PairwiseHingeLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PairwiseHingeLoss
-    - title: PairwiseLogisticLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PairwiseLogisticLoss
-    - title: PairwiseSoftZeroOneLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PairwiseSoftZeroOneLoss
-    - title: PrecisionLambdaWeight
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PrecisionLambdaWeight
-    - title: SigmoidCrossEntropyLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/SigmoidCrossEntropyLoss
-    - title: SoftmaxLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/SoftmaxLoss
 - title: tfr.metrics
   section:
   - title: Overview
     path: /ranking/api_docs/python/tfr/metrics
   - title: average_relevance_position
     path: /ranking/api_docs/python/tfr/metrics/average_relevance_position
+  - title: compute_mean
+    path: /ranking/api_docs/python/tfr/metrics/compute_mean
   - title: discounted_cumulative_gain
     path: /ranking/api_docs/python/tfr/metrics/discounted_cumulative_gain
+  - title: eval_metric
+    path: /ranking/api_docs/python/tfr/metrics/eval_metric
   - title: make_ranking_metric_fn
     path: /ranking/api_docs/python/tfr/metrics/make_ranking_metric_fn
   - title: mean_average_precision
@@ -137,6 +129,10 @@ toc:
     path: /ranking/api_docs/python/tfr/utils/reshape_first_ndims
   - title: reshape_to_2d
     path: /ranking/api_docs/python/tfr/utils/reshape_to_2d
+  - title: scatter_to_2d
+    path: /ranking/api_docs/python/tfr/utils/scatter_to_2d
+  - title: segment_sorted_ranks
+    path: /ranking/api_docs/python/tfr/utils/segment_sorted_ranks
   - title: shuffle_valid_indices
     path: /ranking/api_docs/python/tfr/utils/shuffle_valid_indices
   - title: sorted_ranks

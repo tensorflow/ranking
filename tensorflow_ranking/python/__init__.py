@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_ranking.python import data
+from tensorflow_ranking.python import estimator
 from tensorflow_ranking.python import feature
 from tensorflow_ranking.python import head
 from tensorflow_ranking.python import losses
@@ -32,8 +33,8 @@ from tensorflow.python.util.all_util import remove_undocumented  # pylint: disab
 # them for tfr.keras.losses and metrics APIs. Note that these two are not
 # exposed via tfr.losses_impl, as there is no such import above.
 _allowed_symbols = [
-    'data', 'feature', 'head', 'losses', 'metrics', 'model', 'utils',
-    'losses_impl', 'metrics_impl'
+    'data', 'feature', 'estimator', 'head', 'losses', 'metrics', 'model',
+    'utils', 'losses_impl', 'metrics_impl'
 ]
 
 remove_undocumented(__name__, _allowed_symbols)

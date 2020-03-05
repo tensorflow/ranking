@@ -5,7 +5,7 @@
 
 # tfr.metrics.ordered_pair_accuracy
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
-Computes the percentage of correctedly ordered pair.
+Computes the percentage of correctly ordered pair.
 
 ```python
 tfr.metrics.ordered_pair_accuracy(
-    labels,
-    predictions,
-    weights=None,
-    name=None
+    labels, predictions, weights=None, name=None
 )
 ```
 

@@ -17,5 +17,6 @@
 # Contributors to the `python/` dir should not alter this file; instead update
 # `python/__init__.py` as necessary.
 
+from tensorflow_ranking import extension as ext
 from tensorflow_ranking.python import *  # pylint: disable=wildcard-import
 from tensorflow_ranking.python.version import __version__

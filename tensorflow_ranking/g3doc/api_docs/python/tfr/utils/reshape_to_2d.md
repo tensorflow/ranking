@@ -5,7 +5,7 @@
 
 # tfr.utils.reshape_to_2d
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,12 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Converts the given `tensor` to a 2-D `Tensor`.
 
 ```python
-tfr.utils.reshape_to_2d(tensor)
+tfr.utils.reshape_to_2d(
+    tensor
+)
 ```
 
 <!-- Placeholder for "Used in" -->

@@ -353,6 +353,39 @@ class ExampleListTest(tf.test.TestCase):
         self.assertAllEqual(features["query_length"], [[3], [2]])
         self.assertAllEqual(features["utility"], [[[0.]], [[0.]]])
 
+  def test_parse_from_example_list_shuffle(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      # Trunate number of examples from 2 to 1.
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          list_size=1,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC,
+          shuffle_examples=True,
+          seed=1)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        # With `shuffle_examples` and seed=1, the example `tensorflow` and the
+        # example `learning to rank` in EXAMPLE_LIST_PROTO_1 switch order. After
+        # truncation at list_size=1, only `learning to rank` in
+        # EXAMPLE_LIST_PROTO_1 and `gbdt` in EXAMPLE_LIST_PROTO_2 are left in
+        # serialized features.
+        # Test dense_shape, indices and values for a SparseTensor.
+        self.assertAllEqual(features["unigrams"].dense_shape, [2, 1, 3])
+        self.assertAllEqual(features["unigrams"].indices,
+                            [[0, 0, 0], [0, 0, 1], [0, 0, 2], [1, 0, 0]])
+        self.assertAllEqual(features["unigrams"].values,
+                            [b"learning", b"to", b"rank", b"gbdt"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[1.]], [[0.]]])
+
   def test_parse_from_example_list_static_shape(self):
     with tf.Graph().as_default():
       serialized_example_lists = [
@@ -417,6 +450,37 @@ class ExampleInExampleTest(tf.test.TestCase):
         # For Tensors with dense values, values can be directly checked.
         self.assertAllEqual(features["query_length"], [[3], [2]])
         self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
+  def test_parse_from_example_in_example_shuffle(self):
+    with tf.Graph().as_default():
+      serialized_example_in_example = [
+          _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+          _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+      ]
+      features = data_lib.parse_from_example_in_example(
+          serialized_example_in_example,
+          list_size=1,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC,
+          shuffle_examples=True,
+          seed=1)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        # With `shuffle_examples` and seed=1, the example `tensorflow` and the
+        # example `learning to rank` in EXAMPLES_1 switch order. After
+        # truncation at list_size=1, only `learning to rank` in EXAMPLES_1
+        # and `gbdt` in EXAMPLES_2 are left in serialized features.
+        # Test dense_shape, indices and values for a SparseTensor.
+        self.assertAllEqual(features["unigrams"].dense_shape, [2, 1, 3])
+        self.assertAllEqual(features["unigrams"].indices,
+                            [[0, 0, 0], [0, 0, 1], [0, 0, 2], [1, 0, 0]])
+        self.assertAllEqual(features["unigrams"].values,
+                            [b"learning", b"to", b"rank", b"gbdt"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[1.]], [[0.]]])
 
   def test_parse_example_in_example_with_sizes(self):
     with tf.Graph().as_default():

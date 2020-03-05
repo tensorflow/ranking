@@ -5,7 +5,7 @@
 
 # tfr.losses.create_ndcg_lambda_weight
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,14 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Creates _LambdaWeight for NDCG metric.
 
 ```python
 tfr.losses.create_ndcg_lambda_weight(
-    topn=None,
-    smooth_fraction=0.0
+    topn=None, smooth_fraction=0.0
 )
 ```
 

@@ -5,7 +5,7 @@
 
 # tfr.head.create_ranking_head
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,17 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 A factory method to create `_RankingHead`.
 
 ```python
 tfr.head.create_ranking_head(
-    loss_fn,
-    eval_metric_fns=None,
-    optimizer=None,
-    train_op_fn=None,
-    name=None
+    loss_fn, eval_metric_fns=None, optimizer=None, train_op_fn=None, name=None
 )
 ```
 

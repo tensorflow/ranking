@@ -41,6 +41,8 @@ class RankingLossKey(object):
   APPROX_NDCG_LOSS = 'approx_ndcg_loss'
   APPROX_MRR_LOSS = 'approx_mrr_loss'
   GUMBEL_APPROX_NDCG_LOSS = 'gumbel_approx_ndcg_loss'
+  NEURAL_SORT_CROSS_ENTROPY_LOSS = 'neural_sort_cross_entropy_loss'
+  GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS = 'gumbel_neural_sort_cross_entropy_loss'
 
 
 def make_loss_fn(loss_keys,
@@ -115,7 +117,7 @@ def make_loss_fn(loss_keys,
       # Convert weights to a 2-D Tensor.
       weights = utils.reshape_to_2d(weights)
 
-    gbl_labels, gbl_logits, gbl_weights = _gumbel_softmax_sample(
+    gbl_labels, gbl_logits, gbl_weights = losses_impl.gumbel_softmax_sample(
         labels, logits, weights)
 
     loss_kwargs = {
@@ -157,6 +159,10 @@ def make_loss_fn(loss_keys,
         RankingLossKey.APPROX_MRR_LOSS: (_approx_mrr_loss, loss_kwargs),
         RankingLossKey.GUMBEL_APPROX_NDCG_LOSS:
             (_approx_ndcg_loss, gbl_loss_kwargs),
+        RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS:
+            (_neural_sort_cross_entropy_loss, loss_kwargs),
+        RankingLossKey.GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS:
+            (_neural_sort_cross_entropy_loss, gbl_loss_kwargs),
     }
 
     # Obtain the list of loss ops.
@@ -222,7 +228,12 @@ def make_loss_metric_fn(loss_key,
           losses_impl.ApproxNDCGLoss(name),
       RankingLossKey.APPROX_MRR_LOSS:
           losses_impl.ApproxMRRLoss(name),
-      RankingLossKey.GUMBEL_APPROX_NDCG_LOSS: losses_impl.ApproxNDCGLoss(name),
+      RankingLossKey.GUMBEL_APPROX_NDCG_LOSS:
+          losses_impl.ApproxNDCGLoss(name),
+      RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS:
+          losses_impl.NeuralSortCrossEntropyLoss(name),
+      RankingLossKey.GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS:
+          losses_impl.NeuralSortCrossEntropyLoss(name),
   }
 
   def _get_weights(features):
@@ -614,15 +625,17 @@ def _approx_mrr_loss(labels,
     return loss.compute(labels, logits, weights, reduction)
 
 
-def _gumbel_softmax_sample(
-    labels,
-    logits,
-    weights=None,
-    name=None,
-    sample_size=8,
-    temperature=1.0,
-    seed=None):
-  """Samples scores from Concrete(logits).
+def _neural_sort_cross_entropy_loss(labels,
+                                    logits,
+                                    weights=None,
+                                    reduction=tf.compat.v1.losses.Reduction.SUM,
+                                    name=None,
+                                    temperature=1.0):
+  """Computes NeuralSort CrossEntropy loss.
+
+  NeuralSort CrossEntropy computes the cross entropy of the permutation
+  matrix approximations between the one computed from labels and the one
+  computed from the logits.
 
   Args:
     labels: A `Tensor` of the same shape as `logits` representing graded
@@ -631,60 +644,18 @@ def _gumbel_softmax_sample(
       ranking score of the corresponding item.
     weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
       weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
-      weights. If None, the weight of a list in the mini-batch is set to
-      the sum of the labels of the items in that list.
+      weights. If None, the weight of a list in the mini-batch is set to the sum
+      of the labels of the items in that list.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
     name: A string used as the name for this loss.
-    sample_size: An integer representing the number of samples drawn from the
-      Concrete distribution defined by scores.
-    temperature: The Gumbel-Softmax temperature.
-    seed: Seed for pseudo-random number generator.
+    temperature: The exponent in the smooth softmax function.
 
   Returns:
-    A tuple of expanded labels, logits, and weights where the first dimension
-    is now batch_size * sample_size. Logit Tensors are sampled from
-    Concrete(logits) while labels and weights are simply tiled so the resulting
-    Tensor has the updated dimensions.
+    An op for the NeuralSort CrossEntropy loss.
   """
-  with tf.compat.v1.name_scope(name, 'gumbel_softmax_sample',
+  loss = losses_impl.NeuralSortCrossEntropyLoss(
+      name, params={'temperature': temperature})
+  with tf.compat.v1.name_scope(loss.name, 'neural_sort_cross_entropy_loss',
                                (labels, logits, weights)):
-    batch_size = tf.shape(input=labels)[0]
-    list_size = tf.shape(input=labels)[1]
-
-    # Expand labels.
-    expanded_labels = tf.expand_dims(labels, 1)
-    expanded_labels = tf.tile(expanded_labels, [1, sample_size, 1])
-    expanded_labels = tf.reshape(expanded_labels,
-                                 [batch_size * sample_size, list_size])
-
-    # Sample logits from Concrete(logits).
-    sampled_logits = tf.expand_dims(logits, 1)
-    sampled_logits = tf.tile(sampled_logits, [1, sample_size, 1])
-    sampled_logits += _sample_gumbel([batch_size, sample_size, list_size],
-                                     seed=seed)
-    sampled_logits = tf.reshape(sampled_logits,
-                                [batch_size * sample_size, list_size])
-
-    is_label_valid = utils.is_label_valid(expanded_labels)
-    sampled_logits = tf.where(
-        is_label_valid, sampled_logits / temperature,
-        tf.math.log(1e-20) * tf.ones_like(sampled_logits))
-    sampled_logits = tf.math.log(tf.nn.softmax(sampled_logits) + 1e-20)
-
-    expanded_weights = weights
-    if expanded_weights is not None:
-      true_fn = lambda: tf.expand_dims(tf.expand_dims(expanded_weights, 1), 1)
-      false_fn = lambda: tf.expand_dims(expanded_weights, 1)
-      expanded_weights = tf.cond(
-          pred=tf.math.equal(tf.rank(expanded_weights), 1),
-          true_fn=true_fn,
-          false_fn=false_fn)
-      expanded_weights = tf.tile(expanded_weights, [1, sample_size, 1])
-      expanded_weights = tf.reshape(expanded_weights,
-                                    [batch_size * sample_size, -1])
-
-    return expanded_labels, sampled_logits, expanded_weights
-
-
-def _sample_gumbel(shape, eps=1e-20, seed=None):
-  u = tf.random.uniform(shape, minval=0, maxval=1, dtype=tf.float32, seed=seed)
-  return -tf.math.log(-tf.math.log(u + eps) + eps)
+    return loss.compute(labels, logits, weights, reduction)

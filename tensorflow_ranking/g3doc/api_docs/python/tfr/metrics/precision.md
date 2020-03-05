@@ -5,7 +5,7 @@
 
 # tfr.metrics.precision
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,17 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes precision as weighted average of relevant examples.
 
 ```python
 tfr.metrics.precision(
-    labels,
-    predictions,
-    weights=None,
-    topn=None,
-    name=None
+    labels, predictions, weights=None, topn=None, name=None
 )
 ```
 

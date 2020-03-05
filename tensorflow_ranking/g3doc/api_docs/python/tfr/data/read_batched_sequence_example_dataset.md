@@ -5,7 +5,7 @@
 
 # tfr.data.read_batched_sequence_example_dataset
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,27 +16,14 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Returns a `Dataset` of features from `SequenceExample`.
 
 ```python
 tfr.data.read_batched_sequence_example_dataset(
-    file_pattern,
-    batch_size,
-    list_size,
-    context_feature_spec,
-    example_feature_spec,
-    reader=tf.data.TFRecordDataset,
-    reader_args=None,
-    num_epochs=None,
-    shuffle=True,
-    shuffle_buffer_size=1000,
-    shuffle_seed=None,
-    prefetch_buffer_size=32,
-    reader_num_threads=10,
-    sloppy_ordering=True,
-    drop_final_batch=False
+    file_pattern, batch_size, list_size, context_feature_spec, example_feature_spec,
+    reader=tf.data.TFRecordDataset, reader_args=None, num_epochs=None, shuffle=True,
+    shuffle_buffer_size=1000, shuffle_seed=None, prefetch_buffer_size=32,
+    reader_num_threads=10, sloppy_ordering=True, drop_final_batch=False
 )
 ```
 

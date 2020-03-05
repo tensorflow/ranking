@@ -77,7 +77,7 @@ class UtilTest(tf.test.TestCase):
     with tf.Graph().as_default():
       logits = tf.cast([[1.]], tf.float32)
       labels = tf.cast([[0.]], tf.float32)
-      loss = tf.abs(tf.reduce_sum(logits - labels))
+      loss = tf.abs(tf.reduce_sum(input_tensor=logits - labels))
 
       def _train_op_fn(loss):
         with tf.control_dependencies((tf.compat.v1.assert_near(
@@ -115,6 +115,7 @@ class UtilTest(tf.test.TestCase):
 class RankingHeadTest(tf.test.TestCase):
 
   def setUp(self):
+    super(RankingHeadTest, self).setUp()
     self._default_logits = [[1., 3., 2.], [1., 2., 3.]]
     self._default_labels = [[0., 0., 1.], [0., 0., 2.]]
     self._default_loss = 9.
@@ -342,8 +343,8 @@ class MultiRankingHeadTest(tf.test.TestCase):
           loss_fn=_make_loss_fn(), name='head2')
       multi_head = ranking_head.create_multi_ranking_head([head1, head2])
       logits = {
-          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
-          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+          'head1': tf.convert_to_tensor(value=[[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
       }
       spec = multi_head.create_estimator_spec(
           features={}, mode=tf.estimator.ModeKeys.PREDICT, logits=logits)
@@ -384,12 +385,12 @@ class MultiRankingHeadTest(tf.test.TestCase):
       multi_head = ranking_head.create_multi_ranking_head([head1, head2])
 
       logits = {
-          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
-          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+          'head1': tf.convert_to_tensor(value=[[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
       }
       labels = {
-          'head1': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
-          'head2': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+          'head1': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
       }
       spec = multi_head.create_estimator_spec(
           features={},
@@ -440,12 +441,12 @@ class MultiRankingHeadTest(tf.test.TestCase):
                                                           [1.0, 2.0])
 
       logits = {
-          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
-          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+          'head1': tf.convert_to_tensor(value=[[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
       }
       labels = {
-          'head1': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
-          'head2': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+          'head1': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
       }
       # Create estimator spec.
       spec = multi_head.create_estimator_spec(
@@ -477,12 +478,12 @@ class MultiRankingHeadTest(tf.test.TestCase):
       multi_head = ranking_head.create_multi_ranking_head([head1, head2],
                                                           [1.0, 2.0])
       logits = {
-          'head1': tf.convert_to_tensor([[1., 3.], [1., 2.]]),
-          'head2': tf.convert_to_tensor([[2., 3.], [2., 2.]]),
+          'head1': tf.convert_to_tensor(value=[[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
       }
       labels = {
-          'head1': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
-          'head2': tf.convert_to_tensor([[0., 1.], [0., 2.]]),
+          'head1': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
       }
       regularization_losses = [1.5, 0.5]
       expected_loss = 1. * 4. + 2. * 6. + 1.5 + 0.5

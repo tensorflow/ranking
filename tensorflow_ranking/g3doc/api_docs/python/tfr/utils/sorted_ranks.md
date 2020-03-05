@@ -5,7 +5,7 @@
 
 # tfr.utils.sorted_ranks
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,14 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Returns an int `Tensor` as the ranks (1-based) after sorting scores.
 
 ```python
 tfr.utils.sorted_ranks(
-    scores,
-    shuffle_ties=True
+    scores, shuffle_ties=True, seed=None
 )
 ```
 
@@ -38,6 +35,7 @@ at position 1, and 2.1 will be ranked at position 2.
 *   <b>`scores`</b>: A `Tensor` of shape [batch_size, list_size] representing
     the per-example scores.
 *   <b>`shuffle_ties`</b>: See `sort_by_scores`.
+*   <b>`seed`</b>: See `sort_by_scores`.
 
 #### Returns:
 

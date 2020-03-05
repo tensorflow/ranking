@@ -5,7 +5,7 @@
 
 # tfr.data.parse_from_example_in_example
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,13 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Parses an ExampleInExample batch to a feature map.
 
 ```python
 tfr.data.parse_from_example_in_example(
-    serialized,
-    list_size=None,
-    context_feature_spec=None,
-    example_feature_spec=None
+    serialized, list_size=None, context_feature_spec=None,
+    example_feature_spec=None, size_feature_name=None, shuffle_examples=False,
+    seed=None
 )
 ```
 
@@ -167,6 +164,15 @@ And the expected output is:
 *   <b>`example_feature_spec`</b>: (dict) A mapping from feature keys to
     `FixedLenFeature` or `VarLenFeature` values for examples in
     `ExampleListWithContext` proto.
+*   <b>`size_feature_name`</b>: (str) Name of feature for example list sizes.
+    Populates the feature dictionary with a `tf.int32` Tensor of shape
+    [batch_size] for this feature name. If None, which is default, this feature
+    is not generated.
+*   <b>`shuffle_examples`</b>: (bool) A boolean to indicate whether examples
+    within a list are shuffled before the list is trimmed down to list_size
+    elements (when list has more than list_size elements).
+*   <b>`seed`</b>: (int) A seed passed onto random_ops.uniform() to shuffle
+    examples.
 
 #### Returns:
 

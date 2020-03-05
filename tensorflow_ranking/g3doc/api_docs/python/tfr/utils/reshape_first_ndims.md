@@ -5,7 +5,7 @@
 
 # tfr.utils.reshape_first_ndims
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,15 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Reshapes the first n dims of the input `tensor` to `new shape`.
 
 ```python
 tfr.utils.reshape_first_ndims(
-    tensor,
-    first_ndims,
-    new_shape
+    tensor, first_ndims, new_shape
 )
 ```
 

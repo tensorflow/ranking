@@ -797,6 +797,26 @@ class MetricsTest(tf.test.TestCase):
                rank_discount_fn=rank_discount_fn)),
       ])
 
+  def test_compute_mean(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      with self.test_session() as sess:
+        for key in [
+            'mrr',
+            'arp',
+            'ndcg',
+            'dcg',
+            'precision',
+            'map',
+            'ordered_pair_accuracy',
+        ]:
+          value = sess.run(
+              metrics_lib.compute_mean(
+                  key, labels, scores, weights, 2, name=key))
+          self.assertGreater(value, 0.)
+
 
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()

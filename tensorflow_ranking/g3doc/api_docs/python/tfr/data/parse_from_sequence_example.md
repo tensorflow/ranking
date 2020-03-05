@@ -5,7 +5,7 @@
 
 # tfr.data.parse_from_sequence_example
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,13 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Parses SequenceExample to feature maps.
 
 ```python
 tfr.data.parse_from_sequence_example(
-    serialized,
-    list_size=None,
-    context_feature_spec=None,
-    example_feature_spec=None
+    serialized, list_size=None, context_feature_spec=None,
+    example_feature_spec=None, size_feature_name=None, shuffle_examples=False,
+    seed=None
 )
 ```
 
@@ -140,6 +137,15 @@ And the expected output is:
     `FixedLenFeature` is translated to `FixedLenSequenceFeature` to parse
     SequenceExample. Note that no missing value in the middle of a
     `feature_list` is allowed for frames.
+*   <b>`size_feature_name`</b>: (str) Name of feature for example list sizes.
+    Populates the feature dictionary with a `tf.int32` Tensor of shape
+    [batch_size] for this feature name. If None, which is default, this feature
+    is not generated.
+*   <b>`shuffle_examples`</b>: (bool) A boolean to indicate whether examples
+    within a list are shuffled before the list is trimmed down to list_size
+    elements (when list has more than list_size elements).
+*   <b>`seed`</b>: (int) A seed passed onto random_ops.uniform() to shuffle
+    examples.
 
 #### Returns:
 

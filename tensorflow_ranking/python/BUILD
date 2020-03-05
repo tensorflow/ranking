@@ -19,6 +19,7 @@ py_library(
     visibility = ["//tensorflow_ranking:__pkg__"],
     deps = [
         ":data",
+        ":estimator",
         ":feature",
         ":head",
         ":losses",
@@ -233,6 +234,36 @@ py_test(
         ":losses",
         ":model",
         # py/absl/testing:parameterized dep,
+        # py/tensorflow dep,
+    ],
+)
+
+py_library(
+    name = "estimator",
+    srcs = ["estimator.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":feature",
+        ":head",
+        ":losses",
+        ":metrics",
+        ":model",
+        # py/tensorflow dep,
+    ],
+)
+
+py_test(
+    name = "estimator_test",
+    size = "medium",
+    srcs = ["estimator_test.py"],
+    srcs_version = "PY2AND3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":estimator",
+        ":feature",
         # py/tensorflow dep,
     ],
 )

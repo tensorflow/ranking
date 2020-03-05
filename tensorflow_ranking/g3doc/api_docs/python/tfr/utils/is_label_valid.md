@@ -5,7 +5,7 @@
 
 # tfr.utils.is_label_valid
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,12 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Returns a boolean `Tensor` for label validity.
 
 ```python
-tfr.utils.is_label_valid(labels)
+tfr.utils.is_label_valid(
+    labels
+)
 ```
 
 <!-- Placeholder for "Used in" -->

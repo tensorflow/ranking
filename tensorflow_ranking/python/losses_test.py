@@ -257,7 +257,7 @@ def _batch_aggregation(batch_loss_list, reduction=None):
 def _softmax(values):
   """Returns the softmax of `values`."""
   total = sum(math.exp(v) for v in values)
-  return [math.exp(v) / total for v in values]
+  return [math.exp(v) / (1e-20 + total) for v in values]
 
 
 # Based on nn.sigmoid_cross_entropy_with_logits for x=logit and z=label the
@@ -269,6 +269,37 @@ def _sigmoid_cross_entropy(labels, logits):
 
   return sum(
       per_position_loss(logit, label) for label, logit in zip(labels, logits))
+
+
+def _neural_sort(logits, temperature=1.0):
+  """Non-tensor version of neural sort."""
+  batch_size = len(logits)
+  list_size = len(logits[0])
+
+  result = []
+  for b in range(batch_size):
+    smooth_perm = []
+    logit_diff_sum = [sum(abs(m - l) for m in logits[b]) for l in logits[b]]
+    for i in range(list_size):
+      scaling = list_size + 1 - 2 * (i + 1)
+      scaled_logits = [scaling * l for l in logits[b]]
+      p_logits = [
+          (l - s) / temperature for l, s in zip(scaled_logits, logit_diff_sum)
+      ]
+      p_logits = [l - max(p_logits) for l in p_logits]
+      smooth_perm.append(_softmax(p_logits))
+    result.append(smooth_perm)
+
+  return result
+
+
+def _softmax_cross_entropy(p_trues, p_preds):
+
+  def per_list_loss(y_true, y_pred):
+    return sum(-y_t * math.log(1e-20 + y_p) for y_t, y_p in zip(y_true, y_pred))
+
+  return sum(
+      per_list_loss(p_true, p_pred) for p_true, p_pred in zip(p_trues, p_preds))
 
 
 # Aggregates the per position squared error.
@@ -902,6 +933,68 @@ class LossesTest(tf.test.TestCase):
             loss_fn_1(labels, scores, features).eval(),
             loss_fn_2(labels, scores, features).eval())
 
+  def test_neural_sort_cross_entropy_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+      labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      scores_valid = [[1.4, -2.8, -0.4], [0., 1.8, -1000.], [1., 1.2, -3.2]]
+      labels_valid = [[0., 2., 1.], [1., 0., -1000.], [0., 0., 0.]]
+      p_scores = _neural_sort(scores_valid)
+      p_labels = _neural_sort(labels_valid)
+      with self.cached_session():
+        self.assertAlmostEqual(
+            ranking_losses._neural_sort_cross_entropy_loss(labels,
+                                                           scores).eval(),
+            (_softmax_cross_entropy(p_labels[0], p_scores[0]) +
+             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 3.,
+            places=4)
+        self.assertAlmostEqual(
+            ranking_losses._neural_sort_cross_entropy_loss(
+                labels, scores, weights).eval(),
+            (_softmax_cross_entropy(p_labels[0], p_scores[0]) * 2.0 +
+             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 3.,
+            places=4)
+
+  def test_make_neural_sort_cross_entropy_loss_fn(self):
+    with tf.Graph().as_default():
+      scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5]]
+      labels = [[0., 0., 1.], [0., 0., 1.]]
+      weights = [[2.], [1.]]
+      p_scores = _neural_sort(scores)
+      p_labels = _neural_sort(labels)
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      with self.cached_session():
+        loss_fn_simple = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS)
+        self.assertAlmostEqual(
+            loss_fn_simple(labels, scores, features).eval(),
+            (_softmax_cross_entropy(p_labels[0], p_scores[0]) +
+             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 6.,
+            places=5)
+
+        loss_fn_weighted = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS,
+            weights_feature_name=weights_feature_name)
+        self.assertAlmostEqual(
+            loss_fn_weighted(labels, scores, features).eval(),
+            (_softmax_cross_entropy(p_labels[0], p_scores[0]) * 2.0 +
+             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 6.,
+            places=5)
+
+        # Test loss reduction method.
+        # Two reduction methods should return different loss values.
+        loss_fn_1 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.SUM)
+        loss_fn_2 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.MEAN)
+        self.assertNotAlmostEqual(
+            loss_fn_1(labels, scores, features).eval(),
+            loss_fn_2(labels, scores, features).eval())
+
   def test_make_loss_fn(self):
     with tf.Graph().as_default():
       scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5]]
@@ -1075,11 +1168,46 @@ class LossesTest(tf.test.TestCase):
                           [1.], [1.]]
 
       with self.cached_session():
-        l, s, w = ranking_losses._gumbel_softmax_sample(
+        gbl_labels, gbl_scores, gbl_weights = losses_impl.gumbel_softmax_sample(
             labels, scores, weights, sample_size=2, seed=1)
-        self.assertAllEqual(l.eval(), expanded_labels)
-        self.assertAllClose(s.eval(), sampled_scores, rtol=1e-3)
-        self.assertAllEqual(w.eval(), expanded_weights)
+        self.assertAllEqual(gbl_labels.eval(), expanded_labels)
+        self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
+        self.assertAllEqual(gbl_weights.eval(), expanded_weights)
+
+  def test_neural_sort(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+
+      permuation_mat = [[[1, 0, 0], [0, 0, 1], [0, 1, 0]],
+                        [[0, 0, 1], [0, 1, 0], [1, 0, 0]],
+                        [[0, 1, 0], [1, 0, 0], [0, 0, 1]]]
+
+      with self.cached_session():
+        smooth_perm = losses_impl.neural_sort(scores, temperature=0.01)
+        self.assertAllClose(smooth_perm.eval(), permuation_mat, rtol=1e-3)
+
+  def test_gumbel_neural_sort(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+
+      # sampled_scores = [[[-.291, -1.643, -2.826],
+      #                    [-.0866, -2.924, -3.530]],
+      #                   [[-12.42, -9.492, -7.939e-5],
+      #                    [-8.859, -6.830, -1.223e-3]],
+      #                   [[-.8930, -.5266, -45.80183],
+      #                    [-.6650, -.7220, -45.94149]]]
+
+      permuation_mat = [[[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]],
+                        [[[0, 0, 1], [0, 1, 0], [1, 0, 0]],
+                         [[0, 0, 1], [0, 1, 0], [1, 0, 0]]],
+                        [[[0, 1, 0], [1, 0, 0], [0, 0, 1]],
+                         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]]]
+
+      with self.cached_session():
+        smooth_perm = losses_impl.gumbel_neural_sort(
+            scores, sample_size=2, temperature=0.001, seed=1)
+        self.assertAllClose(smooth_perm.eval(), permuation_mat, rtol=1e-3)
 
 
 class LossMetricTest(tf.test.TestCase):

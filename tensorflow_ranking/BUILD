@@ -12,6 +12,7 @@ py_library(
     srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
     deps = [
+        "//tensorflow_ranking/extension",
         "//tensorflow_ranking/python",
         "//tensorflow_ranking/python:version",
     ],

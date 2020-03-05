@@ -5,7 +5,7 @@
 
 # tfr.data.build_ranking_dataset_with_parsing_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,26 +16,14 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Builds a ranking tf.dataset using the provided `parsing_fn`.
 
 ```python
 tfr.data.build_ranking_dataset_with_parsing_fn(
-    file_pattern,
-    parsing_fn,
-    batch_size,
-    reader=tf.data.TFRecordDataset,
-    reader_args=None,
-    num_epochs=None,
-    shuffle=True,
-    shuffle_buffer_size=1000,
-    shuffle_seed=None,
-    prefetch_buffer_size=32,
-    reader_num_threads=10,
-    sloppy_ordering=True,
-    drop_final_batch=False,
-    num_parser_threads=None
+    file_pattern, parsing_fn, batch_size, reader=tf.data.TFRecordDataset,
+    reader_args=None, num_epochs=None, shuffle=True, shuffle_buffer_size=1000,
+    shuffle_seed=None, prefetch_buffer_size=32, reader_num_threads=10,
+    sloppy_ordering=True, drop_final_batch=False, num_parser_threads=None
 )
 ```
 

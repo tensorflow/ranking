@@ -225,7 +225,7 @@ def _document_interaction_layer(context_features,
     context_inputs = tf.concat(
         [context_features[name] for name in sorted_context_keys], axis=1)
     context_inputs = tf.expand_dims(input=context_inputs, axis=1)
-    length = tf.shape(example_inputs)[1]
+    length = tf.shape(input=example_inputs)[1]
     context_inputs = tf.tile(input=context_inputs, multiples=[1, length, 1])
     outputs.append(context_inputs)
 

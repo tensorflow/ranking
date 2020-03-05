@@ -5,7 +5,7 @@
 
 # tfr.metrics.discounted_cumulative_gain
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,19 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes discounted cumulative gain (DCG).
 
 ```python
 tfr.metrics.discounted_cumulative_gain(
-    labels,
-    predictions,
-    weights=None,
-    topn=None,
-    name=None,
-    gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
+    labels, predictions, weights=None, topn=None, name=None,
+    gain_fn=_DEFAULT_GAIN_FN, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
 )
 ```
 

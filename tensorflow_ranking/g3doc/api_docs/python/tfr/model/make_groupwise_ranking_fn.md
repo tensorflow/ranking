@@ -5,7 +5,7 @@
 
 # tfr.model.make_groupwise_ranking_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Builds an `Estimator` model_fn for groupwise comparison ranking models.
 
 ```python
 tfr.model.make_groupwise_ranking_fn(
-    group_score_fn,
-    group_size,
-    ranking_head,
-    transform_fn=None
+    group_score_fn, group_size, ranking_head, transform_fn=None
 )
 ```
 

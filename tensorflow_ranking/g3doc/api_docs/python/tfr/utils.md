@@ -5,6 +5,8 @@
 
 # Module: tfr.utils
 
+<!-- Insert buttons and diff -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -38,6 +40,12 @@ first n dims of the input `tensor` to `new shape`.
 
 [`reshape_to_2d(...)`](../tfr/utils/reshape_to_2d.md): Converts the given
 `tensor` to a 2-D `Tensor`.
+
+[`scatter_to_2d(...)`](../tfr/utils/scatter_to_2d.md): Scatters a flattened 1-D
+`tensor` to 2-D with padding based on `segments`.
+
+[`segment_sorted_ranks(...)`](../tfr/utils/segment_sorted_ranks.md): Returns an
+int `Tensor` as the ranks after sorting scores per segment.
 
 [`shuffle_valid_indices(...)`](../tfr/utils/shuffle_valid_indices.md): Returns a
 shuffle of indices with valid ones on top.

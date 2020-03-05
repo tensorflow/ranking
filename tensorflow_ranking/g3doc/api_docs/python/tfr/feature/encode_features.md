@@ -5,7 +5,7 @@
 
 # tfr.feature.encode_features
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Returns dense tensors from features using feature columns.
 
 ```python
 tfr.feature.encode_features(
-    features,
-    feature_columns,
-    mode=tf.estimator.ModeKeys.TRAIN,
-    scope=None
+    features, feature_columns, mode=tf.estimator.ModeKeys.TRAIN, scope=None
 )
 ```
 

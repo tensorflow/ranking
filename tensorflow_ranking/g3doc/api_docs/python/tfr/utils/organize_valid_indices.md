@@ -5,7 +5,7 @@
 
 # tfr.utils.organize_valid_indices
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,15 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Organizes indices in such a way that valid items appear first.
 
 ```python
 tfr.utils.organize_valid_indices(
-    is_valid,
-    shuffle=True,
-    seed=None
+    is_valid, shuffle=True, seed=None
 )
 ```
 

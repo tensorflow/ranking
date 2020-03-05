@@ -5,7 +5,7 @@
 
 # tfr.data.build_ranking_serving_input_receiver_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,17 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Returns a serving input receiver fn for a standard data format.
 
 ```python
 tfr.data.build_ranking_serving_input_receiver_fn(
-    data_format,
-    context_feature_spec,
-    example_feature_spec,
-    list_size=None,
-    receiver_name='input_ranking_data',
+    data_format, context_feature_spec, example_feature_spec, list_size=None,
+    size_feature_name=None, receiver_name='input_ranking_data',
     default_batch_size=None
 )
 ```
@@ -43,6 +38,10 @@ tfr.data.build_ranking_serving_input_receiver_fn(
 *   <b>`list_size`</b>: (int) The number of examples to keep. If specified,
     truncation or padding may happen. Otherwise, set it to None to allow dynamic
     list size (recommended).
+*   <b>`size_feature_name`</b>: (str) Name of feature for example list sizes.
+    Populates the feature dictionary with a `tf.int32` Tensor of shape
+    [batch_size] for this feature name. If None, which is default, this feature
+    is not generated.
 *   <b>`receiver_name`</b>: (string) The name for the receiver tensor.
 *   <b>`default_batch_size`</b>: (int) Number of instances expected per batch.
     Leave unset for variable batch size (recommended).
