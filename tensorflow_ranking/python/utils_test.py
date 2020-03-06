@@ -164,6 +164,25 @@ class UtilsTest(tf.test.TestCase):
         inverse_max_dcg_1 = sess.run(inverse_max_dcg_1)
         self.assertAllClose(inverse_max_dcg_1, target_1)
 
+  def test_ndcg(self):
+    with tf.Graph().as_default():
+      labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
+      ranks = [[1, 2, 3, 4], [1, 3, 4, 2], [1, 2, 3, 4]]
+      perm_mat = [[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+                  [[1, 0, 0, 0], [0, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0]],
+                  [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]]
+      ndcg_ = [[0.679685], [0.95176], [0.]]
+      ndcg_rank = [[0.679685], [1.], [0.]]
+      ndcg_perm = [[0.679685], [1.], [0.]]
+
+      with tf.compat.v1.Session() as sess:
+        ndcg = sess.run(utils.ndcg(labels))
+        self.assertAllClose(ndcg, ndcg_)
+        ndcg = sess.run(utils.ndcg(labels, ranks))
+        self.assertAllClose(ndcg, ndcg_rank)
+        ndcg = sess.run(utils.ndcg(labels, perm_mat=perm_mat))
+        self.assertAllClose(ndcg, ndcg_perm)
+
   def test_reshape_to_2d(self):
     with tf.Graph().as_default():
       tensor_3d = tf.constant([[[1], [2], [3]], [[4], [5], [6]]])

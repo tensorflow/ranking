@@ -239,6 +239,39 @@ def inverse_max_dcg(labels,
       tf.zeros_like(discounted_gain))
 
 
+def ndcg(labels, ranks=None, perm_mat=None):
+  """Computes NDCG from labels and ranks.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size], representing graded
+      relevance.
+    ranks: A `Tensor` of the same shape as labels, or [1, list_size], or None.
+      If ranks=None, we assume the labels are sorted in their rank.
+    perm_mat: A `Tensor` with shape [batch_size, list_size, list_size] or None.
+      Permutation matrices with rows correpond to the ranks and columns
+      correspond to the indices. An argmax over each row gives the index of the
+      element at the corresponding rank.
+
+  Returns:
+    A `tensor` of NDCG, ApproxNDCG, or ExpectedNDCG of shape [batch_size, 1].
+  """
+  if ranks is not None and perm_mat is not None:
+    raise ValueError('Cannot use both ranks and perm_mat simultaneously.')
+
+  if ranks is None:
+    list_size = tf.shape(labels)[1]
+    ranks = tf.range(list_size)+1
+  discounts = 1. / tf.math.log1p(tf.cast(ranks, dtype=tf.float32))
+  gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
+  if perm_mat is not None:
+    gains = tf.reduce_sum(
+        input_tensor=perm_mat * tf.expand_dims(gains, 1), axis=-1)
+  dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
+  ndcg_ = dcg * inverse_max_dcg(labels)
+
+  return ndcg_
+
+
 def reshape_to_2d(tensor):
   """Converts the given `tensor` to a 2-D `Tensor`."""
   with tf.compat.v1.name_scope(name='reshape_to_2d'):

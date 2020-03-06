@@ -780,12 +780,10 @@ class ApproxNDCGLoss(_ListwiseLoss):
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
-    gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
     ranks = utils.approx_ranks(logits, alpha=alpha)
-    discounts = 1. / tf.math.log1p(ranks)
-    dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
-    cost = -dcg * utils.inverse_max_dcg(labels)
-    return cost, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
+
+    return -utils.ndcg(labels, ranks), tf.reshape(
+        tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
 
 class ApproxMRRLoss(_ListwiseLoss):
