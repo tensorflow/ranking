@@ -313,3 +313,153 @@ class EstimatorBuilder(object):
         keep_checkpoint_max=self._hparams.get("num_checkpoints"),
         save_checkpoints_secs=self._hparams.get("checkpoint_secs"))
     return tf.estimator.Estimator(model_fn=self._model_fn(), config=config)
+
+
+def _make_dnn_score_fn(hidden_units,
+                       activation_fn=tf.nn.relu,
+                       dropout=None,
+                       use_batch_norm=False,
+                       batch_norm_moment=0.999):
+  """Returns a DNN scoring fn that outputs a score per example.
+
+  Args:
+    hidden_units: (list) Iterable of number hidden units per layer for a DNN
+      model. All layers are fully connected. Ex. `[64, 32]` means first layer
+      has 64 nodes and second one has 32.
+    activation_fn: Activation function applied to each layer. If `None`, will
+      use `tf.nn.relu`.
+    dropout: (float) When not `None`, the probability we will drop out a given
+      coordinate.
+    use_batch_norm: (bool) If true, use batch normalization after each hidden
+      layer.
+    batch_norm_moment: (float) Momentum for the moving average in batch
+      normalization.
+
+  Returns:
+    A DNN scoring function.
+  """
+  activation_fn = activation_fn or tf.nn.relu
+
+  def _scoring_function(context_features, example_features, mode):
+    """Defines the DNN-based scoring fn.
+
+    Args:
+      context_features: (dict) A mapping from context feature names to dense 2-D
+        Tensors of shape [batch_size, ...].
+      example_features: (dict) A mapping from example feature names to dense 3-D
+        Tensors of shape [batch_size, list_size, ...].
+      mode: (`tf.estimator.ModeKeys`) TRAIN, EVAL, or PREDICT.
+
+    Returns:
+      A Tensor of shape [batch_size, 1] containing per-example.
+      scores.
+    """
+    # Input layer.
+    with tf.compat.v1.name_scope("input_layer"):
+      example_input = [
+          tf.compat.v1.layers.flatten(example_features[name])
+          for name in sorted(list(example_features.keys()))
+      ]
+      context_input = [
+          tf.compat.v1.layers.flatten(context_features[name])
+          for name in sorted(list(context_features.keys()))
+      ]
+      # Concat context and example features as input.
+      input_layer = tf.concat(context_input + example_input, 1)
+
+    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+    cur_layer = input_layer
+    # Construct a deep neural network model.
+    with tf.compat.v1.name_scope("dnn_model"):
+      if use_batch_norm:
+        cur_layer = tf.compat.v1.layers.batch_normalization(
+            cur_layer, training=is_training, momentum=batch_norm_moment)
+      for i, layer_width in enumerate(map(int, hidden_units)):
+        cur_layer = tf.compat.v1.layers.dense(cur_layer, units=layer_width)
+        if use_batch_norm:
+          cur_layer = tf.compat.v1.layers.batch_normalization(
+              cur_layer, training=is_training, momentum=batch_norm_moment)
+        cur_layer = activation_fn(cur_layer)
+        if dropout:
+          cur_layer = tf.compat.v1.layers.dropout(
+              inputs=cur_layer, rate=dropout, training=is_training)
+        tf.compat.v1.summary.scalar("fully_connected_{}_sparsity".format(i),
+                                    tf.nn.zero_fraction(cur_layer))
+      logits = tf.compat.v1.layers.dense(cur_layer, units=1)
+
+    tf.compat.v1.summary.scalar("logits_mean",
+                                tf.reduce_mean(input_tensor=logits))
+    return logits
+
+  return _scoring_function
+
+
+def make_dnn_ranking_estimator(
+    example_feature_columns,
+    hidden_units,
+    context_feature_columns=None,
+    optimizer=None,
+    learning_rate=0.05,
+    loss="approx_ndcg_loss",
+    loss_reduction=tf.compat.v1.losses.Reduction.SUM_OVER_BATCH_SIZE,
+    activation_fn=tf.nn.relu,
+    dropout=None,
+    use_batch_norm=False,
+    batch_norm_moment=0.999,
+    model_dir=None,
+    checkpoint_secs=120,
+    num_checkpoints=1000):
+  """Builds an `Estimator` instance with DNN scoring function.
+
+  Args:
+    example_feature_columns: (dict) Example (aka, document) feature columns.
+    hidden_units: (list) Iterable of number hidden units per layer for a DNN
+      model. All layers are fully connected. Ex. `[64, 32]` means first layer
+      has 64 nodes and second one has 32.
+    context_feature_columns: (dict) Context (aka, query) feature columns.
+    optimizer: (`tf.Optimizer`) An `Optimizer` object for model optimzation.
+    learning_rate: (float) Only used if `optimizer` is a string. Defaults to
+      0.05.
+    loss: (str) A string to decide the loss function used in training. See
+      `RankingLossKey` class for possible values.
+    loss_reduction: (str) An enum of strings indicating the loss reduction
+      type. See type definition in the `tf.compat.v1.losses.Reduction`.
+    activation_fn: Activation function applied to each layer. If `None`, will
+      use `tf.nn.relu`.
+    dropout: (float) When not `None`, the probability we will drop out a given
+      coordinate.
+    use_batch_norm: (bool) Whether to use batch normalization after each hidden
+      layer.
+    batch_norm_moment: (float) Momentum for the moving average in batch
+      normalization.
+    model_dir: (str) Directory to save model parameters, graph and etc. This can
+      also be used to load checkpoints from the directory into a estimator to
+      continue training a previously saved model.
+    checkpoint_secs: (int) Time interval (in seconds) to save checkpoints.
+    num_checkpoints: (int) Number of checkpoints to keep.
+
+  Returns:
+    An `Estimator` with DNN scoring function.
+  """
+
+  scoring_function = _make_dnn_score_fn(
+      hidden_units,
+      activation_fn=activation_fn,
+      dropout=dropout,
+      use_batch_norm=use_batch_norm,
+      batch_norm_moment=batch_norm_moment)
+
+  hparams = dict(
+      model_dir=model_dir,
+      learning_rate=learning_rate,
+      loss=loss,
+      checkpoint_secs=checkpoint_secs,
+      num_checkpoints=num_checkpoints)
+
+  return EstimatorBuilder(
+      context_feature_columns,
+      example_feature_columns,
+      optimizer=optimizer,
+      scoring_function=scoring_function,
+      loss_reduction=loss_reduction,
+      hparams=hparams).make_estimator()

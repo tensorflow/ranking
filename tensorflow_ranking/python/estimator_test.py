@@ -18,11 +18,99 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import six
 import tensorflow as tf
 
+from google.protobuf import text_format
+from tensorflow_ranking.python import data
 from tensorflow_ranking.python import estimator as tfr_estimator
 from tensorflow_ranking.python import feature as feature_lib
+from tensorflow_serving.apis import input_pb2
+
+
+ELWC_PROTO = text_format.Parse(
+    """
+    context {
+    }
+    examples {
+      features {
+        feature {
+          key: "custom_features_1"
+          value { float_list { value: 1.0 } }
+        }
+        feature {
+          key: "custom_features_2"
+          value { float_list { value: 1.0 } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 0.0 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "custom_features_1"
+          value { float_list { value: 1.0 } }
+        }
+        feature {
+          key: "custom_features_3"
+          value { float_list { value: 1.0 } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 1.0 } }
+        }
+      }
+    }
+    """, input_pb2.ExampleListWithContext())
+
+_LABEL_FEATURE = "utility"
+
+_PADDING_LABEL = -1
+
+# Prepares model directory, and train and eval data.
+DATA_DIR = tf.compat.v1.test.get_temp_dir()
+
+DATA_FILE = os.path.join(DATA_DIR, "test_elwc.tfrecord")
+
+
+def context_feature_column():
+  return {}
+
+
+def example_feature_columns():
+  """Returns the feature columns."""
+  feature_names = [
+      "custom_features_%d" % (i + 1) for i in range(0, 3)
+  ]
+  return {
+      name:
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      for name in feature_names
+  }
+
+
+def _inner_input_fn():
+  context_feature_spec = tf.feature_column.make_parse_example_spec(
+      list(context_feature_column().values()))
+  label_column = tf.feature_column.numeric_column(
+      _LABEL_FEATURE, default_value=_PADDING_LABEL)
+  example_feature_spec = tf.feature_column.make_parse_example_spec(
+      list(example_feature_columns().values()) + [label_column])
+  dataset = data.build_ranking_dataset(
+      file_pattern=DATA_FILE,
+      data_format=data.ELWC,
+      batch_size=10,
+      context_feature_spec=context_feature_spec,
+      example_feature_spec=example_feature_spec,
+      list_size=2,
+      reader=tf.data.TFRecordDataset)
+  features = tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
+  label = tf.squeeze(features.pop(_LABEL_FEATURE), axis=2)
+  return features, label
 
 
 def _example_feature_columns():
@@ -225,6 +313,33 @@ class EstimatorBuilderTest(tf.test.TestCase):
         hparams=_get_hparams())
     self.assertIsInstance(estimator_with_adam_optimizer._optimizer,
                           tf.compat.v1.train.AdamOptimizer)
+
+
+class DNNEstimatorTest(tf.test.TestCase):
+
+  def test_experiment(self):
+    serialized_elwc_list = [
+        ELWC_PROTO.SerializeToString(),
+    ] * 10
+
+    if tf.io.gfile.exists(DATA_FILE):
+      tf.io.gfile.remove(DATA_FILE)
+    with tf.io.TFRecordWriter(DATA_FILE) as writer:
+      for serialized_elwc in serialized_elwc_list:
+        writer.write(serialized_elwc)
+
+    estimator = tfr_estimator.make_dnn_ranking_estimator(
+        example_feature_columns=example_feature_columns(),
+        hidden_units=["2", "2"],
+        optimizer=tf.compat.v1.train.AdamOptimizer(learning_rate=0.05),
+        learning_rate=0.05,
+        loss="softmax_loss",
+        use_batch_norm=False,
+        model_dir=None)
+    train_spec = tf.estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
+    eval_spec = tf.estimator.EvalSpec(
+        name="eval", input_fn=_inner_input_fn, steps=10)
+    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 if __name__ == "__main__":
