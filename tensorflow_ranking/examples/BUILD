@@ -1,5 +1,8 @@
 # Description:
 # TensorFlow Ranking examples.
+
+# Placeholder for internal Python version compatibility macro.
+
 package(
     default_visibility = [
         "//tensorflow_ranking:__subpackages__",
@@ -9,8 +12,6 @@ package(
 licenses(["notice"])  # Apache 2.0
 
 exports_files(["LICENSE"])
-
-# Placeholder for internal Python version compatibility macro.
 
 py_library(
     name = "tf_ranking_libsvm_lib",
