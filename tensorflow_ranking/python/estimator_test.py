@@ -28,7 +28,6 @@ from tensorflow_ranking.python import estimator as tfr_estimator
 from tensorflow_ranking.python import feature as feature_lib
 from tensorflow_serving.apis import input_pb2
 
-
 ELWC_PROTO = text_format.Parse(
     """
     context {
@@ -83,9 +82,7 @@ def context_feature_column():
 
 def example_feature_columns():
   """Returns the feature columns."""
-  feature_names = [
-      "custom_features_%d" % (i + 1) for i in range(0, 3)
-  ]
+  feature_names = ["custom_features_%d" % (i + 1) for i in range(0, 3)]
   return {
       name:
       tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
@@ -161,6 +158,7 @@ def _get_hparams():
       num_eval_steps=100,
       loss="softmax_loss",
       list_size=10,
+      listwise_inference=False,
       convert_labels_to_binary=False,
       model_dir=None)
   return hparams
@@ -168,12 +166,12 @@ def _get_hparams():
 
 class EstimatorBuilderTest(tf.test.TestCase):
 
-  def _create_default_estimator(self):
+  def _create_default_estimator(self, hparams=None):
     return tfr_estimator.EstimatorBuilder(
         _context_feature_columns(),
         _example_feature_columns(),
         _scoring_function,
-        hparams=_get_hparams())
+        hparams=(hparams or _get_hparams()))
 
   def test_create_estimator_with_misspecified_args(self):
     hparams = _get_hparams()
@@ -220,7 +218,7 @@ class EstimatorBuilderTest(tf.test.TestCase):
         hparams=_get_hparams())
     self.assertIsInstance(pip, tfr_estimator.EstimatorBuilder)
 
-  def test_default_transform_fn(self):
+  def test_transform_fn_train(self):
     estimator_with_default_transform_fn = self._create_default_estimator()
 
     # The below tests the `transform_fn` in the TRAIN mode. In this mode, the
@@ -244,9 +242,12 @@ class EstimatorBuilderTest(tf.test.TestCase):
     self.assertAllEqual(tf.ones(shape=[10, 1]), context["c1"])
     self.assertAllEqual(tf.ones(shape=[10, 10, 1]), example["f1"])
 
-    # The below tests the `transform_fn` in the PREDICT mode. In this mode, the
-    # `_transform_fn` invokes the `encode_pointwise_features()`, which requires
-    # 2D example features and 2D context features.
+  def test_transform_fn_predict_pointwise_inference(self):
+    estimator_with_default_transform_fn = self._create_default_estimator()
+
+    # The below tests `transform_fn` in PREDICT mode with pointwise inference.
+    # In this mode, `_transform_fn` invokes the `encode_pointwise_features()`,
+    # which requires 2D example features and 2D context features.
     context, example = estimator_with_default_transform_fn._transform_fn(
         {
             "f1": tf.ones([10, 1], dtype=tf.float32),
@@ -259,6 +260,33 @@ class EstimatorBuilderTest(tf.test.TestCase):
     # After transformation, we get 2D context tensor and 3D example tensor.
     self.assertAllEqual(tf.ones(shape=[10, 1]), context["c1"])
     self.assertAllEqual(tf.ones(shape=[10, 1, 1]), example["f1"])
+
+  def test_transform_fn_listwise_inference(self):
+    hparams = _get_hparams()
+    hparams["listwise_inference"] = True
+    estimator_with_default_transform_fn = self._create_default_estimator(
+        hparams=hparams)
+
+    # The below tests the `transform_fn` in the TRAIN mode. In this mode, the
+    # `_transform_fn` invokes the `encode_listwise_features()`, which requires
+    # 3D example features and 2D context features.
+    context, example = estimator_with_default_transform_fn._transform_fn(
+        {
+            "f1": tf.ones([10, 10, 1], dtype=tf.float32),
+            "f2": tf.ones([10, 10, 1], dtype=tf.float32) * 2.0,
+            "f3": tf.ones([10, 10, 1], dtype=tf.float32) * 3.0,
+            "c1": tf.ones([10, 1], dtype=tf.float32),
+            "c2": tf.ones([10, 1], dtype=tf.float32) * 2.0,
+        }, tf.estimator.ModeKeys.PREDICT)
+    # `c1` is the only context feature defined in `_context_feature_columns()`.
+    self.assertCountEqual(context.keys(), ["c1"])
+
+    # `f1`, `f2`, `f3` are all defined in the `_example_feature_columns()`.
+    self.assertCountEqual(example.keys(), ["f1", "f2", "f3"])
+
+    # Validates the `context` and `example` features are transformed correctly.
+    self.assertAllEqual(tf.ones(shape=[10, 1]), context["c1"])
+    self.assertAllEqual(tf.ones(shape=[10, 10, 1]), example["f1"])
 
   def test_custom_transform_fn(self):
     estimator_with_customized_transform_fn = tfr_estimator.EstimatorBuilder(

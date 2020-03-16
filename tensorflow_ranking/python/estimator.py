@@ -100,6 +100,7 @@ class EstimatorBuilder(object):
   }
   hparams = dict(
       checkpoint_secs=120,
+      listwise_inference=False,
       loss="softmax_loss",
       model_dir="/path/to/your/model_dir/",
       num_checkpoints=100)
@@ -213,7 +214,8 @@ class EstimatorBuilder(object):
   def _required_hparam_keys(self):
     """Returns a list of keys for required hparams."""
     required_hparam_keys = [
-        "checkpoint_secs", "loss", "model_dir", "num_checkpoints"
+        "checkpoint_secs", "listwise_inference", "loss", "model_dir",
+        "num_checkpoints"
     ]
     return required_hparam_keys
 
@@ -232,7 +234,8 @@ class EstimatorBuilder(object):
     if self._transform_function is not None:
       return self._transform_function(features=features, mode=mode)
 
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if (mode == tf.estimator.ModeKeys.PREDICT and
+        not self._hparams.get("listwise_inference")):
       return feature.encode_pointwise_features(
           features=features,
           context_feature_columns=self._context_feature_columns,
@@ -255,8 +258,9 @@ class EstimatorBuilder(object):
             metrics.RankingMetricKey.NDCG, topn=topn) for topn in [5, 10]
     })
     metric_fns.update({
-        "metric/mrr_%d" % topn: metrics.make_ranking_metric_fn(
-            metrics.RankingMetricKey.MRR, topn=topn) for topn in [10]
+        "metric/mrr_%d" % topn:
+        metrics.make_ranking_metric_fn(metrics.RankingMetricKey.MRR, topn=topn)
+        for topn in [10]
     })
     metric_fns.update({
         "metric/%s" % name: metrics.make_ranking_metric_fn(name) for name in
@@ -400,6 +404,7 @@ def make_dnn_ranking_estimator(
     context_feature_columns=None,
     optimizer=None,
     learning_rate=0.05,
+    listwise_inference=False,
     loss="approx_ndcg_loss",
     loss_reduction=tf.compat.v1.losses.Reduction.SUM_OVER_BATCH_SIZE,
     activation_fn=tf.nn.relu,
@@ -420,10 +425,12 @@ def make_dnn_ranking_estimator(
     optimizer: (`tf.Optimizer`) An `Optimizer` object for model optimzation.
     learning_rate: (float) Only used if `optimizer` is a string. Defaults to
       0.05.
+    listwise_inference: (bool) Whether the inference will be performed with the
+      listwise data format such as `ExampleListWithContext`.
     loss: (str) A string to decide the loss function used in training. See
       `RankingLossKey` class for possible values.
-    loss_reduction: (str) An enum of strings indicating the loss reduction
-      type. See type definition in the `tf.compat.v1.losses.Reduction`.
+    loss_reduction: (str) An enum of strings indicating the loss reduction type.
+      See type definition in the `tf.compat.v1.losses.Reduction`.
     activation_fn: Activation function applied to each layer. If `None`, will
       use `tf.nn.relu`.
     dropout: (float) When not `None`, the probability we will drop out a given
@@ -452,6 +459,7 @@ def make_dnn_ranking_estimator(
   hparams = dict(
       model_dir=model_dir,
       learning_rate=learning_rate,
+      listwise_inference=listwise_inference,
       loss=loss,
       checkpoint_secs=checkpoint_secs,
       num_checkpoints=num_checkpoints)

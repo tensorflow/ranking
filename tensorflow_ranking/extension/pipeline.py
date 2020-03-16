@@ -58,6 +58,7 @@ class RankingPipeline(object):
         num_eval_steps=100,
         loss="softmax_loss",
         list_size=10,
+        listwise_inference=False,
         convert_labels_to_binary=False,
         model_dir="/path/to/your/model/directory")
 
@@ -140,7 +141,6 @@ class RankingPipeline(object):
                dataset_reader=tf.data.TFRecordDataset,
                best_exporter_metric=None,
                best_exporter_metric_higher_better=True,
-               export_elwc=False,
                size_feature_name=None):
     """Constructor.
 
@@ -156,8 +156,6 @@ class RankingPipeline(object):
         None, exports the model with the minimal loss value.
       best_exporter_metric_higher_better: (bool) If a higher metric is better.
         This is only used if `best_exporter_metric` is not None.
-      export_elwc: (bool) Whether to export a TF-Ranking model that accepts ELWC
-        (`ExampleListWithContext`) while serving. Default to not support ELWC.
       size_feature_name: (str) If set, populates the feature dictionary with
         this name and the coresponding value is a `tf.int32` Tensor of shape
         [batch_size] indicating the actual sizes of the example lists before
@@ -176,7 +174,6 @@ class RankingPipeline(object):
     self._best_exporter_metric = best_exporter_metric
     self._best_exporter_metric_higher_better = (
         best_exporter_metric_higher_better)
-    self._export_elwc = export_elwc
     self._size_feature_name = size_feature_name
 
   def _required_hparam_keys(self):
@@ -185,7 +182,7 @@ class RankingPipeline(object):
         "train_input_pattern", "eval_input_pattern", "train_batch_size",
         "eval_batch_size", "checkpoint_secs", "num_checkpoints",
         "num_train_steps", "num_eval_steps", "loss", "list_size",
-        "convert_labels_to_binary", "model_dir"
+        "convert_labels_to_binary", "model_dir", "listwise_inference"
     ]
     return required_hparam_keys
 
@@ -315,7 +312,7 @@ class RankingPipeline(object):
     example_feature_spec = tf.feature_column.make_parse_example_spec(
         self._example_feature_columns.values())
 
-    if self._export_elwc:
+    if self._hparams.get("listwise_inference"):
       # Exports accept the `ExampleListWithContext` format during serving.
       return tfr_data.build_ranking_serving_input_receiver_fn(
           data_format=tfr_data.ELWC,

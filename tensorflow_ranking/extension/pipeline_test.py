@@ -112,7 +112,8 @@ def _make_hparams(train_input_pattern,
                   num_train_steps=1,
                   num_eval_steps=1,
                   checkpoint_secs=1,
-                  num_checkpoints=2):
+                  num_checkpoints=2,
+                  listwise_inference=False):
   return dict(
       train_input_pattern=train_input_pattern,
       eval_input_pattern=eval_input_pattern,
@@ -125,6 +126,7 @@ def _make_hparams(train_input_pattern,
       num_eval_steps=num_eval_steps,
       loss="softmax_loss",
       list_size=list_size,
+      listwise_inference=listwise_inference,
       convert_labels_to_binary=False,
       model_dir=model_dir)
 
@@ -215,15 +217,15 @@ class RankingPipelineTest(tf.test.TestCase):
         label_feature_type=tf.float32)
     pip.train_and_eval()
 
-    pip_export_elwc = pipeline.RankingPipeline(
+    hparams["listwise_inference"] = True
+    pip_listwise_export = pipeline.RankingPipeline(
         _context_feature_columns(),
         _example_feature_columns(),
         hparams=hparams,
         estimator=estimator,
         label_feature_name="utility",
-        label_feature_type=tf.float32,
-        export_elwc=True)
-    pip_export_elwc.train_and_eval()
+        label_feature_type=tf.float32)
+    pip_listwise_export.train_and_eval()
 
     # Does not support non-local training.
     with self.assertRaises(ValueError):
@@ -283,7 +285,7 @@ class RankingPipelineClient(object):
       cur_layer = tf.nn.relu(cur_layer)
     return tf.compat.v1.layers.dense(cur_layer, units=1)
 
-  def build_pipeline(self, hparams, export_elwc=False, size_feature_name=None):
+  def build_pipeline(self, hparams, size_feature_name=None):
     estimator = tfr.estimator.EstimatorBuilder(
         context_feature_columns=_context_feature_columns(),
         example_feature_columns=_example_feature_columns(),
@@ -296,7 +298,6 @@ class RankingPipelineClient(object):
         estimator=estimator,
         label_feature_name="utility",
         label_feature_type=tf.float32,
-        export_elwc=export_elwc,
         size_feature_name=size_feature_name)
 
   def build_best_exporter_pipeline(self, hparams):
@@ -375,7 +376,7 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
     self.assertTrue(
         tf.io.gfile.exists(model_dir + "export/best_model_by_metric"))
 
-  def test_pipeline_with_export_elwc(self):
+  def test_pipeline_with_listwise_inference(self):
     model_dir = self._model_dir + "pipeline-elwc/"
     hparams = _make_hparams(
         train_input_pattern=self._data_file,
@@ -385,9 +386,10 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
         num_train_steps=3,
         num_eval_steps=3,
         checkpoint_secs=1,
-        num_checkpoints=2)
+        num_checkpoints=2,
+        listwise_inference=True)
 
-    pip = RankingPipelineClient().build_pipeline(hparams, export_elwc=True)
+    pip = RankingPipelineClient().build_pipeline(hparams)
     pip.train_and_eval(local_training=True)
 
     required_patterns = [

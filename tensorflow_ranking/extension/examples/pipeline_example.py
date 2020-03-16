@@ -72,6 +72,10 @@ flags.DEFINE_string(
     "loss", "softmax_loss",
     "The RankingLossKey deciding the loss function used in training.")
 flags.DEFINE_integer("list_size", None, "List size used for training.")
+flags.DEFINE_bool(
+    "listwise_inference", False,
+    "Whether the inference will be performed with the listwise data format "
+    "such as the `ExampleListWithContext`.")
 flags.DEFINE_bool("convert_labels_to_binary", False,
                   "If true, relevance labels are set to either 0 or 1.")
 flags.DEFINE_string("model_dir", None, "Output directory for models.")
@@ -161,6 +165,7 @@ def train_and_eval():
       num_eval_steps=FLAGS.num_eval_steps,
       loss=FLAGS.loss,
       list_size=FLAGS.list_size,
+      listwise_inference=FLAGS.listwise_inference,
       convert_labels_to_binary=FLAGS.convert_labels_to_binary,
       model_dir=FLAGS.model_dir)
 

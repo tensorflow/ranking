@@ -29,6 +29,9 @@ In the meantime, it should also involve TF-Ranking specific parameters such as:
    `list_size` is set, the number of examples larger than the `list_size` will
    be trucated, and smaller than the `list_size` will be padded. Please refer to
    `tfr.data.make_parsing_fn` for more details.
+*  `listwise_inference`. Default to be `False`. If `False`, the features will be
+   encoded using `tf.feature.encode_pointwise_features`; otherwise, the features
+   will be encoded by `tf.feature.encode_listwise_features`.
 
 In addition, we add a parameter `convert_labels_to_binary` for label processing.
 If the `convert_labels_to_binary` is set to be True, we convert a label to `1`
@@ -47,6 +50,7 @@ hparams = dict(
         num_eval_steps=100,
         loss="softmax_loss",
         list_size=10,
+        listwise_inference=False,
         convert_labels_to_binary=False,
         model_dir="/path/to/your/model/directory")
 ```
@@ -221,6 +225,7 @@ def scoring_function(context_features, example_features, mode):
       num_eval_steps=100,
       loss="softmax_loss",
       list_size=10,
+      listwise_inference=False,
       convert_labels_to_binary=False,
       model_dir="/path/to/your/model/directory")            # step 1
 
@@ -230,7 +235,7 @@ def scoring_function(context_features, example_features, mode):
         scoring_function=scoring_function,
         hparams=hparams).make_estimator()
 
-  ranking_pipeline = tfr.ext.pipeline.RankingPipeline(              # step 3
+  ranking_pipeline = tfr.ext.pipeline.RankingPipeline(      # step 3
         context_feature_columns(),
         example_feature_columns(),
         hparams=hparams,
