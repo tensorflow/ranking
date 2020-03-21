@@ -446,7 +446,7 @@ class MetricsTest(tf.test.TestCase):
       ])
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
-      rank_discount_fn = lambda rank: rank
+      rank_discount_fn = lambda rank: 1. / rank
 
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
@@ -714,7 +714,7 @@ class MetricsTest(tf.test.TestCase):
       ])
       # Testing different gain and discount functions
       gain_fn = lambda rel: rel
-      rank_discount_fn = lambda rank: rank
+      rank_discount_fn = lambda rank: 1. / rank
 
       def mod_dcg_fn(l, r):
         return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)

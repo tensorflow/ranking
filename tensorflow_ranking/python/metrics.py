@@ -340,8 +340,12 @@ def normalized_discounted_cumulative_gain(
       former case is per-example and the latter case is per-list.
     topn: A cutoff for how many examples to consider for this metric.
     name: A string used as the name for this metric.
-    gain_fn: (function) Transforms labels.
-    rank_discount_fn: (function) The rank discount function.
+    gain_fn: (function) Transforms labels. Note that this implementation of
+      NDCG assumes that this function is *increasing* as a function of its
+      imput.
+    rank_discount_fn: (function) The rank discount function. Note that this
+      implementation of NDCG assumes that this function is *decreasing* as a
+      function of its imput.
 
   Returns:
     A metric for the weighted normalized discounted cumulative gain of the
