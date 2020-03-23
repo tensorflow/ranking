@@ -25,6 +25,7 @@ py_library(
         ":losses",
         ":metrics",
         ":model",
+        "//tensorflow_ranking/python/keras",
     ],
 )
 
