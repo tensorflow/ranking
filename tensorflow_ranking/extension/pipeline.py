@@ -68,7 +68,7 @@ class RankingPipeline(object):
   ranking_pipeline = tfr.ext.pipeline.RankingPipeline(
         context_feature_columns,
         example_feature_columns,
-        hparams
+        hparams,
         estimator=estimator,
         label_feature_name="relevance",
         label_feature_type=tf.int64)
