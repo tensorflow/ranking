@@ -25,8 +25,7 @@ tfr.ext.pipeline.RankingPipeline(
     context_feature_columns, example_feature_columns, hparams, estimator,
     label_feature_name='relevance', label_feature_type=tf.int64,
     dataset_reader=tf.data.TFRecordDataset, best_exporter_metric=None,
-    best_exporter_metric_higher_better=True, export_elwc=False,
-    size_feature_name=None
+    best_exporter_metric_higher_better=True, size_feature_name=None
 )
 ```
 
@@ -56,6 +55,7 @@ hparams = dict(
       num_eval_steps=100,
       loss="softmax_loss",
       list_size=10,
+      listwise_inference=False,
       convert_labels_to_binary=False,
       model_dir="/path/to/your/model/directory")
 
@@ -65,7 +65,7 @@ estimator = <create your own estimator>
 ranking_pipeline = tfr.ext.pipeline.RankingPipeline(
       context_feature_columns,
       example_feature_columns,
-      hparams
+      hparams,
       estimator=estimator,
       label_feature_name="relevance",
       label_feature_type=tf.int64)
@@ -146,9 +146,6 @@ ranking_pipeline.train_and_eval()
     model. If None, exports the model with the minimal loss value.
 *   <b>`best_exporter_metric_higher_better`</b>: (bool) If a higher metric is
     better. This is only used if `best_exporter_metric` is not None.
-*   <b>`export_elwc`</b>: (bool) Whether to export a TF-Ranking model that
-    accepts ELWC (`ExampleListWithContext`) while serving. Default to not
-    support ELWC.
 *   <b>`size_feature_name`</b>: (str) If set, populates the feature dictionary
     with this name and the coresponding value is a `tf.int32` Tensor of shape
     [batch_size] indicating the actual sizes of the example lists before padding

@@ -49,6 +49,7 @@ example_feature_columns = {
 }
 hparams = dict(
     checkpoint_secs=120,
+    listwise_inference=False,
     loss="softmax_loss",
     model_dir="/path/to/your/model_dir/",
     num_checkpoints=100)

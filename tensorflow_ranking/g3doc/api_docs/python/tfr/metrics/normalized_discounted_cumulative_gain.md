@@ -37,8 +37,12 @@ tfr.metrics.normalized_discounted_cumulative_gain(
     per-list.
 *   <b>`topn`</b>: A cutoff for how many examples to consider for this metric.
 *   <b>`name`</b>: A string used as the name for this metric.
-*   <b>`gain_fn`</b>: (function) Transforms labels.
-*   <b>`rank_discount_fn`</b>: (function) The rank discount function.
+*   <b>`gain_fn`</b>: (function) Transforms labels. Note that this
+    implementation of NDCG assumes that this function is *increasing* as a
+    function of its imput.
+*   <b>`rank_discount_fn`</b>: (function) The rank discount function. Note that
+    this implementation of NDCG assumes that this function is *decreasing* as a
+    function of its imput.
 
 #### Returns:
 

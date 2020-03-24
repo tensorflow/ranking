@@ -27,3 +27,8 @@ derive from this class and further tailor for their needs.
 
 [`class EstimatorBuilder`](../tfr/estimator/EstimatorBuilder.md): Builds a
 tf.estimator.Estimator for a TF-Ranking model.
+
+## Functions
+
+[`make_dnn_ranking_estimator(...)`](../tfr/estimator/make_dnn_ranking_estimator.md):
+Builds an `Estimator` instance with DNN scoring function.

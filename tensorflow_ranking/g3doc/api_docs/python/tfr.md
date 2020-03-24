@@ -33,6 +33,8 @@ library.
 
 [`head`](./tfr/head.md) module: Defines `Head`s of TF ranking models.
 
+[`keras`](./tfr/keras.md) module: TensorFlow Ranking Keras Module.
+
 [`losses`](./tfr/losses.md) module: Defines ranking losses as TF ops.
 
 [`metrics`](./tfr/metrics.md) module: Defines ranking metrics as TF ops.
@@ -43,4 +45,4 @@ library.
 
 ## Other Members
 
-*   `__version__ = '0.2.3.dev'` <a id="__version__"></a>
+*   `__version__ = '0.2.4.dev'` <a id="__version__"></a>

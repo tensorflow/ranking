@@ -29,6 +29,8 @@ of max DCG.
 [`is_label_valid(...)`](../tfr/utils/is_label_valid.md): Returns a boolean
 `Tensor` for label validity.
 
+[`ndcg(...)`](../tfr/utils/ndcg.md): Computes NDCG from labels and ranks.
+
 [`organize_valid_indices(...)`](../tfr/utils/organize_valid_indices.md):
 Organizes indices in such a way that valid items appear first.
 
