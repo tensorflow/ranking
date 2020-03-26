@@ -93,3 +93,44 @@ py_test(
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
+
+py_library(
+    name = "tf_ranking_canned_dnn_lib",
+    srcs = ["tf_ranking_canned_dnn.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        # py/absl/flags dep,
+        # py/tensorflow dep,
+        "//tensorflow_ranking",
+    ],
+)
+
+py_binary(
+    name = "tf_ranking_canned_dnn_py_binary",
+    srcs = ["tf_ranking_canned_dnn.py"],
+    main = "tf_ranking_canned_dnn.py",
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
+    deps = [
+        ":tf_ranking_canned_dnn_lib",
+    ],
+)
+
+py_test(
+    name = "tf_ranking_canned_dnn_test",
+    size = "large",
+    srcs = ["tf_ranking_canned_dnn_test.py"],
+    srcs_version = "PY2AND3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":tf_ranking_canned_dnn_lib",
+        # py/absl/flags dep,
+        # py/absl/testing:flagsaver dep,
+        # py/absl/testing:parameterized dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
