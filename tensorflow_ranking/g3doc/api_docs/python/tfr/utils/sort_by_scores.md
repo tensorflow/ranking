@@ -5,7 +5,7 @@
 
 # tfr.utils.sort_by_scores
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Sorts example features according to per-example scores.
 
 ```python
 tfr.utils.sort_by_scores(
-    scores,
-    features_list,
-    topn=None,
-    shuffle_ties=True
+    scores, features_list, topn=None, shuffle_ties=True, seed=None
 )
 ```
 
@@ -40,6 +35,7 @@ tfr.utils.sort_by_scores(
 *   <b>`topn`</b>: An integer as the cutoff of examples in the sorted list.
 *   <b>`shuffle_ties`</b>: A boolean. If True, randomly shuffle before the
     sorting.
+*   <b>`seed`</b>: The ops-level random seed used when `shuffle_ties` is True.
 
 #### Returns:
 

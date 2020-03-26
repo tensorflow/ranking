@@ -12,7 +12,7 @@
 
 # tfr.metrics.RankingMetricKey
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -23,15 +23,11 @@
   </a>
 </td></table>
 
-## Class `RankingMetricKey`
-
-<!-- Start diff -->
-
 Ranking metric key strings.
 
 <!-- Placeholder for "Used in" -->
 
-## Class Members
+## Class Variables
 
 *   `ARP = 'arp'` <a id="ARP"></a>
 *   `DCG = 'dcg'` <a id="DCG"></a>

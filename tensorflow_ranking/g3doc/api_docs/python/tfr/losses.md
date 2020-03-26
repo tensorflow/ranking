@@ -5,6 +5,8 @@
 
 # Module: tfr.losses
 
+<!-- Insert buttons and diff -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -19,11 +21,6 @@ Defines ranking losses as TF ops.
 
 The losses here are used to learn TF ranking models. It works with listwise
 Tensors only.
-
-## Modules
-
-[`losses_impl`](../tfr/losses/losses_impl.md) module: Implements the losses for
-TF-Ranking.
 
 ## Classes
 

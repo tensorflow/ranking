@@ -5,7 +5,7 @@
 
 # tfr.losses.make_loss_metric_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Factory method to create a metric based on a loss.
 
 ```python
 tfr.losses.make_loss_metric_fn(
-    loss_key,
-    weights_feature_name=None,
-    lambda_weight=None,
-    name=None
+    loss_key, weights_feature_name=None, lambda_weight=None, name=None
 )
 ```
 

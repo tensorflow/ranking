@@ -58,6 +58,46 @@ class RankingMetricKey(object):
   ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'
 
 
+def compute_mean(metric_key,
+                 labels,
+                 predictions,
+                 weights=None,
+                 topn=None,
+                 name=None):
+  """Returns the mean of the specified metric given the inputs.
+
+  Args:
+    metric_key: A key in `RankingMetricKey`.
+    labels: A `Tensor` of the same shape as `predictions` representing
+      relevance.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: An `integer` specifying the cutoff of how many items are considered in
+      the metric.
+    name: A `string` used as the name for this metric.
+
+  Returns:
+    A scalar as the computed metric.
+  """
+  metric_dict = {
+      RankingMetricKey.ARP: metrics_impl.ARPMetric(metric_key),
+      RankingMetricKey.MRR: metrics_impl.MRRMetric(metric_key, topn),
+      RankingMetricKey.NDCG: metrics_impl.NDCGMetric(name, topn),
+      RankingMetricKey.DCG: metrics_impl.DCGMetric(name, topn),
+      RankingMetricKey.PRECISION: metrics_impl.PrecisionMetric(name, topn),
+      RankingMetricKey.MAP: metrics_impl.MeanAveragePrecisionMetric(name, topn),
+      RankingMetricKey.ORDERED_PAIR_ACCURACY: metrics_impl.OPAMetric(name),
+  }
+  assert metric_key in metric_dict, ('metric_key %s not supported.' %
+                                     metric_key)
+  metric, weight = metric_dict[metric_key].compute(labels, predictions, weights)
+  return tf.compat.v1.div_no_nan(
+      tf.reduce_sum(input_tensor=metric * weight),
+      tf.reduce_sum(input_tensor=weight))
+
+
 def make_ranking_metric_fn(metric_key,
                            weights_feature_name=None,
                            topn=None,
@@ -300,8 +340,12 @@ def normalized_discounted_cumulative_gain(
       former case is per-example and the latter case is per-list.
     topn: A cutoff for how many examples to consider for this metric.
     name: A string used as the name for this metric.
-    gain_fn: (function) Transforms labels.
-    rank_discount_fn: (function) The rank discount function.
+    gain_fn: (function) Transforms labels. Note that this implementation of
+      NDCG assumes that this function is *increasing* as a function of its
+      imput.
+    rank_discount_fn: (function) The rank discount function. Note that this
+      implementation of NDCG assumes that this function is *decreasing* as a
+      function of its imput.
 
   Returns:
     A metric for the weighted normalized discounted cumulative gain of the

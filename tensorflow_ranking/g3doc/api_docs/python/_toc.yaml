@@ -27,6 +27,24 @@ toc:
     path: /ranking/api_docs/python/tfr/data/parse_from_sequence_example
   - title: read_batched_sequence_example_dataset
     path: /ranking/api_docs/python/tfr/data/read_batched_sequence_example_dataset
+- title: tfr.estimator
+  section:
+  - title: Overview
+    path: /ranking/api_docs/python/tfr/estimator
+  - title: EstimatorBuilder
+    path: /ranking/api_docs/python/tfr/estimator/EstimatorBuilder
+  - title: make_dnn_ranking_estimator
+    path: /ranking/api_docs/python/tfr/estimator/make_dnn_ranking_estimator
+- title: tfr.ext
+  section:
+  - title: Overview
+    path: /ranking/api_docs/python/tfr/ext
+  - title: pipeline
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/ext/pipeline
+    - title: RankingPipeline
+      path: /ranking/api_docs/python/tfr/ext/pipeline/RankingPipeline
 - title: tfr.feature
   section:
   - title: Overview
@@ -47,6 +65,98 @@ toc:
     path: /ranking/api_docs/python/tfr/head/create_multi_ranking_head
   - title: create_ranking_head
     path: /ranking/api_docs/python/tfr/head/create_ranking_head
+- title: tfr.keras
+  section:
+  - title: Overview
+    path: /ranking/api_docs/python/tfr/keras
+  - title: canned
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/canned
+    - title: DNNRankingNetwork
+      path: /ranking/api_docs/python/tfr/keras/canned/DNNRankingNetwork
+    - title: dnn
+      section:
+      - title: Overview
+        path: /ranking/api_docs/python/tfr/keras/canned/dnn
+  - title: estimator
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/estimator
+    - title: model_to_estimator
+      path: /ranking/api_docs/python/tfr/keras/estimator/model_to_estimator
+  - title: feature
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/feature
+    - title: create_keras_inputs
+      path: /ranking/api_docs/python/tfr/keras/feature/create_keras_inputs
+    - title: EncodeListwiseFeatures
+      path: /ranking/api_docs/python/tfr/keras/feature/EncodeListwiseFeatures
+    - title: GenerateMask
+      path: /ranking/api_docs/python/tfr/keras/feature/GenerateMask
+  - title: losses
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/losses
+    - title: ApproxMRRLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/ApproxMRRLoss
+    - title: ApproxNDCGLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/ApproxNDCGLoss
+    - title: get
+      path: /ranking/api_docs/python/tfr/keras/losses/get
+    - title: GumbelApproxNDCGLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/GumbelApproxNDCGLoss
+    - title: ListMLELoss
+      path: /ranking/api_docs/python/tfr/keras/losses/ListMLELoss
+    - title: MeanSquaredLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/MeanSquaredLoss
+    - title: PairwiseHingeLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/PairwiseHingeLoss
+    - title: PairwiseLogisticLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/PairwiseLogisticLoss
+    - title: PairwiseSoftZeroOneLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/PairwiseSoftZeroOneLoss
+    - title: RankingLossKey
+      path: /ranking/api_docs/python/tfr/keras/losses/RankingLossKey
+    - title: SigmoidCrossEntropyLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/SigmoidCrossEntropyLoss
+    - title: SoftmaxLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/SoftmaxLoss
+  - title: metrics
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/metrics
+    - title: ARPMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/ARPMetric
+    - title: DCGMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/DCGMetric
+    - title: default_keras_metrics
+      path: /ranking/api_docs/python/tfr/keras/metrics/default_keras_metrics
+    - title: MeanAveragePrecisionMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/MeanAveragePrecisionMetric
+    - title: MRRMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/MRRMetric
+    - title: NDCGMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/NDCGMetric
+    - title: OPAMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/OPAMetric
+    - title: PrecisionMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/PrecisionMetric
+  - title: model
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/model
+    - title: create_keras_model
+      path: /ranking/api_docs/python/tfr/keras/model/create_keras_model
+  - title: network
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/network
+    - title: RankingNetwork
+      path: /ranking/api_docs/python/tfr/keras/network/RankingNetwork
+    - title: UnivariateRankingNetwork
+      path: /ranking/api_docs/python/tfr/keras/network/UnivariateRankingNetwork
 - title: tfr.losses
   section:
   - title: Overview
@@ -63,42 +173,18 @@ toc:
     path: /ranking/api_docs/python/tfr/losses/make_loss_metric_fn
   - title: RankingLossKey
     path: /ranking/api_docs/python/tfr/losses/RankingLossKey
-  - title: losses_impl
-    section:
-    - title: Overview
-      path: /ranking/api_docs/python/tfr/losses/losses_impl
-    - title: ApproxMRRLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ApproxMRRLoss
-    - title: ApproxNDCGLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ApproxNDCGLoss
-    - title: DCGLambdaWeight
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/DCGLambdaWeight
-    - title: ListMLELambdaWeight
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ListMLELambdaWeight
-    - title: ListMLELoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/ListMLELoss
-    - title: MeanSquaredLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/MeanSquaredLoss
-    - title: PairwiseHingeLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PairwiseHingeLoss
-    - title: PairwiseLogisticLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PairwiseLogisticLoss
-    - title: PairwiseSoftZeroOneLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PairwiseSoftZeroOneLoss
-    - title: PrecisionLambdaWeight
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/PrecisionLambdaWeight
-    - title: SigmoidCrossEntropyLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/SigmoidCrossEntropyLoss
-    - title: SoftmaxLoss
-      path: /ranking/api_docs/python/tfr/losses/losses_impl/SoftmaxLoss
 - title: tfr.metrics
   section:
   - title: Overview
     path: /ranking/api_docs/python/tfr/metrics
   - title: average_relevance_position
     path: /ranking/api_docs/python/tfr/metrics/average_relevance_position
+  - title: compute_mean
+    path: /ranking/api_docs/python/tfr/metrics/compute_mean
   - title: discounted_cumulative_gain
     path: /ranking/api_docs/python/tfr/metrics/discounted_cumulative_gain
+  - title: eval_metric
+    path: /ranking/api_docs/python/tfr/metrics/eval_metric
   - title: make_ranking_metric_fn
     path: /ranking/api_docs/python/tfr/metrics/make_ranking_metric_fn
   - title: mean_average_precision
@@ -129,6 +215,8 @@ toc:
     path: /ranking/api_docs/python/tfr/utils/inverse_max_dcg
   - title: is_label_valid
     path: /ranking/api_docs/python/tfr/utils/is_label_valid
+  - title: ndcg
+    path: /ranking/api_docs/python/tfr/utils/ndcg
   - title: organize_valid_indices
     path: /ranking/api_docs/python/tfr/utils/organize_valid_indices
   - title: padded_nd_indices
@@ -137,6 +225,10 @@ toc:
     path: /ranking/api_docs/python/tfr/utils/reshape_first_ndims
   - title: reshape_to_2d
     path: /ranking/api_docs/python/tfr/utils/reshape_to_2d
+  - title: scatter_to_2d
+    path: /ranking/api_docs/python/tfr/utils/scatter_to_2d
+  - title: segment_sorted_ranks
+    path: /ranking/api_docs/python/tfr/utils/segment_sorted_ranks
   - title: shuffle_valid_indices
     path: /ranking/api_docs/python/tfr/utils/shuffle_valid_indices
   - title: sorted_ranks

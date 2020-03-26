@@ -5,7 +5,7 @@
 
 # tfr.utils.approx_ranks
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,14 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes approximate ranks given a list of logits.
 
 ```python
 tfr.utils.approx_ranks(
-    logits,
-    alpha=10.0
+    logits, alpha=10.0
 )
 ```
 

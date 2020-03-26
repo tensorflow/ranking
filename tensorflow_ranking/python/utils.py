@@ -103,7 +103,7 @@ def sorted_ranks(scores, shuffle_ties=True, seed=None):
     A 1-based int `Tensor`s as the ranks.
   """
   with tf.compat.v1.name_scope(name='sorted_ranks'):
-    batch_size, list_size = tf.unstack(tf.shape(scores))
+    batch_size, list_size = tf.unstack(tf.shape(input=scores))
     # The current position in the list for each score.
     positions = tf.tile(tf.expand_dims(tf.range(list_size), 0), [batch_size, 1])
     # For score [[1.0, 3.5, 2.1]], sorted_positions are [[1, 2, 0]], meaning the
@@ -239,6 +239,39 @@ def inverse_max_dcg(labels,
       tf.zeros_like(discounted_gain))
 
 
+def ndcg(labels, ranks=None, perm_mat=None):
+  """Computes NDCG from labels and ranks.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size], representing graded
+      relevance.
+    ranks: A `Tensor` of the same shape as labels, or [1, list_size], or None.
+      If ranks=None, we assume the labels are sorted in their rank.
+    perm_mat: A `Tensor` with shape [batch_size, list_size, list_size] or None.
+      Permutation matrices with rows correpond to the ranks and columns
+      correspond to the indices. An argmax over each row gives the index of the
+      element at the corresponding rank.
+
+  Returns:
+    A `tensor` of NDCG, ApproxNDCG, or ExpectedNDCG of shape [batch_size, 1].
+  """
+  if ranks is not None and perm_mat is not None:
+    raise ValueError('Cannot use both ranks and perm_mat simultaneously.')
+
+  if ranks is None:
+    list_size = tf.shape(labels)[1]
+    ranks = tf.range(list_size)+1
+  discounts = 1. / tf.math.log1p(tf.cast(ranks, dtype=tf.float32))
+  gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
+  if perm_mat is not None:
+    gains = tf.reduce_sum(
+        input_tensor=perm_mat * tf.expand_dims(gains, 1), axis=-1)
+  dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
+  ndcg_ = dcg * inverse_max_dcg(labels)
+
+  return ndcg_
+
+
 def reshape_to_2d(tensor):
   """Converts the given `tensor` to a 2-D `Tensor`."""
   with tf.compat.v1.name_scope(name='reshape_to_2d'):
@@ -276,7 +309,8 @@ def _circular_indices(size, num_valid_entries):
   with tf.compat.v1.name_scope(name='circular_indices'):
     # shape = [batch_size, size] with value [[0, 1, ...], [0, 1, ...], ...].
     batch_indices = tf.tile(
-        tf.expand_dims(tf.range(size), 0), [tf.shape(num_valid_entries)[0], 1])
+        tf.expand_dims(tf.range(size), 0),
+        [tf.shape(input=num_valid_entries)[0], 1])
     num_valid_entries = tf.reshape(num_valid_entries, [-1, 1])
     batch_indices_mask = tf.less(batch_indices, num_valid_entries)
     # Use mod to make the indices to the ranges of valid entries.
@@ -336,3 +370,132 @@ def padded_nd_indices(is_valid, shuffle=False, seed=None):
     nd_indices = _to_nd_indices(indices)
     nd_indices = tf.gather_nd(shuffled_indices, nd_indices)
     return nd_indices, mask
+
+
+def _in_segment_indices(segments):
+  """Returns 0-based indices per segment."""
+  with tf.compat.v1.name_scope(name='_in_segment_indices'):
+    # Say segments = [0, 0, 0, 1, 2, 2]. The in-segment indices are [0, 1, 2 |
+    # 0 | 0, 1], where we use | to mark the boundaries of the segments.
+    segments.get_shape().assert_has_rank(1)
+    same_segments = tf.cast(
+        tf.equal(
+            tf.expand_dims(segments, axis=1), tf.expand_dims(segments, axis=0)),
+        tf.int32)
+    index = tf.range(tf.shape(input=segments)[0])
+    lower_triangle = tf.cast(
+        tf.greater(
+            tf.expand_dims(index, axis=1), tf.expand_dims(index, axis=0)),
+        tf.int32)
+    # Returns [0, 1, 2, 0, 0, 1] for segments [0, 0, 0, 1, 2, 2].
+    return tf.reduce_sum(input_tensor=same_segments * lower_triangle, axis=1)
+
+
+def scatter_to_2d(tensor, segments, pad_value, output_shape=None):
+  """Scatters a flattened 1-D `tensor` to 2-D with padding based on `segments`.
+
+  For example: tensor = [1, 2, 3], segments = [0, 1, 0] and pad_value = -1, then
+  the returned 2-D tensor is [[1, 3], [2, -1]]. The output_shape is inferred
+  when None is provided. In this case, the shape will be dynamic and may not be
+  compatible with TPU. For TPU use case, please provide the `output_shape`
+  explicitly.
+
+  Args:
+    tensor: A 1-D numeric `Tensor`.
+    segments: A 1-D int `Tensor` which is the idx output from tf.unique like [0,
+      0, 1, 0, 2]. See tf.unique. The segments may or may not be sorted.
+    pad_value: A numeric value to pad the output `Tensor`.
+    output_shape: A `Tensor` of size 2 telling the desired shape of the output
+      tensor. If None, the output_shape will be inferred and not fixed at
+      compilation time. When output_shape is smaller than needed, trucation will
+      be applied.
+
+  Returns:
+    A 2-D Tensor.
+  """
+  with tf.compat.v1.name_scope(name='scatter_to_2d'):
+    tensor = tf.convert_to_tensor(value=tensor)
+    segments = tf.convert_to_tensor(value=segments)
+    tensor.get_shape().assert_has_rank(1)
+    segments.get_shape().assert_has_rank(1)
+    tensor.get_shape().assert_is_compatible_with(segments.get_shape())
+
+    # Say segments = [0, 0, 0, 1, 2, 2]. We would like to build the 2nd dim so
+    # that we can use scatter_nd to distribute the value in `tensor` to 2-D. The
+    # needed 2nd dim for this case is [0, 1, 2, 0, 0, 1], which is the
+    # in-segment indices.
+    index_2nd_dim = _in_segment_indices(segments)
+
+    # Compute the output_shape.
+    if output_shape is None:
+      # Set output_shape to the inferred one.
+      output_shape = [
+          tf.reduce_max(input_tensor=segments) + 1,
+          tf.reduce_max(input_tensor=index_2nd_dim) + 1
+      ]
+    else:
+      # The output_shape may be smaller. We collapse the out-of-range ones into
+      # indices [output_shape[0], 0] and then use tf.slice to remove extra row
+      # and column after scatter.
+      valid_segments = tf.less(segments, output_shape[0])
+      valid_2nd_dim = tf.less(index_2nd_dim, output_shape[1])
+      mask = tf.logical_and(valid_segments, valid_2nd_dim)
+      segments = tf.compat.v1.where(mask, segments,
+                                    output_shape[0] * tf.ones_like(segments))
+      index_2nd_dim = tf.compat.v1.where(mask, index_2nd_dim,
+                                         tf.zeros_like(index_2nd_dim))
+    # Create the 2D Tensor. For padding, we add one extra row and column and
+    # then slice them to fit the output_shape.
+    nd_indices = tf.stack([segments, index_2nd_dim], axis=1)
+    padding = pad_value * tf.ones(
+        shape=(output_shape + tf.ones_like(output_shape)), dtype=tensor.dtype)
+    tensor = tf.tensor_scatter_nd_update(padding, nd_indices, tensor)
+    tensor = tf.slice(tensor, begin=[0, 0], size=output_shape)
+    return tensor
+
+
+def segment_sorted_ranks(scores, segments, shuffle_ties=True, seed=None):
+  """Returns an int `Tensor` as the ranks after sorting scores per segment.
+
+  The returned ranks are 1-based. For example:
+    scores = [1.0, 3.5, 2.1]
+    segments = [0, 0, 1]
+    returned ranks = [2, 1, 1]
+  The first 2 scores belong to the same segment and the first score 1.0 is at
+  rank 2 and second score 3.5 is in rank 1. The last score is in another segment
+  and its rank is 1 and there is no other scores in this segment.
+
+  Args:
+    scores: A 1-D `Tensor` representing the scores to be sorted.
+    segments: A 1-D `Tensor` representing the segments that each score belongs
+      to. This should be the same shape as the scores.
+    shuffle_ties: See `sort_by_scores`.
+    seed: See `sort_by_scores`.
+
+  Returns:
+    A 1-D int `Tensor`s as the ranks (1-based).
+  """
+  with tf.compat.v1.name_scope(name='sorted_ranks_by_segments'):
+    scores = tf.convert_to_tensor(value=scores)
+    segments = tf.convert_to_tensor(value=segments)
+    scores.get_shape().assert_has_rank(1)
+    segments.get_shape().assert_has_rank(1)
+    scores.get_shape().assert_is_compatible_with(segments.get_shape())
+
+    size = tf.shape(input=segments)[0]
+    orig_indices = tf.range(size)
+    # Compute per-segment ranks. The _in_segment_indices returns the 0 based
+    # indices in each segment on their order appeared in the segments. By
+    # sorting the segments based on the scores, we can then compute the ranks,
+    # sorted by scores, in each segment.
+    sorted_segments, sorted_indices = sort_by_scores(
+        tf.expand_dims(scores, 0),
+        [tf.expand_dims(segments, 0),
+         tf.expand_dims(orig_indices, 0)],
+        shuffle_ties=shuffle_ties,
+        seed=seed)
+    in_segment_ranks = _in_segment_indices(sorted_segments[0]) + 1
+
+    # Restores the computed ranks in segments to the original positions.
+    return tf.scatter_nd(
+        tf.expand_dims(sorted_indices[0], 1), in_segment_ranks, shape=[size])

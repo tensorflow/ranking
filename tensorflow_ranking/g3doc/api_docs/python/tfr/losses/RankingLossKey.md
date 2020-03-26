@@ -3,8 +3,11 @@
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="APPROX_MRR_LOSS"/>
 <meta itemprop="property" content="APPROX_NDCG_LOSS"/>
+<meta itemprop="property" content="GUMBEL_APPROX_NDCG_LOSS"/>
+<meta itemprop="property" content="GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS"/>
 <meta itemprop="property" content="LIST_MLE_LOSS"/>
 <meta itemprop="property" content="MEAN_SQUARED_LOSS"/>
+<meta itemprop="property" content="NEURAL_SORT_CROSS_ENTROPY_LOSS"/>
 <meta itemprop="property" content="PAIRWISE_HINGE_LOSS"/>
 <meta itemprop="property" content="PAIRWISE_LOGISTIC_LOSS"/>
 <meta itemprop="property" content="PAIRWISE_SOFT_ZERO_ONE_LOSS"/>
@@ -14,7 +17,7 @@
 
 # tfr.losses.RankingLossKey
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -25,20 +28,23 @@
   </a>
 </td></table>
 
-## Class `RankingLossKey`
-
-<!-- Start diff -->
-
 Ranking loss key strings.
 
 <!-- Placeholder for "Used in" -->
 
-## Class Members
+## Class Variables
 
 *   `APPROX_MRR_LOSS = 'approx_mrr_loss'` <a id="APPROX_MRR_LOSS"></a>
 *   `APPROX_NDCG_LOSS = 'approx_ndcg_loss'` <a id="APPROX_NDCG_LOSS"></a>
+*   `GUMBEL_APPROX_NDCG_LOSS = 'gumbel_approx_ndcg_loss'`
+    <a id="GUMBEL_APPROX_NDCG_LOSS"></a>
+*   `GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS =
+    'gumbel_neural_sort_cross_entropy_loss'`
+    <a id="GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS"></a>
 *   `LIST_MLE_LOSS = 'list_mle_loss'` <a id="LIST_MLE_LOSS"></a>
 *   `MEAN_SQUARED_LOSS = 'mean_squared_loss'` <a id="MEAN_SQUARED_LOSS"></a>
+*   `NEURAL_SORT_CROSS_ENTROPY_LOSS = 'neural_sort_cross_entropy_loss'`
+    <a id="NEURAL_SORT_CROSS_ENTROPY_LOSS"></a>
 *   `PAIRWISE_HINGE_LOSS = 'pairwise_hinge_loss'`
     <a id="PAIRWISE_HINGE_LOSS"></a>
 *   `PAIRWISE_LOGISTIC_LOSS = 'pairwise_logistic_loss'`

@@ -5,7 +5,7 @@
 
 # tfr.feature.make_identity_transform_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,12 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Returns transform fn that split the features.
 
 ```python
-tfr.feature.make_identity_transform_fn(context_feature_names)
+tfr.feature.make_identity_transform_fn(
+    context_feature_names
+)
 ```
 
 <!-- Placeholder for "Used in" -->

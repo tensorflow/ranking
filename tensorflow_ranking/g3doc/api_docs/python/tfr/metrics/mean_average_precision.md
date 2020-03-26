@@ -5,7 +5,7 @@
 
 # tfr.metrics.mean_average_precision
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,17 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes mean average precision (MAP).
 
 ```python
 tfr.metrics.mean_average_precision(
-    labels,
-    predictions,
-    weights=None,
-    topn=None,
-    name=None
+    labels, predictions, weights=None, topn=None, name=None
 )
 ```
 

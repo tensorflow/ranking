@@ -5,7 +5,7 @@
 
 # tfr.metrics.normalized_discounted_cumulative_gain
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,19 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes normalized discounted cumulative gain (NDCG).
 
 ```python
 tfr.metrics.normalized_discounted_cumulative_gain(
-    labels,
-    predictions,
-    weights=None,
-    topn=None,
-    name=None,
-    gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
+    labels, predictions, weights=None, topn=None, name=None,
+    gain_fn=_DEFAULT_GAIN_FN, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
 )
 ```
 
@@ -44,8 +37,12 @@ tfr.metrics.normalized_discounted_cumulative_gain(
     per-list.
 *   <b>`topn`</b>: A cutoff for how many examples to consider for this metric.
 *   <b>`name`</b>: A string used as the name for this metric.
-*   <b>`gain_fn`</b>: (function) Transforms labels.
-*   <b>`rank_discount_fn`</b>: (function) The rank discount function.
+*   <b>`gain_fn`</b>: (function) Transforms labels. Note that this
+    implementation of NDCG assumes that this function is *increasing* as a
+    function of its imput.
+*   <b>`rank_discount_fn`</b>: (function) The rank discount function. Note that
+    this implementation of NDCG assumes that this function is *decreasing* as a
+    function of its imput.
 
 #### Returns:
 

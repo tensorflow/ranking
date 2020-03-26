@@ -5,7 +5,7 @@
 
 # tfr.losses.make_loss_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,18 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Makes a loss function using a single loss or multiple losses.
 
 ```python
 tfr.losses.make_loss_fn(
-    loss_keys,
-    loss_weights=None,
-    weights_feature_name=None,
-    lambda_weight=None,
-    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
-    name=None,
+    loss_keys, loss_weights=None, weights_feature_name=None, lambda_weight=None,
+    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS, name=None,
     extra_args=None
 )
 ```

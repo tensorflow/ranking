@@ -5,7 +5,7 @@
 
 # tfr.utils.inverse_max_dcg
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes the inverse of max DCG.
 
 ```python
 tfr.utils.inverse_max_dcg(
-    labels,
-    gain_fn=(lambda labels: tf.pow(2.0, labels) - 1.0),
-    rank_discount_fn=(lambda rank: 1.0 / tf.math.log1p(rank)),
-    topn=None
+    labels, gain_fn=(lambda labels: tf.pow(2.0, labels) - 1.0),
+    rank_discount_fn=(lambda rank: 1.0 / tf.math.log1p(rank)), topn=None
 )
 ```
 

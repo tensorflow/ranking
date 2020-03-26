@@ -8,6 +8,8 @@
 
 # Module: tfr.data
 
+<!-- Insert buttons and diff -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>

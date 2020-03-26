@@ -5,6 +5,8 @@
 
 # Module: tfr.metrics
 
+<!-- Insert buttons and diff -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -31,8 +33,14 @@ key strings.
 [`average_relevance_position(...)`](../tfr/metrics/average_relevance_position.md):
 Computes average relevance position (ARP).
 
+[`compute_mean(...)`](../tfr/metrics/compute_mean.md): Returns the mean of the
+specified metric given the inputs.
+
 [`discounted_cumulative_gain(...)`](../tfr/metrics/discounted_cumulative_gain.md):
 Computes discounted cumulative gain (DCG).
+
+[`eval_metric(...)`](../tfr/metrics/eval_metric.md): A stand-alone method to
+evaluate metrics on ranked results.
 
 [`make_ranking_metric_fn(...)`](../tfr/metrics/make_ranking_metric_fn.md):
 Factory method to create a ranking metric function.

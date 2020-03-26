@@ -6,6 +6,8 @@
 
 # Module: tfr
 
+<!-- Insert buttons and diff -->
+
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
@@ -21,10 +23,17 @@ TensorFlow Ranking, the project to build ranking models on TensorFlow.
 
 [`data`](./tfr/data.md) module: Input data parsing for tf-ranking library.
 
+[`estimator`](./tfr/estimator.md) module: Provides an `EstimatorBuilder` for
+creating a TF-Ranking model estimator.
+
+[`ext`](./tfr/ext.md) module: TensorFlow Ranking library.
+
 [`feature`](./tfr/feature.md) module: Feature transformations for ranking
 library.
 
 [`head`](./tfr/head.md) module: Defines `Head`s of TF ranking models.
+
+[`keras`](./tfr/keras.md) module: TensorFlow Ranking Keras Module.
 
 [`losses`](./tfr/losses.md) module: Defines ranking losses as TF ops.
 
@@ -36,4 +45,4 @@ library.
 
 ## Other Members
 
-*   `__version__ = '0.2.0.dev'` <a id="__version__"></a>
+*   `__version__ = '0.2.4.dev'` <a id="__version__"></a>

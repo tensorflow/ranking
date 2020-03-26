@@ -164,6 +164,25 @@ class UtilsTest(tf.test.TestCase):
         inverse_max_dcg_1 = sess.run(inverse_max_dcg_1)
         self.assertAllClose(inverse_max_dcg_1, target_1)
 
+  def test_ndcg(self):
+    with tf.Graph().as_default():
+      labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
+      ranks = [[1, 2, 3, 4], [1, 3, 4, 2], [1, 2, 3, 4]]
+      perm_mat = [[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+                  [[1, 0, 0, 0], [0, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0]],
+                  [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]]
+      ndcg_ = [[0.679685], [0.95176], [0.]]
+      ndcg_rank = [[0.679685], [1.], [0.]]
+      ndcg_perm = [[0.679685], [1.], [0.]]
+
+      with tf.compat.v1.Session() as sess:
+        ndcg = sess.run(utils.ndcg(labels))
+        self.assertAllClose(ndcg, ndcg_)
+        ndcg = sess.run(utils.ndcg(labels, ranks))
+        self.assertAllClose(ndcg, ndcg_rank)
+        ndcg = sess.run(utils.ndcg(labels, perm_mat=perm_mat))
+        self.assertAllClose(ndcg, ndcg_perm)
+
   def test_reshape_to_2d(self):
     with tf.Graph().as_default():
       tensor_3d = tf.constant([[[1], [2], [3]], [[4], [5], [6]]])
@@ -238,6 +257,78 @@ class UtilsTest(tf.test.TestCase):
             ])
         # shape = [2, 3] = [batch_size, list_size]
         self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+
+  def test_scatter_to_2d(self):
+    with tf.Graph().as_default():
+      segments = [0, 0, 0, 1, 2, 2]
+      tensor = [0, 0, 0, 1, 2, 2]
+      pad_value = -1
+      expected = [[0, 0, 0], [1, -1, -1], [2, 2, -1]]
+      with tf.compat.v1.Session() as sess:
+        tensor_2d = sess.run(utils.scatter_to_2d(tensor, segments, pad_value))
+        self.assertAllEqual(tensor_2d, expected)
+
+  def test_scatter_to_2d_not_sorted(self):
+    with tf.Graph().as_default():
+      segments = [0, 0, 1, 0, 2, 2]
+      tensor = [0, 0, 1, 0, 2, 2]
+      pad_value = -1
+      expected = [[0, 0, 0], [1, -1, -1], [2, 2, -1]]
+      with tf.compat.v1.Session() as sess:
+        tensor_2d = sess.run(utils.scatter_to_2d(tensor, segments, pad_value))
+        self.assertAllEqual(tensor_2d, expected)
+
+  def test_scatter_to_2d_with_larger_output_shape(self):
+    with tf.Graph().as_default():
+      segments = [0, 0, 0, 1, 2, 2]
+      tensor = [0, 0, 0, 1, 2, 2]
+      pad_value = -1
+      larger_output_shape = [4, 4]
+      larger_expected = [
+          [0, 0, 0, -1],
+          [1, -1, -1, -1],
+          [2, 2, -1, -1],
+          [-1, -1, -1, -1],
+      ]
+      with tf.compat.v1.Session() as sess:
+        tensor_2d = sess.run(
+            utils.scatter_to_2d(tensor, segments, pad_value,
+                                larger_output_shape))
+        self.assertAllEqual(tensor_2d, larger_expected)
+
+  def test_scatter_to_2d_with_smaller_output_shape(self):
+    with tf.Graph().as_default():
+      segments = [0, 0, 0, 1, 2, 2]
+      tensor = [1, 0, 0, 1, 2, 2]
+      pad_value = -1
+      smaller_output_shape = [2, 2]
+      smaller_expected = [
+          [1, 0],
+          [1, -1],
+      ]
+      with tf.compat.v1.Session() as sess:
+        tensor_2d = sess.run(
+            utils.scatter_to_2d(tensor, segments, pad_value,
+                                smaller_output_shape))
+        self.assertAllEqual(tensor_2d, smaller_expected)
+
+  def test_segment_sorted_ranks(self):
+    with tf.Graph().as_default():
+      scores = [1., 3., 2., 1., 2., 3.]
+      segments = [0, 0, 0, 1, 2, 2]
+      expected = [3, 1, 2, 1, 2, 1]
+      with tf.compat.v1.Session() as sess:
+        ranks = sess.run(utils.segment_sorted_ranks(scores, segments, seed=1))
+        self.assertAllEqual(ranks, expected)
+
+  def test_segment_sorted_ranks_not_clustered(self):
+    with tf.Graph().as_default():
+      scores = [1., 3., 1., 2., 2., 3.]
+      segments = [0, 0, 1, 0, 2, 2]
+      expected = [3, 1, 1, 2, 2, 1]
+      with tf.compat.v1.Session() as sess:
+        ranks = sess.run(utils.segment_sorted_ranks(scores, segments, seed=1))
+        self.assertAllEqual(ranks, expected)
 
 
 if __name__ == '__main__':

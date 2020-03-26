@@ -5,7 +5,7 @@
 
 # tfr.metrics.make_ranking_metric_fn
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,18 +16,12 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Factory method to create a ranking metric function.
 
 ```python
 tfr.metrics.make_ranking_metric_fn(
-    metric_key,
-    weights_feature_name=None,
-    topn=None,
-    name=None,
-    gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
+    metric_key, weights_feature_name=None, topn=None, name=None,
+    gain_fn=_DEFAULT_GAIN_FN, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
 )
 ```
 

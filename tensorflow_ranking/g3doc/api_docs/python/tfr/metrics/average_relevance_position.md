@@ -5,7 +5,7 @@
 
 # tfr.metrics.average_relevance_position
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,16 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes average relevance position (ARP).
 
 ```python
 tfr.metrics.average_relevance_position(
-    labels,
-    predictions,
-    weights=None,
-    name=None
+    labels, predictions, weights=None, name=None
 )
 ```
 

@@ -5,7 +5,7 @@
 
 # tfr.metrics.mean_reciprocal_rank
 
-<!-- Insert buttons -->
+<!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
@@ -16,17 +16,11 @@
   </a>
 </td></table>
 
-<!-- Start diff -->
-
 Computes mean reciprocal rank (MRR).
 
 ```python
 tfr.metrics.mean_reciprocal_rank(
-    labels,
-    predictions,
-    weights=None,
-    topn=None,
-    name=None
+    labels, predictions, weights=None, topn=None, name=None
 )
 ```
 

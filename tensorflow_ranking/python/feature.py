@@ -154,8 +154,13 @@ def encode_listwise_features(features,
   # per-example features, we use the parsing feature specs.
   example_features = {}
   if example_feature_columns:
-    example_specs = tf.feature_column.make_parse_example_spec(
-        example_feature_columns.values())
+    if feature_column_lib.is_feature_column_v2(
+        example_feature_columns.values()):
+      example_specs = tf.compat.v2.feature_column.make_parse_example_spec(
+          example_feature_columns.values())
+    else:
+      example_specs = tf.compat.v1.feature_column.make_parse_example_spec(
+          example_feature_columns.values())
     example_name = next(six.iterkeys(example_specs))
     batch_size = tf.shape(input=features[example_name])[0]
     if input_size is None:

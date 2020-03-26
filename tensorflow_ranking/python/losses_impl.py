@@ -339,6 +339,81 @@ def _pairwise_comparison(labels, logits):
   return pairwise_labels, pairwise_logits
 
 
+def gumbel_softmax_sample(labels,
+                          logits,
+                          weights=None,
+                          name=None,
+                          sample_size=8,
+                          temperature=1.0,
+                          seed=None):
+  """Samples scores from Concrete(logits).
+
+  Args:
+    labels: A `Tensor` of the same shape as `logits` representing graded
+      relevance.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+      weights. If None, the weight of a list in the mini-batch is set to the sum
+      of the labels of the items in that list.
+    name: A string used as the name for this loss.
+    sample_size: An integer representing the number of samples drawn from the
+      Concrete distribution defined by scores.
+    temperature: The Gumbel-Softmax temperature.
+    seed: Seed for pseudo-random number generator.
+
+  Returns:
+    A tuple of expanded labels, logits, and weights where the first dimension
+    is now batch_size * sample_size. Logit Tensors are sampled from
+    Concrete(logits) while labels and weights are simply tiled so the resulting
+    Tensor has the updated dimensions.
+  """
+  with tf.compat.v1.name_scope(name, 'gumbel_softmax_sample',
+                               (labels, logits, weights)):
+    batch_size = tf.shape(input=labels)[0]
+    list_size = tf.shape(input=labels)[1]
+
+    # Expand labels.
+    expanded_labels = tf.expand_dims(labels, 1)
+    expanded_labels = tf.tile(expanded_labels, [1, sample_size, 1])
+    expanded_labels = tf.reshape(expanded_labels,
+                                 [batch_size * sample_size, list_size])
+
+    # Sample logits from Concrete(logits).
+    sampled_logits = tf.expand_dims(logits, 1)
+    sampled_logits = tf.tile(sampled_logits, [1, sample_size, 1])
+    sampled_logits += _sample_gumbel([batch_size, sample_size, list_size],
+                                     seed=seed)
+    sampled_logits = tf.reshape(sampled_logits,
+                                [batch_size * sample_size, list_size])
+
+    is_label_valid = utils.is_label_valid(expanded_labels)
+    sampled_logits = tf.compat.v1.where(
+        is_label_valid, sampled_logits / temperature,
+        tf.math.log(1e-20) * tf.ones_like(sampled_logits))
+    sampled_logits = tf.math.log(tf.nn.softmax(sampled_logits) + 1e-20)
+
+    expanded_weights = weights
+    if expanded_weights is not None:
+      true_fn = lambda: tf.expand_dims(tf.expand_dims(expanded_weights, 1), 1)
+      false_fn = lambda: tf.expand_dims(expanded_weights, 1)
+      expanded_weights = tf.cond(
+          pred=tf.math.equal(tf.rank(expanded_weights), 1),
+          true_fn=true_fn,
+          false_fn=false_fn)
+      expanded_weights = tf.tile(expanded_weights, [1, sample_size, 1])
+      expanded_weights = tf.reshape(expanded_weights,
+                                    [batch_size * sample_size, -1])
+
+    return expanded_labels, sampled_logits, expanded_weights
+
+
+def _sample_gumbel(shape, eps=1e-20, seed=None):
+  u = tf.random.uniform(shape, minval=0, maxval=1, dtype=tf.float32, seed=seed)
+  return -tf.math.log(-tf.math.log(u + eps) + eps)
+
+
 class _RankingLoss(object):
   """Interface for ranking loss."""
 
@@ -665,7 +740,7 @@ class ListMLELoss(_ListwiseLoss):
                                 tf.math.log(_EPSILON) * tf.ones_like(logits))
     scores = tf.compat.v1.where(
         is_valid, labels,
-        tf.reduce_min(labels, axis=1, keepdims=True) -
+        tf.reduce_min(input_tensor=labels, axis=1, keepdims=True) -
         1e-6 * tf.ones_like(labels))
     # Use a fixed ops-level seed and the randomness is controlled by the
     # graph-level seed.
@@ -679,7 +754,7 @@ class ListMLELoss(_ListwiseLoss):
 
     if self._lambda_weight is not None and isinstance(self._lambda_weight,
                                                       ListMLELambdaWeight):
-      batch_size, list_size = tf.unstack(tf.shape(sorted_labels))
+      batch_size, list_size = tf.unstack(tf.shape(input=sorted_labels))
       sums *= self._lambda_weight.individual_weights(
           sorted_labels,
           tf.tile(tf.expand_dims(tf.range(list_size) + 1, 0), [batch_size, 1]))
@@ -705,12 +780,10 @@ class ApproxNDCGLoss(_ListwiseLoss):
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
-    gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
     ranks = utils.approx_ranks(logits, alpha=alpha)
-    discounts = 1. / tf.math.log1p(ranks)
-    dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
-    cost = -dcg * utils.inverse_max_dcg(labels)
-    return cost, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
+
+    return -utils.ndcg(labels, ranks), tf.reshape(
+        tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
 
 class ApproxMRRLoss(_ListwiseLoss):
@@ -735,3 +808,130 @@ class ApproxMRRLoss(_ListwiseLoss):
     rr = tf.math.reduce_sum(input_tensor=rr * labels, axis=-1, keepdims=True)
     mrr = rr / tf.math.reduce_sum(input_tensor=labels, axis=-1, keepdims=True)
     return -mrr, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
+
+
+class NeuralSortCrossEntropyLoss(_ListwiseLoss):
+  """Implements Cross-entropy loss of neural sort permutation matrix."""
+
+  def compute_unreduced_loss(self, labels, logits):
+    """See `_RankingLoss`."""
+    temperature = self._params.get('temperature', 0.1)
+    is_valid = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(
+        is_valid, logits, -1e3 * tf.ones_like(logits) +
+        tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
+
+    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
+    labels = tf.compat.v1.where(is_valid, labels, -1e3 * tf.ones_like(labels))
+
+    # shape = [batch_size, list_size, list_size].
+    true_perm = neural_sort(labels, temperature=temperature)
+    smooth_perm = neural_sort(logits, temperature=temperature)
+    losses = tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(
+        labels=true_perm, logits=tf.math.log(1e-20 + smooth_perm), axis=2)
+    # shape = [batch_size, list_size].
+    losses = tf.reduce_mean(input_tensor=losses, axis=-1, keepdims=True)
+
+    return losses, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
+
+
+def neural_sort(logits, name=None, temperature=1.0):
+  r"""Generate the permutation matrix from logits by deterministic neuralsort.
+
+  The sort on a list of logits can be approximated by a differentiable
+  permutation matrix using Neural Sort (https://arxiv.org/abs/1903.08850).
+  The approximation is achieved by constructing a list of functions on logits,
+    fn_i(k) = (list_size + 1 - 2*i) * logit_k - sum_j |logit_k - logit_j|,
+  whose value is maximal when k is at the ith largest logit.
+  So that the permutation matrix can be expressed as
+           / 1 if j = argmax_k fn_i(k)
+    P_ij = |                           = one_hot(argmax(fn_i(j))).
+           \ 0 otherwise
+  And the differentiable approximation of the matrix is applied with softmax,
+    P^_ij = softmax(fn_i(j) / temperature),
+  where the parameter temperature tunes the smoothiness of the approximation.
+
+  #### References
+  [1]: Aditya Grover, Eric Wang, Aaron Zweig, Stefano Ermon.
+       Stochastic Optimization of Sorting Networks via Continuous Relaxations.
+       https://arxiv.org/abs/1903.08850
+
+  Args:
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item. (We are using logits here,
+      noticing the original paper is using probability weights, i.e., the
+      exponentials of the logits).
+    name: A string used as the name for this loss.
+    temperature: The Softmax approximation temperature.
+
+  Returns:
+    A tensor of permutation matrices whose dimension is [batch_size, list_size,
+    list_size].
+  """
+  with tf.compat.v1.name_scope(name, 'neural_sort', [logits]):
+    list_size = tf.shape(input=logits)[1]
+
+    logit_diff = tf.abs(tf.expand_dims(logits, 2) - tf.expand_dims(logits, 1))
+    # shape = [batch_size, 1, list_size].
+    logit_diff_sum = tf.reduce_sum(
+        input_tensor=logit_diff, axis=1, keepdims=True)
+    scaling = tf.cast(
+        list_size + 1 - 2 * (tf.range(list_size) + 1), dtype=tf.float32)
+    # shape = [1, list_size, 1].
+    scaling = tf.expand_dims(tf.expand_dims(scaling, 1), 0)
+    # shape = [batch_size, list_size, list_size].
+    # Use broadcast to align the dims.
+    scaled_logits = scaling * tf.expand_dims(logits, 1)
+
+    p_logits = scaled_logits - logit_diff_sum
+    smooth_perm = tf.nn.softmax(p_logits / temperature, -1)
+
+    return smooth_perm
+
+
+def gumbel_neural_sort(logits,
+                       name=None,
+                       sample_size=8,
+                       temperature=1.0,
+                       seed=None):
+  """Generate the permutation matrix from logits by stochastic neuralsort.
+
+  By sampling logits from the Gumbel distribution,
+    sampled_logits = logits + Gumbel(0, 1),
+  the determinstic neural sort z of sampled_logits obeys the distribution with
+    Prob(z|logits) = (exp(logit_z1) / Z) * (exp(logit_z2) / Z-exp(logit_z1)) *
+                     ... * (exp(logit_zn) / Z-sum_i^(n-1)exp(logit_zi)),
+  where Z = sum_i exp(logit_i).
+
+  Args:
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    name: A string used as the name for this loss.
+    sample_size: An integer representing the number of samples drawn from the
+      Concrete distribution defined by scores.
+    temperature: The Gumbel-Softmax temperature.
+    seed: Seed for pseudo-random number generator.
+
+  Returns:
+    A `Tensor` of permutation matrices whose dimension is [batch_size,
+    sample_size, list_size, list_size].
+  """
+  with tf.compat.v1.name_scope(name, 'gumbel_neural_sort', [logits]):
+    batch_size = tf.shape(input=logits)[0]
+    list_size = tf.shape(input=logits)[1]
+
+    # Sample logits from Concrete(logits).
+    sampled_logits = tf.expand_dims(logits, 1)
+    sampled_logits += _sample_gumbel([batch_size, sample_size, list_size],
+                                     seed=seed)
+    sampled_logits = tf.reshape(sampled_logits,
+                                [batch_size * sample_size, list_size])
+
+    # Sort by constructing the relaxed permuation matrix from sampled logits.
+    smooth_perm = neural_sort(sampled_logits, name, temperature)
+    smooth_perm = tf.reshape(smooth_perm,
+                             [batch_size, sample_size, list_size, list_size])
+
+    return smooth_perm

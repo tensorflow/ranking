@@ -40,6 +40,7 @@ function build_wheel() {
 
   # Make sure init files exist.
   touch "${TMPDIR}/tensorflow_ranking/__init__.py"
+  touch "${TMPDIR}/tensorflow_ranking/extension/__init__.py"
   touch "${TMPDIR}/tensorflow_ranking/python/__init__.py"
 
   pushd ${TMPDIR} > /dev/null

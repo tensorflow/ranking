@@ -1,0 +1,3 @@
+redirects:
+- from: /ranking/api_docs/python/tfr/keras/canned/dnn/DNNRankingNetwork
+  to: /ranking/api_docs/python/tfr/keras/canned/DNNRankingNetwork
