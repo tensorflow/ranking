@@ -122,7 +122,7 @@ def _per_list_precision(labels, predictions, topn):
     topn: A cutoff for how many examples to consider for this metric.
 
   Returns:
-    A `Tensor` of size [batch_size, 1] containing the percision of each query
+    A `Tensor` of size [batch_size, 1] containing the precision of each query
     respectively.
   """
   sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn)[0]
@@ -251,7 +251,7 @@ class ARPMetric(_RankingMetric):
         predictions, [labels, weights], topn=topn)
     relevance = sorted_labels * sorted_weights
     position = tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
-    # TODO: Consider to add a cap poistion topn + 1 when there is no
+    # TODO: Consider to add a cap position topn + 1 when there is no
     # relevant examples.
     return position * tf.ones_like(relevance), relevance
 

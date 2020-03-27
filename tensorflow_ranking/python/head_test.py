@@ -469,7 +469,7 @@ class MultiRankingHeadTest(tf.test.TestCase):
         self.assertEqual(expected_train_result, train_result)
 
   def test_merge_loss(self):
-    """Tests for merging losses from mult-head and regularizition loss."""
+    """Tests for merging losses from multi-head and regularization loss."""
     with tf.Graph().as_default():
       head1 = ranking_head.create_ranking_head(
           loss_fn=_make_loss_fn(), name='head1')

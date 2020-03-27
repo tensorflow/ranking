@@ -333,7 +333,7 @@ class ExampleListTest(tf.test.TestCase):
           EXAMPLE_LIST_PROTO_1.SerializeToString(),
           EXAMPLE_LIST_PROTO_2.SerializeToString()
       ]
-      # Trunate number of examples from 2 to 1.
+      # Truncate number of examples from 2 to 1.
       features = data_lib.parse_from_example_list(
           serialized_example_lists,
           list_size=1,

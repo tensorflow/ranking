@@ -92,11 +92,11 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
         transform_fn = feature_lib.make_identity_transform_fn(["context"])
         context_features, per_example_features = sess.run(
             transform_fn(features, 1))
-        self.assertEqual(["context"], sorted(context_features))
+        self.assertCountEqual(["context"], context_features)
         self.assertAllEqual([[1.0, 1.0], [1.0, 1.0]],
                             context_features["context"])
 
-        self.assertEqual(["per_example"], sorted(per_example_features))
+        self.assertCountEqual(["per_example"], per_example_features)
         self.assertAllEqual([[[10.0]], [[10.0]]],
                             per_example_features["per_example"])
 
@@ -205,8 +205,8 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
 
       with self.assertRaisesRegexp(
           ValueError,
-          r"2nd dimesion of tensor must be equal to input size: 3, but found .*"
-      ):
+          r"2nd dimension of tensor must be equal to input size: 3, "
+          "but found .*"):
         feature_lib.encode_listwise_features(
             features,
             input_size=3,
