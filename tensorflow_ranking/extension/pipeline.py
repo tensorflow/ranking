@@ -113,6 +113,7 @@ class RankingPipeline(object):
   class CustomizedDatasetRankingPipeline(tfr.ext.pipeline.RankingPipeline):
     def _make_dataset(self,
                       batch_size,
+                      list_size,
                       input_pattern,
                       randomize_input=True,
                       num_epochs=None):
@@ -222,6 +223,7 @@ class RankingPipeline(object):
 
   def _make_dataset(self,
                     batch_size,
+                    list_size,
                     input_pattern,
                     randomize_input=True,
                     num_epochs=None):
@@ -230,6 +232,7 @@ class RankingPipeline(object):
     Args:
       batch_size: (int) The number of input examples to process per batch. Use
         params['batch_size'] for TPUEstimator, and `batch_size` for Estimator.
+      list_size: (int) The list size for an ELWC example.
       input_pattern: (str) File pattern for the input data.
       randomize_input: (bool) If true, randomize input example order. It should
         almost always be true except for unittest/debug purposes.
@@ -253,7 +256,7 @@ class RankingPipeline(object):
         file_pattern=input_pattern,
         data_format=tfr_data.ELWC,
         batch_size=batch_size,
-        list_size=self._hparams.get("list_size"),
+        list_size=list_size,
         context_feature_spec=context_feature_spec,
         example_feature_spec=example_feature_spec,
         reader=self._dataset_reader,
@@ -274,6 +277,7 @@ class RankingPipeline(object):
   def _make_input_fn(self,
                      input_pattern,
                      batch_size,
+                     list_size,
                      randomize_input=True,
                      num_epochs=None):
     """Returns the input function for the ranking model.
@@ -281,6 +285,7 @@ class RankingPipeline(object):
     Args:
       input_pattern: (str) File pattern for the input data.
       batch_size: (int) The number of input examples to process per batch.
+      list_size: (int) The list size for an ELWC example.
       randomize_input: (bool) If true, randomize input example order. It should
         almost always be true except for unittest/debug purposes.
       num_epochs: (int) The number of times the input dataset must be repeated.
@@ -294,6 +299,7 @@ class RankingPipeline(object):
       """`input_fn` for the `Estimator`."""
       return self._make_dataset(
           batch_size=batch_size,
+          list_size=list_size,
           input_pattern=input_pattern,
           randomize_input=randomize_input,
           num_epochs=num_epochs)
@@ -377,12 +383,16 @@ class RankingPipeline(object):
 
   def _train_eval_specs(self):
     """Makes a tuple of (train_spec, eval_on_eval_spec, eval_on_train_spec)."""
+    train_list_size = self._hparams.get("list_size")
+    eval_list_size = self._hparams.get("eval_list_size") or train_list_size
     train_input_fn = self._make_input_fn(
         input_pattern=self._hparams.get("train_input_pattern"),
-        batch_size=self._hparams.get("train_batch_size"))
+        batch_size=self._hparams.get("train_batch_size"),
+        list_size=train_list_size)
     eval_input_fn = self._make_input_fn(
         input_pattern=self._hparams.get("eval_input_pattern"),
-        batch_size=self._hparams.get("eval_batch_size"))
+        batch_size=self._hparams.get("eval_batch_size"),
+        list_size=eval_list_size)
 
     train_spec = tf.estimator.TrainSpec(
         input_fn=train_input_fn, max_steps=self._hparams.get("num_train_steps"))

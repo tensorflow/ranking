@@ -175,6 +175,7 @@ class RankingPipelineTest(tf.test.TestCase):
     ds = pip._make_input_fn(
         input_pattern=self._data_file,
         batch_size=batch_size,
+        list_size=5,
         randomize_input=False)()
     features, labels = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
 
