@@ -109,8 +109,19 @@ class EncodeListwiseFeaturesTest(tf.test.TestCase):
     restored_layer = clone_keras_obj(self.listwise_dense_layer)
     self.assertEqual(restored_layer.context_feature_columns,
                      self.context_feature_columns)
-    self.assertEqual(restored_layer.example_feature_columns,
-                     self.example_feature_columns)
+    self.assertEqual(restored_layer.example_feature_columns['utility'],
+                     self.example_feature_columns['utility'])
+    # TODO: Deserialized embedding feature column behavior is the
+    # same but config is different. Hence we check for individual attributes.
+    self.assertEqual(restored_layer.example_feature_columns['unigrams'].name,
+                     'unigrams_embedding')
+    self.assertEqual(
+        restored_layer.example_feature_columns['unigrams'].initializer.mean,
+        0.0)
+    self.assertCountEqual(
+        restored_layer.example_feature_columns['unigrams'].categorical_column
+        .vocabulary_list,
+        ['ranking', 'regression', 'classification', 'ordinal'])
 
   def test_listwise_dense_layer(self):
     context_features, example_features = self.listwise_dense_layer(
@@ -151,13 +162,47 @@ class GenerateMaskTest(tf.test.TestCase):
   def test_get_config(self):
     # Check save and restore config.
     restored_layer = clone_keras_obj(self.mask_generator_layer)
-    self.assertEqual(restored_layer.example_feature_columns,
-                     self.example_feature_columns)
+    self.assertEqual(restored_layer.example_feature_columns['utility'],
+                     self.example_feature_columns['utility'])
+    # TODO: Deserialized embedding feature column behavior is the
+    # same but config is different. Hence we check for individual attributes.
+    self.assertEqual(restored_layer.example_feature_columns['unigrams'].name,
+                     'unigrams_embedding')
+    self.assertEqual(
+        restored_layer.example_feature_columns['unigrams'].initializer.mean,
+        0.0)
+    self.assertCountEqual(
+        restored_layer.example_feature_columns['unigrams'].categorical_column
+        .vocabulary_list,
+        ['ranking', 'regression', 'classification', 'ordinal'])
 
   def test_mask_generator_layer(self):
     mask = self.mask_generator_layer(inputs=self.features, training=False)
     expected_mask = [[True, False], [True, True]]
     self.assertAllEqual(expected_mask, mask)
+
+
+class FeatureColumnSerializationTest(tf.test.TestCase):
+
+  def setUp(self):
+    super(FeatureColumnSerializationTest, self).setUp()
+    self._feature_columns = _example_feature_columns()
+
+  def test_deserialization(self):
+    serialized_feature_columns = feature.serialize_feature_columns(
+        self._feature_columns)
+    restored_feature_columns = feature.deserialize_feature_columns(
+        serialized_feature_columns)
+    self.assertEqual(restored_feature_columns['utility'],
+                     self._feature_columns['utility'])
+    # TODO: Deserialized embedding feature column behavior is the
+    # same but config is different. Hence we check for individual attributes.
+    self.assertEqual(restored_feature_columns['unigrams'].name,
+                     'unigrams_embedding')
+    self.assertEqual(restored_feature_columns['unigrams'].initializer.mean, 0.0)
+    self.assertCountEqual(
+        restored_feature_columns['unigrams'].categorical_column.vocabulary_list,
+        ['ranking', 'regression', 'classification', 'ordinal'])
 
 
 if __name__ == '__main__':

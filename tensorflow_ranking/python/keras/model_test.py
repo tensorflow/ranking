@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import tensorflow.compat.v2 as tf
 
+from tensorflow_ranking.python.keras import feature
 from tensorflow_ranking.python.keras import losses
 from tensorflow_ranking.python.keras import metrics
 from tensorflow_ranking.python.keras import model as model_lib
@@ -61,7 +62,9 @@ def _features():
           tf.SparseTensor(
               indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
               values=["ranking", "regression", "classification", "ordinal"],
-              dense_shape=[2, 2, 1])
+              dense_shape=[2, 2, 1]),
+      "example_list_size":
+          tf.convert_to_tensor(value=[1, 2])
   }
 
 
@@ -79,6 +82,7 @@ class FunctionalRankingModelTest(tf.test.TestCase):
     super(FunctionalRankingModelTest, self).setUp()
     self.context_feature_columns = _context_feature_columns()
     self.example_feature_columns = _example_feature_columns()
+    self.features = _features()
     self.optimizer = tf.keras.optimizers.Adagrad()
     self.loss = losses.SoftmaxLoss()
     self.metrics = [metrics.NDCGMetric("ndcg_5", topn=5)]
@@ -110,6 +114,27 @@ class FunctionalRankingModelTest(tf.test.TestCase):
     self.assertEqual(ranker.optimizer, self.optimizer)
     self.assertEqual(ranker.loss, self.loss)
     self.assertIn("example_list_size", ranker.input_names)
+
+  def test_model_to_json(self):
+    network = _DummyUnivariateRankingNetwork(
+        context_feature_columns=self.context_feature_columns,
+        example_feature_columns=self.example_feature_columns,
+        name="dummy_univariate_ranking_network")
+    ranker = model_lib.create_keras_model(
+        network=network,
+        loss=self.loss,
+        metrics=self.metrics,
+        optimizer=self.optimizer,
+        size_feature_name="example_list_size")
+
+    json_config = ranker.to_json()
+    custom_objects = {
+        "GenerateMask": feature.GenerateMask,
+        "_DummyUnivariateRankingNetwork": _DummyUnivariateRankingNetwork
+    }
+    restored_ranker = tf.keras.models.model_from_json(
+        json_config, custom_objects=custom_objects)
+    self.assertAllEqual(restored_ranker(self.features), ranker(self.features))
 
 
 if __name__ == "__main__":

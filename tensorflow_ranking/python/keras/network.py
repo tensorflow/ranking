@@ -130,10 +130,32 @@ class RankingNetwork(tf.keras.layers.Layer):
   def get_config(self):
     config = super(RankingNetwork, self).get_config()
     config.update({
-        'context_feature_columns': self._context_feature_columns,
-        'example_feature_columns': self._example_feature_columns,
+        'context_feature_columns':
+            feature.serialize_feature_columns(self._context_feature_columns),
+        'example_feature_columns':
+            feature.serialize_feature_columns(self._example_feature_columns),
     })
     return config
+
+  @classmethod
+  def from_config(cls, config, custom_objects=None):
+    """Creates a RankingNetwork layer from its config.
+
+    Args:
+      config: (dict) Layer configuration, typically the output of `get_config`.
+      custom_objects: (dict) Optional dictionary mapping names to custom classes
+        or functions to be considered during deserialization.
+
+    Returns:
+      A RankingNetwork layer.
+    """
+    config_cp = config.copy()
+    config_cp['context_feature_columns'] = feature.deserialize_feature_columns(
+        config_cp['context_feature_columns'])
+    config_cp['example_feature_columns'] = feature.deserialize_feature_columns(
+        config_cp['example_feature_columns'])
+
+    return cls(**config_cp)
 
 
 class UnivariateRankingNetwork(RankingNetwork):

@@ -18,7 +18,55 @@
 import six
 import tensorflow.compat.v2 as tf
 
+from tensorflow.python.feature_column import feature_column_lib as fc
 from tensorflow_ranking.python import utils
+
+
+def serialize_feature_columns(feature_columns):
+  """Serializes feature columns to a dict of class name and config.
+
+  This serialization is required to support for SavedModel using model.save()
+  in Keras. The serialization is similar to that of
+  `tf.keras.layers.DenseFeatures`, which also has feature columns in it's
+  constructor.
+
+  Args:
+    feature_columns: (dict) feature names to feature columns.
+
+  Returns:
+    A dict mapping feature names to serialized feature columns.
+  """
+  feature_column_configs = {}
+
+  sorted_name_to_feature_columns = sorted(six.iteritems(feature_columns))
+  sorted_names, sorted_feature_columns = zip(*sorted_name_to_feature_columns)
+  sorted_configs = fc.serialize_feature_columns(
+      sorted_feature_columns)
+  feature_column_configs = dict(zip(sorted_names, sorted_configs))
+  return feature_column_configs
+
+
+def deserialize_feature_columns(feature_column_configs, custom_objects=None):
+  """Deserializes dict of feature column configs.
+
+  Args:
+    feature_column_configs: (dict) A dict mapping feature names to Keras feature
+      column config, could be generated using `serialize_feature_columns`.
+    custom_objects: (dict) Optional dictionary mapping names to custom classes
+      or functions to be considered during deserialization.
+
+  Returns:
+    A dict mapping feature names to feature columns.
+  """
+  feature_columns = {}
+  sorted_fc_configs = sorted(six.iteritems(feature_column_configs))
+  sorted_names, sorted_configs = zip(*sorted_fc_configs)
+
+  sorted_feature_columns = fc.deserialize_feature_columns(
+      sorted_configs, custom_objects=custom_objects)
+
+  feature_columns = dict(zip(sorted_names, sorted_feature_columns))
+  return feature_columns
 
 
 def create_keras_inputs(context_feature_columns,
@@ -120,10 +168,29 @@ class GenerateMask(tf.keras.layers.Layer):
   def get_config(self):
     config = super(GenerateMask, self).get_config()
     config.update({
-        'example_feature_columns': self._example_feature_columns,
-        'size_feature_name': self._size_feature_name
+        'example_feature_columns':
+            serialize_feature_columns(self._example_feature_columns),
+        'size_feature_name':
+            self._size_feature_name
     })
     return config
+
+  @classmethod
+  def from_config(cls, config, custom_objects=None):
+    """Creates a GenerateMask layer from its config.
+
+    Args:
+      config: A Python dictionary, typically the output of `get_config`.
+      custom_objects: Optional dictionary mapping names (strings) to custom
+        classes or functions to be considered during deserialization.
+
+    Returns:
+      A GenerateMask layer.
+    """
+    config_cp = config.copy()
+    config_cp['example_feature_columns'] = deserialize_feature_columns(
+        config_cp['example_feature_columns'], custom_objects=custom_objects)
+    return cls(**config_cp)
 
 
 class EncodeListwiseFeatures(tf.keras.layers.Layer):
@@ -223,7 +290,29 @@ class EncodeListwiseFeatures(tf.keras.layers.Layer):
     config = super(EncodeListwiseFeatures, self).get_config()
 
     config.update({
-        'context_feature_columns': self._context_feature_columns,
-        'example_feature_columns': self._example_feature_columns,
+        'context_feature_columns':
+            serialize_feature_columns(self._context_feature_columns),
+        'example_feature_columns':
+            serialize_feature_columns(self._example_feature_columns),
     })
     return config
+
+  @classmethod
+  def from_config(cls, config, custom_objects=None):
+    """Creates a EncodeListwiseFeatures layer from its config.
+
+    Args:
+      config: A Python dictionary, typically the output of `get_config`.
+      custom_objects: Optional dictionary mapping names (strings) to custom
+        classes or functions to be considered during deserialization.
+
+    Returns:
+      A EncodeListwiseFeatures layer.
+    """
+    config_cp = config.copy()
+    config_cp['context_feature_columns'] = deserialize_feature_columns(
+        config_cp['context_feature_columns'], custom_objects=custom_objects)
+    config_cp['example_feature_columns'] = deserialize_feature_columns(
+        config_cp['example_feature_columns'], custom_objects=custom_objects)
+
+    return cls(**config_cp)

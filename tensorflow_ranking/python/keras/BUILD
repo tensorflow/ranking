@@ -107,6 +107,7 @@ py_test(
         "notsan",
     ],
     deps = [
+        ":feature",
         ":losses",
         ":metrics",
         ":model",
