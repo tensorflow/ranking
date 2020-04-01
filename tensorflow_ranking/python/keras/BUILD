@@ -113,6 +113,8 @@ py_test(
         ":model",
         ":network",
         # py/tensorflow dep,
+        "//tensorflow_ranking/python:data",
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
 

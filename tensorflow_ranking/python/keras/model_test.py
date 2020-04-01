@@ -21,11 +21,16 @@ from __future__ import print_function
 
 import tensorflow.compat.v2 as tf
 
+from google.protobuf import text_format
+
+from tensorflow_ranking.python import data
 from tensorflow_ranking.python.keras import feature
 from tensorflow_ranking.python.keras import losses
 from tensorflow_ranking.python.keras import metrics
 from tensorflow_ranking.python.keras import model as model_lib
 from tensorflow_ranking.python.keras import network as network_lib
+
+from tensorflow_serving.apis import input_pb2
 
 
 def _context_feature_columns():
@@ -66,6 +71,67 @@ def _features():
       "example_list_size":
           tf.convert_to_tensor(value=[1, 2])
   }
+
+
+EXAMPLE_LIST_PROTO_1 = text_format.Parse(
+    """
+    context {
+      features {
+        feature {
+          key: "query_length"
+          value { int64_list { value: 1 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: "ranking" } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 1.0 } }
+        }
+      }
+    }
+    """, input_pb2.ExampleListWithContext())
+
+EXAMPLE_LIST_PROTO_2 = text_format.Parse(
+    """
+    context {
+      features {
+        feature {
+          key: "query_length"
+          value { int64_list { value: 2 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: "classification" } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 0.0 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "unigrams"
+          value { bytes_list { value: "ordinal" } }
+        }
+        feature {
+          key: "utility"
+          value { float_list { value: 1.0 } }
+        }
+      }
+    }
+    """, input_pb2.ExampleListWithContext())
 
 
 class _DummyUnivariateRankingNetwork(network_lib.UnivariateRankingNetwork):
@@ -135,6 +201,70 @@ class FunctionalRankingModelTest(tf.test.TestCase):
     restored_ranker = tf.keras.models.model_from_json(
         json_config, custom_objects=custom_objects)
     self.assertAllEqual(restored_ranker(self.features), ranker(self.features))
+
+  def test_model_to_saved_model_dense_inputs(self):
+    # TODO: Add SavedModel support for sparse inputs.
+    # After adding @tf.function decorator, _predict function breaks for
+    # sparse inputs to Keras model.
+    example_feature_columns = {}
+    example_feature_columns.update(self.example_feature_columns)
+    # Remove sparse feature based EmbeddingColumn.
+    del example_feature_columns["unigrams"]
+    network = _DummyUnivariateRankingNetwork(
+        context_feature_columns=self.context_feature_columns,
+        example_feature_columns=example_feature_columns)
+    ranker = model_lib.create_keras_model(
+        network=network,
+        loss=self.loss,
+        metrics=self.metrics,
+        optimizer=self.optimizer,
+        size_feature_name="example_list_size")
+
+    context_feature_spec = tf.feature_column.make_parse_example_spec(
+        network.context_feature_columns.values())
+    example_feature_spec = tf.feature_column.make_parse_example_spec(
+        network.example_feature_columns.values())
+
+    eval_batch_size = 2
+
+    @tf.function(input_signature=[
+        tf.TensorSpec(shape=(eval_batch_size,), dtype=tf.string)
+    ])
+    def _predict(serialized):
+      features = data.parse_from_example_list(
+          serialized,
+          context_feature_spec=context_feature_spec,
+          example_feature_spec=example_feature_spec,
+          size_feature_name="example_list_size")
+      scores = ranker(inputs=features, training=False)
+      return {"predictions": scores}
+
+    ranker.infer_from_proto = _predict
+
+    # Export the model to a SavedModel.
+    tf.saved_model.save(
+        ranker,
+        export_dir="/tmp/functional_keras_model",
+        signatures={"predict": ranker.infer_from_proto})
+
+    # Import ranker from SavedModel.
+    imported = tf.saved_model.load("/tmp/functional_keras_model")
+    imported_ranker_predictor = imported.signatures["predict"]
+    output = imported_ranker_predictor(
+        tf.convert_to_tensor([
+            EXAMPLE_LIST_PROTO_1.SerializeToString(),
+            EXAMPLE_LIST_PROTO_2.SerializeToString(),
+        ]))["predictions"]
+
+    features = {}
+    features.update(self.features)
+    # TODO: Add SavedModel support for sparse inputs.
+    # After adding @tf.function decorator, _predict function breaks for
+    # sparse inputs to Keras model. Hence ranker is also created and called
+    # only on dense features. Removing "unigrams", a sparse feature.
+    del features["unigrams"]
+    self.assertAllClose(
+        ranker(features, training=False).numpy(), output.numpy())
 
 
 if __name__ == "__main__":
