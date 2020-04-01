@@ -34,6 +34,7 @@ class RankingLossKey(object):
   PAIRWISE_HINGE_LOSS = 'pairwise_hinge_loss'
   PAIRWISE_LOGISTIC_LOSS = 'pairwise_logistic_loss'
   PAIRWISE_SOFT_ZERO_ONE_LOSS = 'pairwise_soft_zero_one_loss'
+  PAIRWISE_CIRCLE_LOSS = 'pairwise_circle_loss'
   SOFTMAX_LOSS = 'softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
@@ -148,6 +149,8 @@ def make_loss_fn(loss_keys,
             (_pairwise_logistic_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
             (_pairwise_soft_zero_one_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.PAIRWISE_CIRCLE_LOSS:
+            (_pairwise_circle_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.SOFTMAX_LOSS:
             (_softmax_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
@@ -216,6 +219,8 @@ def make_loss_metric_fn(loss_key,
       RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
           losses_impl.PairwiseSoftZeroOneLoss(
               name, lambda_weight=lambda_weight),
+      RankingLossKey.PAIRWISE_CIRCLE_LOSS:
+          losses_impl.PairwiseCircleLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.SOFTMAX_LOSS:
           losses_impl.SoftmaxLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
@@ -398,6 +403,45 @@ def _pairwise_soft_zero_one_loss(
   """
   loss = losses_impl.PairwiseSoftZeroOneLoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'pairwise_soft_zero_one_loss',
+                               (labels, logits, weights)):
+    return loss.compute(labels, logits, weights, reduction)
+
+
+def _pairwise_circle_loss(
+    labels,
+    logits,
+    weights=None,
+    lambda_weight=None,
+    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+    name=None,
+    gamma=1.,
+    m=0.25):
+  """Computes the pairwise circle loss.
+
+  This is the Circle loss originally proposed by Sun et al.
+  ["Circle Loss: A Unified Perspective of Pair Similarity Optimization"]. Note
+  the outside log1p is omitted in this implementation for simplicity with
+  `_LambdaWeight`.
+
+  Args:
+    labels: A `Tensor` of the same shape as `logits` representing graded
+      relevance.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item. The value should be in [0, 1].
+    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+      weights.
+    lambda_weight: A `_LambdaWeight` object.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
+    name: A string used as the name for this loss.
+    norm_logits: sigmoid(`logits`) to scale ranking score into [0, 1].
+
+  Returns:
+    An op for the pairwise circle loss.
+  """
+  loss = losses_impl.PairwiseCircleLoss(name, lambda_weight, params={'gamma': gamma, 'm': m})
+  with tf.compat.v1.name_scope(loss.name, 'pairwise_circle_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights, reduction)
 

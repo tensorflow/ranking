@@ -304,7 +304,7 @@ def _compute_ranks(logits, is_valid):
   return utils.sorted_ranks(scores)
 
 
-def _pairwise_comparison(labels, logits):
+def _pairwise_comparison(labels, logits, pairwise_op=tf.subtract):
   r"""Returns pairwise comparison `Tensor`s.
 
   Given a list of n items, the labels of graded relevance l_i and the logits
@@ -315,11 +315,13 @@ def _pairwise_comparison(labels, logits):
   * `pairwise_labels` = |
                         | 0   otherwise
                         \
-  * `pairwise_logits` = s_i - s_j
+  * `pairwise_logits` = pairwise_op(s_i, s_j)
 
   Args:
     labels: A `Tensor` with shape [batch_size, list_size].
     logits: A `Tensor` with shape [batch_size, list_size].
+    pairwise_op: A function which takes 2 parameters with shape [batch_size,
+      list_size, 1] and [batch_size, 1, list_size].
 
   Returns:
     A tuple of (pairwise_labels, pairwise_logits) with each having the shape
@@ -329,7 +331,7 @@ def _pairwise_comparison(labels, logits):
   # shape [batch_size, list_size, list_size] where the entry [-1, i, j] stores
   # the information for pair (i, j).
   pairwise_label_diff = _apply_pairwise_op(tf.subtract, labels)
-  pairwise_logits = _apply_pairwise_op(tf.subtract, logits)
+  pairwise_logits = _apply_pairwise_op(pairwise_op, logits)
   # Only keep the case when l_i > l_j.
   pairwise_labels = tf.cast(
       tf.greater(pairwise_label_diff, 0), dtype=tf.float32)
@@ -521,6 +523,7 @@ class _PairwiseLoss(_RankingLoss):
     self._name = name
     self._lambda_weight = lambda_weight
     self._params = params or {}
+    self._pairwise_op = tf.subtract
 
   @property
   def name(self):
@@ -536,7 +539,7 @@ class _PairwiseLoss(_RankingLoss):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     ranks = _compute_ranks(logits, is_valid)
-    pairwise_labels, pairwise_logits = _pairwise_comparison(labels, logits)
+    pairwise_labels, pairwise_logits = _pairwise_comparison(labels, logits, self._pairwise_op)
     pairwise_weights = pairwise_labels
     if self._lambda_weight is not None:
       pairwise_weights *= self._lambda_weight.pair_weights(labels, ranks)
@@ -592,6 +595,24 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
     return tf.compat.v1.where(
         tf.greater(pairwise_logits, 0), 1. - tf.sigmoid(pairwise_logits),
         tf.sigmoid(-pairwise_logits))
+
+
+class PairwiseCircleLoss(_PairwiseLoss):
+  """Implements pairwise circle loss."""
+
+  def __init__(self, name, lambda_weight=None, params=None):
+    super().__init__(name, lambda_weight, params)
+    m = self._params.get('m', 0.25)
+
+    def _pairwise_op(si, sj):
+      alpha_i = tf.stop_gradient(tf.nn.relu(1 - si + m), name='circle_loss_alpha_pos')
+      alpha_j = tf.stop_gradient(tf.nn.relu(sj + m), name='circle_loss_alpha_neg')
+      return alpha_i * (1 - si - m) + alpha_j * (sj - m)
+    self._pairwise_op = _pairwise_op
+
+  def _pairwise_loss(self, pairwise_logits):
+    gamma = self._params.get('gamma', 1.)
+    return tf.exp(gamma * pairwise_logits)
 
 
 class _ListwiseLoss(_RankingLoss):

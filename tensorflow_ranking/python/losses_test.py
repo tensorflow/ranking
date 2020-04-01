@@ -212,9 +212,10 @@ def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
       delta = 1. if delta > 0 else 0
     return delta
 
-  def _loss(score_diff, label_diff, delta):
+  def _loss(si, sj, label_diff, delta):
     if label_diff <= 0:
       return 0.
+    score_diff = si - sj
     loss_table = {
         ranking_losses.RankingLossKey.PAIRWISE_HINGE_LOSS:
             max(0, 1 - score_diff) * delta,
@@ -222,6 +223,8 @@ def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
             math.log(1. + math.exp(-score_diff)) * delta,
         ranking_losses.RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
             1. / (1. + math.exp(score_diff)) * delta,
+        ranking_losses.RankingLossKey.PAIRWISE_CIRCLE_LOSS:
+            math.exp(max(0., 1.25-si) * (0.75-si) + max(0., sj+0.25) * (sj-0.25)) * delta,
     }
     return loss_table[loss_form]
 
@@ -232,7 +235,7 @@ def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
     for j in range(len(labels)):
       if labels[i] > labels[j]:
         delta = _lambda_weight(labels[i] - labels[j], i, j)
-        part_loss = _loss(scores[i] - scores[j], labels[i] - labels[j], delta)
+        part_loss = _loss(scores[i], scores[j], labels[i] - labels[j], delta)
         if weights[i] > 0:
           loss += part_loss * weights[i]
           weight += delta * weights[i]
@@ -316,7 +319,7 @@ class LossesTest(tf.test.TestCase):
   def _check_pairwise_loss(self, loss_fn):
     """Helper function to test `loss_fn`."""
     with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
+      scores = [[.1, .3, .2], [.1, .2, .3]]
       labels = [[0., 0., 1.], [0., 0., 2.]]
       listwise_weights = [[2.], [1.]]
       listwise_weights_expanded = [[2.] * 3, [1.] * 3]
@@ -330,6 +333,8 @@ class LossesTest(tf.test.TestCase):
               ranking_losses.RankingLossKey.PAIRWISE_LOGISTIC_LOSS,
           ranking_losses._pairwise_soft_zero_one_loss:
               ranking_losses.RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS,
+          ranking_losses._pairwise_circle_loss:
+              ranking_losses.RankingLossKey.PAIRWISE_CIRCLE_LOSS,
       }
       loss_form = loss_form_dict[loss_fn]
       with self.cached_session():
@@ -421,10 +426,13 @@ class LossesTest(tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(ranking_losses._pairwise_soft_zero_one_loss)
 
+  def test_pairwise_circle_loss(self):
+    self._check_pairwise_loss(ranking_losses._pairwise_circle_loss)
+
   def _check_make_pairwise_loss(self, loss_key):
     """Helper function to test `make_loss_fn`."""
     with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
+      scores = [[.1, .3, .2], [.1, .2, .3]]
       labels = [[0., 0., 1.], [0., 0., 2.]]
       listwise_weights = [[2.], [1.]]
       listwise_weights_expanded = [[2.] * 3, [1.] * 3]
@@ -530,6 +538,10 @@ class LossesTest(tf.test.TestCase):
   def test_make_pairwise_soft_zero_one_loss(self):
     self._check_make_pairwise_loss(
         ranking_losses.RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS)
+
+  def test_make_pairwise_circle_loss(self):
+    self._check_make_pairwise_loss(
+        ranking_losses.RankingLossKey.PAIRWISE_CIRCLE_LOSS)
 
   def test_softmax_loss(self):
     with tf.Graph().as_default():
