@@ -37,9 +37,9 @@ TF-Ranking
 [![Run in Google Colab](https://www.tensorflow.org/images/colab_logo_32px.png)](https://colab.research.google.com/github/tensorflow/ranking/blob/master/tensorflow_ranking/examples/handling_sparse_features.ipynb).
 This demo demonstrates how to:
 
-    *   Use sparse/embedding features
-    *   Process data in TFRecord format
-    *   Tensorboard integration in colab notebook, for Estimator API
+*   Use sparse/embedding features
+*   Process data in TFRecord format
+*   Tensorboard integration in colab notebook, for Estimator API
 
 Also see [Running Scripts](#running-scripts) for executable scripts.
 
