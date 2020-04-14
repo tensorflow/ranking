@@ -56,7 +56,7 @@ class RankingNetwork(tf.keras.layers.Layer):
   def example_feature_columns(self):
     return self._example_feature_columns
 
-  def transform(self, features=None, training=True, mask=None):
+  def transform(self, features=None, training=None, mask=None):
     """Transforms the features into dense context features and example features.
 
     The user can overwrite this function for custom transformations.
@@ -85,7 +85,7 @@ class RankingNetwork(tf.keras.layers.Layer):
   def compute_logits(self,
                      context_features=None,
                      example_features=None,
-                     training=True,
+                     training=None,
                      mask=None):
     """Scores context and examples to return a score per document.
 
@@ -102,11 +102,10 @@ class RankingNetwork(tf.keras.layers.Layer):
     Returns:
       (tf.Tensor) A score tensor of shape [batch_size, list_size].
     """
-    raise NotImplementedError(
-        'Calling an abstract method, '
-        'tfr.keras.RankingModel.compute_logits().')
+    raise NotImplementedError('Calling an abstract method, '
+                              'tfr.keras.RankingModel.compute_logits().')
 
-  def call(self, inputs=None, training=True, mask=None):
+  def call(self, inputs=None, training=None, mask=None):
     """Defines the forward pass for ranking model.
 
     Args:
@@ -175,7 +174,7 @@ class UnivariateRankingNetwork(RankingNetwork):
         **kwargs)
 
   @abc.abstractmethod
-  def score(self, context_features=None, example_features=None, training=True):
+  def score(self, context_features=None, example_features=None, training=None):
     """Univariate scoring of context and one example to generate a score.
 
     Args:
@@ -188,14 +187,13 @@ class UnivariateRankingNetwork(RankingNetwork):
     Returns:
       (tf.Tensor) A score tensor of shape [batch_size, 1].
     """
-    raise NotImplementedError(
-        'Calling an abstract method, '
-        'tfr.keras.UnivariateRankingModel.score().')
+    raise NotImplementedError('Calling an abstract method, '
+                              'tfr.keras.UnivariateRankingModel.score().')
 
   def compute_logits(self,
                      context_features=None,
                      example_features=None,
-                     training=True,
+                     training=None,
                      mask=None):
     """Scores context and examples to return a score per document.
 

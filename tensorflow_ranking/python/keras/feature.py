@@ -228,7 +228,7 @@ class EncodeListwiseFeatures(tf.keras.layers.Layer):
   def example_feature_columns(self):
     return self._example_feature_columns
 
-  def call(self, inputs, training=True):
+  def call(self, inputs, training=None):
     """Transforms the features into dense context features and example features.
 
     This is the Keras equivalent of `tfr.feature.encode_listwise_features`.
