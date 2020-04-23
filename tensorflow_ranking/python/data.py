@@ -880,7 +880,7 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
       elements after shuffling is deterministic). Defaults to `False`.
     drop_final_batch: (bool) If `True`, and the batch size does not evenly
       divide the input dataset size, the final smaller batch will be dropped.
-      Defaults to `True`. If `True`, the batch_size can be statically inferred.
+      Defaults to `False`. If `True`, the batch_size can be statically inferred.
     num_parser_threads: (int) Optional number of threads to be used with
       dataset.map() when invoking parsing_fn.
 
@@ -1175,7 +1175,7 @@ def read_batched_sequence_example_dataset(file_pattern,
       elements after shuffling is deterministic). Defaults to `False`.
     drop_final_batch: (bool) If `True`, and the batch size does not evenly
       divide the input dataset size, the final smaller batch will be dropped.
-      Defaults to `True`. If `True`, the batch_size can be statically inferred.
+      Defaults to `False`. If `True`, the batch_size can be statically inferred.
 
   Returns:
     A dataset of `dict` elements. Each `dict` maps feature keys to
