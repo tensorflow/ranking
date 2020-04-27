@@ -538,8 +538,7 @@ class _SequenceExampleParser(_RankingDataParser):
     """See `_RankingDataParser`."""
     if self._shuffle_examples:
       raise ValueError(
-          "Shuffling examples is not supported in SequenceExample format."
-      )
+          "Shuffling examples is not supported in SequenceExample format.")
 
     list_size = self._list_size
     context_feature_spec = self._context_feature_spec
@@ -888,15 +887,16 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
     A dataset of `dict` elements. Each `dict` maps feature keys to
     `Tensor` or `SparseTensor` objects.
   """
-  files = tf.data.Dataset.list_files(
+  dataset = tf.data.Dataset.list_files(
       file_pattern, shuffle=shuffle, seed=shuffle_seed)
 
-  reader_args = reader_args or []
-  dataset = files.apply(
-      tf.data.experimental.parallel_interleave(
-          lambda filename: reader(filename, *reader_args),
-          cycle_length=reader_num_threads,
-          sloppy=sloppy_ordering))
+  dataset = dataset.interleave(
+      lambda filename: reader(filename, *(reader_args or [])),
+      cycle_length=reader_num_threads,
+      num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  options = tf.data.Options()
+  options.experimental_deterministic = not sloppy_ordering
+  dataset = dataset.with_options(options)
 
   # Extract values if tensors are stored as key-value tuples.
   if tf.compat.v1.data.get_output_types(dataset) == (tf.string, tf.string):
