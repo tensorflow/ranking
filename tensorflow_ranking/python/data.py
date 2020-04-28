@@ -833,20 +833,21 @@ def make_parsing_fn(data_format,
     raise ValueError("Format {} is not supported.".format(data_format))
 
 
-def build_ranking_dataset_with_parsing_fn(file_pattern,
-                                          parsing_fn,
-                                          batch_size,
-                                          reader=tf.data.TFRecordDataset,
-                                          reader_args=None,
-                                          num_epochs=None,
-                                          shuffle=True,
-                                          shuffle_buffer_size=1000,
-                                          shuffle_seed=None,
-                                          prefetch_buffer_size=32,
-                                          reader_num_threads=10,
-                                          sloppy_ordering=True,
-                                          drop_final_batch=False,
-                                          num_parser_threads=None):
+def build_ranking_dataset_with_parsing_fn(
+    file_pattern,
+    parsing_fn,
+    batch_size,
+    reader=tf.data.TFRecordDataset,
+    reader_args=None,
+    num_epochs=None,
+    shuffle=True,
+    shuffle_buffer_size=10000,
+    shuffle_seed=None,
+    prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
+    reader_num_threads=tf.data.experimental.AUTOTUNE,
+    sloppy_ordering=False,
+    drop_final_batch=False,
+    num_parser_threads=tf.data.experimental.AUTOTUNE):
   """Builds a ranking tf.dataset using the provided `parsing_fn`.
 
   Args:
@@ -869,9 +870,9 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
     shuffle_seed: (int) Randomization seed to use for shuffling.
     prefetch_buffer_size: (int) Number of feature batches to prefetch in order
       to improve performance. Recommended value is the number of batches
-      consumed per training step (default is 1).
+      consumed per training step. Defaults to auto-tune.
     reader_num_threads: (int) Number of threads used to read records. If greater
-      than 1, the results will be interleaved.
+      than 1, the results will be interleaved. Defaults to auto-tune.
     sloppy_ordering: (bool) If `True`, reading performance will be improved at
       the cost of non-deterministic ordering. If `False`, the order of elements
       produced is deterministic prior to shuffling (elements are still
@@ -881,7 +882,7 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
       divide the input dataset size, the final smaller batch will be dropped.
       Defaults to `False`. If `True`, the batch_size can be statically inferred.
     num_parser_threads: (int) Optional number of threads to be used with
-      dataset.map() when invoking parsing_fn.
+      dataset.map() when invoking parsing_fn. Defaults to auto-tune.
 
   Returns:
     A dataset of `dict` elements. Each `dict` maps feature keys to
@@ -890,10 +891,17 @@ def build_ranking_dataset_with_parsing_fn(file_pattern,
   dataset = tf.data.Dataset.list_files(
       file_pattern, shuffle=shuffle, seed=shuffle_seed)
 
-  dataset = dataset.interleave(
-      lambda filename: reader(filename, *(reader_args or [])),
-      cycle_length=reader_num_threads,
-      num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  if reader_num_threads == tf.data.experimental.AUTOTUNE:
+    dataset = dataset.interleave(
+        lambda filename: reader(filename, *(reader_args or [])),
+        num_parallel_calls=reader_num_threads)
+  else:
+    # cycle_length needs to be set when reader_num_threads is not AUTOTUNE.
+    dataset = dataset.interleave(
+        lambda filename: reader(filename, *(reader_args or [])),
+        cycle_length=reader_num_threads,
+        num_parallel_calls=reader_num_threads)
+
   options = tf.data.Options()
   options.experimental_deterministic = not sloppy_ordering
   dataset = dataset.with_options(options)

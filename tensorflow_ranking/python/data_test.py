@@ -780,6 +780,58 @@ class RankingDatasetTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllEqual(features["query_length"], [[3], [2]])
         self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
 
+  @parameterized.named_parameters(
+      ("with_reader_num_threads_autotune", tf.data.experimental.AUTOTUNE),
+      ("with_fixed_reader_num_threads", 5))
+  def test_build_ranking_dataset_reader_num_threads(self, reader_num_threads):
+    with tf.Graph().as_default():
+      # Save EIE protos in a sstable file in a temp folder.
+      serialized_example_in_examples = [
+          _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+          _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+      ] * 5
+      data_dir = tf.compat.v1.test.get_temp_dir()
+      data_file = os.path.join(data_dir, "test_ranking_data.tfrecord")
+      if tf.io.gfile.exists(data_file):
+        tf.io.gfile.remove(data_file)
+
+      with tf.io.TFRecordWriter(data_file) as writer:
+        for serialized_eie in serialized_example_in_examples:
+          writer.write(serialized_eie)
+
+      batched_dataset = data_lib.build_ranking_dataset(
+          file_pattern=data_file,
+          data_format=data_lib.EIE,
+          batch_size=2,
+          list_size=2,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC,
+          reader=tf.data.TFRecordDataset,
+          shuffle=False,
+          reader_num_threads=reader_num_threads)
+      features = tf.compat.v1.data.make_one_shot_iterator(
+          batched_dataset).get_next()
+      self.assertAllEqual([2, 1],
+                          features["query_length"].get_shape().as_list())
+      self.assertAllEqual([2, 2, 1], features["utility"].get_shape().as_list())
+
+      self.assertAllEqual(
+          sorted(features.keys()), ["query_length", "unigrams", "utility"])
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(features["unigrams"].dense_shape, [2, 2, 3])
+        self.assertAllEqual(
+            features["unigrams"].indices,
+            [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0]])
+        self.assertAllEqual(
+            features["unigrams"].values,
+            [b"tensorflow", b"learning", b"to", b"rank", b"gbdt"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
   def test_build_ranking_serving_input_receiver_fn(self):
     with tf.Graph().as_default():
       serving_input_receiver_fn = (
