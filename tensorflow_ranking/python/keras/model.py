@@ -20,7 +20,12 @@ import tensorflow.compat.v2 as tf
 from tensorflow_ranking.python.keras import feature
 
 
-def create_keras_model(network, loss, metrics, optimizer, size_feature_name):
+def create_keras_model(network,
+                       loss,
+                       metrics,
+                       optimizer,
+                       size_feature_name,
+                       list_size=None):
   """Creates a Functional Keras ranking model.
 
   A mask is inferred from size_feature_name and passed to the network, along
@@ -38,6 +43,8 @@ def create_keras_model(network, loss, metrics, optimizer, size_feature_name):
       None, this feature name corresponds to a `tf.int32` Tensor of size
       [batch_size] corresponding to sizes of example lists. If `None`, all
       examples are treated as valid.
+    list_size: (int) The list size for example features. If None, use dynamic
+      list size. A fixed list size is required for TPU training.
 
   Returns:
     A compiled ranking Keras model, a `tf.keras.Model` instance.
@@ -46,7 +53,8 @@ def create_keras_model(network, loss, metrics, optimizer, size_feature_name):
   keras_inputs = feature.create_keras_inputs(
       context_feature_columns=network.context_feature_columns,
       example_feature_columns=network.example_feature_columns,
-      size_feature_name=size_feature_name)
+      size_feature_name=size_feature_name,
+      list_size=list_size)
 
   # Create mask from sizes and list_size.
   mask = None

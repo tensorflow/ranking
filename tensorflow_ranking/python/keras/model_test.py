@@ -181,6 +181,21 @@ class FunctionalRankingModelTest(tf.test.TestCase):
     self.assertEqual(ranker.loss, self.loss)
     self.assertIn("example_list_size", ranker.input_names)
 
+  def test_create_keras_model_with_list_size(self):
+    network = _DummyUnivariateRankingNetwork(
+        context_feature_columns=self.context_feature_columns,
+        example_feature_columns=self.example_feature_columns)
+    ranker = model_lib.create_keras_model(
+        network=network,
+        loss=self.loss,
+        metrics=self.metrics,
+        optimizer=self.optimizer,
+        size_feature_name="example_list_size",
+        list_size=2)
+    self.assertEqual(ranker.optimizer, self.optimizer)
+    self.assertEqual(ranker.loss, self.loss)
+    self.assertIn("example_list_size", ranker.input_names)
+
   def test_model_to_json(self):
     network = _DummyUnivariateRankingNetwork(
         context_feature_columns=self.context_feature_columns,

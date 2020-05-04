@@ -71,7 +71,8 @@ def deserialize_feature_columns(feature_column_configs, custom_objects=None):
 
 def create_keras_inputs(context_feature_columns,
                         example_feature_columns,
-                        size_feature_name):
+                        size_feature_name,
+                        list_size=None):
   """Create Keras inputs from context and example feature columns.
 
   Args:
@@ -80,6 +81,8 @@ def create_keras_inputs(context_feature_columns,
     size_feature_name: (str) Name of feature for example list sizes. If not
       None, this feature name corresponds to a `tf.int32` Tensor of size
       [batch_size] corresponding to sizes of example lists.
+    list_size: (int) The list size for example features. If None, use dynamic
+      list size. A fixed list size is required for TPU training.
 
   Returns:
     A dict mapping feature names to Keras Input tensors.
@@ -101,9 +104,7 @@ def create_keras_inputs(context_feature_columns,
     inputs_dict[name] = tf.keras.Input(
         name=name, shape=shape, dtype=spec.dtype, sparse=is_sparse)
 
-  # Create Keras inputs for example features. We set list_size to None to allow
-  # for dynamic list sizes during inference.
-  list_size = None
+  # Create Keras inputs for example features.
   for name, spec in six.iteritems(example_feature_spec):
     is_sparse = isinstance(spec, tf.io.VarLenFeature)
     shape = [list_size] + list(spec.shape) if not is_sparse else (1,)
