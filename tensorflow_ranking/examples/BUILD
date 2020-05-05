@@ -134,3 +134,44 @@ py_test(
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
+
+py_library(
+    name = "tf_ranking_canned_gam_lib",
+    srcs = ["tf_ranking_canned_gam.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        # py/absl/flags dep,
+        # py/tensorflow dep,
+        "//tensorflow_ranking",
+    ],
+)
+
+py_binary(
+    name = "tf_ranking_canned_gam_py_binary",
+    srcs = ["tf_ranking_canned_gam.py"],
+    main = "tf_ranking_canned_gam.py",
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
+    deps = [
+        ":tf_ranking_canned_gam_lib",
+    ],
+)
+
+py_test(
+    name = "tf_ranking_canned_gam_test",
+    size = "large",
+    srcs = ["tf_ranking_canned_gam_test.py"],
+    srcs_version = "PY2AND3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":tf_ranking_canned_gam_lib",
+        # py/absl/flags dep,
+        # py/absl/testing:flagsaver dep,
+        # py/absl/testing:parameterized dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
