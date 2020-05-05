@@ -370,5 +370,32 @@ class DNNEstimatorTest(tf.test.TestCase):
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
+class GAMEstimatorTest(tf.test.TestCase):
+
+  def test_experiment(self):
+    serialized_elwc_list = [
+        ELWC_PROTO.SerializeToString(),
+    ] * 10
+
+    if tf.io.gfile.exists(DATA_FILE):
+      tf.io.gfile.remove(DATA_FILE)
+    with tf.io.TFRecordWriter(DATA_FILE) as writer:
+      for serialized_elwc in serialized_elwc_list:
+        writer.write(serialized_elwc)
+
+    estimator = tfr_estimator.make_gam_ranking_estimator(
+        example_feature_columns=example_feature_columns(),
+        example_hidden_units=["2", "2"],
+        optimizer=tf.compat.v1.train.AdamOptimizer(learning_rate=0.05),
+        learning_rate=0.05,
+        loss="softmax_loss",
+        use_batch_norm=False,
+        model_dir=None)
+    train_spec = tf.estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
+    eval_spec = tf.estimator.EvalSpec(
+        name="eval", input_fn=_inner_input_fn, steps=10)
+    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+
+
 if __name__ == "__main__":
   tf.test.main()
