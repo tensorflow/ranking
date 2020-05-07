@@ -22,7 +22,6 @@ MODEL_DIR=/tmp/output && \
 TRAIN=tensorflow_ranking/examples/data/train_elwc.tfrecord && \
 EVAL=tensorflow_ranking/examples/data/eval_elwc.tfrecord && \
 VOCAB=tensorflow_ranking/examples/data/vocab.txt && \
-WEIGHT_FEATURE_NAME="doc_weight" && \
 rm -rf $MODEL_DIR && \
 bazel build -c opt \
 tensorflow_ranking/examples/keras/keras_m2e_tfrecord_py_binary && \
@@ -31,8 +30,7 @@ tensorflow_ranking/examples/keras/keras_m2e_tfrecord_py_binary && \
 --eval_path=$EVAL \
 --vocab_path=$VOCAB \
 --model_dir=$MODEL_DIR \
---data_format=example_list_with_context \
---weights_feature_name=$WEIGHT_FEATURE_NAME
+--data_format=example_list_with_context
 
 You can use TensorBoard to display the training results stored in $MODEL_DIR.
 
@@ -66,12 +64,6 @@ flags.DEFINE_integer(
 flags.DEFINE_integer("group_size", 1, "Group size used in score function.")
 flags.DEFINE_string("loss", "approx_ndcg_loss",
                     "The RankingLossKey for the loss function.")
-flags.DEFINE_string("weights_feature_name", "",
-                    "The name of the feature where unbiased learning-to-rank "
-                    "weights are stored.")
-flags.DEFINE_bool(
-    "use_document_interactions", False,
-    "If true, uses cross-document interactions to generate scores.")
 
 FLAGS = flags.FLAGS
 
@@ -81,11 +73,8 @@ _EMBEDDING_DIMENSION = 20
 _SIZE = "example_list_size"
 
 
-def _create_feature_columns(use_weight_feature=True):
+def _create_feature_columns():
   """Returns context and example feature columns.
-
-  Args:
-    use_weight_feature: (bool) Whether to use weight feature.
 
   Returns:
     A tuple of dicts (context_feature_columns, example_feature_columns), where
@@ -110,10 +99,6 @@ def _create_feature_columns(use_weight_feature=True):
   document_embedding_column = tf.feature_column.embedding_column(
       sparse_column, _EMBEDDING_DIMENSION)
   example_feature_columns = {"document_tokens": document_embedding_column}
-  if use_weight_feature and FLAGS.weights_feature_name:
-    example_feature_columns[FLAGS.weights_feature_name] = (
-        tf.feature_column.numeric_column(
-            FLAGS.weights_feature_name, default_value=1.))
   return context_feature_columns, example_feature_columns
 
 

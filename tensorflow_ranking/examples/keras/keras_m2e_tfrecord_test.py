@@ -99,8 +99,7 @@ class KerasM2ETFRecordTest(tf.test.TestCase):
         eval_path=self._data_file,
         data_format="example_list_with_context",
         model_dir=self._model_dir,
-        num_train_steps=10,
-        weights_feature_name="doc_weight"):
+        num_train_steps=10):
       keras_m2e_tfrecord.train_and_eval()
 
 
