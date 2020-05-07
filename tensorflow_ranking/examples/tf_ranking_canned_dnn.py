@@ -19,20 +19,15 @@ The supported proto formats are listed at ../python/data.py.
 Sample command lines:
 
 MODEL_DIR=/tmp/output && \
-TRAIN=tensorflow_ranking/examples/data/train_elwc.tfrecord && \
-EVAL=tensorflow_ranking/examples/data/eval_elwc.tfrecord && \
-VOCAB=tensorflow_ranking/examples/data/vocab.txt && \
-WEIGHT_FEATURE_NAME="doc_weight" && \
+TRAIN=tensorflow_ranking/examples/data/train_numerical_elwc.tfrecord && \
+EVAL=tensorflow_ranking/examples/data/vali_numerical_elwc.tfrecord && \
 rm -rf $MODEL_DIR && \
 bazel build -c opt \
 tensorflow_ranking/examples/tf_ranking_canned_dnn_py_binary && \
 ./bazel-bin/tensorflow_ranking/examples/tf_ranking_canned_dnn_py_binary \
---train_path=$TRAIN \
---eval_path=$EVAL \
---vocab_path=$VOCAB \
---model_dir=$MODEL_DIR \
---data_format=example_list_with_context \
---weights_feature_name=$WEIGHT_FEATURE_NAME
+--train_input_pattern=$TRAIN \
+--eval_input_pattern=$EVAL \
+--model_dir=$MODEL_DIR
 
 You can use TensorBoard to display the training results stored in $MODEL_DIR.
 
@@ -45,16 +40,10 @@ from absl import flags
 import tensorflow as tf
 import tensorflow_ranking as tfr
 
-flags.DEFINE_enum(
-    "data_format", "example_list_with_context",
-    ["example_list_with_context", "example_in_example", "sequence_example"],
-    "Data format defined in data.py.")
 flags.DEFINE_string("train_input_pattern", None,
                     "Input file path used for training.")
 flags.DEFINE_string("eval_input_pattern", None,
                     "Input file path used for eval.")
-flags.DEFINE_string("vocab_path", None,
-                    "Vocabulary path for query and document tokens.")
 flags.DEFINE_string("model_dir", None, "Output directory for models.")
 flags.DEFINE_integer("batch_size", 32, "The batch size for train.")
 flags.DEFINE_integer("num_train_steps", 15000, "Number of steps for train.")
@@ -63,19 +52,16 @@ flags.DEFINE_integer("checkpoint_secs", 30,
                      "Saves a model checkpoint every checkpoint_secs seconds.")
 flags.DEFINE_integer("num_checkpoints", 100,
                      "Saves at most num_checkpoints checkpoints in workspace.")
+flags.DEFINE_integer("num_features", 136, "Number of features per example.")
+flags.DEFINE_integer(
+    "list_size", 100,
+    "List size used for training. Use None for dynamic list size.")
 flags.DEFINE_float("learning_rate", 0.05, "Learning rate for optimizer.")
 flags.DEFINE_float("dropout", 0.8, "The dropout rate before output layer.")
 flags.DEFINE_list("hidden_layer_dims", ["64", "32", "16"],
                   "Sizes for hidden layers.")
-flags.DEFINE_integer(
-    "list_size", None,
-    "List size used for training. Use None for dynamic list size.")
 flags.DEFINE_string("loss", "approx_ndcg_loss",
                     "The RankingLossKey for the loss function.")
-flags.DEFINE_string(
-    "weights_feature_name", "",
-    "The name of the feature where unbiased learning-to-rank "
-    "weights are stored.")
 flags.DEFINE_bool("convert_labels_to_binary", False,
                   "If true, relevance labels are set to either 0 or 1.")
 flags.DEFINE_bool("listwise_inference", False,
@@ -83,39 +69,24 @@ flags.DEFINE_bool("listwise_inference", False,
 
 FLAGS = flags.FLAGS
 
-_LABEL_FEATURE = "relevance"
-_EMBEDDING_DIMENSION = 20
+_LABEL_FEATURE = "utility"
 
 
 def context_feature_columns():
-  """Returns context feature names to column definitions."""
-  if FLAGS.vocab_path:
-    sparse_column = tf.feature_column.categorical_column_with_vocabulary_file(
-        key="query_tokens", vocabulary_file=FLAGS.vocab_path)
-  else:
-    sparse_column = tf.feature_column.categorical_column_with_hash_bucket(
-        key="query_tokens", hash_bucket_size=100)
-  query_embedding_column = tf.feature_column.embedding_column(
-      sparse_column, _EMBEDDING_DIMENSION)
-  return {"query_tokens": query_embedding_column}
+  """Returns context feature columns."""
+  return {}
 
 
-def example_feature_columns(use_weight_feature=True):
+def example_feature_columns():
   """Returns the example feature columns."""
-  if FLAGS.vocab_path:
-    sparse_column = tf.feature_column.categorical_column_with_vocabulary_file(
-        key="document_tokens", vocabulary_file=FLAGS.vocab_path)
-  else:
-    sparse_column = tf.feature_column.categorical_column_with_hash_bucket(
-        key="document_tokens", hash_bucket_size=100)
-  document_embedding_column = tf.feature_column.embedding_column(
-      sparse_column, _EMBEDDING_DIMENSION)
-  feature_columns = {"document_tokens": document_embedding_column}
-  if use_weight_feature and FLAGS.weights_feature_name:
-    feature_columns[FLAGS.weights_feature_name] = (
-        tf.feature_column.numeric_column(FLAGS.weights_feature_name,
-                                         default_value=1.))
-  return feature_columns
+  feature_names = [
+      "custom_features_{}".format(i + 1) for i in range(FLAGS.num_features)
+  ]
+  return {
+      name:
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      for name in feature_names
+  }
 
 
 def train_and_eval():
@@ -170,8 +141,8 @@ def main(_):
 
 
 if __name__ == "__main__":
-  flags.mark_flag_as_required("train_path")
-  flags.mark_flag_as_required("eval_path")
+  flags.mark_flag_as_required("train_input_pattern")
+  flags.mark_flag_as_required("eval_input_pattern")
   flags.mark_flag_as_required("model_dir")
 
   tf.compat.v1.app.run()

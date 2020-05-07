@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for tf_ranking_tfrecord.py."""
+"""Tests for tf_ranking_canned_dnn.py."""
 
 import os
 
@@ -31,42 +31,36 @@ FLAGS = flags.FLAGS
 ELWC = text_format.Parse(
     """
     context {
-      features {
-        feature {
-          key: "query_tokens"
-          value { bytes_list { value: ["this", "is", "a", "relevant", "question"] } }
-        }
-      }
     }
     examples {
       features {
         feature {
-          key: "document_tokens"
-          value { bytes_list { value: ["this", "is", "a", "relevant", "answer"] } }
+          key: "custom_features_1"
+          value { float_list { value: 1.0 } }
         }
         feature {
-          key: "relevance"
+          key: "custom_features_2"
+          value { float_list { value: 1.5 } }
+        }
+        feature {
+          key: "utility"
           value { int64_list { value: 1 } }
         }
-        feature {
-          key: "doc_weight"
-          value { float_list { value: 0.5 } }
-        }
       }
     }
     examples {
       features {
         feature {
-          key: "document_tokens"
-          value { bytes_list { value: ["irrelevant", "data"] } }
+          key: "custom_features_1"
+          value { float_list { value: 1.0 } }
         }
         feature {
-          key: "relevance"
+          key: "custom_features_3"
+          value { float_list { value: 2.1 } }
+        }
+        feature {
+          key: "utility"
           value { int64_list { value: 0 } }
-        }
-        feature {
-          key: "doc_weight"
-          value { float_list { value: 2.0 } }
         }
       }
     }""", input_pb2.ExampleListWithContext())
@@ -107,11 +101,10 @@ class TFRankingCannedDNNTest(tf.test.TestCase, parameterized.TestCase):
     with flagsaver.flagsaver(
         train_input_pattern=self._data_file,
         eval_input_pattern=self._data_file,
-        data_format="example_list_with_context",
         model_dir=self._model_dir,
+        num_features=3,
         num_train_steps=10,
-        listwise_inference=listwise_inference,
-        weights_feature_name="doc_weight"):
+        listwise_inference=listwise_inference):
       tf_ranking_canned_dnn.train_and_eval()
 
 
