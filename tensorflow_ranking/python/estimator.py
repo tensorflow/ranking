@@ -384,18 +384,15 @@ def _make_dnn_score_fn(hidden_units,
       if use_batch_norm:
         cur_layer = tf.compat.v1.layers.batch_normalization(
             cur_layer, training=is_training, momentum=batch_norm_moment)
-      for i, layer_width in enumerate(map(int, hidden_units)):
-        cur_layer = tf.compat.v1.layers.dense(cur_layer, units=layer_width)
-        if use_batch_norm:
-          cur_layer = tf.compat.v1.layers.batch_normalization(
-              cur_layer, training=is_training, momentum=batch_norm_moment)
-        cur_layer = activation_fn(cur_layer)
-        if dropout:
-          cur_layer = tf.compat.v1.layers.dropout(
-              inputs=cur_layer, rate=dropout, training=is_training)
-        tf.compat.v1.summary.scalar("fully_connected_{}_sparsity".format(i),
-                                    tf.nn.zero_fraction(cur_layer))
-      logits = tf.compat.v1.layers.dense(cur_layer, units=1)
+      logits = _feed_forward_network(
+          cur_layer,
+          map(int, hidden_units),
+          output_units=1,
+          activation_fn=activation_fn,
+          batch_norm=use_batch_norm,
+          batch_norm_moment=batch_norm_moment,
+          dropout=dropout,
+          is_training=is_training)
 
     tf.compat.v1.summary.scalar("logits_mean",
                                 tf.reduce_mean(input_tensor=logits))
