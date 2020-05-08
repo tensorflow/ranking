@@ -150,9 +150,9 @@ class RankingNetwork(tf.keras.layers.Layer):
     """
     config_cp = config.copy()
     config_cp['context_feature_columns'] = feature.deserialize_feature_columns(
-        config_cp['context_feature_columns'])
+        config_cp['context_feature_columns'], custom_objects=custom_objects)
     config_cp['example_feature_columns'] = feature.deserialize_feature_columns(
-        config_cp['example_feature_columns'])
+        config_cp['example_feature_columns'], custom_objects=custom_objects)
 
     return cls(**config_cp)
 

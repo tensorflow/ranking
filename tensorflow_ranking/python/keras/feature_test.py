@@ -26,19 +26,24 @@ import tensorflow.compat.v2 as tf
 from tensorflow_ranking.python.keras import feature
 
 
-def _context_feature_columns():
-  return {
+def _get_feature_columns():
+
+  def _normalizer_fn(t):
+    return tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
+
+  context_feature_columns = {
       'query_length':
           tf.feature_column.numeric_column(
               'query_length', shape=(1,), default_value=0, dtype=tf.int64)
   }
-
-
-def _example_feature_columns():
-  return {
+  example_feature_columns = {
       'utility':
           tf.feature_column.numeric_column(
-              'utility', shape=(1,), default_value=0.0, dtype=tf.float32),
+              'utility',
+              shape=(1,),
+              default_value=0.0,
+              dtype=tf.float32,
+              normalizer_fn=_normalizer_fn),
       'unigrams':
           tf.feature_column.embedding_column(
               tf.feature_column.categorical_column_with_vocabulary_list(
@@ -48,6 +53,8 @@ def _example_feature_columns():
                   ]),
               dimension=10)
   }
+  custom_objects = {'_normalizer_fn': _normalizer_fn}
+  return context_feature_columns, example_feature_columns, custom_objects
 
 
 def _features():
@@ -66,20 +73,24 @@ def _features():
   }
 
 
-clone_keras_obj = lambda obj: obj.__class__.from_config(obj.get_config())
+def _clone_keras_obj(obj, custom_objects=None):
+  return obj.__class__.from_config(
+      obj.get_config(), custom_objects=custom_objects)
 
 
 class KerasInputsTest(tf.test.TestCase):
 
   def setUp(self):
     super(KerasInputsTest, self).setUp()
-    self.context_feature_columns = _context_feature_columns()
-    self.example_feature_columns = _example_feature_columns()
+    (context_feature_columns, example_feature_columns,
+     _) = _get_feature_columns()
+    self._context_feature_columns = context_feature_columns
+    self._example_feature_columns = example_feature_columns
 
   def test_keras_inputs_dynamic_list_shape(self):
     keras_inputs = feature.create_keras_inputs(
-        context_feature_columns=self.context_feature_columns,
-        example_feature_columns=self.example_feature_columns,
+        context_feature_columns=self._context_feature_columns,
+        example_feature_columns=self._example_feature_columns,
         size_feature_name=None)
 
     self.assertEqual(keras_inputs['query_length'].shape.as_list(), [None, 1])
@@ -95,22 +106,26 @@ class EncodeListwiseFeaturesTest(tf.test.TestCase):
 
   def setUp(self):
     super(EncodeListwiseFeaturesTest, self).setUp()
-    self.context_feature_columns = _context_feature_columns()
-    self.example_feature_columns = _example_feature_columns()
+    (context_feature_columns, example_feature_columns,
+     custom_objects) = _get_feature_columns()
+    self._context_feature_columns = context_feature_columns
+    self._example_feature_columns = example_feature_columns
+    self._custom_objects = custom_objects
 
     # Batch size = 2, list_size = 2.
-    self.features = _features()
-    self.listwise_dense_layer = feature.EncodeListwiseFeatures(
-        context_feature_columns=self.context_feature_columns,
-        example_feature_columns=self.example_feature_columns)
+    self._features = _features()
+    self._listwise_dense_layer = feature.EncodeListwiseFeatures(
+        context_feature_columns=self._context_feature_columns,
+        example_feature_columns=self._example_feature_columns)
 
   def test_get_config(self):
     # Check save and restore config.
-    restored_layer = clone_keras_obj(self.listwise_dense_layer)
+    restored_layer = _clone_keras_obj(
+        self._listwise_dense_layer, custom_objects=self._custom_objects)
     self.assertEqual(restored_layer.context_feature_columns,
-                     self.context_feature_columns)
+                     self._context_feature_columns)
     self.assertEqual(restored_layer.example_feature_columns['utility'],
-                     self.example_feature_columns['utility'])
+                     self._example_feature_columns['utility'])
     # TODO: Deserialized embedding feature column behavior is the
     # same but config is different. Hence we check for individual attributes.
     self.assertEqual(restored_layer.example_feature_columns['unigrams'].name,
@@ -124,46 +139,52 @@ class EncodeListwiseFeaturesTest(tf.test.TestCase):
         ['ranking', 'regression', 'classification', 'ordinal'])
 
   def test_listwise_dense_layer(self):
-    context_features, example_features = self.listwise_dense_layer(
-        inputs=self.features, training=False)
+    context_features, example_features = self._listwise_dense_layer(
+        inputs=self._features, training=False)
     self.assertAllInSet(['query_length'], set(six.iterkeys(context_features)))
     self.assertAllInSet(['unigrams', 'utility'],
                         set(six.iterkeys(example_features)))
     self.assertAllEqual(example_features['unigrams'].get_shape().as_list(),
                         [2, 2, 10])
     self.assertAllEqual(context_features['query_length'], [[1], [2]])
-    self.assertAllEqual(example_features['utility'],
-                        [[[1.0], [0.0]], [[0.0], [1.0]]])
+    self.assertAllEqual(
+        example_features['utility'],
+        [[[tf.math.log1p(1.0)], [0.0]], [[0.0], [tf.math.log1p(1.0)]]])
 
   def test_create_keras_inputs(self):
     keras_inputs = feature.create_keras_inputs(
-        context_feature_columns=self.context_feature_columns,
-        example_feature_columns=self.example_feature_columns,
+        context_feature_columns=self._context_feature_columns,
+        example_feature_columns=self._example_feature_columns,
         size_feature_name='example_list_size')
 
     self.assertCountEqual(
         keras_inputs.keys(),
-        list(self.context_feature_columns.keys()) +
-        list(self.example_feature_columns.keys()) + ['example_list_size'])
+        list(self._context_feature_columns.keys()) +
+        list(self._example_feature_columns.keys()) + ['example_list_size'])
 
 
 class GenerateMaskTest(tf.test.TestCase):
 
   def setUp(self):
     super(GenerateMaskTest, self).setUp()
-    self.context_feature_columns = _context_feature_columns()
-    self.example_feature_columns = _example_feature_columns()
+    (context_feature_columns, example_feature_columns,
+     custom_objects) = _get_feature_columns()
+    self._context_feature_columns = context_feature_columns
+    self._example_feature_columns = example_feature_columns
+    self._custom_objects = custom_objects
+
     # Batch size = 2, list_size = 2.
-    self.features = _features()
-    self.mask_generator_layer = feature.GenerateMask(
-        example_feature_columns=self.example_feature_columns,
+    self._features = _features()
+    self._mask_generator_layer = feature.GenerateMask(
+        example_feature_columns=self._example_feature_columns,
         size_feature_name='example_feature_size')
 
   def test_get_config(self):
     # Check save and restore config.
-    restored_layer = clone_keras_obj(self.mask_generator_layer)
+    restored_layer = _clone_keras_obj(
+        self._mask_generator_layer, custom_objects=self._custom_objects)
     self.assertEqual(restored_layer.example_feature_columns['utility'],
-                     self.example_feature_columns['utility'])
+                     self._example_feature_columns['utility'])
     # TODO: Deserialized embedding feature column behavior is the
     # same but config is different. Hence we check for individual attributes.
     self.assertEqual(restored_layer.example_feature_columns['unigrams'].name,
@@ -177,7 +198,7 @@ class GenerateMaskTest(tf.test.TestCase):
         ['ranking', 'regression', 'classification', 'ordinal'])
 
   def test_mask_generator_layer(self):
-    mask = self.mask_generator_layer(inputs=self.features, training=False)
+    mask = self._mask_generator_layer(inputs=self._features, training=False)
     expected_mask = [[True, False], [True, True]]
     self.assertAllEqual(expected_mask, mask)
 
@@ -186,13 +207,15 @@ class FeatureColumnSerializationTest(tf.test.TestCase):
 
   def setUp(self):
     super(FeatureColumnSerializationTest, self).setUp()
-    self._feature_columns = _example_feature_columns()
+    (_, example_feature_columns, custom_objects) = _get_feature_columns()
+    self._feature_columns = example_feature_columns
+    self._custom_objects = custom_objects
 
   def test_deserialization(self):
     serialized_feature_columns = feature.serialize_feature_columns(
         self._feature_columns)
     restored_feature_columns = feature.deserialize_feature_columns(
-        serialized_feature_columns)
+        serialized_feature_columns, custom_objects=self._custom_objects)
     self.assertEqual(restored_feature_columns['utility'],
                      self._feature_columns['utility'])
     # TODO: Deserialized embedding feature column behavior is the

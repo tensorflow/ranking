@@ -17,8 +17,10 @@
 
 import tensorflow as tf
 
+from tensorflow_ranking.python.keras import metrics
 
-def model_to_estimator(model, model_dir=None, config=None):
+
+def model_to_estimator(model, model_dir=None, config=None, custom_objects=None):
   """Keras ranking model to Estimator.
 
   This function is based on the custom model_fn in TF2.0 migration guide.
@@ -31,12 +33,21 @@ def model_to_estimator(model, model_dir=None, config=None):
     model_dir: (str) Directory to save `Estimator` model graph and checkpoints.
     config: (tf.estimator.RunConfig) Specified config for distributed training
       and checkpointing.
+    custom_objects: (dict) mapping names (strings) to custom
+      objects (classes and functions) to be considered during deserialization.
 
   Returns:
     (tf.estimator.Estimator) A ranking estimator.
   """
 
-  clone_keras_obj = lambda obj: obj.__class__.from_config(obj.get_config())
+  def _clone_fn_with_custom_objects(obj):
+    """Clone keras object, with custom objects for serialization."""
+    return obj.__class__.from_config(
+        obj.get_config(), custom_objects=custom_objects)
+
+  def _clone_fn(obj):
+    """Clone keras object."""
+    return obj.__class__.from_config(obj.get_config())
 
   def _model_fn(features, labels, mode, params, config):
     """Defines an `Estimator` `model_fn`."""
@@ -45,19 +56,23 @@ def model_to_estimator(model, model_dir=None, config=None):
     # In Estimator, all sub-graphs need to be constructed inside the model_fn.
     # Hence, ranker, losses, metrics and optimizer are cloned inside this
     # function.
-    ranker = tf.keras.models.clone_model(model)
+    ranker = tf.keras.models.clone_model(
+        model, clone_function=_clone_fn_with_custom_objects)
     training = (mode == tf.compat.v1.estimator.ModeKeys.TRAIN)
     logits = ranker(features, training=training)
 
     if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
       return tf.compat.v1.estimator.EstimatorSpec(mode=mode, predictions=logits)
 
-    loss = clone_keras_obj(model.loss)
+    loss = _clone_fn(model.loss)
     total_loss = loss(labels, logits)
 
     keras_metrics = []
     for metric in model.metrics:
-      keras_metrics.append(clone_keras_obj(metric))
+      keras_metrics.append(_clone_fn(metric))
+    # Adding default metrics here as model.metrics does not contain custom
+    # metrics.
+    keras_metrics += metrics.default_keras_metrics()
     eval_metric_ops = {}
     for keras_metric in keras_metrics:
       keras_metric.update_state(labels, logits)
@@ -65,7 +80,7 @@ def model_to_estimator(model, model_dir=None, config=None):
 
     train_op = None
     if training:
-      optimizer = clone_keras_obj(model.optimizer)
+      optimizer = _clone_fn_with_custom_objects(model.optimizer)
       optimizer.iterations = tf.compat.v1.train.get_or_create_global_step()
       # Get both the unconditional updates (the None part)
       # and the input-conditional updates (the features part).

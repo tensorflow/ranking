@@ -24,19 +24,24 @@ import tensorflow.compat.v2 as tf
 from tensorflow_ranking.python.keras import network as network_lib
 
 
-def _context_feature_columns():
-  return {
+def _get_feature_columns():
+
+  def _normalizer_fn(t):
+    return tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
+
+  context_feature_columns = {
       "query_length":
           tf.feature_column.numeric_column(
               "query_length", shape=(1,), default_value=0, dtype=tf.int64)
   }
-
-
-def _example_feature_columns():
-  return {
+  example_feature_columns = {
       "utility":
           tf.feature_column.numeric_column(
-              "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
+              "utility",
+              shape=(1,),
+              default_value=0.0,
+              dtype=tf.float32,
+              normalizer_fn=_normalizer_fn),
       "unigrams":
           tf.feature_column.embedding_column(
               tf.feature_column.categorical_column_with_vocabulary_list(
@@ -46,6 +51,8 @@ def _example_feature_columns():
                   ]),
               dimension=10)
   }
+  custom_objects = {"_normalizer_fn": _normalizer_fn}
+  return context_feature_columns, example_feature_columns, custom_objects
 
 
 def _features():
@@ -58,8 +65,15 @@ def _features():
           tf.SparseTensor(
               indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
               values=["ranking", "regression", "classification", "ordinal"],
-              dense_shape=[2, 2, 1])
+              dense_shape=[2, 2, 1]),
+      "example_feature_size":
+          tf.convert_to_tensor(value=[1, 2])
   }
+
+
+def _clone_keras_obj(obj, custom_objects=None):
+  return obj.__class__.from_config(
+      obj.get_config(), custom_objects=custom_objects)
 
 
 class _DummyRankingNetwork(network_lib.RankingNetwork):
@@ -86,26 +100,30 @@ class BaseRankingNetworkTest(tf.test.TestCase):
 
   def setUp(self):
     super(BaseRankingNetworkTest, self).setUp()
-    self.context_feature_columns = _context_feature_columns()
-    self.example_feature_columns = _example_feature_columns()
-    self.features = _features()
-    self.ranker = _DummyRankingNetwork(
-        context_feature_columns=self.context_feature_columns,
-        example_feature_columns=self.example_feature_columns)
+    (context_feature_columns, example_feature_columns,
+     custom_objects) = _get_feature_columns()
+    self._context_feature_columns = context_feature_columns
+    self._example_feature_columns = example_feature_columns
+    self._custom_objects = custom_objects
+    self._features = _features()
+    self._ranker = _DummyRankingNetwork(
+        context_feature_columns=self._context_feature_columns,
+        example_feature_columns=self._example_feature_columns)
 
   def test_transform_fn(self):
-    context_features, example_features = self.ranker.transform(
-        features=self.features, training=False)
+    context_features, example_features = self._ranker.transform(
+        features=self._features, training=False)
     self.assertAllEqual(["query_length"], sorted(context_features))
     self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
     self.assertAllEqual([2, 2, 10],
                         example_features["unigrams"].get_shape().as_list())
     self.assertAllEqual([[1], [2]], context_features["query_length"])
-    self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
-                        example_features["utility"])
+    self.assertAllEqual(
+        [[[tf.math.log1p(1.0)], [0.0]], [[0.0], [tf.math.log1p(1.0)]]],
+        example_features["utility"])
 
   def compute_logits_abstract_method(self):
-    context_features, example_features = self.ranker.transform(
+    context_features, example_features = self._ranker.transform(
         features=self.features, training=False)
     with self.assertRaisesRegexp(
         NotImplementedError, r"Calling an abstract method, "
@@ -114,7 +132,7 @@ class BaseRankingNetworkTest(tf.test.TestCase):
           context_features=context_features, example_features=example_features)
 
   def test_call(self):
-    logits = self.ranker(inputs=self.features)
+    logits = self._ranker(inputs=self._features)
     self.assertAllEqual([[1, 1], [1, 1]], logits)
 
 
@@ -122,20 +140,23 @@ class UnivariateRankingNetworkTest(tf.test.TestCase):
 
   def setUp(self):
     super(UnivariateRankingNetworkTest, self).setUp()
-    self.context_feature_columns = _context_feature_columns()
-    self.example_feature_columns = _example_feature_columns()
-    self.features = _features()
-    self.ranker = _DummyUnivariateRankingNetwork(
-        context_feature_columns=self.context_feature_columns,
-        example_feature_columns=self.example_feature_columns)
+    (context_feature_columns, example_feature_columns,
+     custom_objects) = _get_feature_columns()
+    self._context_feature_columns = context_feature_columns
+    self._example_feature_columns = example_feature_columns
+    self._custom_objects = custom_objects
+    self._features = _features()
+    self._ranker = _DummyUnivariateRankingNetwork(
+        context_feature_columns=self._context_feature_columns,
+        example_feature_columns=self._example_feature_columns)
 
   def test_call(self):
-    logits = self.ranker(
-        inputs=self.features, mask=[[True, False], [True, True]])
+    logits = self._ranker(
+        inputs=self._features, mask=[[True, False], [True, True]])
     self.assertAllEqual([2, 2], logits.get_shape().as_list())
 
   def test_call_no_mask(self):
-    logits = self.ranker(inputs=self.features)
+    logits = self._ranker(inputs=self._features)
     self.assertAllEqual([2, 2], logits.get_shape().as_list())
 
 

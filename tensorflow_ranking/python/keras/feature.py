@@ -36,8 +36,10 @@ def serialize_feature_columns(feature_columns):
   Returns:
     A dict mapping feature names to serialized feature columns.
   """
-  feature_column_configs = {}
+  if not feature_columns:
+    return {}
 
+  feature_column_configs = {}
   sorted_name_to_feature_columns = sorted(six.iteritems(feature_columns))
   sorted_names, sorted_feature_columns = zip(*sorted_name_to_feature_columns)
   sorted_configs = fc.serialize_feature_columns(
@@ -58,6 +60,9 @@ def deserialize_feature_columns(feature_column_configs, custom_objects=None):
   Returns:
     A dict mapping feature names to feature columns.
   """
+  if not feature_column_configs:
+    return {}
+
   feature_columns = {}
   sorted_fc_configs = sorted(six.iteritems(feature_column_configs))
   sorted_names, sorted_configs = zip(*sorted_fc_configs)

@@ -41,7 +41,7 @@ py_library(
 
 py_test(
     name = "estimator_test",
-    size = "small",
+    size = "large",
     srcs = ["estimator_test.py"],
     srcs_version = "PY2AND3",
     tags = [
@@ -55,6 +55,8 @@ py_test(
         ":model",
         ":network",
         # py/tensorflow dep,
+        "//tensorflow_ranking/python:data",
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
 
