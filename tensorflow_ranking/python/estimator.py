@@ -633,6 +633,7 @@ class GAMEstimatorBuilder(EstimatorBuilder):
   """Builds a TFR estimator with subscore signatures of GAM models.
 
   Neural Generalized Additive Ranking Model is an additive ranking model.
+  See the paper (https://arxiv.org/abs/2005.02553) for more details.
   For each example x with n features (x_1, x_2, ..., x_n), the ranking score is:
 
   F(x) = f1(x_1) + f2(x_2) + ... + fn(x_n)
