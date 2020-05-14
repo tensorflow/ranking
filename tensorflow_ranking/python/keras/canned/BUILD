@@ -15,6 +15,7 @@ py_library(
     visibility = ["//visibility:public"],
     deps = [
         ":dnn",
+        ":gam",
     ],
 )
 
@@ -45,5 +46,35 @@ py_test(
         "//tensorflow_ranking/python/keras:losses",
         "//tensorflow_ranking/python/keras:metrics",
         "//tensorflow_ranking/python/keras:model",
+    ],
+)
+
+py_library(
+    name = "gam",
+    srcs = ["gam.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        # py/tensorflow dep,
+        "//tensorflow_ranking/python:utils",
+        "//tensorflow_ranking/python/keras:feature",
+        "//tensorflow_ranking/python/keras:model",
+    ],
+)
+
+py_test(
+    name = "gam_test",
+    size = "small",
+    srcs = ["gam_test.py"],
+    srcs_version = "PY2AND3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":gam",
+        # py/tensorflow dep,
+        "//tensorflow_ranking/python/keras:losses",
+        "//tensorflow_ranking/python/keras:metrics",
+        "//tensorflow_ranking/python/keras:network",
     ],
 )

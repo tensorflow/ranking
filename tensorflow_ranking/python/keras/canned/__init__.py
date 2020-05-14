@@ -15,3 +15,4 @@
 """TensorFlow Ranking Premade Keras Module."""
 
 from tensorflow_ranking.python.keras.canned.dnn import *   # pylint: disable=wildcard-import
+from tensorflow_ranking.python.keras.canned.gam import *  # pylint: disable=wildcard-import
