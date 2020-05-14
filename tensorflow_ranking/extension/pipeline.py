@@ -203,7 +203,8 @@ class RankingPipeline(object):
     if estimator is None:
       raise ValueError("The `estimator` cannot be empty!")
 
-    if not isinstance(estimator, tf.estimator.Estimator):
+    if not isinstance(
+        estimator, (tf.estimator.Estimator, tf.compat.v1.estimator.Estimator)):
       raise ValueError(
           "The argument estimator needs to be of type tf.estimator.Estimator, "
           "not %s." % type(estimator))
