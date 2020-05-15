@@ -330,6 +330,32 @@ class UtilsTest(tf.test.TestCase):
         ranks = sess.run(utils.segment_sorted_ranks(scores, segments, seed=1))
         self.assertAllEqual(ranks, expected)
 
+  def test_de_noise(self):
+    with tf.Graph().as_default():
+      counts = [[1, 2, 3], [1, 2, 3]]
+      noise = [[3, 3, 4], [3, 2, 1]]
+      with tf.compat.v1.Session() as sess:
+        # Larger noise ratio -> the results are more sharp.
+        de_noised = sess.run(utils.de_noise(counts, noise, ratio=0.9))
+        self.assertAllClose(de_noised, [[0., 0.22, 0.78], [0., 0., 1.]])
+        # Smaller noise ratio -> the results are close to counts.
+        de_noised = sess.run(utils.de_noise(counts, noise, ratio=0.1))
+        self.assertAllClose(de_noised, [
+            [0.151852, 0.337037, 0.511111],
+            [0.12963, 0.333333, 0.537037],
+        ])
+
+  def test_de_noise_exception(self):
+    with tf.Graph().as_default():
+      with self.assertRaises(ValueError):
+        utils.de_noise([[1, 2, 3]], [[1, 2, 3]], ratio=1.1)
+      with self.assertRaises(ValueError):
+        utils.de_noise([[1, 2, 3]], [[1, 2, 3]], ratio=-0.1)
+      with self.assertRaises(tf.errors.InvalidArgumentError):
+        utils.de_noise([[-1, 2, 3]], [[1, 2, 3]])
+      with self.assertRaises(tf.errors.InvalidArgumentError):
+        utils.de_noise([[1, 2, 3]], [[0, 2, 3]])
+
 
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()

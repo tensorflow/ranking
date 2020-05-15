@@ -260,7 +260,7 @@ def ndcg(labels, ranks=None, perm_mat=None):
 
   if ranks is None:
     list_size = tf.shape(labels)[1]
-    ranks = tf.range(list_size)+1
+    ranks = tf.range(list_size) + 1
   discounts = 1. / tf.math.log1p(tf.cast(ranks, dtype=tf.float32))
   gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
   if perm_mat is not None:
@@ -499,3 +499,65 @@ def segment_sorted_ranks(scores, segments, shuffle_ties=True, seed=None):
     # Restores the computed ranks in segments to the original positions.
     return tf.scatter_nd(
         tf.expand_dims(sorted_indices[0], 1), in_segment_ranks, shape=[size])
+
+
+def de_noise(counts, noise, ratio=0.9):
+  """Returns a float `Tensor` as the de-noised `counts`.
+
+  The implementation is based on the the paper by Zhang and Xu: "Fast Exact
+  Maximum Likelihood Estimation for Mixture of Language Models." It assumes that
+  the observed `counts` are generated from a mixture of `noise` and the true
+  distribution: `ratio * noise_distribution + (1 - ratio) * true_distribution`,
+  where the contribution of `noise` is controlled by `ratio`. This method
+  returns the true distribution.
+
+  Args:
+    counts: A 2-D `Tensor` representing the observations. All values should be
+      nonnegative.
+    noise: A 2-D `Tensor` representing the noise distribution. This should be
+      the same shape as `counts`. All values should be positive and are
+      normalized to a simplex per row.
+    ratio: A float in (0, 1) representing the contribution from noise.
+
+  Returns:
+    A 2-D float `Tensor` and each row is a simplex.
+  Raises:
+    ValueError: if `ratio` is not in (0,1).
+    InvalidArgumentError: if any of `counts` is negative or any of `noise` is
+    not positive.
+  """
+  if not 0 < ratio < 1:
+    raise ValueError('ratio should be in (0, 1), but get {}'.format(ratio))
+  odds = (1 - ratio) / ratio
+
+  counts = tf.cast(counts, dtype=tf.float32)
+  noise = tf.cast(noise, dtype=tf.float32)
+
+  counts.get_shape().assert_has_rank(2)
+  noise.get_shape().assert_has_rank(2)
+  noise.get_shape().assert_is_compatible_with(counts.get_shape())
+
+  with tf.compat.v1.name_scope(name='de_noise'):
+    counts_nonneg = tf.compat.v1.assert_greater_equal(counts, 0.)
+    noise_pos = tf.compat.v1.assert_greater(noise, 0.)
+    with tf.control_dependencies([counts_nonneg, noise_pos]):
+      # Normalize noise to be a simplex per row.
+      noise = noise / tf.reduce_sum(noise, axis=1, keepdims=True)
+      sorted_idx = tf.argsort(
+          counts / noise, direction='DESCENDING', stable=True)
+      nd_indices = _to_nd_indices(sorted_idx)
+      sorted_counts = tf.gather_nd(counts, nd_indices)
+      sorted_noise = tf.gather_nd(noise, nd_indices)
+      # Decide whether an entry will have a positive value or 0.
+      is_pos = tf.cast(
+          (odds + tf.cumsum(sorted_noise, axis=1)) /
+          tf.cumsum(sorted_counts, axis=1) > sorted_noise / sorted_counts,
+          tf.float32)
+      # The lambda in the paper above, which is the lagrangian multiplier for
+      # the simplex constraint on the variables.
+      lagrangian_multiplier = tf.reduce_sum(
+          sorted_counts * is_pos, axis=1, keepdims=True) / (1 + tf.reduce_sum(
+              sorted_noise * is_pos, axis=1, keepdims=True) / odds)
+      res = (sorted_counts / lagrangian_multiplier -
+             sorted_noise / odds) * is_pos
+      return tf.scatter_nd(nd_indices, res, shape=tf.shape(counts))
