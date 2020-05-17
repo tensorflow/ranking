@@ -17,10 +17,15 @@
 
 import tensorflow as tf
 
+from tensorflow.python.util import function_utils
 from tensorflow_ranking.python.keras import metrics
 
 
-def model_to_estimator(model, model_dir=None, config=None, custom_objects=None):
+def model_to_estimator(model,
+                       model_dir=None,
+                       config=None,
+                       custom_objects=None,
+                       warm_start_from=None):
   """Keras ranking model to Estimator.
 
   This function is based on the custom model_fn in TF2.0 migration guide.
@@ -33,20 +38,23 @@ def model_to_estimator(model, model_dir=None, config=None, custom_objects=None):
     model_dir: (str) Directory to save `Estimator` model graph and checkpoints.
     config: (tf.estimator.RunConfig) Specified config for distributed training
       and checkpointing.
-    custom_objects: (dict) mapping names (strings) to custom
-      objects (classes and functions) to be considered during deserialization.
+    custom_objects: (dict) mapping names (strings) to custom objects (classes
+      and functions) to be considered during deserialization.
+    warm_start_from: (`tf.estimator.WarmStartSettings`) settings to warm-start
+      the `tf.estimator.Estimator`.
 
   Returns:
     (tf.estimator.Estimator) A ranking estimator.
   """
 
-  def _clone_fn_with_custom_objects(obj):
-    """Clone keras object, with custom objects for serialization."""
-    return obj.__class__.from_config(
-        obj.get_config(), custom_objects=custom_objects)
-
   def _clone_fn(obj):
     """Clone keras object."""
+    fn_args = function_utils.fn_args(obj.__class__.from_config)
+
+    if "custom_objects" in fn_args:
+      return obj.__class__.from_config(
+          obj.get_config(), custom_objects=custom_objects)
+
     return obj.__class__.from_config(obj.get_config())
 
   def _model_fn(features, labels, mode, params, config):
@@ -56,8 +64,7 @@ def model_to_estimator(model, model_dir=None, config=None, custom_objects=None):
     # In Estimator, all sub-graphs need to be constructed inside the model_fn.
     # Hence, ranker, losses, metrics and optimizer are cloned inside this
     # function.
-    ranker = tf.keras.models.clone_model(
-        model, clone_function=_clone_fn_with_custom_objects)
+    ranker = tf.keras.models.clone_model(model, clone_function=_clone_fn)
     training = (mode == tf.compat.v1.estimator.ModeKeys.TRAIN)
     logits = ranker(features, training=training)
 
@@ -80,7 +87,7 @@ def model_to_estimator(model, model_dir=None, config=None, custom_objects=None):
 
     train_op = None
     if training:
-      optimizer = _clone_fn_with_custom_objects(model.optimizer)
+      optimizer = _clone_fn(model.optimizer)
       optimizer.iterations = tf.compat.v1.train.get_or_create_global_step()
       # Get both the unconditional updates (the None part)
       # and the input-conditional updates (the features part).
@@ -100,4 +107,7 @@ def model_to_estimator(model, model_dir=None, config=None, custom_objects=None):
         eval_metric_ops=eval_metric_ops)
 
   return tf.compat.v1.estimator.Estimator(
-      model_fn=_model_fn, config=config, model_dir=model_dir)
+      model_fn=_model_fn,
+      config=config,
+      model_dir=model_dir,
+      warm_start_from=warm_start_from)
