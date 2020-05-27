@@ -19,7 +19,7 @@ import six
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python import utils
-
+from tensorflow.python.feature_column import serialization
 
 def create_keras_inputs(context_feature_columns,
                         example_feature_columns,
@@ -120,7 +120,7 @@ class GenerateMask(tf.keras.layers.Layer):
   def get_config(self):
     config = super(GenerateMask, self).get_config()
     config.update({
-        'example_feature_columns': self._example_feature_columns,
+        'example_feature_columns': serialization.serialize_feature_columns(self._example_feature_columns),
         'size_feature_name': self._size_feature_name
     })
     return config
@@ -223,7 +223,7 @@ class EncodeListwiseFeatures(tf.keras.layers.Layer):
     config = super(EncodeListwiseFeatures, self).get_config()
 
     config.update({
-        'context_feature_columns': self._context_feature_columns,
-        'example_feature_columns': self._example_feature_columns,
+        'context_feature_columns': serialization.serialize_feature_columns(self._context_feature_columns),
+        'example_feature_columns': serialization.serialize_feature_columns(self._example_feature_columns),
     })
     return config
