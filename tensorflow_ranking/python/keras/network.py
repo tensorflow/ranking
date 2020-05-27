@@ -18,6 +18,7 @@
 import abc
 import six
 import tensorflow.compat.v2 as tf
+from tensorflow.python.feature_column import serialization
 
 from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras import feature
@@ -130,8 +131,8 @@ class RankingNetwork(tf.keras.layers.Layer):
   def get_config(self):
     config = super(RankingNetwork, self).get_config()
     config.update({
-        'context_feature_columns': self._context_feature_columns,
-        'example_feature_columns': self._example_feature_columns,
+        'context_feature_columns': serialization.serialize_feature_columns(self._context_feature_columns),
+        'example_feature_columns': serialization.serialize_feature_columns(self._example_feature_columns),
     })
     return config
 
