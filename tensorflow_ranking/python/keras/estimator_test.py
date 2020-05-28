@@ -16,6 +16,8 @@
 """Tests for Keras Estimator."""
 
 import os
+from absl.testing import parameterized
+
 import tensorflow as tf
 
 from google.protobuf import text_format
@@ -49,6 +51,10 @@ _ELWC_PROTO = text_format.Parse(
           key: "utility"
           value { float_list { value: 0.0 } }
         }
+        feature {
+          key: "doc_weight"
+          value { float_list { value: 0.0 } }
+        }
       }
     }
     examples {
@@ -61,12 +67,17 @@ _ELWC_PROTO = text_format.Parse(
           key: "utility"
           value { float_list { value: 1.0 } }
         }
+        feature {
+          key: "doc_weight"
+          value { float_list { value: 1.0 } }
+        }
       }
     }
     """, input_pb2.ExampleListWithContext())
 
 _LABEL_FEATURE = 'utility'
 _PADDING_LABEL = -1.
+_EXAMPLE_WEIGHT_FEATURE = 'doc_weight'
 
 
 def _get_feature_columns():
@@ -103,6 +114,11 @@ def _get_feature_columns():
   return context_feature_columns, example_feature_columns, custom_objects
 
 
+def _get_example_weight_feature_column():
+  return tf.feature_column.numeric_column(
+      _EXAMPLE_WEIGHT_FEATURE, dtype=tf.float32, default_value=1.)
+
+
 # This network needs actual layers, otherwise the estimator training fails.
 class _DummyUnivariateRankingNetwork(network.UnivariateRankingNetwork):
   """Dummy univariate ranking network with a simple scoring function."""
@@ -127,7 +143,7 @@ class _DummyUnivariateRankingNetwork(network.UnivariateRankingNetwork):
     return self._score_layer(tf.concat(example_input, axis=1))
 
 
-class KerasModelToEstimatorTest(tf.test.TestCase):
+class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
 
   def setUp(self):
     super(KerasModelToEstimatorTest, self).setUp()
@@ -167,24 +183,48 @@ class KerasModelToEstimatorTest(tf.test.TestCase):
       tf.io.gfile.remove(self._data_file)
     self._data_file = None
 
-  def _inner_input_fn(self):
-    context_feature_columns, example_feature_columns, _ = _get_feature_columns()
-    context_feature_spec = tf.feature_column.make_parse_example_spec(
-        list(context_feature_columns.values()))
-    example_feature_spec = tf.feature_column.make_parse_example_spec(
-        list(example_feature_columns.values()))
-    dataset = data.build_ranking_dataset(
-        file_pattern=self._data_file,
-        data_format=data.ELWC,
-        batch_size=10,
-        context_feature_spec=context_feature_spec,
-        example_feature_spec=example_feature_spec,
-        list_size=2,
-        reader=tf.data.TFRecordDataset,
-        size_feature_name=_SIZE)
-    features = tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
-    label = tf.squeeze(features.pop(_LABEL_FEATURE), axis=2)
-    return features, label
+  def _make_input_fn(self, weights_feature_name=None):
+    """Return an input function, serves weights defined in weights_feature_name.
+
+    Args:
+      weights_feature_name: (str) A string defines the weights feature in
+        dataset. None if no weights is used.
+
+    Returns:
+      A function serves features and labels. Weights will be served in features.
+    """
+
+    def _input_fn():
+      context_feature_columns, example_feature_columns, _ = (
+          _get_feature_columns())
+      context_feature_spec = tf.feature_column.make_parse_example_spec(
+          list(context_feature_columns.values()))
+
+      label_column = tf.feature_column.numeric_column(
+          _LABEL_FEATURE, dtype=tf.float32, default_value=_PADDING_LABEL)
+      weight_column = (
+          _get_example_weight_feature_column()
+          if weights_feature_name == _EXAMPLE_WEIGHT_FEATURE else None)
+      example_fc_list = (
+          list(example_feature_columns.values()) + [label_column] +
+          ([weight_column] if weight_column else []))
+      example_feature_spec = tf.feature_column.make_parse_example_spec(
+          example_fc_list)
+
+      dataset = data.build_ranking_dataset(
+          file_pattern=self._data_file,
+          data_format=data.ELWC,
+          batch_size=10,
+          context_feature_spec=context_feature_spec,
+          example_feature_spec=example_feature_spec,
+          list_size=2,
+          reader=tf.data.TFRecordDataset,
+          size_feature_name=_SIZE)
+      features = tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
+      label = tf.squeeze(features.pop(_LABEL_FEATURE), axis=2)
+      return features, label
+
+    return _input_fn
 
   def test_model_to_estimator_missing_custom_objects(self):
     keras_model = model.create_keras_model(
@@ -199,14 +239,17 @@ class KerasModelToEstimatorTest(tf.test.TestCase):
 
     # Train and export model.
     train_spec = tf.estimator.TrainSpec(
-        input_fn=self._inner_input_fn, max_steps=1)
+        input_fn=self._make_input_fn(), max_steps=1)
     eval_spec = tf.estimator.EvalSpec(
-        name='eval', input_fn=self._inner_input_fn, steps=10)
+        name='eval', input_fn=self._make_input_fn(), steps=10)
 
     with self.assertRaises(AttributeError):
       tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
-  def test_model_to_estimator(self):
+  @parameterized.named_parameters(
+      ('without_weights', None),
+      ('with_example_weights', _EXAMPLE_WEIGHT_FEATURE))
+  def test_model_to_estimator(self, weights_feature_name):
     keras_model = model.create_keras_model(
         network=self._network,
         loss=self._loss,
@@ -216,14 +259,17 @@ class KerasModelToEstimatorTest(tf.test.TestCase):
     estimator = estimator_lib.model_to_estimator(
         model=keras_model,
         config=self._config,
+        weights_feature_name=weights_feature_name,
         custom_objects=self._custom_objects)
     self.assertIsInstance(estimator, tf.compat.v1.estimator.Estimator)
 
     # Train and export model.
     train_spec = tf.estimator.TrainSpec(
-        input_fn=self._inner_input_fn, max_steps=1)
+        input_fn=self._make_input_fn(weights_feature_name), max_steps=1)
     eval_spec = tf.estimator.EvalSpec(
-        name='eval', input_fn=self._inner_input_fn, steps=10)
+        name='eval',
+        input_fn=self._make_input_fn(weights_feature_name),
+        steps=10)
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
     context_feature_spec = tf.feature_column.make_parse_example_spec(
@@ -248,6 +294,29 @@ class KerasModelToEstimatorTest(tf.test.TestCase):
                                   tf.io.gfile.listdir(export_dir)[0],
                                   'saved_model.pb')
     self.assertTrue(tf.io.gfile.exists(saved_model_pb))
+
+  def test_model_to_estimator_wrong_weights_name(self):
+    keras_model = model.create_keras_model(
+        network=self._network,
+        loss=self._loss,
+        metrics=self._eval_metrics,
+        optimizer=self._optimizer,
+        size_feature_name=_SIZE)
+    estimator = estimator_lib.model_to_estimator(
+        model=keras_model,
+        config=self._config,
+        weights_feature_name='weights',
+        custom_objects=self._custom_objects)
+    self.assertIsInstance(estimator, tf.compat.v1.estimator.Estimator)
+
+    # Train and export model.
+    train_spec = tf.estimator.TrainSpec(
+        input_fn=self._make_input_fn(), max_steps=1)
+    eval_spec = tf.estimator.EvalSpec(
+        name='eval', input_fn=self._make_input_fn(), steps=10)
+
+    with self.assertRaises(ValueError):
+      tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 if __name__ == '__main__':

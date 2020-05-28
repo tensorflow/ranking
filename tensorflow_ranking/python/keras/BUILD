@@ -32,10 +32,9 @@ py_library(
     srcs = ["estimator.py"],
     srcs_version = "PY2AND3",
     deps = [
-        ":feature",
-        ":losses",
         ":metrics",
         # py/tensorflow dep,
+        "//tensorflow_ranking/python:utils",
     ],
 )
 
@@ -54,6 +53,7 @@ py_test(
         ":metrics",
         ":model",
         ":network",
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
         "//tensorflow_ranking/python:data",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,

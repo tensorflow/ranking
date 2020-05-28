@@ -22,6 +22,7 @@ MODEL_DIR=/tmp/output && \
 TRAIN=tensorflow_ranking/examples/data/train_elwc.tfrecord && \
 EVAL=tensorflow_ranking/examples/data/eval_elwc.tfrecord && \
 VOCAB=tensorflow_ranking/examples/data/vocab.txt && \
+WEIGHT_FEATURE_NAME="doc_weight" && \
 rm -rf $MODEL_DIR && \
 bazel build -c opt \
 tensorflow_ranking/examples/keras/keras_m2e_tfrecord_py_binary && \
@@ -30,7 +31,8 @@ tensorflow_ranking/examples/keras/keras_m2e_tfrecord_py_binary && \
 --eval_path=$EVAL \
 --vocab_path=$VOCAB \
 --model_dir=$MODEL_DIR \
---data_format=example_list_with_context
+--data_format=example_list_with_context \
+--weights_feature_name=$WEIGHT_FEATURE_NAME
 
 You can use TensorBoard to display the training results stored in $MODEL_DIR.
 
@@ -64,6 +66,10 @@ flags.DEFINE_integer(
 flags.DEFINE_integer("group_size", 1, "Group size used in score function.")
 flags.DEFINE_string("loss", "approx_ndcg_loss",
                     "The RankingLossKey for the loss function.")
+flags.DEFINE_string(
+    "weights_feature_name", None,
+    "The name of the feature where unbiased learning-to-rank "
+    "weights are stored.")
 
 FLAGS = flags.FLAGS
 
@@ -73,7 +79,7 @@ _EMBEDDING_DIMENSION = 20
 _SIZE = "example_list_size"
 
 
-def _create_feature_columns():
+def _get_feature_columns():
   """Returns context and example feature columns.
 
   Returns:
@@ -102,6 +108,13 @@ def _create_feature_columns():
   return context_feature_columns, example_feature_columns
 
 
+def _get_example_weight_feature_column():
+  if FLAGS.weights_feature_name:
+    return tf.feature_column.numeric_column(
+        FLAGS.weights_feature_name, dtype=tf.float32, default_value=1.)
+  return None
+
+
 def make_input_fn(file_pattern,
                   batch_size,
                   randomize_input=True,
@@ -123,13 +136,18 @@ def make_input_fn(file_pattern,
 
   def _input_fn():
     """Defines the input_fn."""
-    context_feature_columns, example_feature_columns = _create_feature_columns()
+    context_feature_columns, example_feature_columns = _get_feature_columns()
     context_feature_spec = tf.feature_column.make_parse_example_spec(
-        context_feature_columns.values())
+        list(context_feature_columns.values()))
+
     label_column = tf.feature_column.numeric_column(
         _LABEL_FEATURE, dtype=tf.int64, default_value=_PADDING_LABEL)
+    weight_column = _get_example_weight_feature_column()
+    example_fc_list = (
+        list(example_feature_columns.values()) + [label_column] +
+        ([weight_column] if weight_column else []))
     example_feature_spec = tf.feature_column.make_parse_example_spec(
-        list(example_feature_columns.values()) + [label_column])
+        example_fc_list)
     dataset = tfr.data.build_ranking_dataset(
         file_pattern=file_pattern,
         data_format=FLAGS.data_format,
@@ -152,7 +170,7 @@ def make_input_fn(file_pattern,
 
 def make_serving_input_fn():
   """Returns serving input fn."""
-  context_feature_columns, example_feature_columns = _create_feature_columns()
+  context_feature_columns, example_feature_columns = _get_feature_columns()
   context_feature_spec = tf.feature_column.make_parse_example_spec(
       context_feature_columns.values())
   example_feature_spec = tf.feature_column.make_parse_example_spec(
@@ -166,7 +184,7 @@ def make_serving_input_fn():
 
 def get_estimator():
   """Create Keras ranking estimator."""
-  context_feature_columns, example_feature_columns = _create_feature_columns()
+  context_feature_columns, example_feature_columns = _get_feature_columns()
   # To build your own custom ranking network, look at how canned
   # DNNRankingNetwork is implemented. You can subclass
   # tfr.keras.network.UnivariateRankingNetwork, or the more generic
@@ -192,7 +210,10 @@ def get_estimator():
       optimizer=optimizer,
       size_feature_name=_SIZE)
   estimator = tfr.keras.estimator.model_to_estimator(
-      model=ranker, model_dir=FLAGS.model_dir, config=config)
+      model=ranker,
+      model_dir=FLAGS.model_dir,
+      config=config,
+      weights_feature_name=FLAGS.weights_feature_name)
 
   return estimator
 

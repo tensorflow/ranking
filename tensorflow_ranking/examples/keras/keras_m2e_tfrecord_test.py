@@ -18,6 +18,7 @@ import os
 
 from absl import flags
 from absl.testing import flagsaver
+from absl.testing import parameterized
 
 import tensorflow as tf
 
@@ -71,7 +72,7 @@ ELWC = text_format.Parse(
     }""", input_pb2.ExampleListWithContext())
 
 
-class KerasM2ETFRecordTest(tf.test.TestCase):
+class KerasM2ETFRecordTest(tf.test.TestCase, parameterized.TestCase):
 
   def setUp(self):
     super(KerasM2ETFRecordTest, self).setUp()
@@ -92,14 +93,17 @@ class KerasM2ETFRecordTest(tf.test.TestCase):
       tf.io.gfile.rmtree(self._model_dir)
     self._model_dir = None
 
-  def test_train_and_eval(self):
+  @parameterized.named_parameters(("no_weights_feature", None),
+                                  ("with_weights_feature", "doc_weight"))
+  def test_train_and_eval(self, weights_feature_name):
 
     with flagsaver.flagsaver(
         train_path=self._data_file,
         eval_path=self._data_file,
         data_format="example_list_with_context",
         model_dir=self._model_dir,
-        num_train_steps=10):
+        num_train_steps=10,
+        weights_feature_name=weights_feature_name):
       keras_m2e_tfrecord.train_and_eval()
 
 

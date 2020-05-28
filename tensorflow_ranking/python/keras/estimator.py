@@ -18,6 +18,7 @@
 import tensorflow as tf
 
 from tensorflow.python.util import function_utils
+from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras import metrics
 
 
@@ -25,6 +26,7 @@ def model_to_estimator(model,
                        model_dir=None,
                        config=None,
                        custom_objects=None,
+                       weights_feature_name=None,
                        warm_start_from=None):
   """Keras ranking model to Estimator.
 
@@ -40,11 +42,17 @@ def model_to_estimator(model,
       and checkpointing.
     custom_objects: (dict) mapping names (strings) to custom objects (classes
       and functions) to be considered during deserialization.
+    weights_feature_name: (str) A string specifying the name of the per-example
+      (of shape [batch_size, list_size]) or per-list (of shape [batch_size, 1])
+      weights feature in `features` dict.
     warm_start_from: (`tf.estimator.WarmStartSettings`) settings to warm-start
       the `tf.estimator.Estimator`.
 
   Returns:
     (tf.estimator.Estimator) A ranking estimator.
+
+  Raises:
+    ValueError: if weights_feature_name is not in features.
   """
 
   def _clone_fn(obj):
@@ -66,13 +74,23 @@ def model_to_estimator(model,
     # function.
     ranker = tf.keras.models.clone_model(model, clone_function=_clone_fn)
     training = (mode == tf.compat.v1.estimator.ModeKeys.TRAIN)
+
+    weights = None
+    if weights_feature_name and mode != tf.compat.v1.estimator.ModeKeys.PREDICT:
+      if weights_feature_name not in features:
+        raise ValueError(
+            "weights_feature '{0}' can not be found in 'features'.".format(
+                weights_feature_name))
+      else:
+        weights = utils.reshape_to_2d(features.pop(weights_feature_name))
+
     logits = ranker(features, training=training)
 
     if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
       return tf.compat.v1.estimator.EstimatorSpec(mode=mode, predictions=logits)
 
     loss = _clone_fn(model.loss)
-    total_loss = loss(labels, logits)
+    total_loss = loss(labels, logits, sample_weight=weights)
 
     keras_metrics = []
     for metric in model.metrics:
@@ -82,7 +100,7 @@ def model_to_estimator(model,
     keras_metrics += metrics.default_keras_metrics()
     eval_metric_ops = {}
     for keras_metric in keras_metrics:
-      keras_metric.update_state(labels, logits)
+      keras_metric.update_state(labels, logits, sample_weight=weights)
       eval_metric_ops[keras_metric.name] = keras_metric
 
     train_op = None
