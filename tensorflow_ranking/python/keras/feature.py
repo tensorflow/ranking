@@ -112,7 +112,7 @@ def create_keras_inputs(context_feature_columns,
   # Create Keras inputs for example features.
   for name, spec in six.iteritems(example_feature_spec):
     is_sparse = isinstance(spec, tf.io.VarLenFeature)
-    shape = [list_size] + list(spec.shape) if not is_sparse else (1,)
+    shape = [list_size] + list(spec.shape) if not is_sparse else (list_size, 1)
     inputs_dict[name] = tf.keras.Input(
         name=name, shape=shape, dtype=spec.dtype, sparse=is_sparse)
 

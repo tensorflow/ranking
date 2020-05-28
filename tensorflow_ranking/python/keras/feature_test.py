@@ -162,6 +162,33 @@ class EncodeListwiseFeaturesTest(tf.test.TestCase):
         list(self._context_feature_columns.keys()) +
         list(self._example_feature_columns.keys()) + ['example_list_size'])
 
+  def test_create_keras_inputs_sparse_features(self):
+    context_feature_columns = {
+        'query':
+            tf.feature_column.categorical_column_with_vocabulary_list(
+                'query',
+                vocabulary_list=[
+                    'ranking', 'regression', 'classification', 'ordinal'
+                ])
+    }
+    example_feature_columns = {
+        'title':
+            tf.feature_column.categorical_column_with_vocabulary_list(
+                'title',
+                vocabulary_list=[
+                    'ranking', 'regression', 'classification', 'ordinal'
+                ])
+    }
+    keras_inputs = feature.create_keras_inputs(
+        context_feature_columns=context_feature_columns,
+        example_feature_columns=example_feature_columns,
+        size_feature_name='example_list_size')
+
+    self.assertCountEqual(
+        keras_inputs.keys(),
+        list(context_feature_columns.keys()) +
+        list(example_feature_columns.keys()) + ['example_list_size'])
+
 
 class GenerateMaskTest(tf.test.TestCase):
 
