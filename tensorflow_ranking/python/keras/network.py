@@ -93,7 +93,7 @@ class RankingNetwork(tf.keras.layers.Layer):
       context_features: (dict) context feature names to 2D tensors of shape
         [batch_size, feature_dims].
       example_features: (dict) example feature names to 3D tensors of shape
-        [batch_size, input_size, feature_dims].
+        [batch_size, list_size, feature_dims].
       training: (bool) whether in train or inference mode.
       mask: (tf.Tensor) Mask is a tensor of shape [batch_size, list_size], which
         is True for a valid example and False for invalid one. If mask is None,
@@ -115,7 +115,7 @@ class RankingNetwork(tf.keras.layers.Layer):
         is True for a valid example and False for invalid one.
 
     Returns:
-      (tf.Tensor) A score tensor of shape [batch_size, input_size].
+      (tf.Tensor) A score tensor of shape [batch_size, list_size].
     """
     context_features, example_features = self.transform(
         features=inputs, training=training, mask=mask)

@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import parameterized
 import tensorflow.compat.v2 as tf
 
 from google.protobuf import text_format
@@ -142,7 +143,7 @@ class _DummyUnivariateRankingNetwork(network_lib.UnivariateRankingNetwork):
     return tf.ones(shape=(large_batch_size, 1))
 
 
-class FunctionalRankingModelTest(tf.test.TestCase):
+class FunctionalRankingModelTest(tf.test.TestCase, parameterized.TestCase):
 
   def setUp(self):
     super(FunctionalRankingModelTest, self).setUp()
@@ -153,7 +154,10 @@ class FunctionalRankingModelTest(tf.test.TestCase):
     self.loss = losses.SoftmaxLoss()
     self.metrics = [metrics.NDCGMetric("ndcg_5", topn=5)]
 
-  def test_create_keras_model_without_padding(self):
+  @parameterized.named_parameters(("without_padding", None, None),
+                                  ("with_padding", "example_list_size", None),
+                                  ("with_list_size", "example_list_size", 2))
+  def test_create_keras_model(self, size_feature_name, list_size):
     network = _DummyUnivariateRankingNetwork(
         context_feature_columns=self.context_feature_columns,
         example_feature_columns=self.example_feature_columns)
@@ -162,39 +166,14 @@ class FunctionalRankingModelTest(tf.test.TestCase):
         loss=self.loss,
         metrics=self.metrics,
         optimizer=self.optimizer,
-        size_feature_name=None)
+        size_feature_name=size_feature_name,
+        list_size=list_size)
     self.assertEqual(ranker.optimizer, self.optimizer)
     self.assertEqual(ranker.loss, self.loss)
-    self.assertNotIn("example_list_size", ranker.input_names)
-
-  def test_create_keras_model_with_padding(self):
-    network = _DummyUnivariateRankingNetwork(
-        context_feature_columns=self.context_feature_columns,
-        example_feature_columns=self.example_feature_columns)
-    ranker = model_lib.create_keras_model(
-        network=network,
-        loss=self.loss,
-        metrics=self.metrics,
-        optimizer=self.optimizer,
-        size_feature_name="example_list_size")
-    self.assertEqual(ranker.optimizer, self.optimizer)
-    self.assertEqual(ranker.loss, self.loss)
-    self.assertIn("example_list_size", ranker.input_names)
-
-  def test_create_keras_model_with_list_size(self):
-    network = _DummyUnivariateRankingNetwork(
-        context_feature_columns=self.context_feature_columns,
-        example_feature_columns=self.example_feature_columns)
-    ranker = model_lib.create_keras_model(
-        network=network,
-        loss=self.loss,
-        metrics=self.metrics,
-        optimizer=self.optimizer,
-        size_feature_name="example_list_size",
-        list_size=2)
-    self.assertEqual(ranker.optimizer, self.optimizer)
-    self.assertEqual(ranker.loss, self.loss)
-    self.assertIn("example_list_size", ranker.input_names)
+    if size_feature_name:
+      self.assertIn("example_list_size", ranker.input_names)
+    else:
+      self.assertNotIn("example_list_size", ranker.input_names)
 
   def test_model_to_json(self):
     network = _DummyUnivariateRankingNetwork(

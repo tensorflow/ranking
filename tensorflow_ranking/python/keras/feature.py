@@ -97,10 +97,6 @@ def create_keras_inputs(context_feature_columns,
   example_feature_spec = tf.feature_column.make_parse_example_spec(
       example_feature_columns.values())
 
-  feature_spec = {}
-  feature_spec.update(context_feature_spec)
-  feature_spec.update(example_feature_spec)
-
   inputs_dict = {}
   # Create Keras inputs for context features.
   for name, spec in six.iteritems(context_feature_spec):
