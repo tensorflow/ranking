@@ -1,31 +1,35 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.utils.reshape_first_ndims" />
+<meta itemprop="name" content="tfr.keras.feature.serialize_feature_columns" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.utils.reshape_first_ndims
+# tfr.keras.feature.serialize_feature_columns
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/feature.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Reshapes the first n dims of the input `tensor` to `new shape`.
+Serializes feature columns to a dict of class name and config.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.utils.reshape_first_ndims(
-    tensor, first_ndims, new_shape
+<code>tfr.keras.feature.serialize_feature_columns(
+    feature_columns
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+This serialization is required to support for SavedModel using model.save() in
+Keras. The serialization is similar to that of `tf.keras.layers.DenseFeatures`,
+which also has feature columns in it's constructor.
 
 <!-- Tabular view -->
 
@@ -34,24 +38,10 @@ Reshapes the first n dims of the input `tensor` to `new shape`.
 
 <tr>
 <td>
-`tensor`
+`feature_columns`
 </td>
 <td>
-The input `Tensor`.
-</td>
-</tr><tr>
-<td>
-`first_ndims`
-</td>
-<td>
-A int denoting the first n dims.
-</td>
-</tr><tr>
-<td>
-`new_shape`
-</td>
-<td>
-A list of int representing the new shape.
+(dict) feature names to feature columns.
 </td>
 </tr>
 </table>
@@ -62,7 +52,7 @@ A list of int representing the new shape.
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
 <td colspan="3">
-A reshaped `Tensor`.
+A dict mapping feature names to serialized feature columns.
 </td>
 </tr>
 

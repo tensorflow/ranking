@@ -14,15 +14,16 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Creates _LambdaWeight based on Position-Aware ListMLE paper.
 
-```python
-tfr.losses.create_p_list_mle_lambda_weight(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.losses.create_p_list_mle_lambda_weight(
     list_size
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -30,10 +31,29 @@ Produces a weight based on the formulation presented in the "Position-Aware
 ListMLE" paper (Lan et al.) and available using
 create_p_list_mle_lambda_weight() factory function above.
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`list_size`</b>: Size of the input list.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`list_size`
+</td>
+<td>
+Size of the input list.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A _LambdaWeight for Position-Aware ListMLE.
+</td>
+</tr>
+
+</table>

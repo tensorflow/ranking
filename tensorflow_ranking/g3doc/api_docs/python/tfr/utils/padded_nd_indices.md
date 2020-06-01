@@ -14,15 +14,16 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Pads the invalid entries by valid ones and returns the nd_indices.
 
-```python
-tfr.utils.padded_nd_indices(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.utils.padded_nd_indices(
     is_valid, shuffle=False, seed=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -40,16 +41,46 @@ nd_indices can be used by gather_nd on a Tensor t `padded_t = tf.gather_nd(t,
 nd_indices)` and get the following Tensor with first 2 dims are [1, 3]:
 `padded_t = [[t(0, 0), t(0, 1), t(0, 0)]]`
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`is_valid`</b>: A boolean `Tensor` for entry validity with shape
-    [batch_size, list_size].
-*   <b>`shuffle`</b>: A boolean that indicates whether valid indices should be
-    shuffled.
-*   <b>`seed`</b>: Random seed for shuffle.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`is_valid`
+</td>
+<td>
+A boolean `Tensor` for entry validity with shape [batch_size,
+list_size].
+</td>
+</tr><tr>
+<td>
+`shuffle`
+</td>
+<td>
+A boolean that indicates whether valid indices should be shuffled.
+</td>
+</tr><tr>
+<td>
+`seed`
+</td>
+<td>
+Random seed for shuffle.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A tuple of Tensors (nd_indices, mask). The first has shape [batch_size,
-list_size, 2] and it can be used in gather_nd or scatter_nd. The second has the
-shape of [batch_size, list_size] with value True for valid indices.
+list_size, 2] and it can be used in gather_nd or scatter_nd. The second has
+the shape of [batch_size, list_size] with value True for valid indices.
+</td>
+</tr>
+
+</table>

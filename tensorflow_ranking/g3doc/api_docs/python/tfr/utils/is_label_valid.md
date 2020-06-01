@@ -14,14 +14,15 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Returns a boolean `Tensor` for label validity.
 
-```python
-tfr.utils.is_label_valid(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.utils.is_label_valid(
     labels
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->

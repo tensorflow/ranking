@@ -14,28 +14,66 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Computes the inverse of max DCG.
 
-```python
-tfr.utils.inverse_max_dcg(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.utils.inverse_max_dcg(
     labels, gain_fn=(lambda labels: tf.pow(2.0, labels) - 1.0),
     rank_discount_fn=(lambda rank: 1.0 / tf.math.log1p(rank)), topn=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`labels`</b>: A `Tensor` with shape [batch_size, list_size]. Each value
-    is the graded relevance of the corresponding item.
-*   <b>`gain_fn`</b>: A gain function. By default this is set to: 2^label - 1.
-*   <b>`rank_discount_fn`</b>: A discount function. By default this is set to:
-    1/log(1+rank).
-*   <b>`topn`</b>: An integer as the cutoff of examples in the sorted list.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`labels`
+</td>
+<td>
+A `Tensor` with shape [batch_size, list_size]. Each value is the
+graded relevance of the corresponding item.
+</td>
+</tr><tr>
+<td>
+`gain_fn`
+</td>
+<td>
+A gain function. By default this is set to: 2^label - 1.
+</td>
+</tr><tr>
+<td>
+`rank_discount_fn`
+</td>
+<td>
+A discount function. By default this is set to:
+1/log(1+rank).
+</td>
+</tr><tr>
+<td>
+`topn`
+</td>
+<td>
+An integer as the cutoff of examples in the sorted list.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A `Tensor` with shape [batch_size, 1].
+</td>
+</tr>
+
+</table>

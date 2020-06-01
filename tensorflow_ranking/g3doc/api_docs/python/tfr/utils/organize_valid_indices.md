@@ -14,31 +14,62 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Organizes indices in such a way that valid items appear first.
 
-```python
-tfr.utils.organize_valid_indices(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.utils.organize_valid_indices(
     is_valid, shuffle=True, seed=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`is_valid`</b>: A boolean `Tensor` for entry validity with shape
-    [batch_size, list_size].
-*   <b>`shuffle`</b>: A boolean indicating whether valid items should be
-    shuffled.
-*   <b>`seed`</b>: An int for random seed at the op level. It works together
-    with the seed at global graph level together to determine the random number
-    generation. See `tf.set_random_seed`.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`is_valid`
+</td>
+<td>
+A boolean `Tensor` for entry validity with shape [batch_size,
+list_size].
+</td>
+</tr><tr>
+<td>
+`shuffle`
+</td>
+<td>
+A boolean indicating whether valid items should be shuffled.
+</td>
+</tr><tr>
+<td>
+`seed`
+</td>
+<td>
+An int for random seed at the op level. It works together with the
+seed at global graph level together to determine the random number
+generation. See `tf.set_random_seed`.
+</td>
+</tr>
+</table>
 
-A tensor of indices with shape [batch_size, list_size, 2]. The returned tensor
-can be used with `tf.gather_nd` and `tf.scatter_nd` to compose a new
-[batch_size, list_size] tensor. The values in the last dimension are the indices
-for an element in the input tensor.
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
+A tensor of indices with shape [batch_size, list_size, 2]. The returned
+tensor can be used with `tf.gather_nd` and `tf.scatter_nd` to compose a new
+[batch_size, list_size] tensor. The values in the last dimension are the
+indices for an element in the input tensor.
+</td>
+</tr>
+
+</table>

@@ -14,15 +14,16 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Computes mean average precision (MAP).
 
-```python
-tfr.metrics.mean_average_precision(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.metrics.mean_average_precision(
     labels, predictions, weights=None, topn=None, name=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -30,18 +31,60 @@ The implementation of MAP is based on Equation (1.7) in the following: Liu, T-Y
 "Learning to Rank for Information Retrieval" found at
 https://www.nowpublishers.com/article/DownloadSummary/INR-016
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`labels`</b>: A `Tensor` of the same shape as `predictions`. A value >= 1
-    means a relevant example.
-*   <b>`predictions`</b>: A `Tensor` with shape [batch_size, list_size]. Each
-    value is the ranking score of the corresponding example.
-*   <b>`weights`</b>: A `Tensor` of the same shape of predictions or
-    [batch_size, 1]. The former case is per-example and the latter case is
-    per-list.
-*   <b>`topn`</b>: A cutoff for how many examples to consider for this metric.
-*   <b>`name`</b>: A string used as the name for this metric.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`labels`
+</td>
+<td>
+A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+relevant example.
+</td>
+</tr><tr>
+<td>
+`predictions`
+</td>
+<td>
+A `Tensor` with shape [batch_size, list_size]. Each value is
+the ranking score of the corresponding example.
+</td>
+</tr><tr>
+<td>
+`weights`
+</td>
+<td>
+A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+former case is per-example and the latter case is per-list.
+</td>
+</tr><tr>
+<td>
+`topn`
+</td>
+<td>
+A cutoff for how many examples to consider for this metric.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+A string used as the name for this metric.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A metric for the mean average precision.
+</td>
+</tr>
+
+</table>

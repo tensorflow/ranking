@@ -33,8 +33,12 @@ toc:
     path: /ranking/api_docs/python/tfr/estimator
   - title: EstimatorBuilder
     path: /ranking/api_docs/python/tfr/estimator/EstimatorBuilder
+  - title: GAMEstimatorBuilder
+    path: /ranking/api_docs/python/tfr/estimator/GAMEstimatorBuilder
   - title: make_dnn_ranking_estimator
     path: /ranking/api_docs/python/tfr/estimator/make_dnn_ranking_estimator
+  - title: make_gam_ranking_estimator
+    path: /ranking/api_docs/python/tfr/estimator/make_gam_ranking_estimator
 - title: tfr.ext
   section:
   - title: Overview
@@ -75,10 +79,16 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/canned
     - title: DNNRankingNetwork
       path: /ranking/api_docs/python/tfr/keras/canned/DNNRankingNetwork
+    - title: GAMRankingNetwork
+      path: /ranking/api_docs/python/tfr/keras/canned/GAMRankingNetwork
     - title: dnn
       section:
       - title: Overview
         path: /ranking/api_docs/python/tfr/keras/canned/dnn
+    - title: gam
+      section:
+      - title: Overview
+        path: /ranking/api_docs/python/tfr/keras/canned/gam
   - title: estimator
     section:
     - title: Overview
@@ -91,10 +101,14 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/feature
     - title: create_keras_inputs
       path: /ranking/api_docs/python/tfr/keras/feature/create_keras_inputs
+    - title: deserialize_feature_columns
+      path: /ranking/api_docs/python/tfr/keras/feature/deserialize_feature_columns
     - title: EncodeListwiseFeatures
       path: /ranking/api_docs/python/tfr/keras/feature/EncodeListwiseFeatures
     - title: GenerateMask
       path: /ranking/api_docs/python/tfr/keras/feature/GenerateMask
+    - title: serialize_feature_columns
+      path: /ranking/api_docs/python/tfr/keras/feature/serialize_feature_columns
   - title: losses
     section:
     - title: Overview
@@ -211,6 +225,8 @@ toc:
     path: /ranking/api_docs/python/tfr/utils
   - title: approx_ranks
     path: /ranking/api_docs/python/tfr/utils/approx_ranks
+  - title: de_noise
+    path: /ranking/api_docs/python/tfr/utils/de_noise
   - title: inverse_max_dcg
     path: /ranking/api_docs/python/tfr/utils/inverse_max_dcg
   - title: is_label_valid

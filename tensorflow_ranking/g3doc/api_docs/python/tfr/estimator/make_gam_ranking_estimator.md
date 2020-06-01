@@ -1,9 +1,9 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.estimator.make_dnn_ranking_estimator" />
+<meta itemprop="name" content="tfr.estimator.make_gam_ranking_estimator" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.estimator.make_dnn_ranking_estimator
+# tfr.estimator.make_gam_ranking_estimator
 
 <!-- Insert buttons and diff -->
 
@@ -17,12 +17,12 @@
 </td>
 </table>
 
-Builds an `Estimator` instance with DNN scoring function.
+Builds an `Estimator` instance with GAM scoring function.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.estimator.make_dnn_ranking_estimator(
-    example_feature_columns, hidden_units, context_feature_columns=None,
-    optimizer=None, learning_rate=0.05, listwise_inference=False,
+<code>tfr.estimator.make_gam_ranking_estimator(
+    example_feature_columns, example_hidden_units, context_feature_columns=None,
+    context_hidden_units=None, optimizer=None, learning_rate=0.05,
     loss='approx_ndcg_loss',
     loss_reduction=tf.compat.v1.losses.Reduction.SUM_OVER_BATCH_SIZE,
     activation_fn=tf.nn.relu, dropout=None, use_batch_norm=False,
@@ -32,6 +32,8 @@ Builds an `Estimator` instance with DNN scoring function.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+See the comment of `GAMEstimatorBuilder` class for more details.
 
 <!-- Tabular view -->
 
@@ -43,30 +45,42 @@ Builds an `Estimator` instance with DNN scoring function.
 `example_feature_columns`
 </td>
 <td>
-(dict) Example (aka, document) feature columns.
+(dict) A dict containing all the example feature
+columns used by the model. Keys are feature names, and values are
+instances of classes derived from `_FeatureColumn`.
 </td>
 </tr><tr>
 <td>
-`hidden_units`
+`example_hidden_units`
 </td>
 <td>
-(list) Iterable of number hidden units per layer for a DNN
-model. All layers are fully connected. Ex. `[64, 32]` means first layer
-has 64 nodes and second one has 32.
+(list) Iterable of number hidden units per layer for
+example features. All layers are fully connected. Ex. `[64, 32]` means
+first layer has 64 nodes and second one has 32.
 </td>
 </tr><tr>
 <td>
 `context_feature_columns`
 </td>
 <td>
-(dict) Context (aka, query) feature columns.
+(dict) A dict containing all the context feature
+columns used by the model. See `example_feature_columns`.
+</td>
+</tr><tr>
+<td>
+`context_hidden_units`
+</td>
+<td>
+(list) Iterable of number hidden units per layer for
+context features. See `example_hidden_units`.
 </td>
 </tr><tr>
 <td>
 `optimizer`
 </td>
 <td>
-(`tf.Optimizer`) An `Optimizer` object for model optimzation.
+(`tf.Optimizer`) An `Optimizer` object for model optimzation. If
+`None`, an Adagard optimizer with `learning_rate` will be created.
 </td>
 </tr><tr>
 <td>
@@ -75,14 +89,6 @@ has 64 nodes and second one has 32.
 <td>
 (float) Only used if `optimizer` is a string. Defaults to
 0.05.
-</td>
-</tr><tr>
-<td>
-`listwise_inference`
-</td>
-<td>
-(bool) Whether the inference will be performed with the
-listwise data format such as `ExampleListWithContext`.
 </td>
 </tr><tr>
 <td>
@@ -97,8 +103,8 @@ listwise data format such as `ExampleListWithContext`.
 `loss_reduction`
 </td>
 <td>
-(str) An enum of strings indicating the loss reduction type.
-See type definition in the `tf.compat.v1.losses.Reduction`.
+(str) An enum of strings indicating the loss reduction
+type. See type definition in the `tf.compat.v1.losses.Reduction`.
 </td>
 </tr><tr>
 <td>
@@ -164,7 +170,7 @@ continue training a previously saved model.
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
 <td colspan="3">
-An `Estimator` with DNN scoring function.
+An `Estimator` with GAM scoring function.
 </td>
 </tr>
 

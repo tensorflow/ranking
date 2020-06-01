@@ -14,7 +14,8 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Feature transformations for ranking in Keras.
 
@@ -30,3 +31,9 @@ generate mask.
 
 [`create_keras_inputs(...)`](../../tfr/keras/feature/create_keras_inputs.md):
 Create Keras inputs from context and example feature columns.
+
+[`deserialize_feature_columns(...)`](../../tfr/keras/feature/deserialize_feature_columns.md):
+Deserializes dict of feature column configs.
+
+[`serialize_feature_columns(...)`](../../tfr/keras/feature/serialize_feature_columns.md):
+Serializes feature columns to a dict of class name and config.

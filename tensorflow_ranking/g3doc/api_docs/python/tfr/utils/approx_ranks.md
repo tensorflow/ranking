@@ -14,15 +14,16 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Computes approximate ranks given a list of logits.
 
-```python
-tfr.utils.approx_ranks(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.utils.approx_ranks(
     logits, alpha=10.0
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -41,12 +42,37 @@ to the indicator function. This technique is at the core of "A general
 approximation framework for direct optimization of information retrieval
 measures" by Qin et al.
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`logits`</b>: A `Tensor` with shape [batch_size, list_size]. Each value
-    is the ranking score of the corresponding item.
-*   <b>`alpha`</b>: Exponent of the generalized sigmoid function.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`logits`
+</td>
+<td>
+A `Tensor` with shape [batch_size, list_size]. Each value is the
+ranking score of the corresponding item.
+</td>
+</tr><tr>
+<td>
+`alpha`
+</td>
+<td>
+Exponent of the generalized sigmoid function.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A `Tensor` of ranks with the same shape as logits.
+</td>
+</tr>
+
+</table>

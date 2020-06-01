@@ -15,7 +15,8 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 TensorFlow Ranking, the project to build ranking models on TensorFlow.
 
@@ -45,4 +46,4 @@ library.
 
 ## Other Members
 
-*   `__version__ = '0.3.0.dev'` <a id="__version__"></a>
+*   `__version__ = '0.3.1.dev'` <a id="__version__"></a>

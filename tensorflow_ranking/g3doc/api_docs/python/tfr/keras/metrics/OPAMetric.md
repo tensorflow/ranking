@@ -31,145 +31,165 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Implements ordered pair accuracy (OPA).
 
-```python
-tfr.keras.metrics.OPAMetric(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.keras.metrics.OPAMetric(
     name=None, dtype=None, **kwargs
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
+<!-- Tabular view -->
 
-#### Args:
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
-*   <b>`name`</b>: (Optional) string name of the metric instance.
-*   <b>`dtype`</b>: (Optional) data type of the metric result.
+<tr> <td> `activity_regularizer` </td> <td> Optional regularizer function for
+the output of this layer. </td> </tr><tr> <td> `dtype` </td> <td> Dtype used by
+the weights of the layer, set in the constructor. </td> </tr><tr> <td> `dynamic`
+</td> <td> Whether the layer is dynamic (eager-only); set in the constructor.
+</td> </tr><tr> <td> `input` </td> <td> Retrieves the input tensor(s) of a
+layer.
 
-#### Attributes:
+Only applicable if the layer has exactly one input, i.e. if it is connected to
+one incoming layer. </td> </tr><tr> <td> `input_spec` </td> <td> `InputSpec`
+instance(s) describing the input format for this layer.
 
-*   <b>`activity_regularizer`</b>: Optional regularizer function for the output
-    of this layer.
-*   <b>`dtype`</b>: Dtype used by the weights of the layer, set in the
-    constructor.
-*   <b>`dynamic`</b>: Whether the layer is dynamic (eager-only); set in the
-    constructor.
-*   <b>`input`</b>: Retrieves the input tensor(s) of a layer.
+When you create a layer subclass, you can set `self.input_spec` to enable the
+layer to run input compatibility checks when it is called. Consider a `Conv2D`
+layer: it can only be called on a single input tensor of rank 4. As such, you
+can set, in `__init__()`:
 
-    Only applicable if the layer has exactly one input, i.e. if it is connected
-    to one incoming layer.
+```python
+self.input_spec = tf.keras.layers.InputSpec(ndim=4)
+```
 
-*   <b>`input_spec`</b>: `InputSpec` instance(s) describing the input format for
-    this layer.
+Now, if you try to call the layer on an input that isn't rank 4 (for instance,
+an input of shape `(2,)`, it will raise a nicely-formatted error:
 
-    When you create a layer subclass, you can set `self.input_spec` to enable
-    the layer to run input compatibility checks when it is called. Consider a
-    `Conv2D` layer: it can only be called on a single input tensor of rank 4. As
-    such, you can set, in `__init__()`:
+```
+ValueError: Input 0 of layer conv2d is incompatible with the layer:
+expected ndim=4, found ndim=1. Full shape received: [2]
+```
 
-    ```python
-    self.input_spec = tf.keras.layers.InputSpec(ndim=4)
-    ```
+Input checks that can be specified via `input_spec` include: - Structure (e.g. a
+single input, a list of 2 inputs, etc) - Shape - Rank (ndim) - Dtype
 
-    Now, if you try to call the layer on an input that isn't rank 4 (for
-    instance, an input of shape `(2,)`, it will raise a nicely-formatted error:
+For more information, see `tf.keras.layers.InputSpec`. </td> </tr><tr> <td>
+`losses` </td> <td> List of losses added using the `add_loss()` API.
 
-    ```
-    ValueError: Input 0 of layer conv2d is incompatible with the layer:
-    expected ndim=4, found ndim=1. Full shape received: [2]
-    ```
+Variable regularization tensors are created when this property is accessed, so
+it is eager safe: accessing `losses` under a `tf.GradientTape` will propagate
+gradients back to the corresponding variables.
 
-    Input checks that can be specified via `input_spec` include:
+```
+>>> class MyLayer(tf.keras.layers.Layer):
+...   def call(self, inputs):
+...     self.add_loss(tf.abs(tf.reduce_mean(inputs)))
+...     return inputs
+>>> l = MyLayer()
+>>> l(np.ones((10, 1)))
+>>> l.losses
+[1.0]
+```
 
-    -   Structure (e.g. a single input, a list of 2 inputs, etc)
-    -   Shape
-    -   Rank (ndim)
-    -   Dtype
+```
+>>> inputs = tf.keras.Input(shape=(10,))
+>>> x = tf.keras.layers.Dense(10)(inputs)
+>>> outputs = tf.keras.layers.Dense(1)(x)
+>>> model = tf.keras.Model(inputs, outputs)
+>>> # Activity regularization.
+>>> model.add_loss(tf.abs(tf.reduce_mean(x)))
+>>> model.losses
+[<tf.Tensor 'Abs:0' shape=() dtype=float32>]
+```
 
-    For more information, see `tf.keras.layers.InputSpec`.
+```
+>>> inputs = tf.keras.Input(shape=(10,))
+>>> d = tf.keras.layers.Dense(10, kernel_initializer='ones')
+>>> x = d(inputs)
+>>> outputs = tf.keras.layers.Dense(1)(x)
+>>> model = tf.keras.Model(inputs, outputs)
+>>> # Weight regularization.
+>>> model.add_loss(lambda: tf.reduce_mean(d.kernel))
+>>> model.losses
+[<tf.Tensor: shape=(), dtype=float32, numpy=1.0>]
+```
 
-*   <b>`losses`</b>: Losses which are associated with this `Layer`.
+</td> </tr><tr> <td> `metrics` </td> <td> List of metrics added using the
+`add_metric()` API.
 
-    Variable regularization tensors are created when this property is accessed,
-    so it is eager safe: accessing `losses` under a `tf.GradientTape` will
-    propagate gradients back to the corresponding variables.
+```
+>>> input = tf.keras.layers.Input(shape=(3,))
+>>> d = tf.keras.layers.Dense(2)
+>>> output = d(input)
+>>> d.add_metric(tf.reduce_max(output), name='max')
+>>> d.add_metric(tf.reduce_min(output), name='min')
+>>> [m.name for m in d.metrics]
+['max', 'min']
+```
 
-*   <b>`metrics`</b>: List of `tf.keras.metrics.Metric` instances tracked by the
-    layer.
+</td> </tr><tr> <td> `name` </td> <td> Name of the layer (string), set in the
+constructor. </td> </tr><tr> <td> `name_scope` </td> <td> Returns a
+`tf.name_scope` instance for this class. </td> </tr><tr> <td>
+`non_trainable_weights` </td> <td> List of all non-trainable weights tracked by
+this layer.
 
-*   <b>`name`</b>: Name of the layer (string), set in the constructor.
+Non-trainable weights are *not* updated during training. They are expected to be
+updated manually in `call()`. </td> </tr><tr> <td> `output` </td> <td> Retrieves
+the output tensor(s) of a layer.
 
-*   <b>`name_scope`</b>: Returns a `tf.name_scope` instance for this class.
+Only applicable if the layer has exactly one output, i.e. if it is connected to
+one incoming layer. </td> </tr><tr> <td> `submodules` </td> <td> Sequence of all
+sub-modules.
 
-*   <b>`non_trainable_weights`</b>: List of all non-trainable weights tracked by
-    this layer.
+Submodules are modules which are properties of this module, or found as
+properties of modules which are properties of this module (and so on).
 
-    Non-trainable weights are *not* updated during training. They are expected
-    to be updated manually in `call()`.
+```
+>>> a = tf.Module()
+>>> b = tf.Module()
+>>> c = tf.Module()
+>>> a.b = b
+>>> b.c = c
+>>> list(a.submodules) == [b, c]
+True
+>>> list(b.submodules) == [c]
+True
+>>> list(c.submodules) == []
+True
+```
 
-*   <b>`output`</b>: Retrieves the output tensor(s) of a layer.
+</td> </tr><tr> <td> `trainable` </td> <td>
 
-    Only applicable if the layer has exactly one output, i.e. if it is connected
-    to one incoming layer.
+</td> </tr><tr> <td> `trainable_weights` </td> <td> List of all trainable
+weights tracked by this layer.
 
-*   <b>`submodules`</b>: Sequence of all sub-modules.
-
-    Submodules are modules which are properties of this module, or found as
-    properties of modules which are properties of this module (and so on).
-
-    ```
-    >>> a = tf.Module()
-    >>> b = tf.Module()
-    >>> c = tf.Module()
-    >>> a.b = b
-    >>> b.c = c
-    >>> list(a.submodules) == [b, c]
-    True
-    >>> list(b.submodules) == [c]
-    True
-    >>> list(c.submodules) == []
-    True
-    ```
-
-*   <b>`trainable`</b>
-
-*   <b>`trainable_weights`</b>: List of all trainable weights tracked by this
-    layer.
-
-    Trainable weights are updated via gradient descent during training.
-
-*   <b>`weights`</b>: Returns the list of all layer variables/weights.
+Trainable weights are updated via gradient descent during training.
+</td>
+</tr><tr>
+<td>
+`weights`
+</td>
+<td>
+Returns the list of all layer variables/weights.
+</td>
+</tr>
+</table>
 
 ## Methods
 
-<h3 id="__call__"><code>__call__</code></h3>
-
-```python
-__call__(
-    *args, **kwargs
-)
-```
-
-Accumulates statistics and then computes metric result value.
-
-#### Args:
-
-*   <b>`*args`</b>: * <b>`**kwargs`</b>: A mini-batch of inputs to the Metric,
-    passed on to `update_state()`.
-
-#### Returns:
-
-The metric value tensor.
-
 <h3 id="add_loss"><code>add_loss</code></h3>
 
-```python
-add_loss(
-    losses, inputs=None
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>add_loss(
+    losses, **kwargs
 )
-```
+</code></pre>
 
 Add loss tensor(s), potentially dependent on layer inputs.
 
@@ -186,7 +206,7 @@ which case `losses` should be a Tensor or list of Tensors.
 ```python
 class MyLayer(tf.keras.layers.Layer):
   def call(self, inputs):
-    self.add_loss(tf.abs(tf.reduce_mean(inputs)), inputs=True)
+    self.add_loss(tf.abs(tf.reduce_mean(inputs)))
     return inputs
 ```
 
@@ -215,60 +235,129 @@ topology since they can't be serialized.
 
 ```python
 inputs = tf.keras.Input(shape=(10,))
-x = tf.keras.layers.Dense(10)(inputs)
+d = tf.keras.layers.Dense(10)
+x = d(inputs)
 outputs = tf.keras.layers.Dense(1)(x)
 model = tf.keras.Model(inputs, outputs)
 # Weight regularization.
-model.add_loss(lambda: tf.reduce_mean(x.kernel))
+model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
-The `get_losses_for` method allows to retrieve the losses relevant to a specific
-set of inputs.
+<!-- Tabular view -->
 
-#### Arguments:
+ <table class="properties responsive orange">
+<tr><th colspan="2">Arguments</th></tr>
 
-*   <b>`losses`</b>: Loss tensor, or list/tuple of tensors. Rather than tensors,
-    losses may also be zero-argument callables which create a loss tensor.
-*   <b>`inputs`</b>: Ignored when executing eagerly. If anything other than None
-    is passed, it signals the losses are conditional on some of the layer's
-    inputs, and thus they should only be run where these inputs are available.
-    This is the case for activity regularization losses, for instance. If `None`
-    is passed, the losses are assumed to be unconditional, and will apply across
-    all dataflows of the layer (e.g. weight regularization losses).
+<tr>
+<td>
+`losses`
+</td>
+<td>
+Loss tensor, or list/tuple of tensors. Rather than tensors, losses
+may also be zero-argument callables which create a loss tensor.
+</td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+Additional keyword arguments for backward compatibility.
+Accepted values:
+inputs - Deprecated, will be automatically inferred.
+</td>
+</tr>
+</table>
 
 <h3 id="add_metric"><code>add_metric</code></h3>
 
-```python
-add_metric(
-    value, aggregation=None, name=None
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>add_metric(
+    value, name=None, **kwargs
 )
-```
+</code></pre>
 
 Adds metric tensor to the layer.
 
-#### Args:
+This method can be used inside the `call()` method of a subclassed layer or
+model.
 
-*   <b>`value`</b>: Metric tensor.
-*   <b>`aggregation`</b>: Sample-wise metric reduction function. If
-    `aggregation=None`, it indicates that the metric tensor provided has been
-    aggregated already. eg, `bin_acc = BinaryAccuracy(name='acc')` followed by
-    `model.add_metric(bin_acc(y_true, y_pred))`. If aggregation='mean', the
-    given metric tensor will be sample-wise reduced using `mean` function. eg,
-    `model.add_metric(tf.reduce_sum(outputs), name='output_mean',
-    aggregation='mean')`.
-*   <b>`name`</b>: String metric name.
+```python
+class MyMetricLayer(tf.keras.layers.Layer):
+  def __init__(self):
+    super(MyMetricLayer, self).__init__(name='my_metric_layer')
+    self.mean = metrics_module.Mean(name='metric_1')
 
-#### Raises:
+  def call(self, inputs):
+    self.add_metric(self.mean(x))
+    self.add_metric(math_ops.reduce_sum(x), name='metric_2')
+    return inputs
+```
 
-*   <b>`ValueError`</b>: If `aggregation` is anything other than None or `mean`.
+This method can also be called directly on a Functional Model during
+construction. In this case, any tensor passed to this Model must be symbolic and
+be able to be traced back to the model's `Input`s. These metrics become part of
+the model's topology and are tracked when you save the model via `save()`.
+
+```python
+inputs = tf.keras.Input(shape=(10,))
+x = tf.keras.layers.Dense(10)(inputs)
+outputs = tf.keras.layers.Dense(1)(x)
+model = tf.keras.Model(inputs, outputs)
+model.add_metric(math_ops.reduce_sum(x), name='metric_1')
+```
+
+Note: Calling `add_metric()` with the result of a metric object on a Functional
+Model, as shown in the example below, is not supported. This is because we
+cannot trace the metric result tensor back to the model's inputs.
+
+```python
+inputs = tf.keras.Input(shape=(10,))
+x = tf.keras.layers.Dense(10)(inputs)
+outputs = tf.keras.layers.Dense(1)(x)
+model = tf.keras.Model(inputs, outputs)
+model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
+```
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`value`
+</td>
+<td>
+Metric tensor.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+String metric name.
+</td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+Additional keyword arguments for backward compatibility.
+Accepted values:
+`aggregation` - When the `value` tensor provided is not the result of
+calling a `keras.Metric` instance, it will be aggregated by default
+using a `keras.Metric.Mean`.
+</td>
+</tr>
+</table>
 
 <h3 id="build"><code>build</code></h3>
 
-```python
-build(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>build(
     input_shape
 )
-```
+</code></pre>
 
 Creates the variables of the layer (optional, for subclass implementers).
 
@@ -278,38 +367,75 @@ layer call.
 
 This is typically used to create the weights of `Layer` subclasses.
 
-#### Arguments:
+<!-- Tabular view -->
 
-*   <b>`input_shape`</b>: Instance of `TensorShape`, or list of instances of
-    `TensorShape` if the layer expects a list of inputs (one instance per
-    input).
+ <table class="properties responsive orange">
+<tr><th colspan="2">Arguments</th></tr>
+
+<tr>
+<td>
+`input_shape`
+</td>
+<td>
+Instance of `TensorShape`, or list of instances of
+`TensorShape` if the layer expects a list of inputs
+(one instance per input).
+</td>
+</tr>
+</table>
 
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
-```python
-compute_mask(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>compute_mask(
     inputs, mask=None
 )
-```
+</code></pre>
 
 Computes an output mask tensor.
 
-#### Arguments:
+<!-- Tabular view -->
 
-*   <b>`inputs`</b>: Tensor or list of tensors.
-*   <b>`mask`</b>: Tensor or list of tensors.
+ <table class="properties responsive orange">
+<tr><th colspan="2">Arguments</th></tr>
 
-#### Returns:
+<tr>
+<td>
+`inputs`
+</td>
+<td>
+Tensor or list of tensors.
+</td>
+</tr><tr>
+<td>
+`mask`
+</td>
+<td>
+Tensor or list of tensors.
+</td>
+</tr>
+</table>
 
-None or a tensor (or list of tensors, one per output tensor of the layer).
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
+None or a tensor (or list of tensors,
+one per output tensor of the layer).
+</td>
+</tr>
+
+</table>
 
 <h3 id="compute_output_shape"><code>compute_output_shape</code></h3>
 
-```python
-compute_output_shape(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>compute_output_shape(
     input_shape
 )
-```
+</code></pre>
 
 Computes the output shape of the layer.
 
@@ -317,41 +443,80 @@ If the layer has not been built, this method will call `build` on the layer.
 This assumes that the layer will later be used with inputs that match the input
 shape provided here.
 
-#### Arguments:
+<!-- Tabular view -->
 
-*   <b>`input_shape`</b>: Shape tuple (tuple of integers) or list of shape
-    tuples (one per output tensor of the layer). Shape tuples can include None
-    for free dimensions, instead of an integer.
+ <table class="properties responsive orange">
+<tr><th colspan="2">Arguments</th></tr>
 
-#### Returns:
+<tr>
+<td>
+`input_shape`
+</td>
+<td>
+Shape tuple (tuple of integers)
+or list of shape tuples (one per output tensor of the layer).
+Shape tuples can include None for free dimensions,
+instead of an integer.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
 An input shape tuple.
+</td>
+</tr>
+
+</table>
 
 <h3 id="count_params"><code>count_params</code></h3>
 
-```python
-count_params()
-```
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>count_params()
+</code></pre>
 
 Count the total number of scalars composing the weights.
 
-#### Returns:
+<!-- Tabular view -->
 
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
 An integer count.
+</td>
+</tr>
 
-#### Raises:
+</table>
 
-*   <b>`ValueError`</b>: if the layer isn't yet built (in which case its weights
-    aren't yet defined).
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+if the layer isn't yet built
+(in which case its weights aren't yet defined).
+</td>
+</tr>
+</table>
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-```python
-@classmethod
-from_config(
-    cls, config
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>@classmethod</code>
+<code>from_config(
+    config
 )
-```
+</code></pre>
 
 Creates a layer from its config.
 
@@ -359,27 +524,47 @@ This method is the reverse of `get_config`, capable of instantiating the same
 layer from the config dictionary. It does not handle layer connectivity (handled
 by Network), nor weights (handled by `set_weights`).
 
-#### Arguments:
+<!-- Tabular view -->
 
-*   <b>`config`</b>: A Python dictionary, typically the output of get_config.
+ <table class="properties responsive orange">
+<tr><th colspan="2">Arguments</th></tr>
 
-#### Returns:
+<tr>
+<td>
+`config`
+</td>
+<td>
+A Python dictionary, typically the
+output of get_config.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
 A layer instance.
+</td>
+</tr>
+
+</table>
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-```python
-get_config()
-```
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>get_config()
+</code></pre>
 
 Returns the serializable config of the metric.
 
 <h3 id="get_weights"><code>get_weights</code></h3>
 
-```python
-get_weights()
-```
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>get_weights()
+</code></pre>
 
 Returns the current weights of the layer.
 
@@ -413,15 +598,23 @@ the bias value. These can be used to set the weights of another Dense layer:
        [1.]], dtype=float32), array([0.], dtype=float32)]
 ```
 
-#### Returns:
+<!-- Tabular view -->
 
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
 Weights values as a list of numpy arrays.
+</td>
+</tr>
+
+</table>
 
 <h3 id="reset_states"><code>reset_states</code></h3>
 
-```python
-reset_states()
-```
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>reset_states()
+</code></pre>
 
 Resets all of the metric state variables.
 
@@ -430,9 +623,9 @@ training.
 
 <h3 id="result"><code>result</code></h3>
 
-```python
-result()
-```
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>result()
+</code></pre>
 
 Computes and returns the metric value tensor.
 
@@ -441,11 +634,11 @@ value using the state variables.
 
 <h3 id="set_weights"><code>set_weights</code></h3>
 
-```python
-set_weights(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>set_weights(
     weights
 )
-```
+</code></pre>
 
 Sets the weights of the layer, from Numpy arrays.
 
@@ -479,52 +672,107 @@ the bias value. These can be used to set the weights of another Dense layer:
        [1.]], dtype=float32), array([0.], dtype=float32)]
 ```
 
-#### Arguments:
+<!-- Tabular view -->
 
-*   <b>`weights`</b>: a list of Numpy arrays. The number of arrays and their
-    shape must match number of the dimensions of the weights of the layer (i.e.
-    it should match the output of `get_weights`).
+ <table class="properties responsive orange">
+<tr><th colspan="2">Arguments</th></tr>
 
-#### Raises:
+<tr>
+<td>
+`weights`
+</td>
+<td>
+a list of Numpy arrays. The number
+of arrays and their shape must match
+number of the dimensions of the weights
+of the layer (i.e. it should match the
+output of `get_weights`).
+</td>
+</tr>
+</table>
 
-*   <b>`ValueError`</b>: If the provided weights list does not match the layer's
-    specifications.
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+If the provided weights list does not match the
+layer's specifications.
+</td>
+</tr>
+</table>
 
 <h3 id="update_state"><code>update_state</code></h3>
 
 <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">View
 source</a>
 
-```python
-update_state(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>update_state(
     y_true, y_pred, sample_weight=None
 )
-```
+</code></pre>
 
 Accumulates metric statistics.
 
 `y_true` and `y_pred` should have the same shape.
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`y_true`</b>: The ground truth values.
-*   <b>`y_pred`</b>: The predicted values.
-*   <b>`sample_weight`</b>: Optional weighting of each example. Defaults to 1.
-    Can be a `Tensor` whose rank is either 0, or the same rank as `y_true`, and
-    must be broadcastable to `y_true`.
+ <table class="properties responsive orange">
+<tr><th colspan="2">Args</th></tr>
 
-#### Returns:
+<tr>
+<td>
+`y_true`
+</td>
+<td>
+The ground truth values.
+</td>
+</tr><tr>
+<td>
+`y_pred`
+</td>
+<td>
+The predicted values.
+</td>
+</tr><tr>
+<td>
+`sample_weight`
+</td>
+<td>
+Optional weighting of each example. Defaults to 1. Can be a
+`Tensor` whose rank is either 0, or the same rank as `y_true`, and must
+be broadcastable to `y_true`.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
 Update op.
+</td>
+</tr>
+
+</table>
 
 <h3 id="with_name_scope"><code>with_name_scope</code></h3>
 
-```python
-@classmethod
-with_name_scope(
-    cls, method
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>@classmethod</code>
+<code>with_name_scope(
+    method
 )
-```
+</code></pre>
 
 Decorator to automatically enter the module name scope.
 
@@ -549,10 +797,70 @@ included the module name:
 numpy=..., dtype=float32)>
 ```
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`method`</b>: The method to wrap.
+ <table class="properties responsive orange">
+<tr><th colspan="2">Args</th></tr>
 
-#### Returns:
+<tr>
+<td>
+`method`
+</td>
+<td>
+The method to wrap.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
 The original method wrapped such that it enters the module's name scope.
+</td>
+</tr>
+
+</table>
+
+<h3 id="__call__"><code>__call__</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>__call__(
+    *args, **kwargs
+)
+</code></pre>
+
+Accumulates statistics and then computes metric result value.
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Args</th></tr>
+
+<tr> <td> `*args` </td> <td>
+
+</td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+A mini-batch of inputs to the Metric,
+passed on to `update_state()`.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
+The metric value tensor.
+</td>
+</tr>
+
+</table>

@@ -14,32 +14,81 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Returns the mean of the specified metric given the inputs.
 
-```python
-tfr.metrics.compute_mean(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.metrics.compute_mean(
     metric_key, labels, predictions, weights=None, topn=None, name=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`metric_key`</b>: A key in `RankingMetricKey`.
-*   <b>`labels`</b>: A `Tensor` of the same shape as `predictions` representing
-    relevance.
-*   <b>`predictions`</b>: A `Tensor` with shape [batch_size, list_size]. Each
-    value is the ranking score of the corresponding example.
-*   <b>`weights`</b>: A `Tensor` of the same shape of predictions or
-    [batch_size, 1]. The former case is per-example and the latter case is
-    per-list.
-*   <b>`topn`</b>: An `integer` specifying the cutoff of how many items are
-    considered in the metric.
-*   <b>`name`</b>: A `string` used as the name for this metric.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`metric_key`
+</td>
+<td>
+A key in `RankingMetricKey`.
+</td>
+</tr><tr>
+<td>
+`labels`
+</td>
+<td>
+A `Tensor` of the same shape as `predictions` representing
+relevance.
+</td>
+</tr><tr>
+<td>
+`predictions`
+</td>
+<td>
+A `Tensor` with shape [batch_size, list_size]. Each value is
+the ranking score of the corresponding example.
+</td>
+</tr><tr>
+<td>
+`weights`
+</td>
+<td>
+A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+former case is per-example and the latter case is per-list.
+</td>
+</tr><tr>
+<td>
+`topn`
+</td>
+<td>
+An `integer` specifying the cutoff of how many items are considered in
+the metric.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+A `string` used as the name for this metric.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A scalar as the computed metric.
+</td>
+</tr>
+
+</table>

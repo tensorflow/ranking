@@ -1,5 +1,5 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.feature.EncodeListwiseFeatures" />
+<meta itemprop="name" content="tfr.keras.canned.GAMRankingNetwork" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
@@ -7,36 +7,52 @@
 <meta itemprop="property" content="add_loss"/>
 <meta itemprop="property" content="add_metric"/>
 <meta itemprop="property" content="build"/>
+<meta itemprop="property" content="compute_logits"/>
 <meta itemprop="property" content="compute_mask"/>
 <meta itemprop="property" content="compute_output_shape"/>
 <meta itemprop="property" content="count_params"/>
 <meta itemprop="property" content="from_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
+<meta itemprop="property" content="score"/>
 <meta itemprop="property" content="set_weights"/>
+<meta itemprop="property" content="transform"/>
 <meta itemprop="property" content="with_name_scope"/>
 </div>
 
-# tfr.keras.feature.EncodeListwiseFeatures
+# tfr.keras.canned.GAMRankingNetwork
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/feature.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/canned/gam.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-A layer that produces dense `Tensors` from context and example features.
+Generalized Additive Model (GAM) based univariate ranking network.
+
+Inherits From:
+[`UnivariateRankingNetwork`](../../../tfr/keras/network/UnivariateRankingNetwork.md)
+
+<section class="expandable">
+  <h4 class="showalways">View aliases</h4>
+  <p>
+<b>Main aliases</b>
+<p>`tfr.keras.canned.gam.GAMRankingNetwork`</p>
+</p>
+</section>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.feature.EncodeListwiseFeatures(
+<code>tfr.keras.canned.GAMRankingNetwork(
     context_feature_columns=None, example_feature_columns=None,
-    name='listwise_dense_features', **kwargs
+    context_hidden_layer_dims=None, example_hidden_layer_dims=None, activation=None,
+    use_batch_norm=True, batch_norm_moment=0.999, dropout=0.5,
+    name='gam_ranking_model', **kwargs
 )
 </code></pre>
 
@@ -51,30 +67,95 @@ A layer that produces dense `Tensors` from context and example features.
 `context_feature_columns`
 </td>
 <td>
-(dict) context feature names to columns.
+A dict containing all the context feature columns
+used by the network. Keys are feature names, and values are instances of
+classes derived from `_FeatureColumn`.
 </td>
 </tr><tr>
 <td>
 `example_feature_columns`
 </td>
 <td>
-(dict) example feature names to columns.
+A dict containing all the example feature columns
+used by the network. Keys are feature names, and values are instances of
+classes derived from `_FeatureColumn`.
+</td>
+</tr><tr>
+<td>
+`context_hidden_layer_dims`
+</td>
+<td>
+Iterable of number hidden units per layer for
+context features. See `example_hidden_units`.
+</td>
+</tr><tr>
+<td>
+`example_hidden_layer_dims`
+</td>
+<td>
+Iterable of number hidden units per layer for
+example features. All layers are fully connected. Ex. `[64, 32]` means
+first layer has 64 nodes and second one has 32.
+</td>
+</tr><tr>
+<td>
+`activation`
+</td>
+<td>
+Activation function applied to each layer. If `None`, will use
+an identity activation, which is default behavior in Keras activations.
+</td>
+</tr><tr>
+<td>
+`use_batch_norm`
+</td>
+<td>
+Whether to use batch normalization after each hidden
+layer.
+</td>
+</tr><tr>
+<td>
+`batch_norm_moment`
+</td>
+<td>
+Momentum for the moving average in batch normalization.
+</td>
+</tr><tr>
+<td>
+`dropout`
+</td>
+<td>
+When not `None`, the probability we will drop out a given
+coordinate.
 </td>
 </tr><tr>
 <td>
 `name`
 </td>
 <td>
-(str) name of the layer.
+name of the keras network.
 </td>
 </tr><tr>
 <td>
 `**kwargs`
 </td>
 <td>
-keyword arguments.
+Keyword arguments.
 </td>
 </tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
+`ValueError` if `example_feature_columns` is empty or if
+`example_hidden_lyaer_dims` is empty.
+</td>
+</tr>
+
 </table>
 
 <!-- Tabular view -->
@@ -423,6 +504,71 @@ Instance of `TensorShape`, or list of instances of
 </tr>
 </table>
 
+<h3 id="compute_logits"><code>compute_logits</code></h3>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+source</a>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>compute_logits(
+    context_features=None, example_features=None, training=None, mask=None
+)
+</code></pre>
+
+Scores context and examples to return a score per document.
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`context_features`
+</td>
+<td>
+(dict) context feature names to 2D tensors of shape
+[batch_size, feature_dims].
+</td>
+</tr><tr>
+<td>
+`example_features`
+</td>
+<td>
+(dict) example feature names to 3D tensors of shape
+[batch_size, list_size, feature_dims].
+</td>
+</tr><tr>
+<td>
+`training`
+</td>
+<td>
+(bool) whether in train or inference mode.
+</td>
+</tr><tr>
+<td>
+`mask`
+</td>
+<td>
+(tf.Tensor) Mask is a tensor of shape [batch_size, list_size], which
+is True for a valid example and False for invalid one. If mask is None,
+all entries are valid.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
+(tf.Tensor) A score tensor of shape [batch_size, list_size].
+</td>
+</tr>
+
+</table>
+
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -550,7 +696,7 @@ if the layer isn't yet built
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/feature.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -560,7 +706,7 @@ source</a>
 )
 </code></pre>
 
-Creates a EncodeListwiseFeatures layer from its config.
+Creates a RankingNetwork layer from its config.
 
 <!-- Tabular view -->
 
@@ -572,15 +718,15 @@ Creates a EncodeListwiseFeatures layer from its config.
 `config`
 </td>
 <td>
-A Python dictionary, typically the output of `get_config`.
+(dict) Layer configuration, typically the output of `get_config`.
 </td>
 </tr><tr>
 <td>
 `custom_objects`
 </td>
 <td>
-Optional dictionary mapping names (strings) to custom
-classes or functions to be considered during deserialization.
+(dict) Optional dictionary mapping names to custom classes
+or functions to be considered during deserialization.
 </td>
 </tr>
 </table>
@@ -591,7 +737,7 @@ classes or functions to be considered during deserialization.
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="3">
-A EncodeListwiseFeatures layer.
+A RankingNetwork layer.
 </td>
 </tr>
 
@@ -599,7 +745,7 @@ A EncodeListwiseFeatures layer.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/feature.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/canned/gam.py">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -677,6 +823,62 @@ Weights values as a list of numpy arrays.
 
 </table>
 
+<h3 id="score"><code>score</code></h3>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/canned/gam.py">View
+source</a>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>score(
+    context_features=None, example_features=None, training=True
+)
+</code></pre>
+
+Univariate scoring of context and one example to generate a score.
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`context_features`
+</td>
+<td>
+(dict) context feature names to 2D tensors of shape
+[batch_size, ...].
+</td>
+</tr><tr>
+<td>
+`example_features`
+</td>
+<td>
+(dict) example feature names to 2D tensors of shape
+[batch_size, ...].
+</td>
+</tr><tr>
+<td>
+`training`
+</td>
+<td>
+(bool) whether in training or inference mode.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="3">
+(tf.Tensor) A score tensor of shape [batch_size, 1].
+</td>
+</tr>
+
+</table>
+
 <h3 id="set_weights"><code>set_weights</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -748,6 +950,77 @@ output of `get_weights`).
 <td>
 If the provided weights list does not match the
 layer's specifications.
+</td>
+</tr>
+</table>
+
+<h3 id="transform"><code>transform</code></h3>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+source</a>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>transform(
+    features=None, training=None, mask=None
+)
+</code></pre>
+
+Transforms the features into dense context features and example features.
+
+The user can overwrite this function for custom transformations. Mask is
+provided as an argument so that inherited models can have access to it for
+custom feature transformations, without modifying `call` explicitly.
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`features`
+</td>
+<td>
+(dict) with a mix of context (2D) and example features (3D).
+</td>
+</tr><tr>
+<td>
+`training`
+</td>
+<td>
+(bool) whether in train or inference mode.
+</td>
+</tr><tr>
+<td>
+`mask`
+</td>
+<td>
+(tf.Tensor) Mask is a tensor of shape [batch_size, list_size], which
+is True for a valid example and False for invalid one.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2">Returns</th></tr>
+
+<tr>
+<td>
+`context_features`
+</td>
+<td>
+(dict) context feature names to dense 2D tensors of
+shape [batch_size, feature_dims].
+</td>
+</tr><tr>
+<td>
+`example_features`
+</td>
+<td>
+(dict) example feature names to dense 3D tensors of
+shape [batch_size, list_size, feature_dims].
 </td>
 </tr>
 </table>

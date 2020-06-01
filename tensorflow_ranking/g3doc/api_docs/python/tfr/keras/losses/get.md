@@ -14,34 +14,89 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Factory method to get a ranking loss class.
 
-```python
-tfr.keras.losses.get(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.keras.losses.get(
     loss, reduction=tf.losses.Reduction.AUTO, lambda_weight=None, name=None,
     **kwargs
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`loss`</b>: (str) An attribute of `RankingLossKey`, defining which loss
-    object to return.
-*   <b>`reduction`</b>: (enum) An enum of strings indicating the loss reduction
-    type. See type definition in the `tf.compat.v2.losses.Reduction`.
-*   <b>`lambda_weight`</b>: (losses_impl._LambdaWeight) A lambda object for
-    ranking metric optimization.
-*   <b>`name`</b>: (optional) (str) Name of loss.
-*   <b>`**kwargs`</b>: Keyword arguments for the loss object.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`loss`
+</td>
+<td>
+(str) An attribute of `RankingLossKey`, defining which loss object to
+return.
+</td>
+</tr><tr>
+<td>
+`reduction`
+</td>
+<td>
+(enum)  An enum of strings indicating the loss reduction type.
+See type definition in the `tf.compat.v2.losses.Reduction`.
+</td>
+</tr><tr>
+<td>
+`lambda_weight`
+</td>
+<td>
+(losses_impl._LambdaWeight) A lambda object for ranking
+metric optimization.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+(optional) (str) Name of loss.
+</td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+Keyword arguments for the loss object.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A ranking loss instance. See `_RankingLoss` signature for more details.
+</td>
+</tr>
 
-#### Raises:
+</table>
 
-*   <b>`ValueError`</b>: If loss_key is unsupported.
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+If loss_key is unsupported.
+</td>
+</tr>
+</table>

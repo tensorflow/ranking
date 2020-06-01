@@ -14,7 +14,8 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 TensorFlow Ranking Premade Keras Module.
 
@@ -22,7 +23,13 @@ TensorFlow Ranking Premade Keras Module.
 
 [`dnn`](../../tfr/keras/canned/dnn.md) module: DNN Ranking network in Keras.
 
+[`gam`](../../tfr/keras/canned/gam.md) module: Generalized Additive Model (GAM)
+Keras Network.
+
 ## Classes
 
 [`class DNNRankingNetwork`](../../tfr/keras/canned/DNNRankingNetwork.md): Deep
 Neural Network (DNN) scoring based univariate ranking network.
+
+[`class GAMRankingNetwork`](../../tfr/keras/canned/GAMRankingNetwork.md):
+Generalized Additive Model (GAM) based univariate ranking network.

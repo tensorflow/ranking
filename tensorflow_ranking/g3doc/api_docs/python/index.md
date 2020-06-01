@@ -16,7 +16,9 @@
 *   <a href="./tfr/data/read_batched_sequence_example_dataset.md"><code>tfr.data.read_batched_sequence_example_dataset</code></a>
 *   <a href="./tfr/estimator.md"><code>tfr.estimator</code></a>
 *   <a href="./tfr/estimator/EstimatorBuilder.md"><code>tfr.estimator.EstimatorBuilder</code></a>
+*   <a href="./tfr/estimator/GAMEstimatorBuilder.md"><code>tfr.estimator.GAMEstimatorBuilder</code></a>
 *   <a href="./tfr/estimator/make_dnn_ranking_estimator.md"><code>tfr.estimator.make_dnn_ranking_estimator</code></a>
+*   <a href="./tfr/estimator/make_gam_ranking_estimator.md"><code>tfr.estimator.make_gam_ranking_estimator</code></a>
 *   <a href="./tfr/ext.md"><code>tfr.ext</code></a>
 *   <a href="./tfr/ext/pipeline.md"><code>tfr.ext.pipeline</code></a>
 *   <a href="./tfr/ext/pipeline/RankingPipeline.md"><code>tfr.ext.pipeline.RankingPipeline</code></a>
@@ -31,14 +33,19 @@
 *   <a href="./tfr/keras.md"><code>tfr.keras</code></a>
 *   <a href="./tfr/keras/canned.md"><code>tfr.keras.canned</code></a>
 *   <a href="./tfr/keras/canned/DNNRankingNetwork.md"><code>tfr.keras.canned.DNNRankingNetwork</code></a>
+*   <a href="./tfr/keras/canned/GAMRankingNetwork.md"><code>tfr.keras.canned.GAMRankingNetwork</code></a>
 *   <a href="./tfr/keras/canned/dnn.md"><code>tfr.keras.canned.dnn</code></a>
 *   <a href="./tfr/keras/canned/DNNRankingNetwork.md"><code>tfr.keras.canned.dnn.DNNRankingNetwork</code></a>
+*   <a href="./tfr/keras/canned/gam.md"><code>tfr.keras.canned.gam</code></a>
+*   <a href="./tfr/keras/canned/GAMRankingNetwork.md"><code>tfr.keras.canned.gam.GAMRankingNetwork</code></a>
 *   <a href="./tfr/keras/estimator.md"><code>tfr.keras.estimator</code></a>
 *   <a href="./tfr/keras/estimator/model_to_estimator.md"><code>tfr.keras.estimator.model_to_estimator</code></a>
 *   <a href="./tfr/keras/feature.md"><code>tfr.keras.feature</code></a>
 *   <a href="./tfr/keras/feature/EncodeListwiseFeatures.md"><code>tfr.keras.feature.EncodeListwiseFeatures</code></a>
 *   <a href="./tfr/keras/feature/GenerateMask.md"><code>tfr.keras.feature.GenerateMask</code></a>
 *   <a href="./tfr/keras/feature/create_keras_inputs.md"><code>tfr.keras.feature.create_keras_inputs</code></a>
+*   <a href="./tfr/keras/feature/deserialize_feature_columns.md"><code>tfr.keras.feature.deserialize_feature_columns</code></a>
+*   <a href="./tfr/keras/feature/serialize_feature_columns.md"><code>tfr.keras.feature.serialize_feature_columns</code></a>
 *   <a href="./tfr/keras/losses.md"><code>tfr.keras.losses</code></a>
 *   <a href="./tfr/keras/losses/ApproxMRRLoss.md"><code>tfr.keras.losses.ApproxMRRLoss</code></a>
 *   <a href="./tfr/keras/losses/ApproxNDCGLoss.md"><code>tfr.keras.losses.ApproxNDCGLoss</code></a>
@@ -89,6 +96,7 @@
 *   <a href="./tfr/model/make_groupwise_ranking_fn.md"><code>tfr.model.make_groupwise_ranking_fn</code></a>
 *   <a href="./tfr/utils.md"><code>tfr.utils</code></a>
 *   <a href="./tfr/utils/approx_ranks.md"><code>tfr.utils.approx_ranks</code></a>
+*   <a href="./tfr/utils/de_noise.md"><code>tfr.utils.de_noise</code></a>
 *   <a href="./tfr/utils/inverse_max_dcg.md"><code>tfr.utils.inverse_max_dcg</code></a>
 *   <a href="./tfr/utils/is_label_valid.md"><code>tfr.utils.is_label_valid</code></a>
 *   <a href="./tfr/utils/ndcg.md"><code>tfr.utils.ndcg</code></a>

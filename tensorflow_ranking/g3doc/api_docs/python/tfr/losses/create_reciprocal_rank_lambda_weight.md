@@ -14,14 +14,15 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Creates _LambdaWeight for MRR-like metric.
 
-```python
-tfr.losses.create_reciprocal_rank_lambda_weight(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.losses.create_reciprocal_rank_lambda_weight(
     topn=None, smooth_fraction=0.0
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->

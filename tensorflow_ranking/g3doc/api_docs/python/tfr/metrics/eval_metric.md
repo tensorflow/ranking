@@ -14,15 +14,16 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 A stand-alone method to evaluate metrics on ranked results.
 
-```python
-tfr.metrics.eval_metric(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.metrics.eval_metric(
     metric_fn, **kwargs
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -39,11 +40,30 @@ tfr.metrics.mean_reciprocal_rank **kwargs: A collection of argument values to be
 passed to the metric, e.g. labels and predictions. See `_RankingMetric` and the
 various metric definitions in tfr.metrics for the specifics.
 
-#### Returns:
+<!-- Tabular view -->
 
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 The evaluation of the metric on the input ranked lists.
+</td>
+</tr>
 
-#### Raises:
+</table>
 
-*   <b>`ValueError`</b>: One of the arguments required by the metric is not
-    provided in the list of arguments included in kwargs.
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+One of the arguments required by the metric is not provided in
+the list of arguments included in kwargs.
+</td>
+</tr>
+</table>

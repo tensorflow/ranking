@@ -14,17 +14,18 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Parses an `ExampleListWithContext` batch to a feature map.
 
-```python
-tfr.data.parse_from_example_list(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.data.parse_from_example_list(
     serialized, list_size=None, context_feature_spec=None,
     example_feature_spec=None, size_feature_name=None, shuffle_examples=False,
     seed=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -130,30 +131,83 @@ And the expected output is:
 }
 ```
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`serialized`</b>: (Tensor) 1-D Tensor and each entry is a serialized
-    `ExampleListWithContext` proto that contains context and example list.
-*   <b>`list_size`</b>: (int) The number of examples for each list. If
-    specified, truncation or padding is applied to make 2nd dim of output
-    Tensors aligned to `list_size`. Otherwise, the 2nd dim of the output Tensors
-    is dynamic.
-*   <b>`context_feature_spec`</b>: (dict) A mapping from feature keys to
-    `FixedLenFeature` or `VarLenFeature` values for context in
-    `ExampleListWithContext` proto.
-*   <b>`example_feature_spec`</b>: (dict) A mapping from feature keys to
-    `FixedLenFeature` or `VarLenFeature` values for examples in
-    `ExampleListWithContext` proto.
-*   <b>`size_feature_name`</b>: (str) Name of feature for example list sizes.
-    Populates the feature dictionary with a `tf.int32` Tensor of shape
-    [batch_size] for this feature name. If None, which is default, this feature
-    is not generated.
-*   <b>`shuffle_examples`</b>: (bool) A boolean to indicate whether examples
-    within a list are shuffled before the list is trimmed down to list_size
-    elements (when list has more than list_size elements).
-*   <b>`seed`</b>: (int) A seed passed onto random_ops.uniform() to shuffle
-    examples.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`serialized`
+</td>
+<td>
+(Tensor) 1-D Tensor and each entry is a serialized
+`ExampleListWithContext` proto that contains context and example list.
+</td>
+</tr><tr>
+<td>
+`list_size`
+</td>
+<td>
+(int) The number of examples for each list. If specified,
+truncation or padding is applied to make 2nd dim of output Tensors aligned
+to `list_size`. Otherwise, the 2nd dim of the output Tensors is dynamic.
+</td>
+</tr><tr>
+<td>
+`context_feature_spec`
+</td>
+<td>
+(dict) A mapping from feature keys to
+`FixedLenFeature` or `VarLenFeature` values for context in
+`ExampleListWithContext` proto.
+</td>
+</tr><tr>
+<td>
+`example_feature_spec`
+</td>
+<td>
+(dict) A mapping from feature keys to
+`FixedLenFeature` or `VarLenFeature` values for examples in
+`ExampleListWithContext` proto.
+</td>
+</tr><tr>
+<td>
+`size_feature_name`
+</td>
+<td>
+(str) Name of feature for example list sizes. Populates
+the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+this feature name. If None, which is default, this feature is not
+generated.
+</td>
+</tr><tr>
+<td>
+`shuffle_examples`
+</td>
+<td>
+(bool) A boolean to indicate whether examples within a
+list are shuffled before the list is trimmed down to list_size elements
+(when list has more than list_size elements).
+</td>
+</tr><tr>
+<td>
+`seed`
+</td>
+<td>
+(int) A seed passed onto random_ops.uniform() to shuffle examples.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A mapping from feature keys to `Tensor` or `SparseTensor`.
+</td>
+</tr>
+
+</table>

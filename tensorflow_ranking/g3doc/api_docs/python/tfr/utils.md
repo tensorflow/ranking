@@ -14,7 +14,8 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Utility functions for ranking library.
 
@@ -22,6 +23,9 @@ Utility functions for ranking library.
 
 [`approx_ranks(...)`](../tfr/utils/approx_ranks.md): Computes approximate ranks
 given a list of logits.
+
+[`de_noise(...)`](../tfr/utils/de_noise.md): Returns a float `Tensor` as the
+de-noised `counts`.
 
 [`inverse_max_dcg(...)`](../tfr/utils/inverse_max_dcg.md): Computes the inverse
 of max DCG.

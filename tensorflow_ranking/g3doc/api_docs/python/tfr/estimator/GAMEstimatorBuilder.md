@@ -1,11 +1,11 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.estimator.EstimatorBuilder" />
+<meta itemprop="name" content="tfr.estimator.GAMEstimatorBuilder" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__init__"/>
 <meta itemprop="property" content="make_estimator"/>
 </div>
 
-# tfr.estimator.EstimatorBuilder
+# tfr.estimator.GAMEstimatorBuilder
 
 <!-- Insert buttons and diff -->
 
@@ -19,10 +19,12 @@
 </td>
 </table>
 
-Builds a tf.estimator.Estimator for a TF-Ranking model.
+Builds a TFR estimator with subscore signatures of GAM models.
+
+Inherits From: [`EstimatorBuilder`](../../tfr/estimator/EstimatorBuilder.md)
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.estimator.EstimatorBuilder(
+<code>tfr.estimator.GAMEstimatorBuilder(
     context_feature_columns, example_feature_columns, scoring_function,
     transform_function=None, optimizer=None, loss_reduction=None, hparams=None
 )
@@ -30,64 +32,36 @@ Builds a tf.estimator.Estimator for a TF-Ranking model.
 
 <!-- Placeholder for "Used in" -->
 
-An example use case is provided below:
+Neural Generalized Additive Ranking Model is an additive ranking model. See the
+paper (https://arxiv.org/abs/2005.02553) for more details. For each example x
+with n features (x_1, x_2, ..., x_n), the ranking score is:
 
-```python
-import tensorflow as tf
-import tensorflow_ranking as tfr
+F(x) = f1(x_1) + f2(x_2) + ... + fn(x_n)
 
-def scoring_function(context_features, example_features, mode):
-  # ...
-  # scoring logic
-  # ...
-  return scores # tensors with shape [batch_size, ...]
+where each feature is scored by a corresponding submodel, and the overall
+ranking score is the sum of all the submodels' outputs. Each submodel is a
+standalone feed-forward network.
 
-context_feature_columns = {
-  "c1": tf.feature_column.numeric_column("c1", shape=(1,))
-}
-example_feature_columns = {
-  "e1": tf.feature_column.numeric_column("e1", shape=(1,))
-}
-hparams = dict(
-    checkpoint_secs=120,
-    listwise_inference=False,
-    loss="softmax_loss",
-    model_dir="/path/to/your/model_dir/",
-    num_checkpoints=100)
-ranking_estimator = tfr.estimator.EstimatorBuilder(
-      context_feature_columns,
-      example_feature_columns,
-      scoring_function=scoring_function,
-      hparams=hparams).make_estimator()
-```
+When there are m context features (c_1, c_2, ..., c_m), the ranking score will
+be determined by:
 
-If you want to customize certain `EstimatorBuilder` behaviors, please create a
-subclass of `EstimatorBuilder`, and overwrite related functions. Right now, we
-recommend only overwriting the `_eval_metric_fns` for your eval metrics. For
-instance, if you need MAP (Mean Average Precision) as your evaluation metric,
-you can do the following:
+F(c, x) = w1(c) * f1(x_1) + w2(c) * f2(x_2) + ... + wn(c) * fn(x_n)
 
-```python
-class MyEstimatorBuilder(tfr.estimator.EstimatorBuilder):
-  def _eval_metric_fns(self):
-    metric_fns = {}
-    metric_fns.update({
-        "metric/ndcg@%d" % topn: tfr.metrics.make_ranking_metric_fn(
-            tfr.metrics.RankingMetricKey.MAP, topn=topn) for topn in [5, 10]
-    })
-    return metric_fns
+where (w1(c), w2(c), ..., wn(c)) is a weighting vector determined solely by
+context features. For each context feature c_j, a feed-forward submodel is
+constructed to derive a weighting vector (wj1(c_j), wj2(c_j), ..., wjn(c_j)).
+The final weighting vector is the sum of the output of all the context features'
+submodels.
 
-# Then, you can define your estimator with:
-ranking_estimator = MyEstimatorBuilder(
-      context_feature_columns,
-      example_feature_columns,
-      scoring_function=scoring_function,
-      hparams=hparams).make_estimator()
-```
+The model is implicitly interpretable as the contribution of each feature to the
+final ranking score can be easily visualized. However, the model does not have
+higher-order inter-feature interactions and hence may not have performance as
+good as the fully-connected DNN.
 
-If you really need to overwrite other functions, particularly `_transform_fn`,
-`_group_score_fn` and `model_fn`, please be careful because the passed-in
-parameters might no longer be used.
+The output of each example feature's submodel can be retrieved by tensor named
+`{feature_name}_subscore`. The output of each context feature's submodel is a
+n-dimensional vector and can be retrieved by tensor named
+`{feature_name}_subweight`.
 
 <!-- Tabular view -->
 

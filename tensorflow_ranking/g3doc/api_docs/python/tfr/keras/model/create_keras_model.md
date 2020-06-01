@@ -14,36 +14,87 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Creates a Functional Keras ranking model.
 
-```python
-tfr.keras.model.create_keras_model(
-    network, loss, metrics, optimizer, size_feature_name
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.keras.model.create_keras_model(
+    network, loss, metrics, optimizer, size_feature_name, list_size=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
 A mask is inferred from size_feature_name and passed to the network, along with
 feature dictionary as inputs.
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`network`</b>:
-    (<a href="../../../tfr/keras/network/RankingNetwork.md"><code>tfr.keras.network.RankingNetwork</code></a>)
-    A ranking network which generates a list of scores.
-*   <b>`loss`</b>: (`tfr.keras.losses._RankingLoss`) A ranking loss.
-*   <b>`metrics`</b>: (list) List of ranking metrics,
-    `tfr.keras.metrics._RankingMetric` instances.
-*   <b>`optimizer`</b>: (`tf.keras.optimizer.Optimizer`) Optimizer to minimize
-    ranking loss.
-*   <b>`size_feature_name`</b>: (str) Name of feature for example list sizes. If
-    not None, this feature name corresponds to a `tf.int32` Tensor of size
-    [batch_size] corresponding to sizes of example lists. If `None`, all
-    examples are treated as valid.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`network`
+</td>
+<td>
+(<a href="../../../tfr/keras/network/RankingNetwork.md"><code>tfr.keras.network.RankingNetwork</code></a>) A ranking network which
+generates a list of scores.
+</td>
+</tr><tr>
+<td>
+`loss`
+</td>
+<td>
+(`tfr.keras.losses._RankingLoss`) A ranking loss.
+</td>
+</tr><tr>
+<td>
+`metrics`
+</td>
+<td>
+(list) List of ranking metrics, `tfr.keras.metrics._RankingMetric`
+instances.
+</td>
+</tr><tr>
+<td>
+`optimizer`
+</td>
+<td>
+(`tf.keras.optimizer.Optimizer`) Optimizer to minimize ranking
+loss.
+</td>
+</tr><tr>
+<td>
+`size_feature_name`
+</td>
+<td>
+(str) Name of feature for example list sizes. If not
+None, this feature name corresponds to a `tf.int32` Tensor of size
+[batch_size] corresponding to sizes of example lists. If `None`, all
+examples are treated as valid.
+</td>
+</tr><tr>
+<td>
+`list_size`
+</td>
+<td>
+(int) The list size for example features. If None, use dynamic
+list size. A fixed list size is required for TPU training.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A compiled ranking Keras model, a `tf.keras.Model` instance.
+</td>
+</tr>
+
+</table>

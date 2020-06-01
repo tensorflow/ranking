@@ -16,18 +16,19 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Class to set up the input, train and eval processes for a TF Ranking model.
 
-```python
-tfr.ext.pipeline.RankingPipeline(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.ext.pipeline.RankingPipeline(
     context_feature_columns, example_feature_columns, hparams, estimator,
     label_feature_name='relevance', label_feature_type=tf.int64,
     dataset_reader=tf.data.TFRecordDataset, best_exporter_metric=None,
     best_exporter_metric_higher_better=True, size_feature_name=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -112,6 +113,7 @@ if you want to customize your dataset reading behaviors, you may overwrite:
 class CustomizedDatasetRankingPipeline(tfr.ext.pipeline.RankingPipeline):
   def _make_dataset(self,
                     batch_size,
+                    list_size,
                     input_pattern,
                     randomize_input=True,
                     num_epochs=None):
@@ -128,28 +130,89 @@ ranking_pipeline = CustomizedDatasetRankingPipeline(
 ranking_pipeline.train_and_eval()
 ```
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`context_feature_columns`</b>: (dict) Context (aka, query) feature
-    columns.
-*   <b>`example_feature_columns`</b>: (dict) Example (aka, document) feature
-    columns.
-*   <b>`hparams`</b>: (dict) A dict containing model hyperparameters.
-*   <b>`estimator`</b>: (`Estimator`) An `Estimator` instance for model train
-    and eval.
-*   <b>`label_feature_name`</b>: (str) The name of the label feature.
-*   <b>`label_feature_type`</b>: (`tf.dtype`) The value type of the label
-    feature.
-*   <b>`dataset_reader`</b>: (`tf.Dataset`) The dataset format for the input
-    files.
-*   <b>`best_exporter_metric`</b>: (str) Metric key for exporting the best
-    model. If None, exports the model with the minimal loss value.
-*   <b>`best_exporter_metric_higher_better`</b>: (bool) If a higher metric is
-    better. This is only used if `best_exporter_metric` is not None.
-*   <b>`size_feature_name`</b>: (str) If set, populates the feature dictionary
-    with this name and the coresponding value is a `tf.int32` Tensor of shape
-    [batch_size] indicating the actual sizes of the example lists before padding
-    and truncation. If None, which is default, this feature is not generated.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`context_feature_columns`
+</td>
+<td>
+(dict) Context (aka, query) feature columns.
+</td>
+</tr><tr>
+<td>
+`example_feature_columns`
+</td>
+<td>
+(dict) Example (aka, document) feature columns.
+</td>
+</tr><tr>
+<td>
+`hparams`
+</td>
+<td>
+(dict) A dict containing model hyperparameters.
+</td>
+</tr><tr>
+<td>
+`estimator`
+</td>
+<td>
+(`Estimator`) An `Estimator` instance for model train and eval.
+</td>
+</tr><tr>
+<td>
+`label_feature_name`
+</td>
+<td>
+(str) The name of the label feature.
+</td>
+</tr><tr>
+<td>
+`label_feature_type`
+</td>
+<td>
+(`tf.dtype`) The value type of the label feature.
+</td>
+</tr><tr>
+<td>
+`dataset_reader`
+</td>
+<td>
+(`tf.Dataset`) The dataset format for the input files.
+</td>
+</tr><tr>
+<td>
+`best_exporter_metric`
+</td>
+<td>
+(str) Metric key for exporting the best model. If
+None, exports the model with the minimal loss value.
+</td>
+</tr><tr>
+<td>
+`best_exporter_metric_higher_better`
+</td>
+<td>
+(bool) If a higher metric is better.
+This is only used if `best_exporter_metric` is not None.
+</td>
+</tr><tr>
+<td>
+`size_feature_name`
+</td>
+<td>
+(str) If set, populates the feature dictionary with
+this name and the coresponding value is a `tf.int32` Tensor of shape
+[batch_size] indicating the actual sizes of the example lists before
+padding and truncation. If None, which is default, this feature is not
+generated.
+</td>
+</tr>
+</table>
 
 ## Methods
 
@@ -158,10 +221,10 @@ ranking_pipeline.train_and_eval()
 <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py">View
 source</a>
 
-```python
-train_and_eval(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>train_and_eval(
     local_training=True
 )
-```
+</code></pre>
 
 Launches train and evaluation jobs locally.

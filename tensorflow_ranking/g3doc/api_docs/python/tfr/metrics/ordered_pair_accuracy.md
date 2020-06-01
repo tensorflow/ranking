@@ -14,15 +14,16 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Computes the percentage of correctly ordered pair.
 
-```python
-tfr.metrics.ordered_pair_accuracy(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.metrics.ordered_pair_accuracy(
     labels, predictions, weights=None, name=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
@@ -31,16 +32,52 @@ For any pair of examples, we compare their orders determined by `labels` and
 is, labels l_i > l_j and predictions s_i > s_j and the weight for this pair is
 the weight from the l_i.
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`labels`</b>: A `Tensor` of the same shape as `predictions`.
-*   <b>`predictions`</b>: A `Tensor` with shape [batch_size, list_size]. Each
-    value is the ranking score of the corresponding example.
-*   <b>`weights`</b>: A `Tensor` of the same shape of predictions or
-    [batch_size, 1]. The former case is per-example and the latter case is
-    per-list.
-*   <b>`name`</b>: A string used as the name for this metric.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`labels`
+</td>
+<td>
+A `Tensor` of the same shape as `predictions`.
+</td>
+</tr><tr>
+<td>
+`predictions`
+</td>
+<td>
+A `Tensor` with shape [batch_size, list_size]. Each value is
+the ranking score of the corresponding example.
+</td>
+</tr><tr>
+<td>
+`weights`
+</td>
+<td>
+A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+former case is per-example and the latter case is per-list.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+A string used as the name for this metric.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A metric for the accuracy or ordered pairs.
+</td>
+</tr>
+
+</table>

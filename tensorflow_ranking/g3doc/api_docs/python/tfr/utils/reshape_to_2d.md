@@ -14,14 +14,15 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Converts the given `tensor` to a 2-D `Tensor`.
 
-```python
-tfr.utils.reshape_to_2d(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.utils.reshape_to_2d(
     tensor
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->

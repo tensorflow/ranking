@@ -14,30 +14,69 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Factory method to create a metric based on a loss.
 
-```python
-tfr.losses.make_loss_metric_fn(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.losses.make_loss_metric_fn(
     loss_key, weights_feature_name=None, lambda_weight=None, name=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`loss_key`</b>: A key in `RankingLossKey`.
-*   <b>`weights_feature_name`</b>: A `string` specifying the name of the weights
-    feature in `features` dict.
-*   <b>`lambda_weight`</b>: A `_LambdaWeight` object.
-*   <b>`name`</b>: A `string` used as the name for this metric.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`loss_key`
+</td>
+<td>
+A key in `RankingLossKey`.
+</td>
+</tr><tr>
+<td>
+`weights_feature_name`
+</td>
+<td>
+A `string` specifying the name of the weights feature
+in `features` dict.
+</td>
+</tr><tr>
+<td>
+`lambda_weight`
+</td>
+<td>
+A `_LambdaWeight` object.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+A `string` used as the name for this metric.
+</td>
+</tr>
+</table>
 
-A metric fn with the following Args: * `labels`: A `Tensor` of the same shape as
-`predictions` representing graded relevance. * `predictions`: A `Tensor` with
-shape [batch_size, list_size]. Each value is the ranking score of the
-corresponding example. * `features`: A dict of `Tensor`s that contains all
-features.
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
+A metric fn with the following Args:
+* `labels`: A `Tensor` of the same shape as `predictions` representing
+graded relevance.
+* `predictions`: A `Tensor` with shape [batch_size, list_size]. Each value
+is the ranking score of the corresponding example.
+* `features`: A dict of `Tensor`s that contains all features.
+</td>
+</tr>
+
+</table>

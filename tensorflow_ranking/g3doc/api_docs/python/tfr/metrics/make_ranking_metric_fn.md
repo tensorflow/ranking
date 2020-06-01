@@ -14,40 +14,91 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Factory method to create a ranking metric function.
 
-```python
-tfr.metrics.make_ranking_metric_fn(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.metrics.make_ranking_metric_fn(
     metric_key, weights_feature_name=None, topn=None, name=None,
     gain_fn=_DEFAULT_GAIN_FN, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`metric_key`</b>: A key in `RankingMetricKey`.
-*   <b>`weights_feature_name`</b>: A `string` specifying the name of the weights
-    feature in `features` dict.
-*   <b>`topn`</b>: An `integer` specifying the cutoff of how many items are
-    considered in the metric.
-*   <b>`name`</b>: A `string` used as the name for this metric.
-*   <b>`gain_fn`</b>: (function) Transforms labels. A method to calculate gain
-    parameters used in the definitions of the DCG and NDCG metrics, where the
-    input is the relevance label of the item. The gain is often defined to be of
-    the form 2^label-1.
-*   <b>`rank_discount_fn`</b>: (function) The rank discount function. A method
-    to define the discount parameters used in the definitions of DCG and NDCG
-    metrics, where the input in the rank of item. The discount function is
-    commonly defined to be of the form log(rank+1).
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`metric_key`
+</td>
+<td>
+A key in `RankingMetricKey`.
+</td>
+</tr><tr>
+<td>
+`weights_feature_name`
+</td>
+<td>
+A `string` specifying the name of the weights feature
+in `features` dict.
+</td>
+</tr><tr>
+<td>
+`topn`
+</td>
+<td>
+An `integer` specifying the cutoff of how many items are considered in
+the metric.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+A `string` used as the name for this metric.
+</td>
+</tr><tr>
+<td>
+`gain_fn`
+</td>
+<td>
+(function) Transforms labels. A method to calculate gain parameters
+used in the definitions of the DCG and NDCG metrics, where the input is
+the relevance label of the item. The gain is often defined to be of the
+form 2^label-1.
+</td>
+</tr><tr>
+<td>
+`rank_discount_fn`
+</td>
+<td>
+(function) The rank discount function. A method to define
+the discount parameters used in the definitions of DCG and NDCG metrics,
+where the input in the rank of item. The discount function is commonly
+defined to be of the form log(rank+1).
+</td>
+</tr>
+</table>
 
-A metric fn with the following Args: * `labels`: A `Tensor` of the same shape as
-`predictions` representing graded relevance. * `predictions`: A `Tensor` with
-shape [batch_size, list_size]. Each value is the ranking score of the
-corresponding example. * `features`: A dict of `Tensor`s that contains all
-features.
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
+A metric fn with the following Args:
+* `labels`: A `Tensor` of the same shape as `predictions` representing
+graded relevance.
+* `predictions`: A `Tensor` with shape [batch_size, list_size]. Each value
+is the ranking score of the corresponding example.
+* `features`: A dict of `Tensor`s that contains all features.
+</td>
+</tr>
+
+</table>

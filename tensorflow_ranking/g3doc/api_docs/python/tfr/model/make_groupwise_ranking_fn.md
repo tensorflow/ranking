@@ -14,25 +14,63 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Builds an `Estimator` model_fn for groupwise comparison ranking models.
 
-```python
-tfr.model.make_groupwise_ranking_fn(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.model.make_groupwise_ranking_fn(
     group_score_fn, group_size, ranking_head, transform_fn=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Args:
+<!-- Tabular view -->
 
-*   <b>`group_score_fn`</b>: See `_GroupwiseRankingModel`.
-*   <b>`group_size`</b>: See `_GroupwiseRankingModel`.
-*   <b>`ranking_head`</b>: A `head._RankingHead` object.
-*   <b>`transform_fn`</b>: See `_GroupwiseRankingModel`.
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
-#### Returns:
+<tr>
+<td>
+`group_score_fn`
+</td>
+<td>
+See `_GroupwiseRankingModel`.
+</td>
+</tr><tr>
+<td>
+`group_size`
+</td>
+<td>
+See `_GroupwiseRankingModel`.
+</td>
+</tr><tr>
+<td>
+`ranking_head`
+</td>
+<td>
+A `head._RankingHead` object.
+</td>
+</tr><tr>
+<td>
+`transform_fn`
+</td>
+<td>
+See `_GroupwiseRankingModel`.
+</td>
+</tr>
+</table>
 
+<!-- Tabular view -->
+
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 See `_make_model_fn`.
+</td>
+</tr>
+
+</table>

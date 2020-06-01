@@ -14,14 +14,15 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Returns a shuffle of indices with valid ones on top.
 
-```python
-tfr.utils.shuffle_valid_indices(
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.utils.shuffle_valid_indices(
     is_valid, seed=None
 )
-```
+</code></pre>
 
 <!-- Placeholder for "Used in" -->

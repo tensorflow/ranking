@@ -14,16 +14,25 @@
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
-</td></table>
+</td>
+</table>
 
 Returns a list of ranking metrics.
 
-```python
-tfr.keras.metrics.default_keras_metrics()
-```
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>tfr.keras.metrics.default_keras_metrics()
+</code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-#### Returns:
+<!-- Tabular view -->
 
+ <table class="properties responsive orange">
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="3">
 A list of metrics of type `tf.keras.metrics.Metric`.
+</td>
+</tr>
+
+</table>
