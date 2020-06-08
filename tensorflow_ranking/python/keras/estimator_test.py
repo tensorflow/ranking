@@ -52,6 +52,10 @@ _ELWC_PROTO = text_format.Parse(
           value { float_list { value: 0.0 } }
         }
         feature {
+          key: "dense_feature"
+          value { float_list { value: -0.5 value: 0.5 } }
+        }
+        feature {
           key: "doc_weight"
           value { float_list { value: 0.0 } }
         }
@@ -66,6 +70,10 @@ _ELWC_PROTO = text_format.Parse(
         feature {
           key: "utility"
           value { float_list { value: 1.0 } }
+        }
+        feature {
+          key: "dense_feature"
+          value { float_list { value: 0.5 value: 0.5 } }
         }
         feature {
           key: "doc_weight"
@@ -108,7 +116,13 @@ def _get_feature_columns():
                   vocabulary_list=[
                       'ranking', 'regression', 'classification', 'ordinal'
                   ]),
-              dimension=10)
+              dimension=10),
+      'dense_feature':
+          tf.feature_column.numeric_column(
+              'dense_feature',
+              shape=(2,),
+              default_value=0.0,
+              dtype=tf.float32)
   }
   custom_objects = {'_normalizer_fn': _normalizer_fn}
   return context_feature_columns, example_feature_columns, custom_objects
@@ -247,9 +261,10 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
       tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
   @parameterized.named_parameters(
-      ('without_weights', None),
-      ('with_example_weights', _EXAMPLE_WEIGHT_FEATURE))
-  def test_model_to_estimator(self, weights_feature_name):
+      ('without_weights', None, True),
+      ('with_example_weights', _EXAMPLE_WEIGHT_FEATURE, True),
+      ('pointwise_inference', None, False))
+  def test_model_to_estimator(self, weights_feature_name, listwise_inference):
     keras_model = model.create_keras_model(
         network=self._network,
         loss=self._loss,
@@ -260,7 +275,8 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         model=keras_model,
         config=self._config,
         weights_feature_name=weights_feature_name,
-        custom_objects=self._custom_objects)
+        custom_objects=self._custom_objects,
+        listwise_inference=listwise_inference)
     self.assertIsInstance(estimator, tf.compat.v1.estimator.Estimator)
 
     # Train and export model.
@@ -277,12 +293,28 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
     example_feature_spec = tf.feature_column.make_parse_example_spec(
         self._example_feature_columns.values())
 
-    serving_input_receiver_fn = (
-        data.build_ranking_serving_input_receiver_fn(
+    def _make_serving_input_fn(listwise_inference):
+      if listwise_inference:
+        return data.build_ranking_serving_input_receiver_fn(
             data.ELWC,
             context_feature_spec=context_feature_spec,
             example_feature_spec=example_feature_spec,
-            size_feature_name=_SIZE))
+            size_feature_name=_SIZE)
+      else:
+        feature_spec = {}
+        feature_spec.update(context_feature_spec)
+        feature_spec.update(example_feature_spec)
+        def pointwise_serving_fn():
+          serialized = tf.compat.v1.placeholder(
+              dtype=tf.string, shape=[None], name='input_ranking_tensor')
+          receiver_tensors = {'input_ranking_data': serialized}
+          features = tf.compat.v1.io.parse_example(serialized, feature_spec)
+          features[_SIZE] = tf.ones((1,), dtype=tf.int32)
+          return tf.estimator.export.ServingInputReceiver(features,
+                                                          receiver_tensors)
+        return pointwise_serving_fn
+
+    serving_input_receiver_fn = _make_serving_input_fn(listwise_inference)
     export_dir = os.path.join(tf.compat.v1.test.get_temp_dir(), 'export')
     estimator.export_saved_model(export_dir, serving_input_receiver_fn)
 
