@@ -35,6 +35,7 @@ class RankingLossKey(object):
   PAIRWISE_LOGISTIC_LOSS = 'pairwise_logistic_loss'
   PAIRWISE_SOFT_ZERO_ONE_LOSS = 'pairwise_soft_zero_one_loss'
   SOFTMAX_LOSS = 'softmax_loss'
+  UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
   LIST_MLE_LOSS = 'list_mle_loss'
@@ -150,6 +151,8 @@ def make_loss_fn(loss_keys,
             (_pairwise_soft_zero_one_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.SOFTMAX_LOSS:
             (_softmax_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.UNIQUE_SOFTMAX_LOSS:
+            (_unique_softmax_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
             (_sigmoid_cross_entropy_loss, loss_kwargs),
         RankingLossKey.MEAN_SQUARED_LOSS: (_mean_squared_loss, loss_kwargs),
@@ -218,6 +221,8 @@ def make_loss_metric_fn(loss_key,
               name, lambda_weight=lambda_weight),
       RankingLossKey.SOFTMAX_LOSS:
           losses_impl.SoftmaxLoss(name, lambda_weight=lambda_weight),
+      RankingLossKey.UNIQUE_SOFTMAX_LOSS:
+          losses_impl.UniqueSoftmaxLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
           losses_impl.SigmoidCrossEntropyLoss(name),
       RankingLossKey.MEAN_SQUARED_LOSS:
@@ -442,6 +447,47 @@ def _softmax_loss(
   """
   loss = losses_impl.SoftmaxLoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'softmax_loss',
+                               (labels, logits, weights)):
+    return loss.compute(labels, logits, weights, reduction)
+
+
+def _unique_softmax_loss(
+    labels,
+    logits,
+    weights=None,
+    lambda_weight=None,
+    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+    name=None):
+  """Computes the unique rating softmax cross entropy for a list.
+
+  This is the uRank loss originally proposed by Zhu and Klabjan in
+  ["Listwise Learning to Rank by Exploring Unique Ratings"] and is
+  appropriate for datasets with multiple relevance labels.
+
+  Given the labels l_i and the logits s_i, the unique softmax loss is defined as
+      -sum_i (2^l_i - 1) * log(exp(s_i) / (sum_j exp(s_j) + exp(s_i))),
+  where j is over the documents with l_j < l_i.
+
+  TODO: Add the lambda_weight support.
+
+  Args:
+    labels: A `Tensor` of the same shape as `logits` representing graded
+      relevance.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+      weights.
+    lambda_weight: A `DCGLambdaWeight` instance.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
+    name: A string used as the name for this loss.
+
+  Returns:
+    An op for the softmax cross entropy as a loss.
+  """
+  loss = losses_impl.UniqueSoftmaxLoss(name, lambda_weight)
+  with tf.compat.v1.name_scope(loss.name, 'unique_softmax_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights, reduction)
 

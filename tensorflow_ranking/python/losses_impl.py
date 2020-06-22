@@ -676,6 +676,38 @@ class SoftmaxLoss(_ListwiseLoss):
     return tf.compat.v1.metrics.mean(losses, weights)
 
 
+class UniqueSoftmaxLoss(_ListwiseLoss):
+  """Implements unique rating softmax loss."""
+
+  def compute_unreduced_loss(self, labels, logits):
+    """See `_RankingLoss`."""
+    is_valid = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(is_valid, logits,
+                                tf.math.log(_EPSILON) * tf.ones_like(logits))
+    pairwise_labels, _ = _pairwise_comparison(labels, logits)
+    # Used in denominator to compute unique softmax probability for each doc.
+    denominator_logits = tf.expand_dims(logits, axis=1) * pairwise_labels
+    denominator_logits = tf.concat(
+        [denominator_logits, tf.expand_dims(logits, axis=2)], axis=2)
+    denominator_mask = tf.concat(
+        [pairwise_labels,
+         tf.expand_dims(tf.ones_like(logits), axis=2)], axis=2)
+    denominator_logits = tf.where(
+        tf.greater(denominator_mask, 0.0), denominator_logits, -1e-3 +
+        tf.reduce_min(denominator_logits) * tf.ones_like(denominator_logits))
+    logits_max = tf.reduce_max(denominator_logits, axis=-1, keepdims=True)
+    # Subtract the max so that exp(denominator_logits) is numerically valid.
+    denominator_logits -= logits_max
+    logits -= tf.squeeze(logits_max, axis=-1)
+    # Set gains for loss weights.
+    gains = tf.pow(2.0, labels) - 1
+    # Compute the softmax loss for each doc.
+    losses = -logits + tf.math.log(tf.reduce_sum(
+                tf.exp(denominator_logits) * denominator_mask, axis=-1))
+    return losses, gains
+
+
 class _PointwiseLoss(_RankingLoss):
   """Interface for pointwise loss."""
 

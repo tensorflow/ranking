@@ -594,6 +594,64 @@ class LossesTest(tf.test.TestCase):
             loss_fn_1(labels, scores, features).eval(),
             loss_fn_2(labels, scores, features).eval())
 
+  def test_unique_softmax_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      with self.cached_session():
+        self.assertAlmostEqual(
+            ranking_losses._unique_softmax_loss(labels, scores).eval(),
+            -(math.log(_softmax(scores[0])[2]) +
+              math.log(_softmax(scores[1][:2])[1]) +
+              math.log(_softmax(scores[1])[2]) * 3.) / 3.,
+            places=5)
+        self.assertAlmostEqual(
+            ranking_losses._unique_softmax_loss(labels, scores, weights).eval(),
+            -(math.log(_softmax(scores[0])[2]) * 2. +
+              math.log(_softmax(scores[1][:2])[1]) * 1. +
+              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 3.,
+            places=5)
+
+  def test_make_unique_softmax_loss_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      weights = [[2.], [1.]]
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      with self.cached_session():
+        loss_fn_simple = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.UNIQUE_SOFTMAX_LOSS)
+        self.assertAlmostEqual(
+            loss_fn_simple(labels, scores, features).eval(),
+            -(math.log(_softmax(scores[0])[2]) +
+              math.log(_softmax(scores[1][:2])[1]) +
+              math.log(_softmax(scores[1])[2]) * 3.) / 3.,
+            places=5)
+
+        loss_fn_weighted = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.UNIQUE_SOFTMAX_LOSS,
+            weights_feature_name=weights_feature_name)
+        self.assertAlmostEqual(
+            loss_fn_weighted(labels, scores, features).eval(),
+            -(math.log(_softmax(scores[0])[2]) * 2. +
+              math.log(_softmax(scores[1][:2])[1]) * 1. +
+              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 3.,
+            places=5)
+
+        # Test loss reduction method.
+        # Two reduction methods should return different loss values.
+        loss_fn_1 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.UNIQUE_SOFTMAX_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.SUM)
+        loss_fn_2 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.UNIQUE_SOFTMAX_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.MEAN)
+        self.assertNotAlmostEqual(
+            loss_fn_1(labels, scores, features).eval(),
+            loss_fn_2(labels, scores, features).eval())
+
   def test_sigmoid_cross_entropy_loss(self):
     with tf.Graph().as_default():
       scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]

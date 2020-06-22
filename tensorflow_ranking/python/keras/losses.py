@@ -36,6 +36,7 @@ class RankingLossKey(object):
   PAIRWISE_LOGISTIC_LOSS = 'pairwise_logistic_loss'
   PAIRWISE_SOFT_ZERO_ONE_LOSS = 'pairwise_soft_zero_one_loss'
   SOFTMAX_LOSS = 'softmax_loss'
+  UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
   LIST_MLE_LOSS = 'list_mle_loss'
@@ -88,6 +89,7 @@ def get(loss,
       RankingLossKey.PAIRWISE_LOGISTIC_LOSS: PairwiseLogisticLoss,
       RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS: PairwiseSoftZeroOneLoss,
       RankingLossKey.SOFTMAX_LOSS: SoftmaxLoss,
+      RankingLossKey.UNIQUE_SOFTMAX_LOSS: UniqueSoftmaxLoss,
   }
   if loss in key_to_cls:
     loss_cls = key_to_cls[loss]
@@ -201,6 +203,18 @@ class SoftmaxLoss(_RankingLoss):
     y_true, y_pred = self._loss.precompute(
         labels=y_true, logits=y_pred, weights=sample_weight)
     return super(SoftmaxLoss, self).__call__(y_true, y_pred)
+
+
+class UniqueSoftmaxLoss(_RankingLoss):
+  """For unique softmax cross entropy loss."""
+
+  def __init__(self,
+               reduction=tf.losses.Reduction.AUTO,
+               name=None,
+               lambda_weight=None):
+    super(UniqueSoftmaxLoss, self).__init__(reduction, name)
+    self._loss = losses_impl.UniqueSoftmaxLoss(
+        name='{}_impl'.format(name), lambda_weight=lambda_weight)
 
 
 class ListMLELoss(_RankingLoss):
