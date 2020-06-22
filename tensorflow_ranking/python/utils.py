@@ -272,6 +272,61 @@ def ndcg(labels, ranks=None, perm_mat=None):
   return ndcg_
 
 
+def alpha_dcg(labels, logits, alpha=0.5, topn=None, seed=None):
+  """Computes the alpha DCG metric from labels and logits.
+
+  alphaDCG is a metric first introduced in ["Novelty and Diversity in
+  Information Retrieval Evaluation."] by C Clarke, et al. It is commonly used in
+  diversification tasks, where a query may have multiple different implications,
+  termed as subtopics / nuggets. This metric tends to emphasize a rank with
+  items covering different subtopics on top by a gain_fn with reduced gain from
+  readily covered subtopics. Specifically,
+    alphaDCG = SUM(gain_fn(label, alpha) / rank_discount_fn(rank)).
+  Using the default values of the gain and discount functions, we get the
+  following commonly used formula for alphaDCG:
+    SUM(label_i * (1-alpha)^(SUM_{rank_j<rank_i}label_j) / log2(1+rank_i)).
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size, subtopic_size]. Each
+      value represents graded relevance to a subtopic: 1 for relevent subtopic,
+      0 for irrelevant, and -1 for paddings. When the actual subtopic number
+      of a query is smaller than the `subtopic_size`, `labels` will be padded
+      to `subtopic_size` with -1, similar to the paddings used for queries
+      with doc number less then list_size.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    alpha: A float between 0 and 1. Originally introduced as an assessor error
+      in judging whether a document is covering a subtopic of the query. It can
+      also be interpreted as the inverse number of documents covering the same
+      subtopic reader needs to get and confirm the subtopic information of a
+      query.
+    topn: An integer. A cutoff for how many examples to consider for DCG.
+    seed: The ops-level random seed used in shuffle ties in `sort_by_scores`.
+
+  Returns:
+    A tensor of alphaDCG with shape [batch_size, 1].
+  """
+  list_size = tf.shape(input=logits)[1]
+  is_valid = is_label_valid(labels)
+  logits = tf.where(
+      tf.reduce_any(is_valid, axis=-1), logits, -1e-6 * tf.ones_like(logits) +
+      tf.reduce_min(input_tensor=logits, axis=1, keepdims=True))
+  labels = tf.where(is_valid, labels, tf.zeros_like(labels))
+  if topn is None:
+    topn = list_size
+  sorted_labels = sort_by_scores(
+      logits, [labels], topn=topn, shuffle_ties=True, seed=seed)[0]
+  # Cumulative number of topics covered along the list_size dimension.
+  cum_subtopics = tf.cumsum(sorted_labels, axis=1, exclusive=True)
+  gains = tf.reduce_sum(
+      tf.multiply(sorted_labels, tf.pow(1 - alpha, cum_subtopics)), axis=-1)
+  ranks = tf.range(topn) + 1
+  return tf.reduce_sum(
+      gains / tf.math.log1p(tf.cast(ranks, dtype=tf.float32)) * tf.math.log(2.),
+      axis=-1,
+      keepdims=True)
+
+
 def reshape_to_2d(tensor):
   """Converts the given `tensor` to a 2-D `Tensor`."""
   with tf.compat.v1.name_scope(name='reshape_to_2d'):
