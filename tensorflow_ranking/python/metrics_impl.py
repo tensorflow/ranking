@@ -428,3 +428,17 @@ class OPAMetric(_RankingMetric):
             weights, 2) * tf.cast(
                 valid_pair, dtype=tf.float32)
     return correct_pairs, pair_weights
+
+class GlobalAveragePrecisionMetric(_RankingMetric):
+  """Implements Global Average Precesion (GAP)."""
+  def __init__(self, name):
+    """Constructor."""
+    self._name = name
+  
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    pass

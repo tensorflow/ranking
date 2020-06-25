@@ -817,6 +817,25 @@ class MetricsTest(tf.test.TestCase):
                   key, labels, scores, weights, 2, name=key))
           self.assertGreater(value, 0.)
 
+  def test_global_average_precision(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order, so the ranks are
+      # [[3, 1, 2], [3, 2, 1]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      rels = [[0, 0, 1], [0, 1, 1]]
+      m = metrics_lib.global_average_precision
+      # self._check_metrics([
+      #     (m([labels[0]], [scores[0]]), _ap(rels[0], scores[0])),
+      #     (m([labels[0]], [scores[0]], topn=1), _ap(rels[0], scores[0],
+      #                                               topn=1)),
+      #     (m([labels[0]], [scores[0]], topn=2), _ap(rels[0], scores[0],
+      #                                               topn=2)),
+      #     (m(labels,
+      #        scores), sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
+      #     (m(labels, scores, topn=1),
+      #      sum(_ap(rels[i], scores[i], topn=1) for i in range(2)) / 2.),
+      # ])
 
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()
