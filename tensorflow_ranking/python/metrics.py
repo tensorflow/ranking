@@ -57,6 +57,9 @@ class RankingMetricKey(object):
   # Ordered Pair Accuracy.
   ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'
 
+  # Global Average Precision (GAP)
+  GAP = 'gap'
+
 
 def compute_mean(metric_key,
                  labels,
@@ -89,6 +92,7 @@ def compute_mean(metric_key,
       RankingMetricKey.PRECISION: metrics_impl.PrecisionMetric(name, topn),
       RankingMetricKey.MAP: metrics_impl.MeanAveragePrecisionMetric(name, topn),
       RankingMetricKey.ORDERED_PAIR_ACCURACY: metrics_impl.OPAMetric(name),
+      RankingMetricKey.GAP: metrics_impl.GlobalAveragePrecisionMetric(name),
   }
   assert metric_key in metric_dict, ('metric_key %s not supported.' %
                                      metric_key)
@@ -199,6 +203,15 @@ def make_ranking_metric_fn(metric_key,
     return ordered_pair_accuracy(
         labels, predictions, weights=_get_weights(features), name=name)
 
+  def _global_average_precision_fn(labels, predictions, features):
+    """Returns mean average precision as the metric."""
+    return global_average_precision(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name)
+
   metric_fn_dict = {
       RankingMetricKey.ARP: _average_relevance_position_fn,
       RankingMetricKey.MRR: _mean_reciprocal_rank_fn,
@@ -207,6 +220,7 @@ def make_ranking_metric_fn(metric_key,
       RankingMetricKey.PRECISION: _precision_fn,
       RankingMetricKey.MAP: _mean_average_precision_fn,
       RankingMetricKey.ORDERED_PAIR_ACCURACY: _ordered_pair_accuracy_fn,
+      RankingMetricKey.GAP: _global_average_precision_fn,
   }
   assert metric_key in metric_fn_dict, ('metric_key %s not supported.' %
                                         metric_key)
@@ -414,6 +428,37 @@ def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
                                (labels, predictions, weights)):
     correct_pairs, pair_weights = metric.compute(labels, predictions, weights)
   return tf.compat.v1.metrics.mean(correct_pairs, pair_weights)
+
+def global_average_precision(labels,
+                           predictions,
+                           weights=None,
+                           topn=None,
+                           name=None):
+  """Computes global average precision (MAP).
+
+  The implementation of GAP is based on Equation (1.7) in the following:
+  Kaggle Evaluation Metric page, found at
+  https://www.kaggle.com/c/youtube8m/overview/evaluation
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: A cutoff for how many examples to consider for this metric.
+    name: A string used as the name for this metric.
+
+  Returns:
+    A metric for the global average precision.
+  """
+  metric = metrics_impl.GlobalAveragePrecisionMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name, 'global_average_precision',
+                               (labels, predictions, weights)):
+    per_list_map, per_list_weights = metric.compute(labels, predictions,
+                                                    weights)
+  return tf.compat.v1.metrics.mean(per_list_map, per_list_weights)
 
 
 def eval_metric(metric_fn, **kwargs):
