@@ -56,6 +56,100 @@ def _get_valid_pairs_and_clean_labels(labels):
   return valid_pairs, labels
 
 
+def approx_ranks(logits, alpha=10.):
+  r"""Computes approximate ranks given a list of logits.
+
+  Given a list of logits, the rank of an item in the list is one plus the total
+  number of items with a larger logit. In other words,
+
+    rank_i = 1 + \sum_{j \neq i} I_{s_j > s_i},
+
+  where "I" is the indicator function. The indicator function can be
+  approximated by a generalized sigmoid:
+
+    I_{s_j < s_i} \approx 1/(1 + exp(-\alpha * (s_j - s_i))).
+
+  This function approximates the rank of an item using this sigmoid
+  approximation to the indicator function. This technique is at the core
+  of "A general approximation framework for direct optimization of
+  information retrieval measures" by Qin et al.
+
+  Args:
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    alpha: Exponent of the generalized sigmoid function.
+
+  Returns:
+    A `Tensor` of ranks with the same shape as logits.
+  """
+  list_size = tf.shape(input=logits)[1]
+  x = tf.tile(tf.expand_dims(logits, 2), [1, 1, list_size])
+  y = tf.tile(tf.expand_dims(logits, 1), [1, list_size, 1])
+  pairs = tf.sigmoid(alpha * (y - x))
+  return tf.reduce_sum(input_tensor=pairs, axis=-1) + .5
+
+
+def inverse_max_dcg(labels,
+                    gain_fn=lambda labels: tf.pow(2.0, labels) - 1.,
+                    rank_discount_fn=lambda rank: 1. / tf.math.log1p(rank),
+                    topn=None):
+  """Computes the inverse of max DCG.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      graded relevance of the corresponding item.
+    gain_fn: A gain function. By default this is set to: 2^label - 1.
+    rank_discount_fn: A discount function. By default this is set to:
+      1/log(1+rank).
+    topn: An integer as the cutoff of examples in the sorted list.
+
+  Returns:
+    A `Tensor` with shape [batch_size, 1].
+  """
+  ideal_sorted_labels, = utils.sort_by_scores(labels, [labels], topn=topn)
+  rank = tf.range(tf.shape(input=ideal_sorted_labels)[1]) + 1
+  discounted_gain = gain_fn(ideal_sorted_labels) * rank_discount_fn(
+      tf.cast(rank, dtype=tf.float32))
+  discounted_gain = tf.reduce_sum(
+      input_tensor=discounted_gain, axis=1, keepdims=True)
+  return tf.compat.v1.where(
+      tf.greater(discounted_gain, 0.), 1. / discounted_gain,
+      tf.zeros_like(discounted_gain))
+
+
+def ndcg(labels, ranks=None, perm_mat=None):
+  """Computes NDCG from labels and ranks.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size], representing graded
+      relevance.
+    ranks: A `Tensor` of the same shape as labels, or [1, list_size], or None.
+      If ranks=None, we assume the labels are sorted in their rank.
+    perm_mat: A `Tensor` with shape [batch_size, list_size, list_size] or None.
+      Permutation matrices with rows correpond to the ranks and columns
+      correspond to the indices. An argmax over each row gives the index of the
+      element at the corresponding rank.
+
+  Returns:
+    A `tensor` of NDCG, ApproxNDCG, or ExpectedNDCG of shape [batch_size, 1].
+  """
+  if ranks is not None and perm_mat is not None:
+    raise ValueError('Cannot use both ranks and perm_mat simultaneously.')
+
+  if ranks is None:
+    list_size = tf.shape(labels)[1]
+    ranks = tf.range(list_size) + 1
+  discounts = 1. / tf.math.log1p(tf.cast(ranks, dtype=tf.float32))
+  gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
+  if perm_mat is not None:
+    gains = tf.reduce_sum(
+        input_tensor=perm_mat * tf.expand_dims(gains, 1), axis=-1)
+  dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
+  normalized_dcg = dcg * inverse_max_dcg(labels)
+
+  return normalized_dcg
+
+
 class _LambdaWeight(object):
   """Interface for ranking metric optimization.
 
@@ -140,7 +234,7 @@ class DCGLambdaWeight(_LambdaWeight):
       valid_pair, labels = _get_valid_pairs_and_clean_labels(labels)
       gain = self._gain_fn(labels)
       if self._normalized:
-        gain *= utils.inverse_max_dcg(
+        gain *= inverse_max_dcg(
             labels,
             gain_fn=self._gain_fn,
             rank_discount_fn=self._rank_discount_fn,
@@ -202,7 +296,7 @@ class DCGLambdaWeight(_LambdaWeight):
           utils.is_label_valid(labels), labels, tf.zeros_like(labels))
       gain = self._gain_fn(labels)
       if self._normalized:
-        gain *= utils.inverse_max_dcg(
+        gain *= inverse_max_dcg(
             labels,
             gain_fn=self._gain_fn,
             rank_discount_fn=self._rank_discount_fn,
@@ -812,9 +906,9 @@ class ApproxNDCGLoss(_ListwiseLoss):
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
-    ranks = utils.approx_ranks(logits, alpha=alpha)
+    ranks = approx_ranks(logits, alpha=alpha)
 
-    return -utils.ndcg(labels, ranks), tf.reshape(
+    return -ndcg(labels, ranks), tf.reshape(
         tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
 
@@ -836,7 +930,7 @@ class ApproxMRRLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
 
-    rr = 1. / utils.approx_ranks(logits, alpha=alpha)
+    rr = 1. / approx_ranks(logits, alpha=alpha)
     rr = tf.math.reduce_sum(input_tensor=rr * labels, axis=-1, keepdims=True)
     mrr = rr / tf.math.reduce_sum(input_tensor=labels, axis=-1, keepdims=True)
     return -mrr, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])

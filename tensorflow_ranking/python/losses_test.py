@@ -29,6 +29,52 @@ def ln(x):
   return math.log(x)
 
 
+class UtilsTest(tf.test.TestCase):
+
+  def test_approx_ranks(self):
+    with tf.Graph().as_default():
+      logits = [[1., 3., 2., 0.], [4., 2., 1.5, 3.]]
+      target_ranks = [[3., 1., 2., 4.], [1., 3., 4., 2.]]
+
+      approx_ranks = losses_impl.approx_ranks(logits, 100.)
+      with tf.compat.v1.Session() as sess:
+        approx_ranks = sess.run(approx_ranks)
+        self.assertAllClose(approx_ranks, target_ranks)
+
+  def test_inverse_max_dcg(self):
+    with tf.Graph().as_default():
+      labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
+      target = [[0.04297], [0.033139], [0.]]
+      target_1 = [[0.04621], [0.04621], [0.]]
+
+      inverse_max_dcg = losses_impl.inverse_max_dcg(labels)
+      inverse_max_dcg_1 = losses_impl.inverse_max_dcg(labels, topn=1)
+      with tf.compat.v1.Session() as sess:
+        inverse_max_dcg = sess.run(inverse_max_dcg)
+        self.assertAllClose(inverse_max_dcg, target)
+        inverse_max_dcg_1 = sess.run(inverse_max_dcg_1)
+        self.assertAllClose(inverse_max_dcg_1, target_1)
+
+  def test_ndcg(self):
+    with tf.Graph().as_default():
+      labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
+      ranks = [[1, 2, 3, 4], [1, 3, 4, 2], [1, 2, 3, 4]]
+      perm_mat = [[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+                  [[1, 0, 0, 0], [0, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0]],
+                  [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]]
+      ndcg_ = [[0.679685], [0.95176], [0.]]
+      ndcg_rank = [[0.679685], [1.], [0.]]
+      ndcg_perm = [[0.679685], [1.], [0.]]
+
+      with tf.compat.v1.Session() as sess:
+        ndcg = sess.run(losses_impl.ndcg(labels))
+        self.assertAllClose(ndcg, ndcg_)
+        ndcg = sess.run(losses_impl.ndcg(labels, ranks))
+        self.assertAllClose(ndcg, ndcg_rank)
+        ndcg = sess.run(losses_impl.ndcg(labels, perm_mat=perm_mat))
+        self.assertAllClose(ndcg, ndcg_perm)
+
+
 class DCGLambdaWeightTest(tf.test.TestCase):
   """Test cases for DCGLambdaWeight."""
 
