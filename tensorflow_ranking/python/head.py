@@ -142,16 +142,6 @@ class _AbstractRankingHead(object):
     raise NotImplementedError('Calling an abstract method.')
 
 
-def _labels_and_logits_metrics(labels, logits):
-  """Returns metrics for labels and logits."""
-  is_label_valid = tf.reshape(tf.greater_equal(labels, 0.), [-1])
-  metrics_dict = {}
-  for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]:
-    metrics_dict[name] = tf.compat.v1.metrics.mean(
-        tf.boolean_mask(tensor=tf.reshape(tensor, [-1]), mask=is_label_valid))
-  return metrics_dict
-
-
 def _get_train_op(loss, train_op_fn=None, optimizer=None):
   """Returns a train op."""
   if optimizer is not None:
@@ -205,11 +195,24 @@ class _RankingHead(_AbstractRankingHead):
     """
     del mode  # Unused for this head.
     logits = tf.convert_to_tensor(value=logits)
-    labels = tf.cast(labels, dtype=tf.float32)
+    if isinstance(labels, dict):
+      for name, label in six.iteritems(labels):
+        labels[name] = tf.cast(label, dtype=tf.float32)
+    else:
+      labels = tf.cast(labels, dtype=tf.float32)
 
     training_loss = self._loss_fn(labels, logits, features)
 
     return training_loss
+
+  def _labels_and_logits_metrics(self, labels, logits):
+    """Returns metrics for labels and logits."""
+    is_label_valid = tf.reshape(tf.greater_equal(labels, 0.), [-1])
+    metrics_dict = {}
+    for name, tensor in [('labels_mean', labels), ('logits_mean', logits)]:
+      metrics_dict[name] = tf.compat.v1.metrics.mean(
+          tf.boolean_mask(tensor=tf.reshape(tensor, [-1]), mask=is_label_valid))
+    return metrics_dict
 
   def create_estimator_spec(self,
                             features,
@@ -249,7 +252,7 @@ class _RankingHead(_AbstractRankingHead):
             metric_fn(labels=labels, predictions=logits, features=features)
             for name, metric_fn in six.iteritems(self._eval_metric_fns)
         }
-        eval_metric_ops.update(_labels_and_logits_metrics(labels, logits))
+        eval_metric_ops.update(self._labels_and_logits_metrics(labels, logits))
         return tf.estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,

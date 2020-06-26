@@ -59,20 +59,6 @@ def _make_loss_fn(weights_feature_name=None):
 
 class UtilTest(tf.test.TestCase):
 
-  def test_labels_and_logits_metrics(self):
-    with tf.Graph().as_default():
-      logits = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      metrics_dict = ranking_head._labels_and_logits_metrics(labels, logits)
-      self.assertCountEqual(['labels_mean', 'logits_mean'], metrics_dict)
-      with self.cached_session() as sess:
-        sess.run(tf.compat.v1.local_variables_initializer())
-        for (metric_op,
-             update_op), value in [(metrics_dict['labels_mean'], 0.5),
-                                   (metrics_dict['logits_mean'], 2.0)]:
-          sess.run(update_op)
-          self.assertAlmostEqual(sess.run(metric_op), value, places=5)
-
   def test_get_train_op(self):
     with tf.Graph().as_default():
       logits = tf.cast([[1.]], tf.float32)
@@ -127,6 +113,21 @@ class RankingHeadTest(tf.test.TestCase):
     head = ranking_head.create_ranking_head(
         loss_fn=_make_loss_fn(), name='fake_head')
     self.assertEqual('fake_head', head.name)
+
+  def test_labels_and_logits_metrics(self):
+    head = ranking_head.create_ranking_head(loss_fn=_make_loss_fn())
+    with tf.Graph().as_default():
+      logits = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      metrics_dict = head._labels_and_logits_metrics(labels, logits)
+      self.assertCountEqual(['labels_mean', 'logits_mean'], metrics_dict)
+      with self.cached_session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        for (metric_op,
+             update_op), value in [(metrics_dict['labels_mean'], 0.5),
+                                   (metrics_dict['logits_mean'], 2.0)]:
+          sess.run(update_op)
+          self.assertAlmostEqual(sess.run(metric_op), value, places=5)
 
   def test_predict(self):
     with tf.Graph().as_default():
