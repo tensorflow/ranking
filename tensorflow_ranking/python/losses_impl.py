@@ -443,8 +443,12 @@ def gumbel_softmax_sample(labels,
   """Samples scores from Concrete(logits).
 
   Args:
-    labels: A `Tensor` of the same shape as `logits` representing graded
-      relevance.
+    labels: A `Tensor` with shape [batch_size, list_size] same as `logits`,
+      representing graded relevance. Or in the diversity tasks, a `Tensor` with
+      shape [batch_size, list_size, subtopic_size]. Each value represents
+      relevance to a subtopic, 1 for relevent subtopic, 0 for irrelevant, and -1
+      for paddings. When the actual subtopic number of a query is smaller than
+      the `subtopic_size`, `labels` will be padded to `subtopic_size` with -1.
     logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
       ranking score of the corresponding item.
     weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
@@ -470,9 +474,9 @@ def gumbel_softmax_sample(labels,
 
     # Expand labels.
     expanded_labels = tf.expand_dims(labels, 1)
-    expanded_labels = tf.tile(expanded_labels, [1, sample_size, 1])
-    expanded_labels = tf.reshape(expanded_labels,
-                                 [batch_size * sample_size, list_size])
+    expanded_labels = tf.repeat(expanded_labels, [sample_size], axis=1)
+    expanded_labels = utils.reshape_first_ndims(expanded_labels, 2,
+                                                [batch_size * sample_size])
 
     # Sample logits from Concrete(logits).
     sampled_logits = tf.expand_dims(logits, 1)
@@ -483,6 +487,8 @@ def gumbel_softmax_sample(labels,
                                 [batch_size * sample_size, list_size])
 
     is_label_valid = utils.is_label_valid(expanded_labels)
+    if is_label_valid.shape.rank > 2:
+      is_label_valid = tf.reduce_any(is_label_valid, axis=-1)
     sampled_logits = tf.compat.v1.where(
         is_label_valid, sampled_logits / temperature,
         tf.math.log(1e-20) * tf.ones_like(sampled_logits))

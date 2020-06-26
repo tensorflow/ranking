@@ -1250,6 +1250,9 @@ class LossesTest(tf.test.TestCase):
       labels = [[0., 0., 1.],
                 [1., 0., 1.],
                 [0., 0., -1.]]
+      labels_3d = [[[0., 0.], [0., 1.], [1., 0.]],
+                   [[1., 1.], [0., 0.], [0., 1.]],
+                   [[0., 0.], [0., 0.], [-1., -1.]]]
       weights = [[2.],
                  [1.],
                  [1.]]
@@ -1267,6 +1270,14 @@ class LossesTest(tf.test.TestCase):
                          [1., 0., 1.],
                          [0., 0., -1.],
                          [0., 0., -1.]]
+
+      expanded_labels_3d = [[[0., 0.], [0., 1.], [1., 0.]],
+                            [[0., 0.], [0., 1.], [1., 0.]],
+                            [[1., 1.], [0., 0.], [0., 1.]],
+                            [[1., 1.], [0., 0.], [0., 1.]],
+                            [[0., 0.], [0., 0.], [-1., -1.]],
+                            [[0., 0.], [0., 0.], [-1., -1.]]]
+
       expanded_weights = [[2.], [2.],
                           [1.], [1.],
                           [1.], [1.]]
@@ -1277,6 +1288,10 @@ class LossesTest(tf.test.TestCase):
         self.assertAllEqual(gbl_labels.eval(), expanded_labels)
         self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
         self.assertAllEqual(gbl_weights.eval(), expanded_weights)
+        gbl_labels_3d, gbl_scores, _ = losses_impl.gumbel_softmax_sample(
+            labels_3d, scores, weights, sample_size=2, seed=1)
+        self.assertAllEqual(gbl_labels_3d.eval(), expanded_labels_3d)
+        self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
 
   def test_neural_sort(self):
     with tf.Graph().as_default():
