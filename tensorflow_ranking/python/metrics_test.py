@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
 import math
 import tensorflow as tf
 
@@ -43,6 +44,30 @@ def _dcg(label,
     A single dcg addend. e.g. weight*(2^relevance-1)/log2(rank+1).
   """
   return weight * gain_fn(label) * rank_discount_fn(rank)
+
+
+def _alpha_dcg(label,
+               cum_label,
+               rank,
+               weight=1.0,
+               alpha=0.5,
+               rank_discount_fn=lambda r: 1. / math.log(r + 1.0, 2.0)):
+  """Returns a single alpha dcg addend.
+
+  Args:
+    label: The document label.
+    cum_label: The cumulative document label.
+    rank: The document rank starting from 1.
+    weight: The document weight.
+    alpha: The information gain about a subtopic from a doc.
+    rank_discount_fn: (function) The rank discount function.
+
+  Returns:
+    A single alpha dcg addend. e.g.
+    weight*(relevance*SUM((1-alpha)^SUM(relevance)))/log2(rank+1).
+  """
+  gain = sum(l * (1-alpha)**cl for l, cl in zip(label, cum_label))
+  return weight * gain * rank_discount_fn(rank)
 
 
 def _ap(relevances, scores, topn=None):
@@ -96,6 +121,7 @@ def _label_boost(boost_form, label):
       'NDCG': math.pow(2.0, label) - 1.0,
       'PRECISION': 1.0 if label >= 1.0 else 0.0,
       'MAP': 1.0 if label >= 1.0 else 0.0,
+      'ALPHADCG': label
   }
   return boost[boost_form]
 
@@ -757,6 +783,261 @@ class MetricsTest(tf.test.TestCase):
           (m([labels[0]], [scores[0]], {}), 1. / 2.),
           (m([labels[1]], [scores[1]], {}), 1.),
           (m(labels, scores, {}), (1. + 3.) / (2. + 3.)),
+      ])
+
+  def test_alpha_discounted_cumulative_gain(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      # ranks = [[3, 1, 2], [3, 2, 1]]
+      labels = [[[0., 0.], [0., 1.], [0., 1.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
+      #               [[2., 1.], [1., 1.], [0., 0.]]]
+      m = metrics_lib.alpha_discounted_cumulative_gain
+      expected_alphadcg = (_alpha_dcg([0., 1.], [0., 0.], 1) +
+                           _alpha_dcg([0., 1.], [0., 1.], 2) +
+                           _alpha_dcg([0., 0.], [0., 2.], 3))
+      self._check_metrics([
+          (m([labels[0]], [scores[0]]), expected_alphadcg),
+      ])
+      expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1) +
+                             _alpha_dcg([0., 1.], [0., 1.], 2) +
+                             _alpha_dcg([0., 0.], [0., 2.], 3))
+      expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1) +
+                             _alpha_dcg([1., 0.], [1., 1.], 2) +
+                             _alpha_dcg([0., 0.], [2., 1.], 3))
+      expected_alphadcg = (expected_alphadcg_1 + expected_alphadcg_2) / 2.0
+      self._check_metrics([
+          (m(labels, scores), expected_alphadcg),
+      ])
+      # Testing different gain and discount functions
+      alpha = 0.2
+      rank_discount_fn = lambda rank: 1. / rank
+
+      mod_alpha_dcg_fn = functools.partial(_alpha_dcg, alpha=alpha,
+                                           rank_discount_fn=rank_discount_fn)
+
+      expected_modified_alphadcg_1 = (mod_alpha_dcg_fn([0., 1.], [0., 0.], 1) +
+                                      mod_alpha_dcg_fn([0., 1.], [0., 1.], 2) +
+                                      mod_alpha_dcg_fn([0., 0.], [0., 2.], 3))
+      self._check_metrics([
+          (m([labels[0]], [scores[0]],
+             alpha=alpha,
+             rank_discount_fn=rank_discount_fn), expected_modified_alphadcg_1),
+      ])
+
+  def test_alpha_discounted_cumulative_gain_with_zero_relevance(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 0.], [0., 0.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      # cum_labels = [[[0., 0.], [0., 0.], [0., 0.]],
+      #               [[2., 1.], [1., 1.], [0., 0.]]]
+
+      expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1) +
+                             _alpha_dcg([1., 0.], [1., 1.], 2) +
+                             _alpha_dcg([0., 0.], [2., 1.], 3))
+      m = metrics_lib.alpha_discounted_cumulative_gain
+      self._check_metrics([(m(labels, scores),
+                            (0. + expected_alphadcg_2) / 2.0)])
+
+  def test_alpha_discounted_cumulative_gain_with_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 1.], [0., 1.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
+      #               [[2., 1.], [1., 1.], [0., 0.]]]
+      sum_labels = [[0., 1., 1.], [0., 1., 2.]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      list_weights = [[1.], [2.]]
+      m = metrics_lib.alpha_discounted_cumulative_gain
+
+      self._check_metrics([
+          (m([labels[0]], [scores[0]], [weights[0]], topn=1),
+           _alpha_dcg([0., 1.], [0., 0.], 1, 2.) / 2.5),
+          (m([labels[0]], [scores[0]], [weights[0]]),
+           (_alpha_dcg([0., 1.], [0., 0.], 1, 2.) +
+            _alpha_dcg([0., 1.], [0., 1.], 2, 3.) +
+            _alpha_dcg([0., 0.], [0., 2.], 3, 1.)) / 2.5),
+      ])
+      expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1, 2.) +
+                             _alpha_dcg([0., 1.], [0., 1.], 2, 3.) +
+                             _alpha_dcg([0., 0.], [0., 2.], 3, 1.)) / 2.5
+      expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 6.) +
+                             _alpha_dcg([1., 0.], [1., 1.], 2, 5.) +
+                             _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 17 * 3
+      as_list_weights = _example_weights_to_list_weights(
+          weights, sum_labels, 'ALPHADCG')
+      expected_alphadcg = (
+          expected_alphadcg_1 * as_list_weights[0] +
+          expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
+      self._check_metrics([
+          (m(labels, scores, weights), expected_alphadcg),
+      ])
+      expected_alphadcg_1 = _alpha_dcg([0., 1.], [0., 0.], 1, 2.) / 2.5
+      expected_alphadcg_2 = _alpha_dcg([1., 1.], [0., 0.], 1, 6.) / 17 * 3
+      expected_alphadcg = (
+          expected_alphadcg_1 * as_list_weights[0] +
+          expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
+      self._check_metrics([
+          (m(labels, scores, weights, topn=1), expected_alphadcg),
+      ])
+
+      expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1, 1.) +
+                             _alpha_dcg([0., 1.], [0., 1.], 2, 1.) +
+                             _alpha_dcg([0., 0.], [0., 2.], 3, 1.))
+      expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 2.) +
+                             _alpha_dcg([1., 0.], [1., 1.], 2, 2.) +
+                             _alpha_dcg([0., 0.], [2., 1.], 3, 2.)) / 2.
+      expected_alphadcg = (expected_alphadcg_1 + 2. * expected_alphadcg_2) / 3.
+      self._check_metrics([(m(labels, scores, list_weights),
+                            expected_alphadcg)])
+      # Test zero alphaDCG cases.
+      self._check_metrics([
+          (m(labels, scores, [[0.], [0.]]), 0.),
+          (m([[[0., 0.], [0., 0.], [0., 0.]]],
+             [scores[0]], weights[0], topn=1), 0.),
+      ])
+
+  def test_alpha_discounted_cumulative_gain_with_weights_zero_relevance(
+      self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 0.], [0., 0.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      # cum_labels = [[[0., 0.], [0., 0.], [0., 0.]],
+      #               [[2., 1.], [1., 1.], [0., 0.]]]
+      sum_labels = [[0., 0., 0.], [0., 1., 2.]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      m = metrics_lib.alpha_discounted_cumulative_gain
+      expected_alphadcg_1 = 0.0
+      expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 6.) +
+                             _alpha_dcg([1., 0.], [1., 1.], 2, 5.) +
+                             _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 17 * 3
+      as_list_weights = _example_weights_to_list_weights(
+          weights, sum_labels, 'ALPHADCG')
+      self.assertAllClose(as_list_weights, [17. / 3., 17. / 3.])
+      expected_alphadcg = (
+          expected_alphadcg_1 * as_list_weights[0] +
+          expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
+      self._check_metrics([
+          (m(labels, scores, weights), expected_alphadcg),
+      ])
+      # Test zero NDCG cases.
+      self._check_metrics([(m(labels, scores, [[0.], [0.]]), 0.)])
+
+  def test_make_alpha_discounted_cumulative_gain_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      # ranks = [[3, 1, 2], [3, 2, 1]]
+      labels = [[[0., 0.], [0., 1.], [0., 1.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
+      #               [[2., 1.], [1., 1.], [0., 0.]]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      weights_3d = [[[1.], [2.], [3.]], [[4.], [5.], [6.]]]
+      list_weights = [1., 0.]
+      list_weights_2d = [[1.], [0.]]
+      weights_feature_name = 'weights'
+      weights_invalid_feature_name = 'weights_invalid'
+      weights_3d_feature_name = 'weights_3d'
+      list_weights_name = 'list_weights'
+      list_weights_2d_name = 'list_weights_2d'
+      features = {
+          weights_feature_name: [weights[0]],
+          weights_invalid_feature_name: weights[0],
+          weights_3d_feature_name: [weights_3d[0]],
+          list_weights_name: list_weights,
+          list_weights_2d_name: list_weights_2d
+      }
+      m = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.ALPHA_DCG)
+
+      expected_alphadcg = (_alpha_dcg([0., 1.], [0., 0.], 1) +
+                           _alpha_dcg([0., 1.], [0., 1.], 2) +
+                           _alpha_dcg([0., 0.], [0., 2.], 3))
+      self._check_metrics([
+          (m([labels[0]], [scores[0]], features), expected_alphadcg),
+      ])
+      expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1) +
+                             _alpha_dcg([0., 1.], [0., 1.], 2) +
+                             _alpha_dcg([0., 0.], [0., 2.], 3))
+      expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1) +
+                             _alpha_dcg([1., 0.], [1., 1.], 2) +
+                             _alpha_dcg([0., 0.], [2., 1.], 3))
+      expected_alphadcg = (expected_alphadcg_1 + expected_alphadcg_2) / 2.0
+      self._check_metrics([
+          (m(labels, scores, features), expected_alphadcg),
+      ])
+
+      # With item-wise weights.
+      m_top = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.ALPHA_DCG,
+          weights_feature_name=weights_feature_name,
+          topn=1)
+      m_weight = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.ALPHA_DCG,
+          weights_feature_name=weights_feature_name)
+      m_weights_3d = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.ALPHA_DCG,
+          weights_feature_name=weights_3d_feature_name)
+      self._check_metrics([
+          (m_top([labels[0]], [scores[0]], features),
+           _alpha_dcg([0., 1.], [0., 0.], 1, 2.) / 2.5),
+          (m_weight([labels[0]], [scores[0]], features),
+           (_alpha_dcg([0., 1.], [0., 0.], 1, 2.) +
+            _alpha_dcg([0., 1.], [0., 1.], 2, 3.) +
+            _alpha_dcg([0., 0.], [0., 2.], 3, 1.)) / 2.5),
+          (m_weights_3d([labels[0]], [scores[0]], features),
+           (_alpha_dcg([0., 1.], [0., 0.], 1, 2.) +
+            _alpha_dcg([0., 1.], [0., 1.], 2, 3.) +
+            _alpha_dcg([0., 0.], [0., 2.], 3, 1.)) / 2.5),
+      ])
+      with self.assertRaises(ValueError):
+        m_weight_invalid = metrics_lib.make_ranking_metric_fn(
+            metrics_lib.RankingMetricKey.ALPHA_DCG,
+            weights_feature_name=weights_invalid_feature_name)
+        m_weight_invalid([labels[0]], [scores[0]], features)
+
+      # With list-wise weights.
+      m_list_weight = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.ALPHA_DCG,
+          weights_feature_name=list_weights_name)
+      m_list_weight_2d = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.ALPHA_DCG,
+          weights_feature_name=list_weights_2d_name)
+      self._check_metrics([
+          (m_list_weight(labels, scores, features),
+           (_alpha_dcg([0., 1.], [0., 0.], 1, 1.) +
+            _alpha_dcg([0., 1.], [0., 1.], 2, 1.) +
+            _alpha_dcg([0., 0.], [0., 2.], 3, 1.))),
+          (m_list_weight_2d(labels, scores, features),
+           (_alpha_dcg([0., 1.], [0., 0.], 1, 1.) +
+            _alpha_dcg([0., 1.], [0., 1.], 2, 1.) +
+            _alpha_dcg([0., 0.], [0., 2.], 3, 1.))),
+      ])
+
+      # Testing different gain and discount functions
+      alpha = 0.2
+      rank_discount_fn = lambda rank: 1. / rank
+
+      mod_alpha_dcg_fn = functools.partial(_alpha_dcg, alpha=alpha,
+                                           rank_discount_fn=rank_discount_fn)
+
+      m_mod = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.ALPHA_DCG,
+          rank_discount_fn=rank_discount_fn,
+          alpha=alpha)
+
+      expected_modified_alphadcg_1 = (mod_alpha_dcg_fn([0., 1.], [0., 0.], 1) +
+                                      mod_alpha_dcg_fn([0., 1.], [0., 1.], 2) +
+                                      mod_alpha_dcg_fn([0., 0.], [0., 2.], 3))
+      self._check_metrics([
+          (m_mod([labels[0]], [scores[0]], features),
+           expected_modified_alphadcg_1),
       ])
 
   def test_eval_metric(self):

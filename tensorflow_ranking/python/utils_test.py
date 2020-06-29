@@ -18,7 +18,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import math
 import tensorflow as tf
 
 from tensorflow_ranking.python import utils
@@ -140,19 +139,6 @@ class UtilsTest(tf.test.TestCase):
         self.assertAllEqual(reshaped_array.values, target_array.values)
         self.assertAllEqual(reshaped_array.dense_shape,
                             target_array.dense_shape)
-
-  def test_alpha_dcg(self):
-    with tf.Graph().as_default():
-      labels = [[[1., 1.], [1., 0.], [0., 1.], [0., 0.]],
-                [[0., 0.], [1., 0.], [0., 0.], [0., 1.]],
-                [[0., -1.], [1., -1.], [-1., -1.], [-1., -1.]]]
-      logits = [[2., 1., 0.5, 0.], [1., 0.5, 0., 0.8], [0., 1., -0.5, 2.]]
-      alphadcg_ = [[2. + (0.5 / math.log(3) + 0.5 / math.log(4)) * math.log(2)],
-                   [(1. / math.log(3) + 1. / math.log(4)) * math.log(2)], [1.]]
-
-      with tf.compat.v1.Session() as sess:
-        alphadcg = sess.run(utils.alpha_dcg(labels, logits))
-        self.assertAllClose(alphadcg, alphadcg_)
 
   def test_reshape_to_2d(self):
     with tf.Graph().as_default():

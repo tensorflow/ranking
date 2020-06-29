@@ -23,6 +23,7 @@ from __future__ import division
 from __future__ import print_function
 
 import abc
+import functools
 import tensorflow as tf
 
 from tensorflow_ranking.python import utils
@@ -30,6 +31,33 @@ from tensorflow_ranking.python import utils
 _DEFAULT_GAIN_FN = lambda label: tf.pow(2.0, label) - 1
 
 _DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
+
+
+def _alpha_dcg_gain_fn(labels, alpha):
+  """Computes gain for alpha DCG metric from sorted labels.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size, subtopic_size]. Each
+      value represents graded relevance to a subtopic: 1 for relevent subtopic,
+      0 for irrelevant, and -1 for paddings. When the actual subtopic number of
+      a query is smaller than the `subtopic_size`, `labels` will be padded to
+      `subtopic_size` with -1, similar to the paddings used for queries with doc
+      number less then list_size.
+    alpha: A float between 0 and 1. Originally introduced as an assessor error
+      in judging whether a document is covering a subtopic of the query. It can
+      also be interpreted as the inverse number of documents covering the same
+      subtopic reader needs to get and confirm the subtopic information of a
+      query.
+
+  Returns:
+    A function computes the alpha DCG gain.
+  """
+  # Cumulative number of topics covered along the list_size dimension.
+  cum_subtopics = tf.cumsum(labels, axis=1, exclusive=True)
+  gains = tf.reduce_sum(
+      tf.multiply(labels, tf.pow(1 - alpha, cum_subtopics)), axis=-1)
+
+  return gains
 
 
 def _per_example_weights_to_per_list_weights(weights, relevance):
@@ -93,7 +121,9 @@ def _discounted_cumulative_gain(labels,
 
   Args:
     labels: The relevance `Tensor` of shape [batch_size, list_size]. For the
-      ideal ranking, the examples are sorted by relevance in reverse order.
+      ideal ranking, the examples are sorted by relevance in reverse order. In
+      alpha_dcg, it is a `Tensor` with shape [batch_size, list_size,
+      subtopic_size].
     weights: A `Tensor` of the same shape as labels or [batch_size, 1]. The
       former case is per-example and the latter case is per-list.
     gain_fn: (function) Transforms labels.
@@ -428,3 +458,73 @@ class OPAMetric(_RankingMetric):
             weights, 2) * tf.cast(
                 valid_pair, dtype=tf.float32)
     return correct_pairs, pair_weights
+
+
+class AlphaDCGMetric(_RankingMetric):
+  """Implements alpha discounted cumulative gain (alphaDCG).
+
+  alphaDCG is a metric first introduced in ["Novelty and Diversity in
+  Information Retrieval Evaluation."] by C Clarke, et al. It is commonly used in
+  diversification tasks, where a query may have multiple different implications,
+  termed as subtopics / nuggets. This metric tends to emphasize a rank with
+  items covering different subtopics on top by a gain_fn with reduced gain from
+  readily covered subtopics. Specifically,
+    alphaDCG = SUM(gain_fn(label, alpha) / rank_discount_fn(rank)).
+  Using the default values of the gain and discount functions, we get the
+  following commonly used formula for alphaDCG:
+    SUM(label_i * (1-alpha)^(SUM_{rank_j<rank_i}label_j) / log2(1+rank_i)).
+  """
+
+  def __init__(self,
+               name,
+               topn,
+               alpha=0.5,
+               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
+               seed=None):
+    """Constructor."""
+    self._name = name
+    self._topn = topn
+    self._alpha = alpha
+    self._gain_fn = functools.partial(_alpha_dcg_gain_fn, alpha=alpha)
+    self._rank_discount_fn = rank_discount_fn
+    self._seed = seed
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+    labels = tf.convert_to_tensor(value=labels)
+    predictions = tf.convert_to_tensor(value=predictions)
+    labels.get_shape().assert_has_rank(3)
+    is_valid = utils.is_label_valid(labels)
+    predictions = tf.where(
+        tf.reduce_any(is_valid,
+                      axis=-1), predictions, -1e-6 * tf.ones_like(predictions) +
+        tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
+    # All labels should be >= 0. Invalid entries are reset.
+    labels = tf.where(is_valid, labels, tf.zeros_like(labels))
+    weights = (
+        tf.constant(1.0, dtype=tf.float32)
+        if weights is None else tf.convert_to_tensor(value=weights))
+    weights = tf.ones_like(predictions) * weights
+    list_size = tf.shape(input=predictions)[1]
+    if self._topn is None:
+      topn = list_size
+    else:
+      topn = self._topn
+    sorted_labels, sorted_weights = utils.sort_by_scores(
+        predictions, [labels, weights], topn=topn, seed=self._seed)
+
+    alpha_dcg = _discounted_cumulative_gain(sorted_labels,
+                                            sorted_weights,
+                                            self._gain_fn,
+                                            self._rank_discount_fn)
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights=weights,
+        relevance=tf.reduce_sum(tf.cast(labels, dtype=tf.float32), axis=-1))
+    per_list_alpha_dcg = tf.compat.v1.math.divide_no_nan(
+        alpha_dcg, per_list_weights)
+    return per_list_alpha_dcg, per_list_weights
