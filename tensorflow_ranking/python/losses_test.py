@@ -894,33 +894,34 @@ class LossesTest(tf.test.TestCase):
   def test_approx_ndcg_loss(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      # ranks= [[1,    3,    2],   [3,  2,   1],    [2,  1,    3]]
-      labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
+      # ranks= [[1,    3,    2],   [2,  1,   3],    [2,  1,    3]]
+      labels = [[0., 2., 1.], [1., 0., -1.], [0., 0., 0.]]
       weights = [[2.], [1.], [1.]]
       example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-      norm_wts = [
-          sum([wt * l
-               for wt, l in zip(wts, lbls)]) / sum(lbls) if sum(lbls) else 0
-          for wts, lbls in zip(example_weights, labels)
-      ]
+      norm_weights = []
+      for weight, label in zip(example_weights, labels):
+        sum_label = sum(max(0, l) for l in label)
+        norm_weights.append(
+            sum(w * max(0, l) for w, l in zip(weight, label)) / sum_label
+            if sum_label else 0)
 
       with self.cached_session():
         self.assertAlmostEqual(
             ranking_losses._approx_ndcg_loss(labels, scores).eval(),
             -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) +
-              (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
+              ln(2) * (1 / ln(3))),
             places=5)
         self.assertAlmostEqual(
             ranking_losses._approx_ndcg_loss(labels, scores, weights).eval(),
             -(2 * (1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + 1 *
-              (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
+              ln(2) * (1 / ln(3))),
             places=5)
         self.assertAlmostEqual(
             ranking_losses._approx_ndcg_loss(labels, scores,
                                              example_weights).eval(),
-            -(norm_wts[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-              (3 / ln(4) + 1 / ln(3)) + norm_wts[1] *
-              (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
+            -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+              (3 / ln(4) + 1 / ln(3)) + norm_weights[1] *
+              ln(2) * (1 / ln(3))),
             places=5)
 
   def test_make_approx_ndcg_fn(self):

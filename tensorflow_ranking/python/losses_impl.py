@@ -721,6 +721,8 @@ class _ListwiseLoss(_RankingLoss):
     else:
       weights = tf.convert_to_tensor(value=weights)
       labels = tf.convert_to_tensor(value=labels)
+      is_valid = utils.is_label_valid(labels)
+      labels = tf.where(is_valid, labels, tf.zeros_like(labels))
       return tf.compat.v1.math.divide_no_nan(
           tf.reduce_sum(input_tensor=(weights * labels), axis=1, keepdims=True),
           tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True))

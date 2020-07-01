@@ -31,8 +31,9 @@ def ln(x):
 
 
 def normalize_weights(weights, labels):
-  return sum([weight * label for weight, label in zip(weights, labels)
-             ]) / sum(labels) if sum(labels) else 0
+  sum_label = sum(max(0, l) for l in labels)
+  return sum(w * max(0, l)
+             for w, l in zip(weights, labels)) / sum_label if sum_label else 0
 
 
 def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
@@ -354,9 +355,9 @@ class LossesTest(tf.test.TestCase):
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     weights = [[2.], [1.], [1.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-    norm_wts = [
-        normalize_weights(wts, lbls)
-        for wts, lbls in zip(example_weights, labels)
+    norm_weights = [
+        normalize_weights(w, l)
+        for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.ApproxNDCGLoss()
@@ -372,8 +373,8 @@ class LossesTest(tf.test.TestCase):
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, example_weights).numpy(),
-        -(norm_wts[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-          (3 / ln(4) + 1 / ln(3)) + norm_wts[1] *
+        -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + norm_weights[1] *
           (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))) / 3.,
         places=5)
 
@@ -428,9 +429,9 @@ class LossesTest(tf.test.TestCase):
     # ranks= [[1,    3,    2],   [3,  2,   1],    [2,  1,    3]]
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-    norm_wts = [
-        normalize_weights(wts, lbls)
-        for wts, lbls in zip(example_weights, labels)
+    norm_weights = [
+        normalize_weights(w, l)
+        for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.ApproxNDCGLoss(reduction=tf.losses.Reduction.SUM)
@@ -441,8 +442,8 @@ class LossesTest(tf.test.TestCase):
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, example_weights).numpy(),
-        -(norm_wts[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-          (3 / ln(4) + 1 / ln(3)) + norm_wts[1] *
+        -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + norm_weights[1] *
           (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
         places=5)
 
@@ -451,9 +452,9 @@ class LossesTest(tf.test.TestCase):
     # ranks= [[1,    3,    2],   [3,  2,   1],    [2,  1,    3]]
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-    norm_wts = [
-        normalize_weights(wts, lbls)
-        for wts, lbls in zip(example_weights, labels)
+    norm_weights = [
+        normalize_weights(w, l)
+        for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.ApproxNDCGLoss(
@@ -465,8 +466,8 @@ class LossesTest(tf.test.TestCase):
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, example_weights).numpy(),
-        -(norm_wts[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-          (3 / ln(4) + 1 / ln(3)) + norm_wts[1] *
+        -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + norm_weights[1] *
           (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))) / 3.,
         places=5)
 
@@ -784,9 +785,9 @@ class GetLossesTest(tf.test.TestCase):
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     weights = [[2.], [1.], [1.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-    norm_wts = [
-        normalize_weights(wts, lbls)
-        for wts, lbls in zip(example_weights, labels)
+    norm_weights = [
+        normalize_weights(w, l)
+        for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.get(loss=losses.RankingLossKey.APPROX_NDCG_LOSS)
@@ -802,8 +803,8 @@ class GetLossesTest(tf.test.TestCase):
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, example_weights).numpy(),
-        -(norm_wts[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-          (3 / ln(4) + 1 / ln(3)) + norm_wts[1] *
+        -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + norm_weights[1] *
           (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))) / 3.,
         places=5)
 
@@ -864,9 +865,9 @@ class GetLossesTest(tf.test.TestCase):
     # ranks= [[1,    3,    2],   [3,  2,   1],    [2,  1,    3]]
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-    norm_wts = [
-        normalize_weights(wts, lbls)
-        for wts, lbls in zip(example_weights, labels)
+    norm_weights = [
+        normalize_weights(w, l)
+        for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.get(
@@ -879,8 +880,8 @@ class GetLossesTest(tf.test.TestCase):
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, example_weights).numpy(),
-        -(norm_wts[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-          (3 / ln(4) + 1 / ln(3)) + norm_wts[1] *
+        -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + norm_weights[1] *
           (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))),
         places=5)
 
@@ -889,9 +890,9 @@ class GetLossesTest(tf.test.TestCase):
     # ranks= [[1,    3,    2],   [3,  2,   1],    [2,  1,    3]]
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-    norm_wts = [
-        normalize_weights(wts, lbls)
-        for wts, lbls in zip(example_weights, labels)
+    norm_weights = [
+        normalize_weights(w, l)
+        for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.get(
@@ -904,8 +905,8 @@ class GetLossesTest(tf.test.TestCase):
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, example_weights).numpy(),
-        -(norm_wts[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-          (3 / ln(4) + 1 / ln(3)) + norm_wts[1] *
+        -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + norm_weights[1] *
           (1 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4))) / 3.,
         places=5)
 
