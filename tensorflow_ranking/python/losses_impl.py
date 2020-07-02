@@ -56,7 +56,7 @@ def _get_valid_pairs_and_clean_labels(labels):
   return valid_pairs, labels
 
 
-def approx_ranks(logits, alpha=10.):
+def approx_ranks(logits, temperature=0.1):
   r"""Computes approximate ranks given a list of logits.
 
   Given a list of logits, the rank of an item in the list is one plus the total
@@ -67,7 +67,7 @@ def approx_ranks(logits, alpha=10.):
   where "I" is the indicator function. The indicator function can be
   approximated by a generalized sigmoid:
 
-    I_{s_j < s_i} \approx 1/(1 + exp(-\alpha * (s_j - s_i))).
+    I_{s_j < s_i} \approx 1/(1 + exp(-(s_j - s_i)/temperature)).
 
   This function approximates the rank of an item using this sigmoid
   approximation to the indicator function. This technique is at the core
@@ -77,7 +77,7 @@ def approx_ranks(logits, alpha=10.):
   Args:
     logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
       ranking score of the corresponding item.
-    alpha: Exponent of the generalized sigmoid function.
+    temperature: A float number as the divider for logits.
 
   Returns:
     A `Tensor` of ranks with the same shape as logits.
@@ -85,7 +85,7 @@ def approx_ranks(logits, alpha=10.):
   list_size = tf.shape(input=logits)[1]
   x = tf.tile(tf.expand_dims(logits, 2), [1, 1, list_size])
   y = tf.tile(tf.expand_dims(logits, 1), [1, list_size, 1])
-  pairs = tf.sigmoid(alpha * (y - x))
+  pairs = tf.sigmoid((y - x) / temperature)
   return tf.reduce_sum(input_tensor=pairs, axis=-1) + .5
 
 
@@ -519,10 +519,22 @@ class _RankingLoss(object):
 
   __metaclass__ = abc.ABCMeta
 
-  @abc.abstractproperty
+  def __init__(self, name, lambda_weight=None, temperature=1.0):
+    """Constructor.
+
+    Args:
+      name: A string used as the name for this loss.
+      lambda_weight: A `_LambdaWeight` object.
+      temperature: A float number to modify the logits=logits/temperature.
+    """
+    self._name = name
+    self._lambda_weight = lambda_weight
+    self._temperature = temperature
+
+  @property
   def name(self):
     """The loss name."""
-    raise NotImplementedError('Calling an abstract method.')
+    return self._name
 
   @abc.abstractmethod
   def compute_unreduced_loss(self, labels, logits):
@@ -578,6 +590,7 @@ class _RankingLoss(object):
     Returns:
       Reduced loss for training and eval.
     """
+    logits = tf.convert_to_tensor(value=logits) / self._temperature
     losses, loss_weights = self.compute_unreduced_loss(labels, logits)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
     return tf.compat.v1.losses.compute_weighted_loss(
@@ -609,23 +622,6 @@ class _PairwiseLoss(_RankingLoss):
   """Interface for pairwise ranking loss."""
 
   __metaclass__ = abc.ABCMeta
-
-  def __init__(self, name, lambda_weight=None, params=None):
-    """Constructor.
-
-    Args:
-      name: A string used as the name for this loss.
-      lambda_weight: A `_LambdaWeight` object.
-      params: A dict for params used in loss computation.
-    """
-    self._name = name
-    self._lambda_weight = lambda_weight
-    self._params = params or {}
-
-  @property
-  def name(self):
-    """The loss name."""
-    return self._name
 
   @abc.abstractmethod
   def _pairwise_loss(self, pairwise_logits):
@@ -697,23 +693,6 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
 class _ListwiseLoss(_RankingLoss):
   """Interface for listwise loss."""
 
-  def __init__(self, name, lambda_weight=None, params=None):
-    """Constructor.
-
-    Args:
-      name: A string used as the name for this loss.
-      lambda_weight: A `_LambdaWeight` object.
-      params: A dict for params used in loss computation.
-    """
-    self._name = name
-    self._lambda_weight = lambda_weight
-    self._params = params or {}
-
-  @property
-  def name(self):
-    """The loss name."""
-    return self._name
-
   def normalize_weights(self, labels, weights):
     """See `_RankingLoss`."""
     if weights is None:
@@ -766,6 +745,7 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def compute(self, labels, logits, weights, reduction):
     """See `_RankingLoss`."""
+    logits = tf.convert_to_tensor(value=logits) / self._temperature
     labels, logits = self.precompute(labels, logits, weights)
     losses, weights = self.compute_unreduced_loss(labels, logits)
     return tf.compat.v1.losses.compute_weighted_loss(
@@ -773,6 +753,7 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def eval_metric(self, labels, logits, weights):
     """See `_RankingLoss`."""
+    logits = tf.convert_to_tensor(value=logits) / self._temperature
     labels, logits = self.precompute(labels, logits, weights)
     losses, weights = self.compute_unreduced_loss(labels, logits)
     return tf.compat.v1.metrics.mean(losses, weights)
@@ -805,28 +786,13 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
     # Set gains for loss weights.
     gains = tf.pow(2.0, labels) - 1
     # Compute the softmax loss for each doc.
-    losses = -logits + tf.math.log(tf.reduce_sum(
-                tf.exp(denominator_logits) * denominator_mask, axis=-1))
+    losses = -logits + tf.math.log(
+        tf.reduce_sum(tf.exp(denominator_logits) * denominator_mask, axis=-1))
     return losses, gains
 
 
 class _PointwiseLoss(_RankingLoss):
   """Interface for pointwise loss."""
-
-  def __init__(self, name, params=None):
-    """Constructor.
-
-    Args:
-      name: A string used as the name for this loss.
-      params: A dict for params used in loss computation.
-    """
-    self._name = name
-    self._params = params or {}
-
-  @property
-  def name(self):
-    """The loss name."""
-    return self._name
 
   def normalize_weights(self, labels, weights):
     """See _RankingLoss."""
@@ -840,6 +806,15 @@ class _PointwiseLoss(_RankingLoss):
 class SigmoidCrossEntropyLoss(_PointwiseLoss):
   """Implements sigmoid cross entropy loss."""
 
+  def __init__(self, name, temperature=1.0):
+    """Overwrite the constructor.
+
+    Args:
+      name: A string used as the name for this loss.
+      temperature: A float number to modify the logits=logits/temperature.
+    """
+    super(SigmoidCrossEntropyLoss, self).__init__(name, None, temperature)
+
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
     labels = tf.compat.v1.where(
@@ -851,6 +826,15 @@ class SigmoidCrossEntropyLoss(_PointwiseLoss):
 
 class MeanSquaredLoss(_PointwiseLoss):
   """Implements the means squared error loss."""
+
+  def __init__(self, name):
+    """Overwrite the constructor.
+
+    Args:
+      name: A string used as the name for this loss.
+    """
+    # temperature is not used in this loss.
+    super(MeanSquaredLoss, self).__init__(name, None, temperature=1.0)
 
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
@@ -901,9 +885,13 @@ class ListMLELoss(_ListwiseLoss):
 class ApproxNDCGLoss(_ListwiseLoss):
   """Implements ApproxNDCG loss."""
 
+  # Use a different default temperature.
+  def __init__(self, name, lambda_weight=None, temperature=0.1):
+    """See `_ListwiseLoss`."""
+    super(ApproxNDCGLoss, self).__init__(name, lambda_weight, temperature)
+
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
-    alpha = self._params.get('alpha', 10.0)
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(
@@ -914,7 +902,7 @@ class ApproxNDCGLoss(_ListwiseLoss):
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
-    ranks = approx_ranks(logits, alpha=alpha)
+    ranks = approx_ranks(logits, temperature=self._temperature)
 
     return -ndcg(labels, ranks), tf.reshape(
         tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
@@ -923,9 +911,13 @@ class ApproxNDCGLoss(_ListwiseLoss):
 class ApproxMRRLoss(_ListwiseLoss):
   """Implements ApproxMRR loss."""
 
+  # Use a different default temperature.
+  def __init__(self, name, lambda_weight=None, temperature=0.1):
+    """See `_ListwiseLoss`."""
+    super(ApproxMRRLoss, self).__init__(name, lambda_weight, temperature)
+
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
-    alpha = self._params.get('alpha', 10.0)
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(
@@ -938,7 +930,7 @@ class ApproxMRRLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
 
-    rr = 1. / approx_ranks(logits, alpha=alpha)
+    rr = 1. / approx_ranks(logits, temperature=self._temperature)
     rr = tf.math.reduce_sum(input_tensor=rr * labels, axis=-1, keepdims=True)
     mrr = rr / tf.math.reduce_sum(input_tensor=labels, axis=-1, keepdims=True)
     return -mrr, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
@@ -949,7 +941,6 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
-    temperature = self._params.get('temperature', 0.1)
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(
@@ -961,8 +952,8 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(is_valid, labels, -1e3 * tf.ones_like(labels))
 
     # shape = [batch_size, list_size, list_size].
-    true_perm = neural_sort(labels, temperature=temperature)
-    smooth_perm = neural_sort(logits, temperature=temperature)
+    true_perm = neural_sort(labels, temperature=self._temperature)
+    smooth_perm = neural_sort(logits, temperature=self._temperature)
     losses = tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(
         labels=true_perm, logits=tf.math.log(1e-20 + smooth_perm), axis=2)
     # shape = [batch_size, list_size].

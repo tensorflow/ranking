@@ -183,8 +183,9 @@ class LossesTest(tf.test.TestCase):
         places=5)
 
     # Test LambdaWeight.
+    rank_discount_fn = lambda r: 1. / tf.math.log1p(r)
     lambda_weight = losses.DCGLambdaWeight(
-        rank_discount_fn=lambda r: 1. / tf.math.log1p(r), smooth_fraction=1.)
+        rank_discount_fn=rank_discount_fn, smooth_fraction=1.)
     loss_form_dict = {
         'hinge':
             losses.PairwiseHingeLoss(name='hinge', lambda_weight=lambda_weight),
@@ -241,8 +242,8 @@ class LossesTest(tf.test.TestCase):
         places=5)
 
     # Test LambdaWeight.
-    lambda_weight = losses.DCGLambdaWeight(
-        rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
+    rank_discount_fn = lambda r: 1. / tf.math.log1p(r)
+    lambda_weight = losses.DCGLambdaWeight(rank_discount_fn=rank_discount_fn)
     loss = losses.SoftmaxLoss(lambda_weight=lambda_weight)
     self.assertAlmostEqual(
         loss(labels, scores).numpy(),
@@ -258,15 +259,13 @@ class LossesTest(tf.test.TestCase):
     loss = losses.UniqueSoftmaxLoss()
     self.assertAlmostEqual(
         loss(labels, scores).numpy(),
-        -(ln(_softmax(scores[0])[2]) +
-          ln(_softmax(scores[1][:2])[1]) +
+        -(ln(_softmax(scores[0])[2]) + ln(_softmax(scores[1][:2])[1]) +
           ln(_softmax(scores[1])[2]) * 3.) / 9.,
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, weights).numpy(),
-        -(ln(_softmax(scores[0])[2]) * 2. +
-          ln(_softmax(scores[1][:2])[1]) * 1. +
-          ln(_softmax(scores[1])[2]) * 3. * 1.) / 9.,
+        -(ln(_softmax(scores[0])[2]) * 2. + ln(_softmax(scores[1][:2])[1]) * 1.
+          + ln(_softmax(scores[1])[2]) * 3. * 1.) / 9.,
         places=5)
 
   def test_sigmoid_cross_entropy_loss(self):
@@ -356,8 +355,7 @@ class LossesTest(tf.test.TestCase):
     weights = [[2.], [1.], [1.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     norm_weights = [
-        normalize_weights(w, l)
-        for w, l in zip(example_weights, labels)
+        normalize_weights(w, l) for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.ApproxNDCGLoss()
@@ -430,8 +428,7 @@ class LossesTest(tf.test.TestCase):
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     norm_weights = [
-        normalize_weights(w, l)
-        for w, l in zip(example_weights, labels)
+        normalize_weights(w, l) for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.ApproxNDCGLoss(reduction=tf.losses.Reduction.SUM)
@@ -453,8 +450,7 @@ class LossesTest(tf.test.TestCase):
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     norm_weights = [
-        normalize_weights(w, l)
-        for w, l in zip(example_weights, labels)
+        normalize_weights(w, l) for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.ApproxNDCGLoss(
@@ -604,8 +600,9 @@ class GetLossesTest(tf.test.TestCase):
         places=5)
 
     # Test LambdaWeight.
+    rank_discount_fn = lambda r: 1. / tf.math.log1p(r)
     lambda_weight = losses.DCGLambdaWeight(
-        rank_discount_fn=lambda r: 1. / tf.math.log1p(r), smooth_fraction=1.)
+        rank_discount_fn=rank_discount_fn, smooth_fraction=1.)
     loss_form_dict = {
         'hinge':
             losses.get(
@@ -669,8 +666,8 @@ class GetLossesTest(tf.test.TestCase):
         places=5)
 
     # Test LambdaWeight.
-    lambda_weight = losses.DCGLambdaWeight(
-        rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
+    rank_discount_fn = lambda r: 1. / tf.math.log1p(r)
+    lambda_weight = losses.DCGLambdaWeight(rank_discount_fn=rank_discount_fn)
     loss = losses.get(
         loss=losses.RankingLossKey.SOFTMAX_LOSS, lambda_weight=lambda_weight)
     self.assertAlmostEqual(
@@ -687,15 +684,13 @@ class GetLossesTest(tf.test.TestCase):
     loss = losses.get(loss=losses.RankingLossKey.UNIQUE_SOFTMAX_LOSS)
     self.assertAlmostEqual(
         loss(labels, scores).numpy(),
-        -(ln(_softmax(scores[0])[2]) +
-          ln(_softmax(scores[1][:2])[1]) +
+        -(ln(_softmax(scores[0])[2]) + ln(_softmax(scores[1][:2])[1]) +
           ln(_softmax(scores[1])[2]) * 3.) / 9.,
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, weights).numpy(),
-        -(ln(_softmax(scores[0])[2]) * 2. +
-          ln(_softmax(scores[1][:2])[1]) * 1. +
-          ln(_softmax(scores[1])[2]) * 3. * 1.) / 9.,
+        -(ln(_softmax(scores[0])[2]) * 2. + ln(_softmax(scores[1][:2])[1]) * 1.
+          + ln(_softmax(scores[1])[2]) * 3. * 1.) / 9.,
         places=5)
 
   def test_sigmoid_cross_entropy_loss(self):
@@ -786,8 +781,7 @@ class GetLossesTest(tf.test.TestCase):
     weights = [[2.], [1.], [1.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     norm_weights = [
-        normalize_weights(w, l)
-        for w, l in zip(example_weights, labels)
+        normalize_weights(w, l) for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.get(loss=losses.RankingLossKey.APPROX_NDCG_LOSS)
@@ -866,8 +860,7 @@ class GetLossesTest(tf.test.TestCase):
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     norm_weights = [
-        normalize_weights(w, l)
-        for w, l in zip(example_weights, labels)
+        normalize_weights(w, l) for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.get(
@@ -891,8 +884,7 @@ class GetLossesTest(tf.test.TestCase):
     labels = [[0., 2., 1.], [1., 0., 3.], [0., 0., 0.]]
     example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     norm_weights = [
-        normalize_weights(w, l)
-        for w, l in zip(example_weights, labels)
+        normalize_weights(w, l) for w, l in zip(example_weights, labels)
     ]
 
     loss = losses.get(

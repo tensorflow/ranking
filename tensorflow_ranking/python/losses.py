@@ -52,7 +52,7 @@ def make_loss_fn(loss_keys,
                  lambda_weight=None,
                  reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
                  name=None,
-                 extra_args=None):
+                 params=None):
   """Makes a loss function using a single loss or multiple losses.
 
   Args:
@@ -70,7 +70,7 @@ def make_loss_fn(loss_keys,
     reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
       reduce training loss over batch.
     name: A string used as the name for this loss.
-    extra_args: A string-keyed dictionary that contains any other loss-specific
+    params: A string-keyed dictionary that contains any other loss-specific
       arguments.
 
   Returns:
@@ -94,6 +94,8 @@ def make_loss_fn(loss_keys,
   if loss_weights:
     if len(loss_keys) != len(loss_weights):
       raise ValueError('loss_keys and loss_weights must have the same size.')
+
+  params = params or {}
 
   def _loss_fn(labels, logits, features):
     """Computes a single loss or weighted combination of losses.
@@ -135,9 +137,8 @@ def make_loss_fn(loss_keys,
         'reduction': reduction,
         'name': name,
     }
-    if extra_args is not None:
-      loss_kwargs.update(extra_args)
-      gbl_loss_kwargs.update(extra_args)
+    loss_kwargs.update(params)
+    gbl_loss_kwargs.update(params)
 
     loss_kwargs_with_lambda_weight = loss_kwargs.copy()
     loss_kwargs_with_lambda_weight['lambda_weight'] = lambda_weight
@@ -565,9 +566,7 @@ def _list_mle_loss(
     lambda_weight=None,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     name=None):
-  """Computes the ListMLE loss [Xia et al.
-
-  2008] for a list.
+  """Computes the ListMLE loss in (Xia et al 2008) for a list.
 
   Given the labels of graded relevance l_i and the logits s_i, we calculate
   the ListMLE loss for the given list.
@@ -604,7 +603,7 @@ def _approx_ndcg_loss(labels,
                       weights=None,
                       reduction=tf.compat.v1.losses.Reduction.SUM,
                       name=None,
-                      alpha=10.):
+                      temperature=0.1):
   """Computes ApproxNDCG loss.
 
   ApproxNDCG ["A general approximation framework for direct optimization of
@@ -625,12 +624,12 @@ def _approx_ndcg_loss(labels,
     reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
       reduce training loss over batch.
     name: A string used as the name for this loss.
-    alpha: The exponent in the generalized sigmoid function.
+    temperature: The temperature used to scale logits=logits/temperature.
 
   Returns:
     An op for the ApproxNDCG loss.
   """
-  loss = losses_impl.ApproxNDCGLoss(name, params={'alpha': alpha})
+  loss = losses_impl.ApproxNDCGLoss(name, temperature=temperature)
   with tf.compat.v1.name_scope(loss.name, 'approx_ndcg_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights, reduction)
@@ -641,7 +640,7 @@ def _approx_mrr_loss(labels,
                      weights=None,
                      reduction=tf.compat.v1.losses.Reduction.SUM,
                      name=None,
-                     alpha=10.):
+                     temperature=0.1):
   """Computes ApproxMRR loss.
 
   ApproxMRR ["A general approximation framework for direct optimization of
@@ -660,12 +659,12 @@ def _approx_mrr_loss(labels,
     reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
       reduce training loss over batch.
     name: A string used as the name for this loss.
-    alpha: The exponent in the generalized sigmoid function.
+    temperature: The temperature used to scale logits=logits/temperature.
 
   Returns:
     An op for the ApproxMRR loss.
   """
-  loss = losses_impl.ApproxMRRLoss(name, params={'alpha': alpha})
+  loss = losses_impl.ApproxMRRLoss(name, temperature=temperature)
   with tf.compat.v1.name_scope(loss.name, 'approx_mrr_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights, reduction)
@@ -695,13 +694,12 @@ def _neural_sort_cross_entropy_loss(labels,
     reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
       reduce training loss over batch.
     name: A string used as the name for this loss.
-    temperature: The exponent in the smooth softmax function.
+    temperature: The temperature used to scale logits=logits/temperature.
 
   Returns:
     An op for the NeuralSort CrossEntropy loss.
   """
-  loss = losses_impl.NeuralSortCrossEntropyLoss(
-      name, params={'temperature': temperature})
+  loss = losses_impl.NeuralSortCrossEntropyLoss(name, temperature=temperature)
   with tf.compat.v1.name_scope(loss.name, 'neural_sort_cross_entropy_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights, reduction)
