@@ -52,7 +52,8 @@ def make_loss_fn(loss_keys,
                  lambda_weight=None,
                  reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
                  name=None,
-                 params=None):
+                 params=None,
+                 gumbel_params=None):
   """Makes a loss function using a single loss or multiple losses.
 
   Args:
@@ -72,6 +73,8 @@ def make_loss_fn(loss_keys,
     name: A string used as the name for this loss.
     params: A string-keyed dictionary that contains any other loss-specific
       arguments.
+    gumbel_params: A string-keyed dictionary that contains other
+      `gumbel_softmax_sample` arguments.
 
   Returns:
     A function _loss_fn(). See `_loss_fn()` for its signature.
@@ -96,6 +99,7 @@ def make_loss_fn(loss_keys,
       raise ValueError('loss_keys and loss_weights must have the same size.')
 
   params = params or {}
+  gumbel_params = gumbel_params or {}
 
   def _loss_fn(labels, logits, features):
     """Computes a single loss or weighted combination of losses.
@@ -121,7 +125,7 @@ def make_loss_fn(loss_keys,
       weights = utils.reshape_to_2d(weights)
 
     gbl_labels, gbl_logits, gbl_weights = losses_impl.gumbel_softmax_sample(
-        labels, logits, weights)
+        labels, logits, weights, **gumbel_params)
 
     loss_kwargs = {
         'labels': labels,
