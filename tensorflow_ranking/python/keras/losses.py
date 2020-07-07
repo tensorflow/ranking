@@ -264,23 +264,18 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
                temperature=1.0,
                seed=None):
     super(GumbelApproxNDCGLoss, self).__init__(reduction, name, lambda_weight)
-    self._name = name
-    self._sample_size = sample_size
-    self._temperature = temperature
-    self._seed = seed
+    self._gumbel_sampler = losses_impl.GumbelSampler(
+        name=name,
+        sample_size=sample_size,
+        temperature=temperature,
+        seed=seed)
 
   def __call__(self, y_true, y_pred, sample_weight=None):
     """See _RankingLoss."""
     # For Gumbel approx NDCG, the logits are sampled from Gumbel distribution
     # to sort the documents.
-    gbl_labels, gbl_logits, gbl_weights = losses_impl.gumbel_softmax_sample(
-        y_true,
-        y_pred,
-        weights=sample_weight,
-        name=self._name,
-        sample_size=self._sample_size,
-        temperature=self._temperature,
-        seed=self._seed)
+    gbl_labels, gbl_logits, gbl_weights = self._gumbel_sampler.sample(
+        y_true, y_pred, weights=sample_weight)
     return super(GumbelApproxNDCGLoss, self).__call__(gbl_labels, gbl_logits,
                                                       gbl_weights)
 

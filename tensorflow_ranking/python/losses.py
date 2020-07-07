@@ -100,6 +100,7 @@ def make_loss_fn(loss_keys,
 
   params = params or {}
   gumbel_params = gumbel_params or {}
+  gumbel_sampler = losses_impl.GumbelSampler(**gumbel_params)
 
   def _loss_fn(labels, logits, features):
     """Computes a single loss or weighted combination of losses.
@@ -124,7 +125,7 @@ def make_loss_fn(loss_keys,
       # Convert weights to a 2-D Tensor.
       weights = utils.reshape_to_2d(weights)
 
-    gbl_labels, gbl_logits, gbl_weights = losses_impl.gumbel_softmax_sample(
+    gbl_labels, gbl_logits, gbl_weights = gumbel_sampler.sample(
         labels, logits, weights, **gumbel_params)
 
     loss_kwargs = {

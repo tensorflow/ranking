@@ -1269,14 +1269,15 @@ class LossesTest(tf.test.TestCase):
 
       expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
 
+      gumbel_sampler = losses_impl.GumbelSampler(sample_size=2, seed=1)
       with self.cached_session():
-        gbl_labels, gbl_scores, gbl_weights = losses_impl.gumbel_softmax_sample(
-            labels, scores, weights, sample_size=2, seed=1)
+        gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
+            labels, scores, weights)
         self.assertAllEqual(gbl_labels.eval(), expanded_labels)
         self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
         self.assertAllEqual(gbl_weights.eval(), expanded_weights)
-        gbl_labels_3d, gbl_scores, _ = losses_impl.gumbel_softmax_sample(
-            labels_3d, scores, weights, sample_size=2, seed=1)
+        gbl_labels_3d, gbl_scores, _ = gumbel_sampler.sample(
+            labels_3d, scores, weights)
         self.assertAllEqual(gbl_labels_3d.eval(), expanded_labels_3d)
         self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
 

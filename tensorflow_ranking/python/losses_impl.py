@@ -433,80 +433,81 @@ def _pairwise_comparison(labels, logits):
   return pairwise_labels, pairwise_logits
 
 
-def gumbel_softmax_sample(labels,
-                          logits,
-                          weights=None,
-                          name=None,
-                          sample_size=8,
-                          temperature=1.0,
-                          seed=None):
-  """Samples scores from Concrete(logits).
+class GumbelSampler(object):
+  """Random sampler for sampling gumbel distributed logits."""
 
-  Args:
-    labels: A `Tensor` with shape [batch_size, list_size] same as `logits`,
-      representing graded relevance. Or in the diversity tasks, a `Tensor` with
-      shape [batch_size, list_size, subtopic_size]. Each value represents
-      relevance to a subtopic, 1 for relevent subtopic, 0 for irrelevant, and -1
-      for paddings. When the actual subtopic number of a query is smaller than
-      the `subtopic_size`, `labels` will be padded to `subtopic_size` with -1.
-    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
-      ranking score of the corresponding item.
-    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
-      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
-      weights. If None, the weight of a list in the mini-batch is set to the sum
-      of the labels of the items in that list.
-    name: A string used as the name for this loss.
-    sample_size: An integer representing the number of samples drawn from the
-      Concrete distribution defined by scores.
-    temperature: The Gumbel-Softmax temperature.
-    seed: Seed for pseudo-random number generator.
+  def __init__(self, name=None, sample_size=8, temperature=1.0, seed=None):
+    """Constructor."""
+    self._name = name
+    self._sample_size = sample_size
+    self._temperature = temperature
+    self._seed = seed
 
-  Returns:
-    A tuple of expanded labels, logits, and weights where the first dimension
-    is now batch_size * sample_size. Logit Tensors are sampled from
-    Concrete(logits) while labels and weights are simply tiled so the resulting
-    Tensor has the updated dimensions.
-  """
-  with tf.compat.v1.name_scope(name, 'gumbel_softmax_sample',
-                               (labels, logits, weights)):
-    batch_size = tf.shape(input=labels)[0]
-    list_size = tf.shape(input=labels)[1]
+  def sample(self, labels, logits, weights=None):
+    """Samples scores from Concrete(logits).
 
-    # Expand labels.
-    expanded_labels = tf.expand_dims(labels, 1)
-    expanded_labels = tf.repeat(expanded_labels, [sample_size], axis=1)
-    expanded_labels = utils.reshape_first_ndims(expanded_labels, 2,
-                                                [batch_size * sample_size])
+    Args:
+      labels: A `Tensor` with shape [batch_size, list_size] same as `logits`,
+        representing graded relevance. Or in the diversity tasks, a `Tensor`
+        with shape [batch_size, list_size, subtopic_size]. Each value represents
+        relevance to a subtopic, 1 for relevent subtopic, 0 for irrelevant, and
+        -1 for paddings. When the actual subtopic number of a query is smaller
+        than the `subtopic_size`, `labels` will be padded to `subtopic_size`
+        with -1.
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights. If None, the weight of a list in the mini-batch is set to the
+        sum of the labels of the items in that list.
 
-    # Sample logits from Concrete(logits).
-    sampled_logits = tf.expand_dims(logits, 1)
-    sampled_logits = tf.tile(sampled_logits, [1, sample_size, 1])
-    sampled_logits += _sample_gumbel([batch_size, sample_size, list_size],
-                                     seed=seed)
-    sampled_logits = tf.reshape(sampled_logits,
-                                [batch_size * sample_size, list_size])
+    Returns:
+      A tuple of expanded labels, logits, and weights where the first dimension
+      is now batch_size * sample_size. Logit Tensors are sampled from
+      Concrete(logits) while labels and weights are simply tiled so the
+      resulting
+      Tensor has the updated dimensions.
+    """
+    with tf.compat.v1.name_scope(self._name, 'gumbel_softmax_sample',
+                                 (labels, logits, weights)):
+      batch_size = tf.shape(input=labels)[0]
+      list_size = tf.shape(input=labels)[1]
 
-    is_label_valid = utils.is_label_valid(expanded_labels)
-    if is_label_valid.shape.rank > 2:
-      is_label_valid = tf.reduce_any(is_label_valid, axis=-1)
-    sampled_logits = tf.compat.v1.where(
-        is_label_valid, sampled_logits / temperature,
-        tf.math.log(1e-20) * tf.ones_like(sampled_logits))
-    sampled_logits = tf.math.log(tf.nn.softmax(sampled_logits) + 1e-20)
+      # Expand labels.
+      expanded_labels = tf.expand_dims(labels, 1)
+      expanded_labels = tf.repeat(expanded_labels, [self._sample_size], axis=1)
+      expanded_labels = utils.reshape_first_ndims(
+          expanded_labels, 2, [batch_size * self._sample_size])
 
-    expanded_weights = weights
-    if expanded_weights is not None:
-      true_fn = lambda: tf.expand_dims(tf.expand_dims(expanded_weights, 1), 1)
-      false_fn = lambda: tf.expand_dims(expanded_weights, 1)
-      expanded_weights = tf.cond(
-          pred=tf.math.equal(tf.rank(expanded_weights), 1),
-          true_fn=true_fn,
-          false_fn=false_fn)
-      expanded_weights = tf.tile(expanded_weights, [1, sample_size, 1])
-      expanded_weights = tf.reshape(expanded_weights,
-                                    [batch_size * sample_size, -1])
+      # Sample logits from Concrete(logits).
+      sampled_logits = tf.expand_dims(logits, 1)
+      sampled_logits = tf.tile(sampled_logits, [1, self._sample_size, 1])
+      sampled_logits += _sample_gumbel(
+          [batch_size, self._sample_size, list_size], seed=self._seed)
+      sampled_logits = tf.reshape(sampled_logits,
+                                  [batch_size * self._sample_size, list_size])
 
-    return expanded_labels, sampled_logits, expanded_weights
+      is_label_valid = utils.is_label_valid(expanded_labels)
+      if is_label_valid.shape.rank > 2:
+        is_label_valid = tf.reduce_any(is_label_valid, axis=-1)
+      sampled_logits = tf.compat.v1.where(
+          is_label_valid, sampled_logits / self._temperature,
+          tf.math.log(1e-20) * tf.ones_like(sampled_logits))
+      sampled_logits = tf.math.log(tf.nn.softmax(sampled_logits) + 1e-20)
+
+      expanded_weights = weights
+      if expanded_weights is not None:
+        true_fn = lambda: tf.expand_dims(tf.expand_dims(expanded_weights, 1), 1)
+        false_fn = lambda: tf.expand_dims(expanded_weights, 1)
+        expanded_weights = tf.cond(
+            pred=tf.math.equal(tf.rank(expanded_weights), 1),
+            true_fn=true_fn,
+            false_fn=false_fn)
+        expanded_weights = tf.tile(expanded_weights, [1, self._sample_size, 1])
+        expanded_weights = tf.reshape(expanded_weights,
+                                      [batch_size * self._sample_size, -1])
+
+      return expanded_labels, sampled_logits, expanded_weights
 
 
 def _sample_gumbel(shape, eps=1e-20, seed=None):
