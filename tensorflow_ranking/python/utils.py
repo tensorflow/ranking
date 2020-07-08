@@ -51,13 +51,14 @@ def sort_by_scores(scores,
                    topn=None,
                    shuffle_ties=True,
                    seed=None):
-  """Sorts example features according to per-example scores.
+  """Sorts list of features according to per-example scores.
 
   Args:
     scores: A `Tensor` of shape [batch_size, list_size] representing the
       per-example scores.
-    features_list: A list of `Tensor`s with the same shape as scores to be
-      sorted.
+    features_list: A list of `Tensor`s to be sorted. The shape of the `Tensor`
+      can be [batch_size, list_size] or [batch_size, list_size, feature_dims].
+      The latter is applicable for example features.
     topn: An integer as the cutoff of examples in the sorted list.
     shuffle_ties: A boolean. If True, randomly shuffle before the sorting.
     seed: The ops-level random seed used when `shuffle_ties` is True.

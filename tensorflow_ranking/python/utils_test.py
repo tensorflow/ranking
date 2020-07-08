@@ -59,6 +59,30 @@ class UtilsTest(tf.test.TestCase):
         self.assertAllEqual(sorted_positions, [[2, 3, 1]])
         self.assertAllEqual(sorted_names, [[b'b', b'c', b'a']])
 
+  def test_sort_by_scores_for_3d_features(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      example_feature = [[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]],
+                         [[10., 20., 30.], [40., 50., 60.], [70., 80., 90.]]]
+      with tf.compat.v1.Session() as sess:
+        sorted_example_feature = sess.run(
+            utils.sort_by_scores(scores, [example_feature])[0])
+        self.assertAllEqual(
+            sorted_example_feature,
+            [[[4., 5., 6.], [7., 8., 9.], [1., 2., 3.]],
+             [[70., 80., 90.], [40., 50., 60.], [10., 20., 30.]]])
+
+        sorted_example_feature = sess.run(
+            utils.sort_by_scores(scores, [example_feature], topn=2)[0])
+        self.assertAllEqual(
+            sorted_example_feature,
+            [[[4., 5., 6.], [7., 8., 9.]], [[70., 80., 90.], [40., 50., 60.]]])
+
+        sorted_example_feature = sess.run(
+            utils.sort_by_scores([scores[0]], [[example_feature[0]]])[0])
+        self.assertAllEqual(sorted_example_feature,
+                            [[[4., 5., 6.], [7., 8., 9.], [1., 2., 3.]]])
+
   def test_sort_by_scores_shuffle_ties(self):
     with tf.Graph().as_default():
       tf.compat.v1.set_random_seed(589)
