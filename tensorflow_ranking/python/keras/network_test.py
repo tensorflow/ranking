@@ -154,10 +154,23 @@ class UnivariateRankingNetworkTest(tf.test.TestCase):
     logits = self._ranker(
         inputs=self._features, mask=[[True, False], [True, True]])
     self.assertAllEqual([2, 2], logits.get_shape().as_list())
+    self.assertAllEqual(logits.numpy(), [[1., 0.], [1., 1.]])
 
   def test_call_no_mask(self):
     logits = self._ranker(inputs=self._features)
     self.assertAllEqual([2, 2], logits.get_shape().as_list())
+    self.assertAllEqual(logits.numpy(), [[1., 1.], [1., 1.]])
+
+  def test_listwise_scoring(self):
+    context_features, example_features = self._ranker._listwise_dense_layer(
+        self._features, training=False)
+    logits = network_lib.listwise_scoring(
+        self._ranker.score,
+        context_features=context_features,
+        example_features=example_features,
+        training=False,
+        mask=[[True, False], [True, True]])
+    self.assertAllEqual(logits.numpy(), [[[1.], [0.]], [[1.], [1.]]])
 
 
 if __name__ == "__main__":
