@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
 import math
 import six
 import tensorflow.compat.v2 as tf
@@ -43,6 +44,30 @@ def _dcg(label,
     A single dcg addend. e.g. weight*(2^relevance-1)/log2(rank+1).
   """
   return weight * gain_fn(label) * rank_discount_fn(rank)
+
+
+def _alpha_dcg(label,
+               cum_label,
+               rank,
+               weight=1.0,
+               alpha=0.5,
+               rank_discount_fn=lambda r: 1. / math.log(r + 1.0, 2.0)):
+  """Returns a single alpha dcg addend.
+
+  Args:
+    label: The document label.
+    cum_label: The cumulative document label.
+    rank: The document rank starting from 1.
+    weight: The document weight.
+    alpha: The information gain about a subtopic from a doc.
+    rank_discount_fn: (function) The rank discount function.
+
+  Returns:
+    A single alpha dcg addend. e.g.
+    weight*(relevance*SUM((1-alpha)^SUM(relevance)))/log2(rank+1).
+  """
+  gain = sum(l * (1-alpha)**cl for l, cl in zip(label, cum_label))
+  return weight * gain * rank_discount_fn(rank)
 
 
 def _ap(relevances, scores, topn=None):
@@ -96,6 +121,7 @@ def _label_boost(boost_form, label):
       'NDCG': math.pow(2.0, label) - 1.0,
       'PRECISION': 1.0 if label >= 1.0 else 0.0,
       'MAP': 1.0 if label >= 1.0 else 0.0,
+      'ALPHADCG': 1.0 if label >= 1.0 else 0.0,
   }
   return boost[boost_form]
 
@@ -182,6 +208,15 @@ class MetricsSerializationTest(tf.test.TestCase):
         'topn': 1,
         'gain_fn': gain_fn,
         'rank_discount_fn': rank_discount_fn
+    })
+
+  def test_alpha_discounted_cumulative_gain(self):
+    rank_discount_fn = lambda rank: rank
+    self._check_config(metrics_lib.AlphaDCGMetric, {
+        'topn': 1,
+        'alpha': 0.5,
+        'rank_discount_fn': rank_discount_fn,
+        'seed': 1,
     })
 
   def test_ordered_pair_accuracy(self):
@@ -508,7 +543,7 @@ class MetricsTest(tf.test.TestCase):
     expected_ndcg = (expected_ndcg_1 + expected_ndcg_2) / 2.0
     self.assertAlmostEqual(metric_.result().numpy(), expected_ndcg, places=5)
 
-    # Testing different gain and discount functions.
+    # Test different gain and discount functions.
     gain_fn = lambda rel: rel
     rank_discount_fn = lambda rank: rank
     metric_ = metrics_lib.NDCGMetric(
@@ -650,7 +685,7 @@ class MetricsTest(tf.test.TestCase):
                     expected_dcg_2_weighted) / (1. + expected_weight_2)
     self.assertAlmostEqual(metric_.result().numpy(), expected_dcg, places=5)
 
-    # Testing different gain and discount functions.
+    # Test different gain and discount functions.
     gain_fn = lambda rel: rel
     rank_discount_fn = lambda rank: 1. / rank
 
@@ -666,6 +701,164 @@ class MetricsTest(tf.test.TestCase):
     metric_.update_state([labels[0]], [scores[0]])
     self.assertAlmostEqual(
         metric_.result().numpy(), expected_modified_dcg_1, places=5)
+
+  def test_alpha_discounted_cumulative_gain(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    # Note that scores are ranked in descending order.
+    # ranks = [[3, 1, 2], [3, 2, 1]]
+    labels = [[[0., 0.], [0., 1.], [0., 1.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+    # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
+    #               [[2., 1.], [1., 1.], [0., 0.]]]
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_alphadcg = (_alpha_dcg([0., 1.], [0., 0.], 1) +
+                         _alpha_dcg([0., 1.], [0., 1.], 2) +
+                         _alpha_dcg([0., 0.], [0., 2.], 3))
+    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
+                           places=5)
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state(labels, scores)
+    expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1) +
+                           _alpha_dcg([0., 1.], [0., 1.], 2) +
+                           _alpha_dcg([0., 0.], [0., 2.], 3))
+    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1) +
+                           _alpha_dcg([1., 0.], [1., 1.], 2) +
+                           _alpha_dcg([0., 0.], [2., 1.], 3))
+    expected_alphadcg = (expected_alphadcg_1 + expected_alphadcg_2) / 2.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
+                           places=5)
+
+   # Test different gain and discount functions.
+    alpha = 0.2
+    rank_discount_fn = lambda rank: 1. / rank
+
+    mod_alpha_dcg_fn = functools.partial(_alpha_dcg, alpha=alpha,
+                                         rank_discount_fn=rank_discount_fn)
+
+    metric_ = metrics_lib.AlphaDCGMetric(
+        alpha=alpha, rank_discount_fn=rank_discount_fn)
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_modified_alphadcg_1 = (mod_alpha_dcg_fn([0., 1.], [0., 0.], 1) +
+                                    mod_alpha_dcg_fn([0., 1.], [0., 1.], 2) +
+                                    mod_alpha_dcg_fn([0., 0.], [0., 2.], 3))
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_modified_alphadcg_1, places=5)
+
+  def test_alpha_discounted_cumulative_gain_with_zero_relevance(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[[0., 0.], [0., 0.], [0., 0.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+    # cum_labels = [[[0., 0.], [0., 0.], [0., 0.]],
+    #               [[2., 1.], [1., 1.], [0., 0.]]]
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state(labels, scores)
+    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1) +
+                           _alpha_dcg([1., 0.], [1., 1.], 2) +
+                           _alpha_dcg([0., 0.], [2., 1.], 3))
+    self.assertAlmostEqual(metric_.result().numpy(),
+                           (0. + expected_alphadcg_2) / 2.0, places=5)
+
+  def test_alpha_discounted_cumulative_gain_with_weights(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[[0., 0.], [0., 1.], [0., 1.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+    # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
+    #               [[2., 1.], [1., 1.], [0., 0.]]]
+    sum_labels = [[0., 1., 1.], [0., 1., 2.]]
+    weights = [[1., 2., 3.], [4., 5., 6.]]
+    list_weights = [[1.], [2.]]
+
+    metric_ = metrics_lib.AlphaDCGMetric(topn=1)
+    metric_.update_state([labels[0]], [scores[0]], weights[0])
+    expected_result = _alpha_dcg([0., 1.], [0., 0.], 1, 2.) / 2.5
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state([labels[0]], [scores[0]], weights[0])
+    expected_result = (_alpha_dcg([0., 1.], [0., 0.], 1, 2.) +
+                       _alpha_dcg([0., 1.], [0., 1.], 2, 3.) +
+                       _alpha_dcg([0., 0.], [0., 2.], 3, 1.)) / 2.5
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state(labels, scores, weights)
+    expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1, 2.) +
+                           _alpha_dcg([0., 1.], [0., 1.], 2, 3.) +
+                           _alpha_dcg([0., 0.], [0., 2.], 3, 1.)) / 2.5
+    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 6.) +
+                           _alpha_dcg([1., 0.], [1., 1.], 2, 5.) +
+                           _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 5.5
+    as_list_weights = _example_weights_to_list_weights(weights, sum_labels,
+                                                       'ALPHADCG')
+    expected_alphadcg = (
+        expected_alphadcg_1 * as_list_weights[0] +
+        expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
+                           places=5)
+
+    metric_ = metrics_lib.AlphaDCGMetric(topn=1)
+    metric_.update_state(labels, scores, weights)
+    expected_alphadcg_1 = _alpha_dcg([0., 1.], [0., 0.], 1, 2.) / 2.5
+    expected_alphadcg_2 = _alpha_dcg([1., 1.], [0., 0.], 1, 6.) / 5.5
+    expected_alphadcg = (
+        expected_alphadcg_1 * as_list_weights[0] +
+        expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
+                           places=5)
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state(labels, scores, list_weights)
+    expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1, 1.) +
+                           _alpha_dcg([0., 1.], [0., 1.], 2, 1.) +
+                           _alpha_dcg([0., 0.], [0., 2.], 3, 1.))
+    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 2.) +
+                           _alpha_dcg([1., 0.], [1., 1.], 2, 2.) +
+                           _alpha_dcg([0., 0.], [2., 1.], 3, 2.)) / 2.
+    expected_alphadcg = (expected_alphadcg_1 + 2. * expected_alphadcg_2) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
+                           places=5)
+
+    # Test zero alphaDCG cases.
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state(labels, scores, [[0.], [0.]])
+    self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
+
+    metric_ = metrics_lib.AlphaDCGMetric(topn=1)
+    metric_.update_state([[[0., 0.], [0., 0.], [0., 0.]]], [scores[0]],
+                         weights[0])
+    self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
+
+  def test_alpha_discounted_cumulative_gain_with_weights_zero_relevance(
+      self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[[0., 0.], [0., 0.], [0., 0.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+    # cum_labels = [[[0., 0.], [0., 0.], [0., 0.]],
+    #               [[2., 1.], [1., 1.], [0., 0.]]]
+    sum_labels = [[0., 0., 0.], [0., 1., 2.]]
+    weights = [[1., 2., 3.], [4., 5., 6.]]
+    expected_alphadcg_1 = 0.0
+    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 6.) +
+                           _alpha_dcg([1., 0.], [1., 1.], 2, 5.) +
+                           _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 5.5
+    as_list_weights = _example_weights_to_list_weights(weights, sum_labels,
+                                                       'ALPHADCG')
+    self.assertAllClose(as_list_weights, [5.5, 5.5])
+    expected_alphadcg = (
+        expected_alphadcg_1 * as_list_weights[0] +
+        expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state(labels, scores, weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
+                           places=5)
+    # Test zero AlphaDCG cases.
+    metric_ = metrics_lib.AlphaDCGMetric()
+    metric_.update_state(labels, scores, [[0.], [0.]])
+    self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
 
   def test_ordered_pair_accuracy(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]

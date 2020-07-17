@@ -121,7 +121,7 @@ def _label_boost(boost_form, label):
       'NDCG': math.pow(2.0, label) - 1.0,
       'PRECISION': 1.0 if label >= 1.0 else 0.0,
       'MAP': 1.0 if label >= 1.0 else 0.0,
-      'ALPHADCG': label
+      'ALPHADCG': 1.0 if label >= 1.0 else 0.0,
   }
   return boost[boost_form]
 
@@ -470,7 +470,7 @@ class MetricsTest(tf.test.TestCase):
       self._check_metrics([
           (m(labels, scores), expected_ndcg),
       ])
-      # Testing different gain and discount functions
+      # Test different gain and discount functions.
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: 1. / rank
 
@@ -654,7 +654,7 @@ class MetricsTest(tf.test.TestCase):
            (_dcg(1., 1, 3.) + _dcg(0., 2, 1.) + _dcg(0., 3, 2.))),
       ])
 
-      # Testing different gain and discount functions
+      # Test different gain and discount functions.
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: 1. / rank
 
@@ -694,7 +694,7 @@ class MetricsTest(tf.test.TestCase):
              weights), (expected_dcg_1 + expected_dcg_2_weighted) /
            (1. + expected_weight_2)),
       ])
-      # Testing different gain and discount functions
+      # Test different gain and discount functions.
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: 1. / rank
 
@@ -738,7 +738,7 @@ class MetricsTest(tf.test.TestCase):
                features), (expected_dcg_1 + expected_dcg_2_weighted) /
            (1. + expected_weight_2)),
       ])
-      # Testing different gain and discount functions
+      # Test different gain and discount functions.
       gain_fn = lambda rel: rel
       rank_discount_fn = lambda rank: 1. / rank
 
@@ -811,7 +811,7 @@ class MetricsTest(tf.test.TestCase):
       self._check_metrics([
           (m(labels, scores), expected_alphadcg),
       ])
-      # Testing different gain and discount functions
+      # Test different gain and discount functions.
       alpha = 0.2
       rank_discount_fn = lambda rank: 1. / rank
 
@@ -867,7 +867,7 @@ class MetricsTest(tf.test.TestCase):
                              _alpha_dcg([0., 0.], [0., 2.], 3, 1.)) / 2.5
       expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 6.) +
                              _alpha_dcg([1., 0.], [1., 1.], 2, 5.) +
-                             _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 17 * 3
+                             _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 5.5
       as_list_weights = _example_weights_to_list_weights(
           weights, sum_labels, 'ALPHADCG')
       expected_alphadcg = (
@@ -877,7 +877,7 @@ class MetricsTest(tf.test.TestCase):
           (m(labels, scores, weights), expected_alphadcg),
       ])
       expected_alphadcg_1 = _alpha_dcg([0., 1.], [0., 0.], 1, 2.) / 2.5
-      expected_alphadcg_2 = _alpha_dcg([1., 1.], [0., 0.], 1, 6.) / 17 * 3
+      expected_alphadcg_2 = _alpha_dcg([1., 1.], [0., 0.], 1, 6.) / 5.5
       expected_alphadcg = (
           expected_alphadcg_1 * as_list_weights[0] +
           expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
@@ -915,17 +915,17 @@ class MetricsTest(tf.test.TestCase):
       expected_alphadcg_1 = 0.0
       expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 6.) +
                              _alpha_dcg([1., 0.], [1., 1.], 2, 5.) +
-                             _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 17 * 3
+                             _alpha_dcg([0., 0.], [2., 1.], 3, 4.)) / 5.5
       as_list_weights = _example_weights_to_list_weights(
           weights, sum_labels, 'ALPHADCG')
-      self.assertAllClose(as_list_weights, [17. / 3., 17. / 3.])
+      self.assertAllClose(as_list_weights, [5.5, 5.5])
       expected_alphadcg = (
           expected_alphadcg_1 * as_list_weights[0] +
           expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
       self._check_metrics([
           (m(labels, scores, weights), expected_alphadcg),
       ])
-      # Test zero NDCG cases.
+      # Test zero alphaDCG cases.
       self._check_metrics([(m(labels, scores, [[0.], [0.]]), 0.)])
 
   def test_make_alpha_discounted_cumulative_gain_fn(self):
@@ -1020,7 +1020,7 @@ class MetricsTest(tf.test.TestCase):
             _alpha_dcg([0., 0.], [0., 2.], 3, 1.))),
       ])
 
-      # Testing different gain and discount functions
+      # Test different gain and discount functions.
       alpha = 0.2
       rank_discount_fn = lambda rank: 1. / rank
 

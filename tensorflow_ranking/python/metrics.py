@@ -416,7 +416,7 @@ def alpha_discounted_cumulative_gain(
     rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
     alpha=0.5,
     seed=None):
-  """Computes discounted cumulative gain (DCG).
+  """Computes alpha discounted cumulative gain (alpha-DCG).
 
   Args:
     labels: A `Tensor` with shape [batch_size, list_size, subtopic_size]. Each
@@ -441,7 +441,7 @@ def alpha_discounted_cumulative_gain(
     seed: The ops-level random seed used in shuffle ties in `sort_by_scores`.
 
   Returns:
-    A metric for the weighted discounted cumulative gain of the batch.
+    A metric for the weighted alpha discounted cumulative gain of the batch.
   """
   metric = metrics_impl.AlphaDCGMetric(name, topn, alpha=alpha,
                                        rank_discount_fn=rank_discount_fn,

@@ -41,6 +41,7 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         ":utils",
+        # py/six dep,
         # py/tensorflow dep,
     ],
 )

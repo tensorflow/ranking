@@ -24,6 +24,7 @@ from __future__ import print_function
 
 import abc
 import functools
+import six
 import tensorflow as tf
 
 from tensorflow_ranking.python import utils
@@ -200,10 +201,8 @@ def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
   return labels, predictions, example_weights, topn
 
 
-class _RankingMetric(object):
+class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
   """Interface for ranking metrics."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractproperty
   def name(self):
@@ -228,11 +227,124 @@ class _RankingMetric(object):
     raise NotImplementedError('Calling an abstract method.')
 
 
+class _DivRankingMetric(_RankingMetric):
+  """Interface for diversity ranking metrics.
+
+  Attributes:
+    name: A string used as the name for this metric.
+  """
+
+  def __init__(self):
+    super(_DivRankingMetric, self).__init__()
+    self._name = None
+    self._topn = None
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  @abc.abstractmethod
+  def _compute_per_list_metric(self, labels, predictions, weights, topn):
+    """Computes the metric with the given inputs.
+
+    Args:
+      labels: A `Tensor` with shape [batch_size, list_size, subtopic_size]. A
+        nonzero value means that the example covers the corresponding subtopic.
+      predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+        the ranking score of the corresponding example.
+      weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
+        The former case is per-example and the latter case is per-list.
+      topn: A cutoff for how many examples to consider for this metric.
+
+    Returns:
+      A tf per-list metric.
+    """
+
+  def _prepare_and_validate_params(self,
+                                   labels,
+                                   predictions,
+                                   weights=None):
+    """Prepares and validates the parameters.
+
+    Args:
+      labels: A `Tensor` with shape [batch_size, list_size, subtopic_size]. A
+        nonzero value means that the example covers the corresponding subtopic.
+      predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+        the ranking score of the corresponding example.
+      weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
+        The former case is per-example and the latter case is per-list.
+
+    Returns:
+      A 4-tuple of (labels, predictions, weights, topn) ready to be used for
+      metric calculation.
+    """
+    labels = tf.convert_to_tensor(value=labels)
+    predictions = tf.convert_to_tensor(value=predictions)
+    labels.get_shape().assert_has_rank(3)
+
+    is_label_valid = utils.is_label_valid(labels)
+    predictions = tf.where(
+        tf.reduce_any(is_label_valid,
+                      axis=-1), predictions, -1e-6 * tf.ones_like(predictions) +
+        tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
+    # All labels should be >= 0. Invalid entries are reset.
+    labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
+    weights = (
+        tf.constant(1.0, dtype=tf.float32)
+        if weights is None else tf.convert_to_tensor(value=weights))
+    example_weights = tf.ones_like(predictions) * weights
+    topn = tf.shape(input=predictions)[1] if self._topn is None else self._topn
+
+    return labels, predictions, example_weights, topn
+
+  def _compute_per_list_weights(self, weights, labels):
+    """Computes per list weight from weights and labels for diversification.
+
+    Args:
+      weights:  The weights `Tensor` of shape [batch_size, list_size].
+      labels:  The labels `Tensor` of shape [batch_size, list_size,
+        subtopic_size].
+
+    Returns:
+      The per-list `Tensor` of shape [batch_size, 1]
+    """
+    # per_list_weights are computed from the whole list to avoid the problem of
+    # 0 when there is no relevant example in topn.
+    return _per_example_weights_to_per_list_weights(
+        weights,
+        tf.cast(
+            tf.reduce_any(tf.greater_equal(labels, 1.0), axis=-1),
+            dtype=tf.float32))
+
+  def compute(self, labels, predictions, weights):
+    """Computes the metric and per list weight with the given inputs.
+
+    Args:
+      labels: A `Tensor` with shape [batch_size, list_size, subtopic_size]. A
+        nonzero value means that the example covers the corresponding subtopic.
+      predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+        the ranking score of the corresponding example.
+      weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
+        The former case is per-example and the latter case is per-list.
+
+    Returns:
+      A per-list metric and a per-list weights.
+    """
+    labels, predictions, weights, topn = (
+        self._prepare_and_validate_params(labels, predictions, weights))
+    per_list_metric = self._compute_per_list_metric(
+        labels, predictions, weights, topn)
+    per_list_weights = self._compute_per_list_weights(weights, labels)
+    return per_list_metric, per_list_weights
+
+
 class MRRMetric(_RankingMetric):
   """Implements mean reciprocal rank (MRR)."""
 
   def __init__(self, name, topn):
     """Constructor."""
+    super(MRRMetric, self).__init__()
     self._name = name
     self._topn = topn
 
@@ -265,6 +377,7 @@ class ARPMetric(_RankingMetric):
 
   def __init__(self, name):
     """Constructor."""
+    super(ARPMetric, self).__init__()
     self._name = name
 
   @property
@@ -291,6 +404,7 @@ class PrecisionMetric(_RankingMetric):
 
   def __init__(self, name, topn):
     """Constructor."""
+    super(PrecisionMetric, self).__init__()
     self._name = name
     self._topn = topn
 
@@ -316,6 +430,7 @@ class MeanAveragePrecisionMetric(_RankingMetric):
 
   def __init__(self, name, topn):
     """Constructor."""
+    super(MeanAveragePrecisionMetric, self).__init__()
     self._name = name
     self._topn = topn
 
@@ -360,6 +475,7 @@ class NDCGMetric(_RankingMetric):
                gain_fn=_DEFAULT_GAIN_FN,
                rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
     """Constructor."""
+    super(NDCGMetric, self).__init__()
     self._name = name
     self._topn = topn
     self._gain_fn = gain_fn
@@ -400,6 +516,7 @@ class DCGMetric(_RankingMetric):
                gain_fn=_DEFAULT_GAIN_FN,
                rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
     """Constructor."""
+    super(DCGMetric, self).__init__()
     self._name = name
     self._topn = topn
     self._gain_fn = gain_fn
@@ -430,6 +547,7 @@ class OPAMetric(_RankingMetric):
 
   def __init__(self, name):
     """Constructor."""
+    super(OPAMetric, self).__init__()
     self._name = name
 
   @property
@@ -460,7 +578,7 @@ class OPAMetric(_RankingMetric):
     return correct_pairs, pair_weights
 
 
-class AlphaDCGMetric(_RankingMetric):
+class AlphaDCGMetric(_DivRankingMetric):
   """Implements alpha discounted cumulative gain (alphaDCG).
 
   alphaDCG is a metric first introduced in ["Novelty and Diversity in
@@ -482,6 +600,7 @@ class AlphaDCGMetric(_RankingMetric):
                rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
                seed=None):
     """Constructor."""
+    super(AlphaDCGMetric, self).__init__()
     self._name = name
     self._topn = topn
     self._alpha = alpha
@@ -489,42 +608,13 @@ class AlphaDCGMetric(_RankingMetric):
     self._rank_discount_fn = rank_discount_fn
     self._seed = seed
 
-  @property
-  def name(self):
-    """The metric name."""
-    return self._name
-
-  def compute(self, labels, predictions, weights):
-    """See `_RankingMetric`."""
-    labels = tf.convert_to_tensor(value=labels)
-    predictions = tf.convert_to_tensor(value=predictions)
-    labels.get_shape().assert_has_rank(3)
-    is_valid = utils.is_label_valid(labels)
-    predictions = tf.where(
-        tf.reduce_any(is_valid,
-                      axis=-1), predictions, -1e-6 * tf.ones_like(predictions) +
-        tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
-    # All labels should be >= 0. Invalid entries are reset.
-    labels = tf.where(is_valid, labels, tf.zeros_like(labels))
-    weights = (
-        tf.constant(1.0, dtype=tf.float32)
-        if weights is None else tf.convert_to_tensor(value=weights))
-    weights = tf.ones_like(predictions) * weights
-    list_size = tf.shape(input=predictions)[1]
-    if self._topn is None:
-      topn = list_size
-    else:
-      topn = self._topn
+  def _compute_per_list_metric(self, labels, predictions, weights, topn):
+    """See `_DivRankingMetric`."""
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn, seed=self._seed)
-
     alpha_dcg = _discounted_cumulative_gain(sorted_labels,
                                             sorted_weights,
                                             self._gain_fn,
                                             self._rank_discount_fn)
-    per_list_weights = _per_example_weights_to_per_list_weights(
-        weights=weights,
-        relevance=tf.reduce_sum(tf.cast(labels, dtype=tf.float32), axis=-1))
-    per_list_alpha_dcg = tf.compat.v1.math.divide_no_nan(
-        alpha_dcg, per_list_weights)
-    return per_list_alpha_dcg, per_list_weights
+    per_list_weights = self._compute_per_list_weights(weights, labels)
+    return tf.compat.v1.math.divide_no_nan(alpha_dcg, per_list_weights)

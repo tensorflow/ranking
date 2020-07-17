@@ -207,6 +207,54 @@ class DCGMetric(_RankingMetric):
     return config
 
 
+class AlphaDCGMetric(_RankingMetric):
+  """Implements alpha discounted cumulative gain (alphaDCG)."""
+
+  def __init__(self,
+               topn=None,
+               alpha=0.5,
+               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
+               seed=None,
+               dtype=None,
+               name="alpha_dcg_metric",
+               **kwargs):
+    """Construct the ranking metric class for alpha-DCG.
+
+    Args:
+      topn: A cutoff for how many examples to consider for this metric.
+      alpha: A float between 0 and 1, parameter used in definition of alpha-DCG.
+        Introduced as an assessor error in judging whether a document is
+        covering a subtopic of the query.
+      rank_discount_fn: A function of rank discounts. Default is set to
+        discount = 1 / log2(rank+1).
+      seed: The ops-level random seed used in shuffle ties in `sort_by_scores`.
+      dtype: Data type of the metric output. See `tf.keras.metrics.Metric`.
+      name: A string used as the name for this metric.
+      **kwargs: Other keyward arguments used in `tf.keras.metrics.Metric`.
+    """
+    super(AlphaDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    self._topn = topn
+    self._alpha = alpha
+    self._rank_discount_fn = rank_discount_fn
+    self._seed = seed
+    self._metric = metrics_impl.AlphaDCGMetric(
+        name=name,
+        topn=topn,
+        alpha=alpha,
+        rank_discount_fn=rank_discount_fn,
+        seed=seed)
+
+  def get_config(self):
+    config = super(AlphaDCGMetric, self).get_config()
+    config.update({
+        "topn": self._topn,
+        "alpha": self._alpha,
+        "rank_discount_fn": self._rank_discount_fn,
+        "seed": self._seed,
+    })
+    return config
+
+
 class OPAMetric(_RankingMetric):
   """Implements ordered pair accuracy (OPA)."""
 
