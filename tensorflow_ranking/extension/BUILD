@@ -1,6 +1,5 @@
 # Description:
 # Folder for TensorFlow ranking extensions.
-# Placeholder for internal Python version compatibility macro.
 
 package(
     default_visibility = [
@@ -36,7 +35,9 @@ py_test(
     name = "pipeline_test",
     size = "large",
     srcs = ["pipeline_test.py"],
+    python_version = "PY3",
     shard_count = 2,
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",

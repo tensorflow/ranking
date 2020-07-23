@@ -1,7 +1,5 @@
 # TensorFlow Ranking Keras canned models.
 
-# Placeholder for internal Python version compatibility macro.
-
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
@@ -35,7 +33,8 @@ py_test(
     name = "dnn_test",
     size = "small",
     srcs = ["dnn_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -65,7 +64,8 @@ py_test(
     name = "gam_test",
     size = "small",
     srcs = ["gam_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",

@@ -1,7 +1,5 @@
 # TensorFlow Ranking Keras API.
 
-# Placeholder for internal Python version compatibility macro.
-
 package(
     default_visibility = [
         "//tensorflow_ranking:__subpackages__",
@@ -42,7 +40,8 @@ py_test(
     name = "estimator_test",
     size = "large",
     srcs = ["estimator_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -75,7 +74,8 @@ py_test(
     name = "network_test",
     size = "small",
     srcs = ["network_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -103,7 +103,8 @@ py_test(
     name = "model_test",
     size = "small",
     srcs = ["model_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -134,7 +135,8 @@ py_test(
     name = "feature_test",
     size = "small",
     srcs = ["feature_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -159,7 +161,8 @@ py_test(
     name = "losses_test",
     size = "medium",
     srcs = ["losses_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -184,7 +187,8 @@ py_test(
     name = "metrics_test",
     size = "medium",
     srcs = ["metrics_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",

@@ -1,8 +1,6 @@
 # Description:
 # TensorFlow Ranking examples.
 
-# Placeholder for internal Python version compatibility macro.
-
 package(
     default_visibility = [
         "//tensorflow_ranking:__subpackages__",
@@ -39,7 +37,8 @@ py_test(
     name = "tf_ranking_libsvm_test",
     size = "large",
     srcs = ["tf_ranking_libsvm_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -79,7 +78,8 @@ py_test(
     name = "tf_ranking_tfrecord_test",
     size = "large",
     srcs = ["tf_ranking_tfrecord_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -120,7 +120,8 @@ py_test(
     name = "tf_ranking_canned_dnn_test",
     size = "large",
     srcs = ["tf_ranking_canned_dnn_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
@@ -161,7 +162,8 @@ py_test(
     name = "tf_ranking_canned_gam_test",
     size = "large",
     srcs = ["tf_ranking_canned_gam_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",

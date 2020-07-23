@@ -1,6 +1,5 @@
 # Description:
 # Example usage of tensorflow ranking extensions.
-# Placeholder for internal Python version compatibility macro.
 
 package(
     default_visibility = [
@@ -39,7 +38,8 @@ py_test(
     name = "pipeline_example_test",
     size = "large",
     srcs = ["pipeline_example_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     tags = [
         "no_pip",
         "notsan",
