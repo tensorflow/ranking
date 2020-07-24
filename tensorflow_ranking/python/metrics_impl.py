@@ -234,10 +234,10 @@ class _DivRankingMetric(_RankingMetric):
     name: A string used as the name for this metric.
   """
 
-  def __init__(self):
+  def __init__(self, name, topn=None):
     super(_DivRankingMetric, self).__init__()
-    self._name = None
-    self._topn = None
+    self._name = name
+    self._topn = topn
 
   @property
   def name(self):
@@ -578,6 +578,39 @@ class OPAMetric(_RankingMetric):
     return correct_pairs, pair_weights
 
 
+class PrecisionIAMetric(_DivRankingMetric):
+  """Implements Intent-Aware Precision@k (Pre-IA@k).
+
+  PrecisionIA is a metric introduced in ["Overview of the TREC 2009 Web Track."]
+  by C Clarke, et al. It is one of the evaluation measures for the TREC
+  diversity task, where a query may have multiple different implications, termed
+  as subtopics / nuggets. Specifically,
+    Pre-IA@k = SUM_t SUM_{i=1}^k label(rank=i, topic=t) / (# of Subtopics * k),
+  where t indexes subtopics and i indexes document ranks, SUM_t sums over all
+  subtopics and SUM_{i=1}^k sums over the top k ranks.
+  """
+
+  def _compute_per_list_metric(self, labels, predictions, weights, topn):
+    """See `_DivRankingMetric`."""
+    sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn)[0]
+    # relevance shape = [batch_size, topn].
+    relevance = tf.reduce_sum(
+        tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32),
+        axis=-1)
+    # num_subtopics shape = [batch_size, 1].
+    num_subtopics = tf.reduce_sum(
+        tf.cast(
+            tf.reduce_any(tf.greater_equal(labels, 1.0), axis=1, keepdims=True),
+            dtype=tf.float32),
+        axis=-1)
+    return tf.compat.v1.math.divide_no_nan(
+        tf.reduce_sum(input_tensor=relevance, axis=1, keepdims=True),
+        tf.reduce_sum(
+            input_tensor=tf.ones_like(relevance) * num_subtopics,
+            axis=1,
+            keepdims=True))
+
+
 class AlphaDCGMetric(_DivRankingMetric):
   """Implements alpha discounted cumulative gain (alphaDCG).
 
@@ -600,9 +633,7 @@ class AlphaDCGMetric(_DivRankingMetric):
                rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
                seed=None):
     """Constructor."""
-    super(AlphaDCGMetric, self).__init__()
-    self._name = name
-    self._topn = topn
+    super(AlphaDCGMetric, self).__init__(name, topn)
     self._alpha = alpha
     self._gain_fn = functools.partial(_alpha_dcg_gain_fn, alpha=alpha)
     self._rank_discount_fn = rank_discount_fn

@@ -54,6 +54,9 @@ class RankingMetricKey(object):
   # Mean Average Precision. For binary relevance.
   MAP = 'map'
 
+  # PrecisionIA. For binary relevance of subtopics.
+  PRECISION_IA = 'precision_ia'
+
   # Ordered Pair Accuracy.
   ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'
 
@@ -199,6 +202,15 @@ def make_ranking_metric_fn(metric_key,
         topn=topn,
         name=name)
 
+  def _precision_ia_fn(labels, predictions, features):
+    """Returns an intent-aware precision as the metric."""
+    return precision_ia(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name)
+
   def _ordered_pair_accuracy_fn(labels, predictions, features):
     """Returns ordered pair accuracy as the metric."""
     return ordered_pair_accuracy(
@@ -222,6 +234,7 @@ def make_ranking_metric_fn(metric_key,
       RankingMetricKey.DCG: _discounted_cumulative_gain_fn,
       RankingMetricKey.PRECISION: _precision_fn,
       RankingMetricKey.MAP: _mean_average_precision_fn,
+      RankingMetricKey.PRECISION_IA: _precision_ia_fn,
       RankingMetricKey.ORDERED_PAIR_ACCURACY: _ordered_pair_accuracy_fn,
       RankingMetricKey.ALPHA_DCG: _alpha_discounted_cumulative_gain_fn,
   }
@@ -337,6 +350,30 @@ def mean_average_precision(labels,
     per_list_map, per_list_weights = metric.compute(labels, predictions,
                                                     weights)
   return tf.compat.v1.metrics.mean(per_list_map, per_list_weights)
+
+
+def precision_ia(labels, predictions, weights=None, topn=None, name=None):
+  """Computes Intent-Aware Precision as weighted average of relevant examples.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size, subtopic_size]. A
+      nonzero value means that the example covers the corresponding subtopic.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: A cutoff for how many examples to consider for this metric.
+    name: A string used as the name for this metric.
+
+  Returns:
+    A metric for the weighted precision of the batch.
+  """
+  metric = metrics_impl.PrecisionIAMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name, 'precision_ia',
+                               (labels, predictions, weights)):
+    precision_at_k, per_list_weights = metric.compute(labels, predictions,
+                                                      weights)
+  return tf.compat.v1.metrics.mean(precision_at_k, per_list_weights)
 
 
 def normalized_discounted_cumulative_gain(

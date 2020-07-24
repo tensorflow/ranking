@@ -451,6 +451,94 @@ class MetricsTest(tf.test.TestCase):
              features), sum(_ap(rels[i], scores[i]) for i in range(2)) / 2.),
       ])
 
+  def test_precision_ia(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 0.], [1., 0.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      m = metrics_lib.precision_ia
+      self._check_metrics([
+          (m([labels[0]], [scores[0]]), 1. / 3.),
+          (m([labels[0]], [scores[0]], topn=1), 0. / 1.),
+          (m([labels[0]], [scores[0]], topn=2), 1. / 2.),
+          (m(labels, scores), (1. / 3. + 3. / 6.) / 2.),
+      ])
+
+  def test_precision_ia_with_zero_relevance(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 0.], [0., 0.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      m = metrics_lib.precision_ia
+      self._check_metrics([
+          (m([labels[0]], [scores[0]]), 0.),
+          (m(labels, scores), (0. + 3. / 6.) / 2.),
+      ])
+
+  def test_precision_ia_with_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 0.], [1., 0.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      sum_labels = [[0., 0., 1.], [0., 1., 1.]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      list_weights = [[1.], [2.]]
+      m = metrics_lib.precision_ia
+      as_list_weights = _example_weights_to_list_weights(
+          weights, sum_labels, 'PRECISION')
+      self._check_metrics([
+          (m(labels, scores,
+             weights), ((1. / 3.) * as_list_weights[0] +
+                        (3. / 6.) * as_list_weights[1]) / sum(as_list_weights)),
+          (m(labels, scores, weights,
+             topn=2), ((1. / 2.) * as_list_weights[0] +
+                       (3. / 4.) * as_list_weights[1]) / sum(as_list_weights)),
+          # Per list weight.
+          (m(labels, scores,
+             list_weights), ((1. / 3.) * list_weights[0][0] +
+                             (3. / 6.) * list_weights[1][0]) / 3.0),
+          # Zero precision case.
+          (m(labels, scores, [[0., 0., 0.], [0., 0., 0.]], topn=2), 0.),
+      ])
+
+  def test_precision_ia_weights_with_zero_relevance(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 0.], [0., 0.]],
+                [[0., 0.], [0., 0.], [1., 0.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      sum_labels = [[0., 0., 0.], [0., 0., 1.], [0., 1., 1.]]
+      weights = [[0., 0., 1.], [1., 2., 3.], [4., 5., 6.]]
+      m = metrics_lib.precision_ia
+      as_list_weights = _example_weights_to_list_weights(
+          weights, sum_labels, 'PRECISION')
+      self.assertAllClose(as_list_weights, [(3 + 5.5) / 2., 3, 5.5])
+      self._check_metrics([
+          (m(labels, scores, weights, topn=2), 0.0 * as_list_weights[0] +
+           ((1. / 2.) * as_list_weights[1] +
+            (3. / 4.) * as_list_weights[2]) / sum(as_list_weights)),
+          (m(labels[0:2], scores[0:2], [[0., 0., 0.], [0., 0., 0.]]), 0.),
+      ])
+
+  def test_make_precision_ia_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[[0., 0.], [0., 0.], [1., 0.]],
+                [[0., 0.], [1., 0.], [1., 1.]]]
+      features = {}
+      m = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.PRECISION_IA)
+      m_top_1 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.PRECISION_IA, topn=1)
+      m_top_2 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.PRECISION_IA, topn=2)
+      self._check_metrics([
+          (m([labels[0]], [scores[0]], features), 1. / 3.),
+          (m_top_1([labels[0]], [scores[0]], features), 0. / 1.),
+          (m_top_2([labels[0]], [scores[0]], features), 1. / 2.),
+          (m(labels, scores, features), (1. / 3. + 3. / 6.) / 2.),
+      ])
+
   def test_normalized_discounted_cumulative_gain(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]

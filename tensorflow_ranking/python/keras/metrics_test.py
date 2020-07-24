@@ -190,6 +190,9 @@ class MetricsSerializationTest(tf.test.TestCase):
   def test_precision(self):
     self._check_config(metrics_lib.PrecisionMetric, {'topn': 1})
 
+  def test_precision_ia(self):
+    self._check_config(metrics_lib.PrecisionIAMetric, {'topn': 1})
+
   def test_mean_average_precision(self):
     self._check_config(metrics_lib.MeanAveragePrecisionMetric, {'topn': 1})
 
@@ -428,6 +431,94 @@ class MetricsTest(tf.test.TestCase):
     # Zero precision case.
     metric_ = metrics_lib.PrecisionMetric(topn=2)
     metric_.update_state(labels, scores, [[0., 0., 0.], [0., 0., 0.]])
+    self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
+
+  def test_precision_ia(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[[0., 0.], [0., 0.], [1., 0.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+
+    metric_ = metrics_lib.PrecisionIAMetric()
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 1. / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.PrecisionIAMetric(topn=1)
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 0. / 1.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.PrecisionIAMetric()
+    metric_.update_state(labels, scores)
+    expected_result = (1. / 3. + 3. / 6.) / 2.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_precision_ia_with_zero_relevance(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[[0., 0.], [0., 0.], [0., 0.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+
+    metric_ = metrics_lib.PrecisionIAMetric()
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 0.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.PrecisionIAMetric()
+    metric_.update_state(labels, scores)
+    expected_result = (0. + 3. / 6.) / 2.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_precision_ia_with_weights(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[[0., 0.], [0., 0.], [1., 0.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+    weights = [[1., 2., 3.], [4., 5., 6.]]
+    list_weights = [[1.], [2.]]
+    as_list_weights = _example_weights_to_list_weights(
+        weights, [[0., 0., 1.], [0., 1., 1.]], 'PRECISION')
+
+    metric_ = metrics_lib.PrecisionIAMetric()
+    metric_.update_state(labels, scores, weights)
+    expected_result = ((1. / 3.) * as_list_weights[0] +
+                       (3. / 6.) * as_list_weights[1]) / sum(as_list_weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.PrecisionIAMetric(topn=2)
+    metric_.update_state(labels, scores, weights)
+    expected_result = ((1. / 2.) * as_list_weights[0] +
+                       (3. / 4.) * as_list_weights[1]) / sum(as_list_weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    # Per list weight.
+    metric_ = metrics_lib.PrecisionIAMetric()
+    metric_.update_state(labels, scores, list_weights)
+    expected_result = ((1. / 3.) * list_weights[0][0] +
+                       (3. / 6.) * list_weights[1][0]) / 3.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    # Zero precision case.
+    metric_ = metrics_lib.PrecisionIAMetric(topn=2)
+    metric_.update_state(labels, scores, [[0., 0., 0.], [0., 0., 0.]])
+    self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
+
+  def test_precision_ia_weights_with_zero_relevance(self):
+    scores = [[1., 3., 2.], [1., 3., 2.], [1., 2., 3.]]
+    labels = [[[0., 0.], [0., 0.], [0., 0.]],
+              [[0., 0.], [0., 0.], [1., 0.]],
+              [[0., 0.], [1., 0.], [1., 1.]]]
+    weights = [[0., 0., 1.], [1., 2., 3.], [4., 5., 6.]]
+    as_list_weights = _example_weights_to_list_weights(
+        weights, [[0., 0., 0.], [0., 0., 1.], [0., 1., 1.]], 'PRECISION')
+    self.assertAllClose(as_list_weights, [(3 + 5.5) / 2., 3, 5.5])
+    metric_ = metrics_lib.PrecisionIAMetric(topn=2)
+    metric_.update_state(labels, scores, weights)
+    expected_result = (0.0 * as_list_weights[0] +
+                       (1. / 2.) * as_list_weights[1] +
+                       (3. / 4.) * as_list_weights[2]) / sum(as_list_weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.PrecisionIAMetric()
+    metric_.update_state(labels[0:2], scores[0:2], [[0., 0., 0.], [0., 0., 0.]])
     self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
 
   def test_mean_average_precision(self):

@@ -128,6 +128,26 @@ class PrecisionMetric(_RankingMetric):
     return config
 
 
+class PrecisionIAMetric(_RankingMetric):
+  """Implements PrecisionIA@k (Pre-IA@k)."""
+
+  def __init__(self,
+               topn=None,
+               dtype=None,
+               name="precision_ia_metric",
+               **kwargs):
+    super(PrecisionIAMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    self._topn = topn
+    self._metric = metrics_impl.PrecisionIAMetric(name=name, topn=topn)
+
+  def get_config(self):
+    config = super(PrecisionIAMetric, self).get_config()
+    config.update({
+        "topn": self._topn,
+    })
+    return config
+
+
 class MeanAveragePrecisionMetric(_RankingMetric):
   """Implements mean average precision (MAP)."""
 
