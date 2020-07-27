@@ -820,6 +820,8 @@ class SigmoidCrossEntropyLoss(_PointwiseLoss):
     """See `_RankingLoss`."""
     labels = tf.compat.v1.where(
         utils.is_label_valid(labels), labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(
+        utils.is_label_valid(labels), logits, tf.zeros_like(logits))
     losses = tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
     return losses, 1.
