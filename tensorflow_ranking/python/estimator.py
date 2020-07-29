@@ -24,10 +24,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import inspect
-
 import tensorflow as tf
 
+from tensorflow.python.util import function_utils
 from tensorflow_ranking.python import feature
 from tensorflow_ranking.python import head
 from tensorflow_ranking.python import losses
@@ -66,16 +65,7 @@ def _validate_function_args(function, required_args):
   Raises:
     ValueError: If any of `required_args` does not present in the `function`.
   """
-  fn_args = None
-  try:
-    # This is for Python 3.
-    fn_spec = inspect.getfullargspec(function)
-    fn_args = [arg for arg in fn_spec.args if arg != "self"]
-  except AttributeError:
-    # This is for Python 2.
-    fn_spec = inspect.getargspec(function)
-    fn_args = [arg for arg in fn_spec.args if arg != "self"]
-
+  fn_args = function_utils.fn_args(function)
   if set(fn_args) != set(required_args):
     raise ValueError(
         "Function `%s` needs to have the following arguments: %s."
@@ -488,16 +478,16 @@ def _feed_forward_network(x,
 
   Args:
    x: Input tensor.
-   hidden_layer_dims: Iterable of number hidden units per layer.
-     All layers are fully connected. Ex. `[64, 32]` means first layer has 64
-     nodes and second one has 32.
+   hidden_layer_dims: Iterable of number hidden units per layer. All layers are
+     fully connected. Ex. `[64, 32]` means first layer has 64 nodes and second
+     one has 32.
    output_units: (int) Size of output logits from this tower.
    activation_fn: Activation function applied to each layer. If `None`, will use
      ReLU activation.
    batch_norm: Whether to use batch normalization after each hidden layer.
    batch_norm_moment: Momentum for the moving average in batch normalization.
    dropout: When not `None`, the probability we will drop out a given
-      coordinate.
+     coordinate.
    is_training: Whether in the training mode.
 
   Returns:
@@ -544,14 +534,12 @@ def _make_gam_score_fn(context_hidden_units,
     example_feature_names = sorted(list(example_features.keys()))
     context_feature_names = sorted(list(context_features.keys()))
     with tf.compat.v1.name_scope("input_layer"):
-      example_input = [
-          (name, tf.compat.v1.layers.flatten(example_features[name]))
-          for name in sorted(list(example_feature_names))
-      ]
-      context_input = [
-          (name, tf.compat.v1.layers.flatten(context_features[name]))
-          for name in sorted(list(context_feature_names))
-      ]
+      example_input = [(name,
+                        tf.compat.v1.layers.flatten(example_features[name]))
+                       for name in sorted(list(example_feature_names))]
+      context_input = [(name,
+                        tf.compat.v1.layers.flatten(context_features[name]))
+                       for name in sorted(list(context_feature_names))]
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
@@ -669,8 +657,9 @@ class GAMEstimatorBuilder(EstimatorBuilder):
 
     def _gam_model_fn(features, labels, mode, params, config):
       """Redefines the model_fn for GAM to include subscore signatures."""
-      estimator_spec = super(GAMEstimatorBuilder, self)._model_fn()(
-          features, labels, mode, params, config)
+      estimator_spec = super(GAMEstimatorBuilder,
+                             self)._model_fn()(features, labels, mode, params,
+                                               config)
       if mode == tf.estimator.ModeKeys.PREDICT:
         # Export subscores of each feature.  Find nodes ending with
         # `_SUBSCORE_POSTFIX` and `_SUBWEIGHT_POSTFIX` and create signatures
@@ -680,14 +669,14 @@ class GAMEstimatorBuilder(EstimatorBuilder):
         subscore_signatures = {}
         for node in tf.compat.v1.get_default_graph().as_graph_def().node:
           if node.name.endswith(_SUBSCORE_POSTFIX):
-            subscore_name = node.name[node.name.rfind("/")+1:]
+            subscore_name = node.name[node.name.rfind("/") + 1:]
             subscore_tensor = (
                 tf.compat.v1.get_default_graph().get_tensor_by_name(
                     "{}:0".format(node.name)))
             subscore_signatures[subscore_name] = (
                 tf.estimator.export.RegressionOutput(subscore_tensor))
           elif node.name.endswith(_SUBWEIGHT_POSTFIX):
-            subscore_name = node.name[node.name.rfind("/")+1:]
+            subscore_name = node.name[node.name.rfind("/") + 1:]
             subscore_tensor = (
                 tf.compat.v1.get_default_graph().get_tensor_by_name(
                     "{}:0".format(node.name)))
@@ -737,8 +726,8 @@ def make_gam_ranking_estimator(
       0.05.
     loss: (str) A string to decide the loss function used in training. See
       `RankingLossKey` class for possible values.
-    loss_reduction: (str) An enum of strings indicating the loss reduction
-      type. See type definition in the `tf.compat.v1.losses.Reduction`.
+    loss_reduction: (str) An enum of strings indicating the loss reduction type.
+      See type definition in the `tf.compat.v1.losses.Reduction`.
     activation_fn: Activation function applied to each layer. If `None`, will
       use `tf.nn.relu`.
     dropout: (float) When not `None`, the probability we will drop out a given
