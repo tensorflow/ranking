@@ -126,7 +126,7 @@ def make_loss_fn(loss_keys,
       weights = utils.reshape_to_2d(weights)
 
     gbl_labels, gbl_logits, gbl_weights = gumbel_sampler.sample(
-        labels, logits, weights, **gumbel_params)
+        labels, logits, weights=weights)
 
     loss_kwargs = {
         'labels': labels,

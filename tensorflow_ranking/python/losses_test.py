@@ -973,6 +973,56 @@ class LossesTest(tf.test.TestCase):
             loss_fn_1(labels, scores, features).eval(),
             loss_fn_2(labels, scores, features).eval())
 
+  def test_make_gumbel_approx_ndcg_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+      labels = [[0., 2., 1.], [1., 0., 3.], [1., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      # sampled_scores = [[-.291, -1.643, -2.826],
+      #                   [-.0866, -2.924, -3.530],
+      #                   [-12.42, -9.492, -7.939e-5],
+      #                   [-8.859, -6.830, -1.223e-3],
+      #                   [-.8930, -.5266, -45.80183],
+      #                   [-.6650, -.7220, -45.94149]]
+      # sampled_rank = [[1, 2, 3],
+      #                 [1, 2, 3],
+      #                 [3, 2, 1],
+      #                 [3, 2, 1],
+      #                 [2, 1, 3],
+      #                 [1, 2, 3]]
+      # expanded_labels = [[0., 2., 1.], [0., 2., 1.],
+      #                    [1., 0., 3.], [1., 0., 3.],
+      #                    [1., 0., 0.], [1., 0., 0.]]
+      # expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
+
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      with self.cached_session():
+        loss_fn_simple = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.GUMBEL_APPROX_NDCG_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.SUM,
+            params={'temperature': 0.01},
+            gumbel_params={'sample_size': 2, 'seed': 1})
+        self.assertAlmostEqual(
+            loss_fn_simple(labels, scores, features).eval(),
+            -((2 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(3) + 1 / ln(4)) +
+              (2 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4)) +
+              (1 / (1 / ln(2))) * (1 / ln(3)) + 1),
+            places=5)
+
+        loss_fn_weighted = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.GUMBEL_APPROX_NDCG_LOSS,
+            weights_feature_name=weights_feature_name,
+            reduction=tf.compat.v1.losses.Reduction.SUM,
+            params={'temperature': 0.01},
+            gumbel_params={'sample_size': 2, 'seed': 1})
+        self.assertAlmostEqual(
+            loss_fn_weighted(labels, scores, features).eval(),
+            -(2 * (2 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(3) + 1 / ln(4)) +
+              1 * (2 / (7 / ln(2) + 1 / ln(3))) * (7 / ln(2) + 1 / ln(4)) +
+              1 * (1 / (1 / ln(2))) * (1 / ln(3)) + 1 * 1),
+            places=5)
+
   def test_approx_mrr_loss(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
