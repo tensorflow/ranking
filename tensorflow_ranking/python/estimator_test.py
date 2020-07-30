@@ -173,6 +173,14 @@ class EstimatorBuilderTest(tf.test.TestCase):
         _scoring_function,
         hparams=(hparams or _get_hparams()))
 
+  def test_validate_hparams(self):
+    hparams = {"allowed_key": "allowed_value"}
+    tfr_estimator._validate_hparams(hparams, [], [])
+    tfr_estimator._validate_hparams(hparams, [],
+                                    ["allowed_key", "not_set_allowed"])
+    with self.assertRaises(ValueError):
+      tfr_estimator._validate_hparams(hparams, ["required"])
+
   def test_create_estimator_with_misspecified_args(self):
     hparams = _get_hparams()
     with self.assertRaises(ValueError):

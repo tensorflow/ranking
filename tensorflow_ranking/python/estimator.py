@@ -40,19 +40,37 @@ _SUBSCORE_POSTFIX = "subscore"
 _SUBWEIGHT_POSTFIX = "subweight"
 
 
-def _validate_hparams(hparams_in_dict, required_keys):
-  """Asserts all of the `required_keys` are presented in `hparams_in_dict`.
+def _validate_hparams(hparams_in_dict, required_keys, allowed_keys=None):
+  """Validate keys in `hparams_in_dict`.
+
+  It asserts all of the `required_keys` are presented in `hparams_in_dict`. It
+  also prints all the allowed keys as info. The main purpose is to allow for
+  easy debugging, because a mis-spelled allowed key uses the default value
+  (e.g., None) silently.
+
+  A hparams can contain extra keys other than `required_keys` and `allowed_keys`
+  and this function does nothing about them.
 
   Args:
     hparams_in_dict: (dict) A dict with the key in string and value in any type.
-    required_keys: (list) A list of strings.
+    required_keys: (list) A list of strings for required keys.
+    allowed_keys: (list) A list of strings for allowed but not requried keys.
 
   Raises:
     ValueError: If any of `required_keys` does not present in `hparams_in_dict`.
   """
+  required_keys = required_keys or []
+  allowed_keys = allowed_keys or []
   for required_key in required_keys:
     if required_key not in hparams_in_dict:
       raise ValueError("Required key is missing: '{}'".format(required_key))
+  for allowed_key in allowed_keys:
+    if allowed_key in hparams_in_dict:
+      tf.compat.v1.logging.info("Allowed key is set: {}={}".format(
+          allowed_key, hparams_in_dict.get(allowed_key)))
+    else:
+      tf.compat.v1.logging.info(
+          "Allowed key is not set: {}".format(allowed_key))
 
 
 def _validate_function_args(function, required_args):
@@ -209,15 +227,19 @@ class EstimatorBuilder(object):
 
   def _required_hparam_keys(self):
     """Returns a list of keys for required hparams."""
-    required_hparam_keys = [
+    return [
         "checkpoint_secs", "listwise_inference", "loss", "model_dir",
         "num_checkpoints"
     ]
-    return required_hparam_keys
+
+  def _allowed_hparam_keys(self):
+    """All hparams used except required should be declared here."""
+    return []
 
   def _validate_function_args_and_hparams(self):
     """Validates that the hparams and arguments are all as required."""
-    _validate_hparams(self._hparams, self._required_hparam_keys())
+    _validate_hparams(self._hparams, self._required_hparam_keys(),
+                      self._allowed_hparam_keys())
     _validate_function_args(
         self._scoring_function,
         required_args=["context_features", "example_features", "mode"])
