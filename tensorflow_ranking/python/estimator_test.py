@@ -333,7 +333,19 @@ class EstimatorBuilderTest(tf.test.TestCase):
     estimator = self._create_default_estimator()
     self.assertCountEqual(estimator._eval_metric_fns().keys(), [
         "metric/mrr", "metric/mrr_10", "metric/ndcg", "metric/ndcg_10",
-        "metric/ndcg_5"
+        "metric/ndcg_5", "metric/softmax_loss"
+    ])
+
+    # Metric weights feature name is set.
+    hparams = _get_hparams()
+    hparams.update({"metric_weights_feature_name": "a_weight_feature"})
+    estimator = self._create_default_estimator(hparams=hparams)
+    self.assertCountEqual(estimator._eval_metric_fns().keys(), [
+        "metric/mrr", "metric/mrr_10", "metric/ndcg", "metric/ndcg_10",
+        "metric/ndcg_5", "metric/weighted_mrr", "metric/weighted_mrr_10",
+        "metric/weighted_ndcg", "metric/weighted_ndcg_10",
+        "metric/weighted_ndcg_5", "metric/softmax_loss",
+        "metric/weighted_softmax_loss"
     ])
 
   def test_optimizer(self):

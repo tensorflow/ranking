@@ -33,6 +33,9 @@ from tensorflow_ranking.python import losses
 from tensorflow_ranking.python import metrics
 from tensorflow_ranking.python import model
 
+_METRIC_WEIGHT = "metric_weights_feature_name"
+_LOSS_WEIGHT = "loss_weights_feature_name"
+
 # Postfix for names of subscore tensors in GAM.
 _SUBSCORE_POSTFIX = "subscore"
 
@@ -89,6 +92,28 @@ def _validate_function_args(function, required_args):
         "Function `%s` needs to have the following arguments: %s."
         " What were provided are the following: %s." %
         (function.__name__, sorted(required_args), sorted(fn_args)))
+
+
+def _get_metric_pair(key, weight=None, topn=None):
+  """Helper function to construct metric name and function."""
+  name = "".join([
+      "metric/",
+      "weighted_" if weight else "",
+      key,
+      "_%s" % topn if topn else "",
+  ])
+  return name, metrics.make_ranking_metric_fn(
+      key, weights_feature_name=weight, topn=topn)
+
+
+def _get_loss_metric_pair(key, weight=None):
+  """Helper function to construct metric name and function for a loss."""
+  name = "".join([
+      "metric/",
+      "weighted_" if weight else "",
+      key,
+  ])
+  return name, losses.make_loss_metric_fn(key, weights_feature_name=weight)
 
 
 class EstimatorBuilder(object):
@@ -233,8 +258,8 @@ class EstimatorBuilder(object):
     ]
 
   def _allowed_hparam_keys(self):
-    """All hparams used except required should be declared here."""
-    return []
+    """Returns a list of allowed but not required keys for hparams."""
+    return [_METRIC_WEIGHT, _LOSS_WEIGHT]
 
   def _validate_function_args_and_hparams(self):
     """Validates that the hparams and arguments are all as required."""
@@ -272,18 +297,33 @@ class EstimatorBuilder(object):
     """Returns a dict from name to metric functions."""
     metric_fns = {}
     metric_fns.update({
-        "metric/ndcg_%d" % topn: metrics.make_ranking_metric_fn(
-            metrics.RankingMetricKey.NDCG, topn=topn) for topn in [5, 10]
+        _get_metric_pair(metrics.RankingMetricKey.NDCG, topn=topn)
+        for topn in [5, 10, None]
     })
     metric_fns.update({
-        "metric/mrr_%d" % topn:
-        metrics.make_ranking_metric_fn(metrics.RankingMetricKey.MRR, topn=topn)
-        for topn in [10]
+        _get_metric_pair(metrics.RankingMetricKey.MRR, topn=topn)
+        for topn in [10, None]
     })
-    metric_fns.update({
-        "metric/%s" % name: metrics.make_ranking_metric_fn(name) for name in
-        [metrics.RankingMetricKey.MRR, metrics.RankingMetricKey.NDCG]
-    })
+
+    metric_fns.update({_get_loss_metric_pair(self._hparams.get("loss"))})
+
+    if self._hparams.get(_METRIC_WEIGHT):
+      weight = self._hparams.get(_METRIC_WEIGHT)
+      tf.compat.v1.logging.info("Metric weight %s=%s" %
+                                (_METRIC_WEIGHT, weight))
+      metric_fns.update({
+          _get_metric_pair(
+              metrics.RankingMetricKey.NDCG, weight=weight, topn=topn)
+          for topn in [5, 10, None]
+      })
+      metric_fns.update({
+          _get_metric_pair(
+              metrics.RankingMetricKey.MRR, weight=weight, topn=topn)
+          for topn in [10, None]
+      })
+      metric_fns.update(
+          {_get_loss_metric_pair(self._hparams.get("loss"), weight=weight)})
+
     return metric_fns
 
   def _group_score_fn(self, context_features, group_features, mode, params,
@@ -318,7 +358,9 @@ class EstimatorBuilder(object):
 
     ranking_head = head.create_ranking_head(
         loss_fn=losses.make_loss_fn(
-            self._hparams.get("loss"), reduction=self._loss_reduction),
+            self._hparams.get("loss"),
+            weights_feature_name=self._hparams.get(_LOSS_WEIGHT),
+            reduction=self._loss_reduction),
         eval_metric_fns=self._eval_metric_fns(),
         train_op_fn=_train_op_fn)
 
