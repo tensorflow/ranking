@@ -1,0 +1,10 @@
+[PAD]
+this
+is
+my
+simple
+test
+[UNK]
+[CLS]
+[SEP]
+[MASK]
