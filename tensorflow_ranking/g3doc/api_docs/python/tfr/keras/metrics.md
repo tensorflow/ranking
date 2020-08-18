@@ -24,6 +24,9 @@ Keras metrics in TF-Ranking.
 [`class ARPMetric`](../../tfr/keras/metrics/ARPMetric.md): Implements average
 relevance position (ARP).
 
+[`class AlphaDCGMetric`](../../tfr/keras/metrics/AlphaDCGMetric.md): Implements
+alpha discounted cumulative gain (alphaDCG).
+
 [`class DCGMetric`](../../tfr/keras/metrics/DCGMetric.md): Implements discounted
 cumulative gain (DCG).
 
@@ -38,6 +41,9 @@ normalized discounted cumulative gain (NDCG).
 
 [`class OPAMetric`](../../tfr/keras/metrics/OPAMetric.md): Implements ordered
 pair accuracy (OPA).
+
+[`class PrecisionIAMetric`](../../tfr/keras/metrics/PrecisionIAMetric.md):
+Implements PrecisionIA@k (Pre-IA@k).
 
 [`class PrecisionMetric`](../../tfr/keras/metrics/PrecisionMetric.md):
 Implements precision@k (P@k).

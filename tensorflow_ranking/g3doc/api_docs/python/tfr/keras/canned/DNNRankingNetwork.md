@@ -56,9 +56,11 @@ Inherits From:
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -138,10 +140,11 @@ keyword arguments.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 `ValueError` if `example_feature_columns` or `hidden_layer_dims` is empty.
 </td>
 </tr>
@@ -150,7 +153,8 @@ keyword arguments.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
 <tr> <td> `activity_regularizer` </td> <td> Optional regularizer function for
@@ -213,9 +217,11 @@ gradients back to the corresponding variables.
 >>> outputs = tf.keras.layers.Dense(1)(x)
 >>> model = tf.keras.Model(inputs, outputs)
 >>> # Activity regularization.
+>>> len(model.losses)
+0
 >>> model.add_loss(tf.abs(tf.reduce_mean(x)))
->>> model.losses
-[<tf.Tensor 'Abs:0' shape=() dtype=float32>]
+>>> len(model.losses)
+1
 ```
 
 ```
@@ -274,7 +280,9 @@ True
 True
 ```
 
-</td> </tr><tr> <td> `trainable` </td> <td>
+</td> </tr><tr> <td> `supports_masking` </td> <td> Whether this layer supports
+computing a mask using `compute_mask`. </td> </tr><tr> <td> `trainable` </td>
+<td>
 
 </td> </tr><tr> <td> `trainable_weights` </td> <td> List of all trainable
 weights tracked by this layer.
@@ -355,7 +363,8 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
 
 <tr>
@@ -430,7 +439,8 @@ model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
 
 <tr>
@@ -479,7 +489,8 @@ This is typically used to create the weights of `Layer` subclasses.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
 
 <tr>
@@ -509,7 +520,8 @@ Scores context and examples to return a score per document.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
 
 <tr>
@@ -549,14 +561,31 @@ all entries are valid.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 (tf.Tensor) A score tensor of shape [batch_size, list_size].
 </td>
 </tr>
 
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+If `scorer` does not return a scalar output.
+</td>
+</tr>
 </table>
 
 <h3 id="compute_mask"><code>compute_mask</code></h3>
@@ -571,7 +600,8 @@ Computes an output mask tensor.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
 
 <tr>
@@ -593,10 +623,11 @@ Tensor or list of tensors.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 None or a tensor (or list of tensors,
 one per output tensor of the layer).
 </td>
@@ -620,7 +651,8 @@ shape provided here.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
 
 <tr>
@@ -638,10 +670,11 @@ instead of an integer.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 An input shape tuple.
 </td>
 </tr>
@@ -658,10 +691,11 @@ Count the total number of scalars composing the weights.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 An integer count.
 </td>
 </tr>
@@ -670,7 +704,8 @@ An integer count.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
 
 <tr>
@@ -700,7 +735,8 @@ Creates a RankingNetwork layer from its config.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
 
 <tr>
@@ -723,10 +759,11 @@ or functions to be considered during deserialization.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A RankingNetwork layer.
 </td>
 </tr>
@@ -753,10 +790,11 @@ class name. These are handled by `Network` (one layer of abstraction above).
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 Python dictionary.
 </td>
 </tr>
@@ -803,10 +841,11 @@ the bias value. These can be used to set the weights of another Dense layer:
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 Weights values as a list of numpy arrays.
 </td>
 </tr>
@@ -828,7 +867,8 @@ Univariate scoring of context and one example to generate a score.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
 
 <tr>
@@ -859,10 +899,11 @@ Univariate scoring of context and one example to generate a score.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 (tf.Tensor) A score tensor of shape [batch_size, 1].
 </td>
 </tr>
@@ -911,7 +952,8 @@ the bias value. These can be used to set the weights of another Dense layer:
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
 
 <tr>
@@ -930,7 +972,8 @@ output of `get_weights`).
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
 
 <tr>
@@ -963,7 +1006,8 @@ custom feature transformations, without modifying `call` explicitly.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
 
 <tr>
@@ -993,7 +1037,8 @@ is True for a valid example and False for invalid one.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 
 <tr>
@@ -1049,7 +1094,8 @@ numpy=..., dtype=float32)>
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
 
 <tr>
@@ -1064,10 +1110,11 @@ The method to wrap.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 The original method wrapped such that it enters the module's name scope.
 </td>
 </tr>
@@ -1086,7 +1133,8 @@ Wraps `call`, applying pre- and post-processing steps.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
 
 <tr>
@@ -1108,10 +1156,11 @@ Keyword arguments to be passed to `self.call`.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 Output tensor(s).
 </td>
 </tr>
@@ -1131,7 +1180,8 @@ Output tensor(s).
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
 
 <tr>

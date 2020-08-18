@@ -33,7 +33,8 @@ at position 1, and 2.1 will be ranked at position 2.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -63,10 +64,11 @@ See `sort_by_scores`.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A 1-based int `Tensor`s as the ranks.
 </td>
 </tr>

@@ -1,5 +1,5 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.metrics.NDCGMetric" />
+<meta itemprop="name" content="tfr.keras.metrics.AlphaDCGMetric" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
@@ -20,7 +20,7 @@
 <meta itemprop="property" content="with_name_scope"/>
 </div>
 
-# tfr.keras.metrics.NDCGMetric
+# tfr.keras.metrics.AlphaDCGMetric
 
 <!-- Insert buttons and diff -->
 
@@ -34,16 +34,76 @@
 </td>
 </table>
 
-Implements normalized discounted cumulative gain (NDCG).
+Implements alpha discounted cumulative gain (alphaDCG).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.metrics.NDCGMetric(
-    name=None, topn=None, gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN, dtype=None, **kwargs
+<code>tfr.keras.metrics.AlphaDCGMetric(
+    topn=None, alpha=0.5, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN, seed=None,
+    dtype=None, name='alpha_dcg_metric', **kwargs
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`topn`
+</td>
+<td>
+A cutoff for how many examples to consider for this metric.
+</td>
+</tr><tr>
+<td>
+`alpha`
+</td>
+<td>
+A float between 0 and 1, parameter used in definition of alpha-DCG.
+Introduced as an assessor error in judging whether a document is
+covering a subtopic of the query.
+</td>
+</tr><tr>
+<td>
+`rank_discount_fn`
+</td>
+<td>
+A function of rank discounts. Default is set to
+discount = 1 / log2(rank+1).
+</td>
+</tr><tr>
+<td>
+`seed`
+</td>
+<td>
+The ops-level random seed used in shuffle ties in `sort_by_scores`.
+</td>
+</tr><tr>
+<td>
+`dtype`
+</td>
+<td>
+Data type of the metric output. See `tf.keras.metrics.Metric`.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+A string used as the name for this metric.
+</td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+Other keyward arguments used in `tf.keras.metrics.Metric`.
+</td>
+</tr>
+</table>
 
 <!-- Tabular view -->
 

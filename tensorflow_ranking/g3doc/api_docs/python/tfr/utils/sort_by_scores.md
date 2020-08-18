@@ -17,7 +17,7 @@
 </td>
 </table>
 
-Sorts example features according to per-example scores.
+Sorts list of features according to per-example scores.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.utils.sort_by_scores(
@@ -29,7 +29,8 @@ Sorts example features according to per-example scores.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -45,8 +46,9 @@ per-example scores.
 `features_list`
 </td>
 <td>
-A list of `Tensor`s with the same shape as scores to be
-sorted.
+A list of `Tensor`s to be sorted. The shape of the `Tensor`
+can be [batch_size, list_size] or [batch_size, list_size, feature_dims].
+The latter is applicable for example features.
 </td>
 </tr><tr>
 <td>
@@ -74,10 +76,11 @@ The ops-level random seed used when `shuffle_ties` is True.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A list of `Tensor`s as the list of sorted features by `scores`.
 </td>
 </tr>

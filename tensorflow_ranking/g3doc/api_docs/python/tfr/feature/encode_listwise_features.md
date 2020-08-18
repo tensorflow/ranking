@@ -30,7 +30,8 @@ Returns dense tensors from features using feature columns.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -87,7 +88,8 @@ inference. See `ModeKeys`.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 
 <tr>
@@ -111,7 +113,8 @@ inference. See `ModeKeys`.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
 
 <tr>

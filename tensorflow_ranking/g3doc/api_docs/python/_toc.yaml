@@ -49,6 +49,14 @@ toc:
       path: /ranking/api_docs/python/tfr/ext/pipeline
     - title: RankingPipeline
       path: /ranking/api_docs/python/tfr/ext/pipeline/RankingPipeline
+  - title: tfrbert
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/ext/tfrbert
+    - title: TFRBertRankingNetwork
+      path: /ranking/api_docs/python/tfr/ext/tfrbert/TFRBertRankingNetwork
+    - title: TFRBertUtil
+      path: /ranking/api_docs/python/tfr/ext/tfrbert/TFRBertUtil
 - title: tfr.feature
   section:
   - title: Overview
@@ -137,10 +145,14 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/losses/SigmoidCrossEntropyLoss
     - title: SoftmaxLoss
       path: /ranking/api_docs/python/tfr/keras/losses/SoftmaxLoss
+    - title: UniqueSoftmaxLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/UniqueSoftmaxLoss
   - title: metrics
     section:
     - title: Overview
       path: /ranking/api_docs/python/tfr/keras/metrics
+    - title: AlphaDCGMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/AlphaDCGMetric
     - title: ARPMetric
       path: /ranking/api_docs/python/tfr/keras/metrics/ARPMetric
     - title: DCGMetric
@@ -155,6 +167,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/metrics/NDCGMetric
     - title: OPAMetric
       path: /ranking/api_docs/python/tfr/keras/metrics/OPAMetric
+    - title: PrecisionIAMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/PrecisionIAMetric
     - title: PrecisionMetric
       path: /ranking/api_docs/python/tfr/keras/metrics/PrecisionMetric
   - title: model
@@ -167,6 +181,8 @@ toc:
     section:
     - title: Overview
       path: /ranking/api_docs/python/tfr/keras/network
+    - title: listwise_scoring
+      path: /ranking/api_docs/python/tfr/keras/network/listwise_scoring
     - title: RankingNetwork
       path: /ranking/api_docs/python/tfr/keras/network/RankingNetwork
     - title: UnivariateRankingNetwork
@@ -191,6 +207,8 @@ toc:
   section:
   - title: Overview
     path: /ranking/api_docs/python/tfr/metrics
+  - title: alpha_discounted_cumulative_gain
+    path: /ranking/api_docs/python/tfr/metrics/alpha_discounted_cumulative_gain
   - title: average_relevance_position
     path: /ranking/api_docs/python/tfr/metrics/average_relevance_position
   - title: compute_mean
@@ -211,6 +229,8 @@ toc:
     path: /ranking/api_docs/python/tfr/metrics/ordered_pair_accuracy
   - title: precision
     path: /ranking/api_docs/python/tfr/metrics/precision
+  - title: precision_ia
+    path: /ranking/api_docs/python/tfr/metrics/precision_ia
   - title: RankingMetricKey
     path: /ranking/api_docs/python/tfr/metrics/RankingMetricKey
 - title: tfr.model
@@ -223,16 +243,10 @@ toc:
   section:
   - title: Overview
     path: /ranking/api_docs/python/tfr/utils
-  - title: approx_ranks
-    path: /ranking/api_docs/python/tfr/utils/approx_ranks
   - title: de_noise
     path: /ranking/api_docs/python/tfr/utils/de_noise
-  - title: inverse_max_dcg
-    path: /ranking/api_docs/python/tfr/utils/inverse_max_dcg
   - title: is_label_valid
     path: /ranking/api_docs/python/tfr/utils/is_label_valid
-  - title: ndcg
-    path: /ranking/api_docs/python/tfr/utils/ndcg
   - title: organize_valid_indices
     path: /ranking/api_docs/python/tfr/utils/organize_valid_indices
   - title: padded_nd_indices

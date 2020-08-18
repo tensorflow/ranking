@@ -1,5 +1,7 @@
 # All symbols in TensorFlow Ranking
 
+<!-- Insert buttons and diff -->
+
 ## Primary symbols
 
 *   <a href="./tfr.md"><code>tfr</code></a>
@@ -22,6 +24,9 @@
 *   <a href="./tfr/ext.md"><code>tfr.ext</code></a>
 *   <a href="./tfr/ext/pipeline.md"><code>tfr.ext.pipeline</code></a>
 *   <a href="./tfr/ext/pipeline/RankingPipeline.md"><code>tfr.ext.pipeline.RankingPipeline</code></a>
+*   <a href="./tfr/ext/tfrbert.md"><code>tfr.ext.tfrbert</code></a>
+*   <a href="./tfr/ext/tfrbert/TFRBertRankingNetwork.md"><code>tfr.ext.tfrbert.TFRBertRankingNetwork</code></a>
+*   <a href="./tfr/ext/tfrbert/TFRBertUtil.md"><code>tfr.ext.tfrbert.TFRBertUtil</code></a>
 *   <a href="./tfr/feature.md"><code>tfr.feature</code></a>
 *   <a href="./tfr/feature/encode_features.md"><code>tfr.feature.encode_features</code></a>
 *   <a href="./tfr/feature/encode_listwise_features.md"><code>tfr.feature.encode_listwise_features</code></a>
@@ -58,14 +63,17 @@
 *   <a href="./tfr/keras/losses/RankingLossKey.md"><code>tfr.keras.losses.RankingLossKey</code></a>
 *   <a href="./tfr/keras/losses/SigmoidCrossEntropyLoss.md"><code>tfr.keras.losses.SigmoidCrossEntropyLoss</code></a>
 *   <a href="./tfr/keras/losses/SoftmaxLoss.md"><code>tfr.keras.losses.SoftmaxLoss</code></a>
+*   <a href="./tfr/keras/losses/UniqueSoftmaxLoss.md"><code>tfr.keras.losses.UniqueSoftmaxLoss</code></a>
 *   <a href="./tfr/keras/losses/get.md"><code>tfr.keras.losses.get</code></a>
 *   <a href="./tfr/keras/metrics.md"><code>tfr.keras.metrics</code></a>
 *   <a href="./tfr/keras/metrics/ARPMetric.md"><code>tfr.keras.metrics.ARPMetric</code></a>
+*   <a href="./tfr/keras/metrics/AlphaDCGMetric.md"><code>tfr.keras.metrics.AlphaDCGMetric</code></a>
 *   <a href="./tfr/keras/metrics/DCGMetric.md"><code>tfr.keras.metrics.DCGMetric</code></a>
 *   <a href="./tfr/keras/metrics/MRRMetric.md"><code>tfr.keras.metrics.MRRMetric</code></a>
 *   <a href="./tfr/keras/metrics/MeanAveragePrecisionMetric.md"><code>tfr.keras.metrics.MeanAveragePrecisionMetric</code></a>
 *   <a href="./tfr/keras/metrics/NDCGMetric.md"><code>tfr.keras.metrics.NDCGMetric</code></a>
 *   <a href="./tfr/keras/metrics/OPAMetric.md"><code>tfr.keras.metrics.OPAMetric</code></a>
+*   <a href="./tfr/keras/metrics/PrecisionIAMetric.md"><code>tfr.keras.metrics.PrecisionIAMetric</code></a>
 *   <a href="./tfr/keras/metrics/PrecisionMetric.md"><code>tfr.keras.metrics.PrecisionMetric</code></a>
 *   <a href="./tfr/keras/metrics/default_keras_metrics.md"><code>tfr.keras.metrics.default_keras_metrics</code></a>
 *   <a href="./tfr/keras/model.md"><code>tfr.keras.model</code></a>
@@ -73,6 +81,7 @@
 *   <a href="./tfr/keras/network.md"><code>tfr.keras.network</code></a>
 *   <a href="./tfr/keras/network/RankingNetwork.md"><code>tfr.keras.network.RankingNetwork</code></a>
 *   <a href="./tfr/keras/network/UnivariateRankingNetwork.md"><code>tfr.keras.network.UnivariateRankingNetwork</code></a>
+*   <a href="./tfr/keras/network/listwise_scoring.md"><code>tfr.keras.network.listwise_scoring</code></a>
 *   <a href="./tfr/losses.md"><code>tfr.losses</code></a>
 *   <a href="./tfr/losses/RankingLossKey.md"><code>tfr.losses.RankingLossKey</code></a>
 *   <a href="./tfr/losses/create_ndcg_lambda_weight.md"><code>tfr.losses.create_ndcg_lambda_weight</code></a>
@@ -82,6 +91,7 @@
 *   <a href="./tfr/losses/make_loss_metric_fn.md"><code>tfr.losses.make_loss_metric_fn</code></a>
 *   <a href="./tfr/metrics.md"><code>tfr.metrics</code></a>
 *   <a href="./tfr/metrics/RankingMetricKey.md"><code>tfr.metrics.RankingMetricKey</code></a>
+*   <a href="./tfr/metrics/alpha_discounted_cumulative_gain.md"><code>tfr.metrics.alpha_discounted_cumulative_gain</code></a>
 *   <a href="./tfr/metrics/average_relevance_position.md"><code>tfr.metrics.average_relevance_position</code></a>
 *   <a href="./tfr/metrics/compute_mean.md"><code>tfr.metrics.compute_mean</code></a>
 *   <a href="./tfr/metrics/discounted_cumulative_gain.md"><code>tfr.metrics.discounted_cumulative_gain</code></a>
@@ -92,14 +102,12 @@
 *   <a href="./tfr/metrics/normalized_discounted_cumulative_gain.md"><code>tfr.metrics.normalized_discounted_cumulative_gain</code></a>
 *   <a href="./tfr/metrics/ordered_pair_accuracy.md"><code>tfr.metrics.ordered_pair_accuracy</code></a>
 *   <a href="./tfr/metrics/precision.md"><code>tfr.metrics.precision</code></a>
+*   <a href="./tfr/metrics/precision_ia.md"><code>tfr.metrics.precision_ia</code></a>
 *   <a href="./tfr/model.md"><code>tfr.model</code></a>
 *   <a href="./tfr/model/make_groupwise_ranking_fn.md"><code>tfr.model.make_groupwise_ranking_fn</code></a>
 *   <a href="./tfr/utils.md"><code>tfr.utils</code></a>
-*   <a href="./tfr/utils/approx_ranks.md"><code>tfr.utils.approx_ranks</code></a>
 *   <a href="./tfr/utils/de_noise.md"><code>tfr.utils.de_noise</code></a>
-*   <a href="./tfr/utils/inverse_max_dcg.md"><code>tfr.utils.inverse_max_dcg</code></a>
 *   <a href="./tfr/utils/is_label_valid.md"><code>tfr.utils.is_label_valid</code></a>
-*   <a href="./tfr/utils/ndcg.md"><code>tfr.utils.ndcg</code></a>
 *   <a href="./tfr/utils/organize_valid_indices.md"><code>tfr.utils.organize_valid_indices</code></a>
 *   <a href="./tfr/utils/padded_nd_indices.md"><code>tfr.utils.padded_nd_indices</code></a>
 *   <a href="./tfr/utils/reshape_first_ndims.md"><code>tfr.utils.reshape_first_ndims</code></a>

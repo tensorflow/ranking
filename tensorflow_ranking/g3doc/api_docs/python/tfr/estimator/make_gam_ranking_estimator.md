@@ -37,7 +37,8 @@ See the comment of `GAMEstimatorBuilder` class for more details.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -103,8 +104,8 @@ context features. See `example_hidden_units`.
 `loss_reduction`
 </td>
 <td>
-(str) An enum of strings indicating the loss reduction
-type. See type definition in the `tf.compat.v1.losses.Reduction`.
+(str) An enum of strings indicating the loss reduction type.
+See type definition in the `tf.compat.v1.losses.Reduction`.
 </td>
 </tr><tr>
 <td>
@@ -166,10 +167,11 @@ continue training a previously saved model.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 An `Estimator` with GAM scoring function.
 </td>
 </tr>

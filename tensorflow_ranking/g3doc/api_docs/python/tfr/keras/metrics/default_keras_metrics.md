@@ -27,10 +27,11 @@ Returns a list of ranking metrics.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A list of metrics of type `tf.keras.metrics.Metric`.
 </td>
 </tr>

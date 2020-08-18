@@ -23,7 +23,7 @@ Makes a loss function using a single loss or multiple losses.
 <code>tfr.losses.make_loss_fn(
     loss_keys, loss_weights=None, weights_feature_name=None, lambda_weight=None,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS, name=None,
-    extra_args=None
+    params=None, gumbel_params=None
 )
 </code></pre>
 
@@ -31,7 +31,8 @@ Makes a loss function using a single loss or multiple losses.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -86,21 +87,30 @@ A string used as the name for this loss.
 </td>
 </tr><tr>
 <td>
-`extra_args`
+`params`
 </td>
 <td>
 A string-keyed dictionary that contains any other loss-specific
 arguments.
+</td>
+</tr><tr>
+<td>
+`gumbel_params`
+</td>
+<td>
+A string-keyed dictionary that contains other
+`gumbel_softmax_sample` arguments.
 </td>
 </tr>
 </table>
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A function _loss_fn(). See `_loss_fn()` for its signature.
 </td>
 </tr>
@@ -109,7 +119,8 @@ A function _loss_fn(). See `_loss_fn()` for its signature.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
 
 <tr>

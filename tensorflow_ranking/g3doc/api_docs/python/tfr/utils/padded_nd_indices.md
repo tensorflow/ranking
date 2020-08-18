@@ -43,7 +43,8 @@ nd_indices)` and get the following Tensor with first 2 dims are [1, 3]:
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -73,10 +74,11 @@ Random seed for shuffle.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A tuple of Tensors (nd_indices, mask). The first has shape [batch_size,
 list_size, 2] and it can be used in gather_nd or scatter_nd. The second has
 the shape of [batch_size, list_size] with value True for valid indices.

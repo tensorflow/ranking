@@ -1,5 +1,5 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.metrics.NDCGMetric" />
+<meta itemprop="name" content="tfr.keras.metrics.PrecisionIAMetric" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
@@ -20,7 +20,7 @@
 <meta itemprop="property" content="with_name_scope"/>
 </div>
 
-# tfr.keras.metrics.NDCGMetric
+# tfr.keras.metrics.PrecisionIAMetric
 
 <!-- Insert buttons and diff -->
 
@@ -34,17 +34,15 @@
 </td>
 </table>
 
-Implements normalized discounted cumulative gain (NDCG).
+Implements PrecisionIA@k (Pre-IA@k).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.metrics.NDCGMetric(
-    name=None, topn=None, gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN, dtype=None, **kwargs
+<code>tfr.keras.metrics.PrecisionIAMetric(
+    topn=None, dtype=None, name='precision_ia_metric', **kwargs
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
 
  <table class="responsive fixed orange">

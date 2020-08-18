@@ -1,5 +1,5 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.losses.ApproxMRRLoss" />
+<meta itemprop="name" content="tfr.keras.losses.UniqueSoftmaxLoss" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
@@ -7,7 +7,7 @@
 <meta itemprop="property" content="get_config"/>
 </div>
 
-# tfr.keras.losses.ApproxMRRLoss
+# tfr.keras.losses.UniqueSoftmaxLoss
 
 <!-- Insert buttons and diff -->
 
@@ -21,16 +21,15 @@
 </td>
 </table>
 
-For approximate MRR loss.
+For unique softmax cross entropy loss.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.losses.ApproxMRRLoss(
+<code>tfr.keras.losses.UniqueSoftmaxLoss(
     reduction=tf.losses.Reduction.AUTO, name=None, lambda_weight=None
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
 
  <table class="responsive fixed orange">

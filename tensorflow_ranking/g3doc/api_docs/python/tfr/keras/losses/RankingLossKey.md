@@ -11,6 +11,7 @@
 <meta itemprop="property" content="PAIRWISE_SOFT_ZERO_ONE_LOSS"/>
 <meta itemprop="property" content="SIGMOID_CROSS_ENTROPY_LOSS"/>
 <meta itemprop="property" content="SOFTMAX_LOSS"/>
+<meta itemprop="property" content="UNIQUE_SOFTMAX_LOSS"/>
 </div>
 
 # tfr.keras.losses.RankingLossKey
@@ -48,3 +49,5 @@ Ranking loss key strings.
 *   `SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'`
     <a id="SIGMOID_CROSS_ENTROPY_LOSS"></a>
 *   `SOFTMAX_LOSS = 'softmax_loss'` <a id="SOFTMAX_LOSS"></a>
+*   `UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'`
+    <a id="UNIQUE_SOFTMAX_LOSS"></a>

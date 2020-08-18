@@ -42,10 +42,11 @@ various metric definitions in tfr.metrics for the specifics.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 The evaluation of the metric on the input ranked lists.
 </td>
 </tr>
@@ -54,7 +55,8 @@ The evaluation of the metric on the input ranked lists.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
 
 <tr>

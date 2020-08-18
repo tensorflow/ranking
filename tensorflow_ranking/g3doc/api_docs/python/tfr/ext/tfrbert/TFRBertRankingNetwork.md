@@ -1,5 +1,5 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.metrics.NDCGMetric" />
+<meta itemprop="name" content="tfr.ext.tfrbert.TFRBertRankingNetwork" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
@@ -7,43 +7,110 @@
 <meta itemprop="property" content="add_loss"/>
 <meta itemprop="property" content="add_metric"/>
 <meta itemprop="property" content="build"/>
+<meta itemprop="property" content="compute_logits"/>
 <meta itemprop="property" content="compute_mask"/>
 <meta itemprop="property" content="compute_output_shape"/>
 <meta itemprop="property" content="count_params"/>
 <meta itemprop="property" content="from_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
-<meta itemprop="property" content="reset_states"/>
-<meta itemprop="property" content="result"/>
+<meta itemprop="property" content="score"/>
 <meta itemprop="property" content="set_weights"/>
-<meta itemprop="property" content="update_state"/>
+<meta itemprop="property" content="transform"/>
 <meta itemprop="property" content="with_name_scope"/>
 </div>
 
-# tfr.keras.metrics.NDCGMetric
+# tfr.ext.tfrbert.TFRBertRankingNetwork
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api" align="left">
 
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Implements normalized discounted cumulative gain (NDCG).
+A TFRBertRankingNetwork scoring based univariate ranking network.
+
+Inherits From:
+[`UnivariateRankingNetwork`](../../../tfr/keras/network/UnivariateRankingNetwork.md)
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.metrics.NDCGMetric(
-    name=None, topn=None, gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN, dtype=None, **kwargs
+<code>tfr.ext.tfrbert.TFRBertRankingNetwork(
+    context_feature_columns, example_feature_columns, bert_config_file,
+    bert_max_seq_length, bert_output_dropout, name='tfrbert', **kwargs
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`context_feature_columns`
+</td>
+<td>
+A dict containing all the context feature columns
+used by the network. Keys are feature names, and values are instances of
+classes derived from `_FeatureColumn`.
+</td>
+</tr><tr>
+<td>
+`example_feature_columns`
+</td>
+<td>
+A dict containing all the example feature columns
+used by the network. Keys are feature names, and values are instances of
+classes derived from `_FeatureColumn`.
+</td>
+</tr><tr>
+<td>
+`bert_config_file`
+</td>
+<td>
+(string) path to Bert configuration file.
+</td>
+</tr><tr>
+<td>
+`bert_max_seq_length`
+</td>
+<td>
+(int) maximum input sequence length (#words) after
+WordPiece tokenization. Sequences longer than this will be truncated,
+and shorter than this will be padded.
+</td>
+</tr><tr>
+<td>
+`bert_output_dropout`
+</td>
+<td>
+When not `None`, the probability will be used as the
+dropout probability for BERT output.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+name of Keras network.
+</td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+keyword arguments.
+</td>
+</tr>
+</table>
 
 <!-- Tabular view -->
 
@@ -52,9 +119,14 @@ Implements normalized discounted cumulative gain (NDCG).
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
 <tr> <td> `activity_regularizer` </td> <td> Optional regularizer function for
-the output of this layer. </td> </tr><tr> <td> `dtype` </td> <td> Dtype used by
-the weights of the layer, set in the constructor. </td> </tr><tr> <td> `dynamic`
-</td> <td> Whether the layer is dynamic (eager-only); set in the constructor.
+the output of this layer. </td> </tr><tr> <td> `context_feature_columns` </td>
+<td>
+
+</td> </tr><tr> <td> `dtype` </td> <td> Dtype used by the weights of the layer,
+set in the constructor. </td> </tr><tr> <td> `dynamic` </td> <td> Whether the
+layer is dynamic (eager-only); set in the constructor. </td> </tr><tr> <td>
+`example_feature_columns` </td> <td>
+
 </td> </tr><tr> <td> `input` </td> <td> Retrieves the input tensor(s) of a
 layer.
 
@@ -394,6 +466,89 @@ Instance of `TensorShape`, or list of instances of
 </tr>
 </table>
 
+<h3 id="compute_logits"><code>compute_logits</code></h3>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+source</a>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>compute_logits(
+    context_features=None, example_features=None, training=None, mask=None
+)
+</code></pre>
+
+Scores context and examples to return a score per document.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`context_features`
+</td>
+<td>
+(dict) context feature names to 2D tensors of shape
+[batch_size, feature_dims].
+</td>
+</tr><tr>
+<td>
+`example_features`
+</td>
+<td>
+(dict) example feature names to 3D tensors of shape
+[batch_size, list_size, feature_dims].
+</td>
+</tr><tr>
+<td>
+`training`
+</td>
+<td>
+(bool) whether in train or inference mode.
+</td>
+</tr><tr>
+<td>
+`mask`
+</td>
+<td>
+(tf.Tensor) Mask is a tensor of shape [batch_size, list_size], which
+is True for a valid example and False for invalid one. If mask is None,
+all entries are valid.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+(tf.Tensor) A score tensor of shape [batch_size, list_size].
+</td>
+</tr>
+
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+If `scorer` does not return a scalar output.
+</td>
+</tr>
+</table>
+
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -527,32 +682,38 @@ if the layer isn't yet built
 
 <h3 id="from_config"><code>from_config</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@classmethod</code>
 <code>from_config(
-    config
+    config, custom_objects=None
 )
 </code></pre>
 
-Creates a layer from its config.
-
-This method is the reverse of `get_config`, capable of instantiating the same
-layer from the config dictionary. It does not handle layer connectivity (handled
-by Network), nor weights (handled by `set_weights`).
+Creates a RankingNetwork layer from its config.
 
 <!-- Tabular view -->
 
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
 `config`
 </td>
 <td>
-A Python dictionary, typically the
-output of get_config.
+(dict) Layer configuration, typically the output of `get_config`.
+</td>
+</tr><tr>
+<td>
+`custom_objects`
+</td>
+<td>
+(dict) Optional dictionary mapping names to custom classes
+or functions to be considered during deserialization.
 </td>
 </tr>
 </table>
@@ -564,7 +725,7 @@ output of get_config.
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A layer instance.
+A RankingNetwork layer.
 </td>
 </tr>
 
@@ -572,14 +733,34 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>get_config()
 </code></pre>
 
-Returns the serializable config of the metric.
+Returns the config of the layer.
+
+A layer config is a Python dictionary (serializable) containing the
+configuration of a layer. The same layer can be reinstantiated later (without
+its trained weights) from this configuration.
+
+The config of a layer does not include connectivity information, nor the layer
+class name. These are handled by `Network` (one layer of abstraction above).
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+Python dictionary.
+</td>
+</tr>
+
+</table>
 
 <h3 id="get_weights"><code>get_weights</code></h3>
 
@@ -632,27 +813,63 @@ Weights values as a list of numpy arrays.
 
 </table>
 
-<h3 id="reset_states"><code>reset_states</code></h3>
+<h3 id="score"><code>score</code></h3>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py">View
+source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>reset_states()
+<code>score(
+    context_features=None, example_features=None, training=True
+)
 </code></pre>
 
-Resets all of the metric state variables.
+Univariate scoring of context and one example to generate a score.
 
-This function is called between epochs/steps, when a metric is evaluated during
-training.
+<!-- Tabular view -->
 
-<h3 id="result"><code>result</code></h3>
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
 
-<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>result()
-</code></pre>
+<tr>
+<td>
+`context_features`
+</td>
+<td>
+(dict) Context feature names to 2D tensors of shape
+[batch_size, ...].
+</td>
+</tr><tr>
+<td>
+`example_features`
+</td>
+<td>
+(dict) Example feature names to 2D tensors of shape
+[batch_size, ...].
+</td>
+</tr><tr>
+<td>
+`training`
+</td>
+<td>
+(bool) Whether in training or inference mode.
+</td>
+</tr>
+</table>
 
-Computes and returns the metric value tensor.
+<!-- Tabular view -->
 
-Result computation is an idempotent operation that simply calculates the metric
-value using the state variables.
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+(tf.Tensor) A score tensor of shape [batch_size, 1].
+</td>
+</tr>
+
+</table>
 
 <h3 id="set_weights"><code>set_weights</code></h3>
 
@@ -731,20 +948,22 @@ layer's specifications.
 </tr>
 </table>
 
-<h3 id="update_state"><code>update_state</code></h3>
+<h3 id="transform"><code>transform</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>update_state(
-    y_true, y_pred, sample_weight=None
+<code>transform(
+    features=None, training=None, mask=None
 )
 </code></pre>
 
-Accumulates metric statistics.
+Transforms the features into dense context features and example features.
 
-`y_true` and `y_pred` should have the same shape.
+The user can overwrite this function for custom transformations. Mask is
+provided as an argument so that inherited models can have access to it for
+custom feature transformations, without modifying `call` explicitly.
 
 <!-- Tabular view -->
 
@@ -754,26 +973,25 @@ Accumulates metric statistics.
 
 <tr>
 <td>
-`y_true`
+`features`
 </td>
 <td>
-The ground truth values.
-</td>
-</tr><tr>
-<td>
-`y_pred`
-</td>
-<td>
-The predicted values.
+(dict) with a mix of context (2D) and example features (3D).
 </td>
 </tr><tr>
 <td>
-`sample_weight`
+`training`
 </td>
 <td>
-Optional weighting of each example. Defaults to 1. Can be a
-`Tensor` whose rank is either 0, or the same rank as `y_true`, and must
-be broadcastable to `y_true`.
+(bool) whether in train or inference mode.
+</td>
+</tr><tr>
+<td>
+`mask`
+</td>
+<td>
+(tf.Tensor) Mask is a tensor of shape [batch_size, list_size], which
+is True for a valid example and False for invalid one.
 </td>
 </tr>
 </table>
@@ -783,12 +1001,24 @@ be broadcastable to `y_true`.
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-<tr class="alt">
-<td colspan="2">
-Update op.
+
+<tr>
+<td>
+`context_features`
+</td>
+<td>
+(dict) context feature names to dense 2D tensors of
+shape [batch_size, feature_dims].
+</td>
+</tr><tr>
+<td>
+`example_features`
+</td>
+<td>
+(dict) example feature names to dense 3D tensors of
+shape [batch_size, list_size, feature_dims].
 </td>
 </tr>
-
 </table>
 
 <h3 id="with_name_scope"><code>with_name_scope</code></h3>
@@ -860,24 +1090,27 @@ The original method wrapped such that it enters the module's name scope.
 )
 </code></pre>
 
-Accumulates statistics and then computes metric result value.
+Wraps `call`, applying pre- and post-processing steps.
 
 <!-- Tabular view -->
 
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
+<tr><th colspan="2">Arguments</th></tr>
 
-<tr> <td> `*args` </td> <td>
-
+<tr>
+<td>
+`*args`
+</td>
+<td>
+Positional arguments to be passed to `self.call`.
 </td>
 </tr><tr>
 <td>
 `**kwargs`
 </td>
 <td>
-A mini-batch of inputs to the Metric,
-passed on to `update_state()`.
+Keyword arguments to be passed to `self.call`.
 </td>
 </tr>
 </table>
@@ -889,8 +1122,42 @@ passed on to `update_state()`.
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-The metric value tensor.
+Output tensor(s).
 </td>
 </tr>
 
+</table>
+
+#### Note:
+
+-   The following optional keyword arguments are reserved for specific uses:
+    *   `training`: Boolean scalar tensor of Python boolean indicating whether
+        the `call` is meant for training or inference.
+    *   `mask`: Boolean input mask.
+-   If the layer's `call` method takes a `mask` argument (as some Keras layers
+    do), its default value will be set to the mask generated for `inputs` by the
+    previous layer (if `input` did come from a layer that generated a
+    corresponding mask, i.e. if it came from a Keras layer with masking support.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+if the layer's `call` method returns None (an invalid value).
+</td>
+</tr><tr>
+<td>
+`RuntimeError`
+</td>
+<td>
+if `super().__init__()` was not called in the constructor.
+</td>
+</tr>
 </table>

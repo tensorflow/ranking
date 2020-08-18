@@ -21,19 +21,11 @@ Utility functions for ranking library.
 
 ## Functions
 
-[`approx_ranks(...)`](../tfr/utils/approx_ranks.md): Computes approximate ranks
-given a list of logits.
-
 [`de_noise(...)`](../tfr/utils/de_noise.md): Returns a float `Tensor` as the
 de-noised `counts`.
 
-[`inverse_max_dcg(...)`](../tfr/utils/inverse_max_dcg.md): Computes the inverse
-of max DCG.
-
 [`is_label_valid(...)`](../tfr/utils/is_label_valid.md): Returns a boolean
 `Tensor` for label validity.
-
-[`ndcg(...)`](../tfr/utils/ndcg.md): Computes NDCG from labels and ranks.
 
 [`organize_valid_indices(...)`](../tfr/utils/organize_valid_indices.md):
 Organizes indices in such a way that valid items appear first.
@@ -56,7 +48,7 @@ int `Tensor` as the ranks after sorting scores per segment.
 [`shuffle_valid_indices(...)`](../tfr/utils/shuffle_valid_indices.md): Returns a
 shuffle of indices with valid ones on top.
 
-[`sort_by_scores(...)`](../tfr/utils/sort_by_scores.md): Sorts example features
+[`sort_by_scores(...)`](../tfr/utils/sort_by_scores.md): Sorts list of features
 according to per-example scores.
 
 [`sorted_ranks(...)`](../tfr/utils/sorted_ranks.md): Returns an int `Tensor` as

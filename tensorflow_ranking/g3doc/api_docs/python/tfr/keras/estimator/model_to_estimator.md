@@ -22,7 +22,7 @@ Keras ranking model to Estimator.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.estimator.model_to_estimator(
     model, model_dir=None, config=None, custom_objects=None,
-    weights_feature_name=None, warm_start_from=None
+    weights_feature_name=None, warm_start_from=None, listwise_inference=True
 )
 </code></pre>
 
@@ -33,7 +33,8 @@ https://www.tensorflow.org/guide/migrate#custom_model_fn_with_tf_20_symbols
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -85,15 +86,24 @@ weights feature in `features` dict.
 (`tf.estimator.WarmStartSettings`) settings to warm-start
 the `tf.estimator.Estimator`.
 </td>
+</tr><tr>
+<td>
+`listwise_inference`
+</td>
+<td>
+(bool) whether to use listwise inference in the predict
+mode.
+</td>
 </tr>
 </table>
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 (tf.estimator.Estimator) A ranking estimator.
 </td>
 </tr>
@@ -102,7 +112,8 @@ the `tf.estimator.Estimator`.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
 
 <tr>

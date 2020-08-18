@@ -26,3 +26,8 @@ for ranking networks in Keras.
 
 [`class UnivariateRankingNetwork`](../../tfr/keras/network/UnivariateRankingNetwork.md):
 Base class for univariate ranking network.
+
+## Functions
+
+[`listwise_scoring(...)`](../../tfr/keras/network/listwise_scoring.md): Listwise
+scoring op for context and example features.

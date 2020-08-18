@@ -1,9 +1,9 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.metrics.discounted_cumulative_gain" />
+<meta itemprop="name" content="tfr.metrics.alpha_discounted_cumulative_gain" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.metrics.discounted_cumulative_gain
+# tfr.metrics.alpha_discounted_cumulative_gain
 
 <!-- Insert buttons and diff -->
 
@@ -17,17 +17,16 @@
 </td>
 </table>
 
-Computes discounted cumulative gain (DCG).
+Computes alpha discounted cumulative gain (alpha-DCG).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.metrics.discounted_cumulative_gain(
+<code>tfr.metrics.alpha_discounted_cumulative_gain(
     labels, predictions, weights=None, topn=None, name=None,
-    gain_fn=_DEFAULT_GAIN_FN, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
+    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN, alpha=0.5, seed=None
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
 
  <table class="responsive fixed orange">
@@ -39,7 +38,12 @@ Computes discounted cumulative gain (DCG).
 `labels`
 </td>
 <td>
-A `Tensor` of the same shape as `predictions`.
+A `Tensor` with shape [batch_size, list_size, subtopic_size]. Each
+value represents graded relevance to a subtopic: 1 for relevent subtopic,
+0 for irrelevant, and -1 for paddings. When the actual subtopic number
+of a query is smaller than the `subtopic_size`, `labels` will be padded
+to `subtopic_size` with -1, similar to the paddings used for queries
+with doc number less then list_size.
 </td>
 </tr><tr>
 <td>
@@ -54,8 +58,8 @@ the ranking score of the corresponding example.
 `weights`
 </td>
 <td>
-A `Tensor` of the same shape of predictions or [batch_size, 1]. The
-former case is per-example and the latter case is per-list.
+A `Tensor` of shape [batch_size, list_size] or [batch_size, 1].
+They are per-example and per-list, respectively.
 </td>
 </tr><tr>
 <td>
@@ -73,17 +77,29 @@ A string used as the name for this metric.
 </td>
 </tr><tr>
 <td>
-`gain_fn`
-</td>
-<td>
-(function) Transforms labels.
-</td>
-</tr><tr>
-<td>
 `rank_discount_fn`
 </td>
 <td>
-(function) The rank discount function.
+A function of rank discounts. Default is set to
+discount = 1 / log2(rank+1).
+</td>
+</tr><tr>
+<td>
+`alpha`
+</td>
+<td>
+A float between 0 and 1. Originally introduced as an assessor error
+in judging whether a document is covering a subtopic of the query. It
+can also be interpreted as the inverse number of documents covering the
+same subtopic reader needs to get and confirm the subtopic information
+of a query.
+</td>
+</tr><tr>
+<td>
+`seed`
+</td>
+<td>
+The ops-level random seed used in shuffle ties in `sort_by_scores`.
 </td>
 </tr>
 </table>
@@ -95,7 +111,7 @@ A string used as the name for this metric.
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
 <td colspan="2">
-A metric for the weighted discounted cumulative gain of the batch.
+A metric for the weighted alpha discounted cumulative gain of the batch.
 </td>
 </tr>
 

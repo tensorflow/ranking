@@ -29,7 +29,8 @@ Organizes indices in such a way that valid items appear first.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -61,10 +62,11 @@ generation. See `tf.set_random_seed`.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A tensor of indices with shape [batch_size, list_size, 2]. The returned
 tensor can be used with `tf.gather_nd` and `tf.scatter_nd` to compose a new
 [batch_size, list_size] tensor. The values in the last dimension are the

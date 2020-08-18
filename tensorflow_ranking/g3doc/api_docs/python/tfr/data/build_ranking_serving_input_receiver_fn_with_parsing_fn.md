@@ -29,7 +29,8 @@ Returns a receiver function with the provided `parsing_fn`.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -61,10 +62,11 @@ unset for variable batch size (recommended).
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A `tf.estimator.export.ServingInputReceiver` object, which packages the
 placeholders and the resulting feature Tensors together.
 </td>

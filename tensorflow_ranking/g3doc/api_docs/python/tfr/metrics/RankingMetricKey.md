@@ -1,6 +1,7 @@
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.metrics.RankingMetricKey" />
 <meta itemprop="path" content="Stable" />
+<meta itemprop="property" content="ALPHA_DCG"/>
 <meta itemprop="property" content="ARP"/>
 <meta itemprop="property" content="DCG"/>
 <meta itemprop="property" content="MAP"/>
@@ -8,6 +9,7 @@
 <meta itemprop="property" content="NDCG"/>
 <meta itemprop="property" content="ORDERED_PAIR_ACCURACY"/>
 <meta itemprop="property" content="PRECISION"/>
+<meta itemprop="property" content="PRECISION_IA"/>
 </div>
 
 # tfr.metrics.RankingMetricKey
@@ -30,6 +32,7 @@ Ranking metric key strings.
 
 ## Class Variables
 
+*   `ALPHA_DCG = 'alpha_dcg'` <a id="ALPHA_DCG"></a>
 *   `ARP = 'arp'` <a id="ARP"></a>
 *   `DCG = 'dcg'` <a id="DCG"></a>
 *   `MAP = 'map'` <a id="MAP"></a>
@@ -38,3 +41,4 @@ Ranking metric key strings.
 *   `ORDERED_PAIR_ACCURACY = 'ordered_pair_accuracy'`
     <a id="ORDERED_PAIR_ACCURACY"></a>
 *   `PRECISION = 'precision'` <a id="PRECISION"></a>
+*   `PRECISION_IA = 'precision_ia'` <a id="PRECISION_IA"></a>

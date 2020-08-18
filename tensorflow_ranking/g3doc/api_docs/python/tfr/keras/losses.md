@@ -53,6 +53,9 @@ For sigmoid cross-entropy loss.
 [`class SoftmaxLoss`](../../tfr/keras/losses/SoftmaxLoss.md): For softmax cross
 entropy loss.
 
+[`class UniqueSoftmaxLoss`](../../tfr/keras/losses/UniqueSoftmaxLoss.md): For
+unique softmax cross entropy loss.
+
 ## Functions
 
 [`get(...)`](../../tfr/keras/losses/get.md): Factory method to get a ranking

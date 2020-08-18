@@ -22,7 +22,7 @@ Factory method to create a ranking metric function.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.metrics.make_ranking_metric_fn(
     metric_key, weights_feature_name=None, topn=None, name=None,
-    gain_fn=_DEFAULT_GAIN_FN, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN
+    gain_fn=_DEFAULT_GAIN_FN, rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN, **kwargs
 )
 </code></pre>
 
@@ -30,7 +30,8 @@ Factory method to create a ranking metric function.
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
 
 <tr>
@@ -83,15 +84,23 @@ the discount parameters used in the definitions of DCG and NDCG metrics,
 where the input in the rank of item. The discount function is commonly
 defined to be of the form log(rank+1).
 </td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+Other keyword arguments (e.g. alpha, seed).
+</td>
 </tr>
 </table>
 
 <!-- Tabular view -->
 
- <table class="properties responsive orange">
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
-<td colspan="3">
+<td colspan="2">
 A metric fn with the following Args:
 * `labels`: A `Tensor` of the same shape as `predictions` representing
 graded relevance.

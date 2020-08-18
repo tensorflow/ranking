@@ -46,4 +46,4 @@ library.
 
 ## Other Members
 
-*   `__version__ = '0.3.1.dev'` <a id="__version__"></a>
+*   `__version__ = '0.3.2.dev'` <a id="__version__"></a>

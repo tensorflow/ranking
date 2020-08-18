@@ -31,6 +31,9 @@ key strings.
 
 ## Functions
 
+[`alpha_discounted_cumulative_gain(...)`](../tfr/metrics/alpha_discounted_cumulative_gain.md):
+Computes alpha discounted cumulative gain (alpha-DCG).
+
 [`average_relevance_position(...)`](../tfr/metrics/average_relevance_position.md):
 Computes average relevance position (ARP).
 
@@ -60,3 +63,6 @@ Computes the percentage of correctly ordered pair.
 
 [`precision(...)`](../tfr/metrics/precision.md): Computes precision as weighted
 average of relevant examples.
+
+[`precision_ia(...)`](../tfr/metrics/precision_ia.md): Computes Intent-Aware
+Precision as weighted average of relevant examples.
