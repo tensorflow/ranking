@@ -18,6 +18,7 @@ py_library(
     visibility = ["//tensorflow_ranking:__pkg__"],
     deps = [
         ":pipeline",
+        ":tfrbert",
     ],
 )
 
