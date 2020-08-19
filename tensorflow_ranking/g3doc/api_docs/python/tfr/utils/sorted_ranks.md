@@ -32,7 +32,6 @@ Example: Given scores = [[1.0, 3.5, 2.1]], the returned ranks will be [[3, 1,
 at position 1, and 2.1 will be ranked at position 2.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -63,7 +62,6 @@ See `sort_by_scores`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>

@@ -32,7 +32,6 @@ This function is based on the custom model_fn in TF2.0 migration guide.
 https://www.tensorflow.org/guide/migrate#custom_model_fn_with_tf_20_symbols
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -111,7 +110,6 @@ mode.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>

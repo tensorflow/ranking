@@ -30,7 +30,6 @@ Makes a loss function using a single loss or multiple losses.
 <!-- Placeholder for "Used in" -->
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -105,7 +104,6 @@ A string-keyed dictionary that contains other
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
@@ -118,7 +116,6 @@ A function _loss_fn(). See `_loss_fn()` for its signature.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>

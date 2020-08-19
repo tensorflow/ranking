@@ -45,7 +45,6 @@ Implements mean average precision (MAP).
 <!-- Placeholder for "Used in" -->
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -250,7 +249,6 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -326,7 +324,6 @@ model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -376,7 +373,6 @@ layer call.
 This is typically used to create the weights of `Layer` subclasses.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -404,7 +400,6 @@ Instance of `TensorShape`, or list of instances of
 Computes an output mask tensor.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -427,7 +422,6 @@ Tensor or list of tensors.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -455,7 +449,6 @@ This assumes that the layer will later be used with inputs that match the input
 shape provided here.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -474,7 +467,6 @@ instead of an integer.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -495,7 +487,6 @@ An input shape tuple.
 Count the total number of scalars composing the weights.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -508,7 +499,6 @@ An integer count.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -540,7 +530,6 @@ layer from the config dictionary. It does not handle layer connectivity (handled
 by Network), nor weights (handled by `set_weights`).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -557,7 +546,6 @@ output of get_config.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -619,7 +607,6 @@ the bias value. These can be used to set the weights of another Dense layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -694,7 +681,6 @@ the bias value. These can be used to set the weights of another Dense layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -714,7 +700,6 @@ output of `get_weights`).
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -746,7 +731,6 @@ Accumulates metric statistics.
 `y_true` and `y_pred` should have the same shape.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -778,7 +762,6 @@ be broadcastable to `y_true`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -823,7 +806,6 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -839,7 +821,6 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -862,7 +843,6 @@ The original method wrapped such that it enters the module's name scope.
 Accumulates statistics and then computes metric result value.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -882,7 +862,6 @@ passed on to `update_state()`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

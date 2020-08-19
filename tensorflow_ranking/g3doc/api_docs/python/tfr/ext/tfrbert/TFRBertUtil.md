@@ -31,8 +31,8 @@ Class that defines a set of utility functions for Bert.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-<!-- Tabular view -->
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -82,7 +82,6 @@ source</a>
 Converts a <context, example list> pair to an ELWC example.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -119,7 +118,6 @@ Converts a <context, example list> pair to an ELWC example.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -146,7 +144,6 @@ source</a>
 Creates an optimizer for TFR-BERT.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -187,7 +184,6 @@ Default to be the `adamw` (AdamWeightDecay). See more details in the
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -216,7 +212,6 @@ Our TFRBert ranking models will warm-start from a pre-trained Bert model. Here,
 we define the warm-start setting by excluding non-Bert parameters.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -232,7 +227,6 @@ we define the warm-start setting by excluding non-Bert parameters.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

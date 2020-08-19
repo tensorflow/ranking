@@ -32,7 +32,6 @@ Keras. The serialization is similar to that of `tf.keras.layers.DenseFeatures`,
 which also has feature columns in it's constructor.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -48,7 +47,6 @@ which also has feature columns in it's constructor.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>

@@ -27,8 +27,8 @@ Computes alpha discounted cumulative gain (alpha-DCG).
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-<!-- Tabular view -->
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -105,7 +105,6 @@ The ops-level random seed used in shuffle ties in `sort_by_scores`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>

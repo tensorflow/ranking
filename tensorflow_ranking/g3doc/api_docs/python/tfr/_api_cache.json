@@ -1978,8 +1978,6 @@
     "tfr.utils.print_function": true,
     "tfr.utils.reshape_first_ndims": false,
     "tfr.utils.reshape_to_2d": false,
-    "tfr.utils.scatter_to_2d": false,
-    "tfr.utils.segment_sorted_ranks": false,
     "tfr.utils.shuffle_valid_indices": false,
     "tfr.utils.sort_by_scores": false,
     "tfr.utils.sorted_ranks": false

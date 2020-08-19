@@ -41,7 +41,6 @@ passed to the metric, e.g. labels and predictions. See `_RankingMetric` and the
 various metric definitions in tfr.metrics for the specifics.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
@@ -54,7 +53,6 @@ The evaluation of the metric on the input ranked lists.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>

@@ -47,8 +47,8 @@ Inherits From:
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-<!-- Tabular view -->
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -113,7 +113,6 @@ keyword arguments.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -323,7 +322,6 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -399,7 +397,6 @@ model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -449,7 +446,6 @@ layer call.
 This is typically used to create the weights of `Layer` subclasses.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -480,7 +476,6 @@ source</a>
 Scores context and examples to return a score per document.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -521,7 +516,6 @@ all entries are valid.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -534,7 +528,6 @@ all entries are valid.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -560,7 +553,6 @@ If `scorer` does not return a scalar output.
 Computes an output mask tensor.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -583,7 +575,6 @@ Tensor or list of tensors.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -611,7 +602,6 @@ This assumes that the layer will later be used with inputs that match the input
 shape provided here.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -630,7 +620,6 @@ instead of an integer.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -651,7 +640,6 @@ An input shape tuple.
 Count the total number of scalars composing the weights.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -664,7 +652,6 @@ An integer count.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -695,7 +682,6 @@ source</a>
 Creates a RankingNetwork layer from its config.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -719,7 +705,6 @@ or functions to be considered during deserialization.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -750,7 +735,6 @@ The config of a layer does not include connectivity information, nor the layer
 class name. These are handled by `Network` (one layer of abstraction above).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -801,7 +785,6 @@ the bias value. These can be used to set the weights of another Dense layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -827,7 +810,6 @@ source</a>
 Univariate scoring of context and one example to generate a score.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -859,7 +841,6 @@ Univariate scoring of context and one example to generate a score.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -912,7 +893,6 @@ the bias value. These can be used to set the weights of another Dense layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -932,7 +912,6 @@ output of `get_weights`).
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -966,7 +945,6 @@ provided as an argument so that inherited models can have access to it for
 custom feature transformations, without modifying `call` explicitly.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -997,7 +975,6 @@ is True for a valid example and False for invalid one.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1054,7 +1031,6 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1070,7 +1046,6 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1093,7 +1068,6 @@ The original method wrapped such that it enters the module's name scope.
 Wraps `call`, applying pre- and post-processing steps.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Arguments</th></tr>
@@ -1116,7 +1090,6 @@ Keyword arguments to be passed to `self.call`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1140,7 +1113,6 @@ Output tensor(s).
     corresponding mask, i.e. if it came from a Keras layer with masking support.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>

@@ -112,8 +112,6 @@
 *   <a href="./tfr/utils/padded_nd_indices.md"><code>tfr.utils.padded_nd_indices</code></a>
 *   <a href="./tfr/utils/reshape_first_ndims.md"><code>tfr.utils.reshape_first_ndims</code></a>
 *   <a href="./tfr/utils/reshape_to_2d.md"><code>tfr.utils.reshape_to_2d</code></a>
-*   <a href="./tfr/utils/scatter_to_2d.md"><code>tfr.utils.scatter_to_2d</code></a>
-*   <a href="./tfr/utils/segment_sorted_ranks.md"><code>tfr.utils.segment_sorted_ranks</code></a>
 *   <a href="./tfr/utils/shuffle_valid_indices.md"><code>tfr.utils.shuffle_valid_indices</code></a>
 *   <a href="./tfr/utils/sort_by_scores.md"><code>tfr.utils.sort_by_scores</code></a>
 *   <a href="./tfr/utils/sorted_ranks.md"><code>tfr.utils.sorted_ranks</code></a>

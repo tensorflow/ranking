@@ -90,7 +90,6 @@ If you really need to overwrite other functions, particularly `_transform_fn`,
 parameters might no longer be used.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -169,7 +168,6 @@ type. See type definition in the `tf.compat.v1.losses.Reduction`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>

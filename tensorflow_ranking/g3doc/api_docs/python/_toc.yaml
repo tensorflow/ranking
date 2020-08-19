@@ -255,10 +255,6 @@ toc:
     path: /ranking/api_docs/python/tfr/utils/reshape_first_ndims
   - title: reshape_to_2d
     path: /ranking/api_docs/python/tfr/utils/reshape_to_2d
-  - title: scatter_to_2d
-    path: /ranking/api_docs/python/tfr/utils/scatter_to_2d
-  - title: segment_sorted_ranks
-    path: /ranking/api_docs/python/tfr/utils/segment_sorted_ranks
   - title: shuffle_valid_indices
     path: /ranking/api_docs/python/tfr/utils/shuffle_valid_indices
   - title: sorted_ranks

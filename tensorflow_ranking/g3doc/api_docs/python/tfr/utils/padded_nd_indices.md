@@ -42,7 +42,6 @@ nd_indices)` and get the following Tensor with first 2 dims are [1, 3]:
 `padded_t = [[t(0, 0), t(0, 1), t(0, 0)]]`
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -73,7 +72,6 @@ Random seed for shuffle.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>

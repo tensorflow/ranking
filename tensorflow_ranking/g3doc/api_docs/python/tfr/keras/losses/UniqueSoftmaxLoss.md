@@ -30,8 +30,8 @@ For unique softmax cross entropy loss.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-<!-- Tabular view -->
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -74,7 +74,6 @@ Optional name for the op.
 Instantiates a `Loss` from its config (output of `get_config()`).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -90,7 +89,6 @@ Output of `get_config()`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
