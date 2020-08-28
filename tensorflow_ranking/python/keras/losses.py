@@ -125,6 +125,7 @@ class _RankingLoss(tf.keras.losses.Loss):
 
   def call(self, y_true, y_pred):
     """See tf.keras.losses.Loss."""
+    y_pred = self._loss.get_logits(y_pred)
     losses, weights = self._loss.compute_unreduced_loss(
         labels=y_true, logits=y_pred)
     return tf.multiply(losses, weights)
@@ -156,10 +157,13 @@ class PairwiseHingeLoss(_PairwiseLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=1.0):
     super(PairwiseHingeLoss, self).__init__(reduction, name)
     self._loss = losses_impl.PairwiseHingeLoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
 
 class PairwiseLogisticLoss(_PairwiseLoss):
@@ -168,10 +172,13 @@ class PairwiseLogisticLoss(_PairwiseLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=1.0):
     super(PairwiseLogisticLoss, self).__init__(reduction, name)
     self._loss = losses_impl.PairwiseLogisticLoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
 
 class PairwiseSoftZeroOneLoss(_PairwiseLoss):
@@ -180,10 +187,13 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=1.0):
     super(PairwiseSoftZeroOneLoss, self).__init__(reduction, name)
     self._loss = losses_impl.PairwiseSoftZeroOneLoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
 
 class SoftmaxLoss(_RankingLoss):
@@ -192,10 +202,13 @@ class SoftmaxLoss(_RankingLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=1.0):
     super(SoftmaxLoss, self).__init__(reduction, name)
     self._loss = losses_impl.SoftmaxLoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
   def __call__(self, y_true, y_pred, sample_weight=None):
     """See _RankingLoss."""
@@ -211,10 +224,13 @@ class UniqueSoftmaxLoss(_RankingLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=1.0):
     super(UniqueSoftmaxLoss, self).__init__(reduction, name)
     self._loss = losses_impl.UniqueSoftmaxLoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
 
 class ListMLELoss(_RankingLoss):
@@ -223,10 +239,13 @@ class ListMLELoss(_RankingLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=1.0):
     super(ListMLELoss, self).__init__(reduction, name)
     self._loss = losses_impl.ListMLELoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
 
 class ApproxMRRLoss(_RankingLoss):
@@ -235,10 +254,13 @@ class ApproxMRRLoss(_RankingLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=0.1):
     super(ApproxMRRLoss, self).__init__(reduction, name)
     self._loss = losses_impl.ApproxMRRLoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
 
 class ApproxNDCGLoss(_RankingLoss):
@@ -247,10 +269,13 @@ class ApproxNDCGLoss(_RankingLoss):
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
-               lambda_weight=None):
+               lambda_weight=None,
+               temperature=0.1):
     super(ApproxNDCGLoss, self).__init__(reduction, name)
     self._loss = losses_impl.ApproxNDCGLoss(
-        name='{}_impl'.format(name), lambda_weight=lambda_weight)
+        name='{}_impl'.format(name),
+        lambda_weight=lambda_weight,
+        temperature=temperature)
 
 
 class GumbelApproxNDCGLoss(ApproxNDCGLoss):
@@ -260,14 +285,16 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
+               temperature=0.1,
                sample_size=8,
-               temperature=1.0,
+               gumbel_temperature=1.0,
                seed=None):
-    super(GumbelApproxNDCGLoss, self).__init__(reduction, name, lambda_weight)
+    super(GumbelApproxNDCGLoss, self).__init__(
+        reduction, name, lambda_weight, temperature=temperature)
     self._gumbel_sampler = losses_impl.GumbelSampler(
         name=name,
         sample_size=sample_size,
-        temperature=temperature,
+        temperature=gumbel_temperature,
         seed=seed)
 
   def __call__(self, y_true, y_pred, sample_weight=None):

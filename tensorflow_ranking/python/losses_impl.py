@@ -56,7 +56,7 @@ def _get_valid_pairs_and_clean_labels(labels):
   return valid_pairs, labels
 
 
-def approx_ranks(logits, temperature=0.1):
+def approx_ranks(logits):
   r"""Computes approximate ranks given a list of logits.
 
   Given a list of logits, the rank of an item in the list is one plus the total
@@ -77,7 +77,6 @@ def approx_ranks(logits, temperature=0.1):
   Args:
     logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
       ranking score of the corresponding item.
-    temperature: A float number as the divider for logits.
 
   Returns:
     A `Tensor` of ranks with the same shape as logits.
@@ -85,7 +84,7 @@ def approx_ranks(logits, temperature=0.1):
   list_size = tf.shape(input=logits)[1]
   x = tf.tile(tf.expand_dims(logits, 2), [1, 1, list_size])
   y = tf.tile(tf.expand_dims(logits, 1), [1, list_size, 1])
-  pairs = tf.sigmoid((y - x) / temperature)
+  pairs = tf.sigmoid(y - x)
   return tf.reduce_sum(input_tensor=pairs, axis=-1) + .5
 
 
@@ -572,6 +571,18 @@ class _RankingLoss(object):
     del labels
     return 1.0 if weights is None else weights
 
+  def get_logits(self, logits):
+    """Computes logits rescaled by temperature.
+
+    Args:
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+
+    Returns:
+      Tensor of rescaled logits.
+    """
+    return tf.convert_to_tensor(value=logits) / self._temperature
+
   def compute(self, labels, logits, weights, reduction):
     """Computes the reduced loss for tf.estimator (not tf.keras).
 
@@ -591,7 +602,7 @@ class _RankingLoss(object):
     Returns:
       Reduced loss for training and eval.
     """
-    logits = tf.convert_to_tensor(value=logits) / self._temperature
+    logits = self.get_logits(logits)
     losses, loss_weights = self.compute_unreduced_loss(labels, logits)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
     return tf.compat.v1.losses.compute_weighted_loss(
@@ -746,7 +757,7 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def compute(self, labels, logits, weights, reduction):
     """See `_RankingLoss`."""
-    logits = tf.convert_to_tensor(value=logits) / self._temperature
+    logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights)
     losses, weights = self.compute_unreduced_loss(labels, logits)
     return tf.compat.v1.losses.compute_weighted_loss(
@@ -754,7 +765,7 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def eval_metric(self, labels, logits, weights):
     """See `_RankingLoss`."""
-    logits = tf.convert_to_tensor(value=logits) / self._temperature
+    logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights)
     losses, weights = self.compute_unreduced_loss(labels, logits)
     return tf.compat.v1.metrics.mean(losses, weights)
@@ -905,7 +916,7 @@ class ApproxNDCGLoss(_ListwiseLoss):
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
-    ranks = approx_ranks(logits, temperature=self._temperature)
+    ranks = approx_ranks(logits)
 
     return -ndcg(labels, ranks), tf.reshape(
         tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
@@ -933,7 +944,7 @@ class ApproxMRRLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
 
-    rr = 1. / approx_ranks(logits, temperature=self._temperature)
+    rr = 1. / approx_ranks(logits)
     rr = tf.math.reduce_sum(input_tensor=rr * labels, axis=-1, keepdims=True)
     mrr = rr / tf.math.reduce_sum(input_tensor=labels, axis=-1, keepdims=True)
     return -mrr, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
@@ -955,8 +966,8 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(is_valid, labels, -1e3 * tf.ones_like(labels))
 
     # shape = [batch_size, list_size, list_size].
-    true_perm = neural_sort(labels, temperature=self._temperature)
-    smooth_perm = neural_sort(logits, temperature=self._temperature)
+    true_perm = neural_sort(labels)
+    smooth_perm = neural_sort(logits)
     losses = tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(
         labels=true_perm, logits=tf.math.log(1e-20 + smooth_perm), axis=2)
     # shape = [batch_size, list_size].
@@ -965,7 +976,7 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
     return losses, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
 
-def neural_sort(logits, name=None, temperature=1.0):
+def neural_sort(logits, name=None):
   r"""Generate the permutation matrix from logits by deterministic neuralsort.
 
   The sort on a list of logits can be approximated by a differentiable
@@ -992,7 +1003,6 @@ def neural_sort(logits, name=None, temperature=1.0):
       noticing the original paper is using probability weights, i.e., the
       exponentials of the logits).
     name: A string used as the name for this loss.
-    temperature: The Softmax approximation temperature.
 
   Returns:
     A tensor of permutation matrices whose dimension is [batch_size, list_size,
@@ -1014,7 +1024,7 @@ def neural_sort(logits, name=None, temperature=1.0):
     scaled_logits = scaling * tf.expand_dims(logits, 1)
 
     p_logits = scaled_logits - logit_diff_sum
-    smooth_perm = tf.nn.softmax(p_logits / temperature, -1)
+    smooth_perm = tf.nn.softmax(p_logits, -1)
 
     return smooth_perm
 
@@ -1058,7 +1068,7 @@ def gumbel_neural_sort(logits,
                                 [batch_size * sample_size, list_size])
 
     # Sort by constructing the relaxed permuation matrix from sampled logits.
-    smooth_perm = neural_sort(sampled_logits, name, temperature)
+    smooth_perm = neural_sort(sampled_logits / temperature, name)
     smooth_perm = tf.reshape(smooth_perm,
                              [batch_size, sample_size, list_size, list_size])
 

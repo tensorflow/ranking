@@ -33,10 +33,10 @@ class UtilsTest(tf.test.TestCase):
 
   def test_approx_ranks(self):
     with tf.Graph().as_default():
-      logits = [[1., 3., 2., 0.], [4., 2., 1.5, 3.]]
+      logits = [[100., 300., 200., 0.], [400., 200., 150., 300.]]
       target_ranks = [[3., 1., 2., 4.], [1., 3., 4., 2.]]
 
-      approx_ranks = losses_impl.approx_ranks(logits, 0.01)
+      approx_ranks = losses_impl.approx_ranks(logits)
       with tf.compat.v1.Session() as sess:
         approx_ranks = sess.run(approx_ranks)
         self.assertAllClose(approx_ranks, target_ranks)
@@ -1001,8 +1001,11 @@ class LossesTest(tf.test.TestCase):
         loss_fn_simple = ranking_losses.make_loss_fn(
             ranking_losses.RankingLossKey.GUMBEL_APPROX_NDCG_LOSS,
             reduction=tf.compat.v1.losses.Reduction.SUM,
-            params={'temperature': 0.01},
-            gumbel_params={'sample_size': 2, 'seed': 1})
+            params={'temperature': 0.001},
+            gumbel_params={
+                'sample_size': 2,
+                'seed': 1
+            })
         self.assertAlmostEqual(
             loss_fn_simple(labels, scores, features).eval(),
             -((2 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(3) + 1 / ln(4)) +
@@ -1014,8 +1017,11 @@ class LossesTest(tf.test.TestCase):
             ranking_losses.RankingLossKey.GUMBEL_APPROX_NDCG_LOSS,
             weights_feature_name=weights_feature_name,
             reduction=tf.compat.v1.losses.Reduction.SUM,
-            params={'temperature': 0.01},
-            gumbel_params={'sample_size': 2, 'seed': 1})
+            params={'temperature': 0.001},
+            gumbel_params={
+                'sample_size': 2,
+                'seed': 1
+            })
         self.assertAlmostEqual(
             loss_fn_weighted(labels, scores, features).eval(),
             -(2 * (2 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(3) + 1 / ln(4)) +
@@ -1333,14 +1339,14 @@ class LossesTest(tf.test.TestCase):
 
   def test_neural_sort(self):
     with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+      scores = [[140., -280., -40.], [0., 180., 1020.], [100., 120., -320.]]
 
       permuation_mat = [[[1, 0, 0], [0, 0, 1], [0, 1, 0]],
                         [[0, 0, 1], [0, 1, 0], [1, 0, 0]],
                         [[0, 1, 0], [1, 0, 0], [0, 0, 1]]]
 
       with self.cached_session():
-        smooth_perm = losses_impl.neural_sort(scores, temperature=0.01)
+        smooth_perm = losses_impl.neural_sort(scores)
         self.assertAllClose(smooth_perm.eval(), permuation_mat, rtol=1e-3)
 
   def test_gumbel_neural_sort(self):
