@@ -1,4 +1,4 @@
-# Copyright 2020 The TensorFlow Ranking Authors.
+# Copyright 2021 The TensorFlow Ranking Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -183,7 +183,13 @@ class _ExampleInExampleParser(_RankingDataParser):
     example_features = tf.compat.v1.io.parse_example(
         tf.reshape(serialized_list, [-1]), self._example_feature_spec)
     for k, v in six.iteritems(example_features):
-      features[k] = utils.reshape_first_ndims(v, 1, [batch_size, cur_list_size])
+      if isinstance(v, tf.RaggedTensor):
+        # Reshape from [batch_size * cur_list_size, ...] to
+        # [batch_size, cur_list_size, ...] for RaggedTensor.
+        features[k] = tf.RaggedTensor.from_uniform_row_length(v, cur_list_size)
+      else:
+        features[k] = utils.reshape_first_ndims(v, 1,
+                                                [batch_size, cur_list_size])
 
     if self._context_feature_spec:
       features.update(

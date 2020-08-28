@@ -1,4 +1,4 @@
-# Copyright 2020 The TensorFlow Ranking Authors.
+# Copyright 2021 The TensorFlow Ranking Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -210,6 +210,13 @@ EXAMPLE_FEATURE_SPEC = {
     "utility": tf.io.FixedLenFeature([1], tf.float32, default_value=[-1.])
 }
 
+CONTEXT_RAGGED_FEATURE_SPEC = {"query_length": tf.io.RaggedFeature(tf.int64)}
+
+EXAMPLE_RAGGED_FEATURE_SPEC = {
+    "unigrams": tf.io.RaggedFeature(tf.string),
+    "utility": tf.io.FixedLenFeature([1], tf.float32, default_value=[-1.])
+}
+
 
 def make_example_list_input_fn():
   """example_list input fn."""
@@ -412,6 +419,124 @@ class ExampleListTest(tf.test.TestCase):
                             features["utility"].get_shape().as_list())
 
 
+class ExampleListWithRaggedTest(tf.test.TestCase):
+
+  def test_parse_from_example_list(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          context_feature_spec=CONTEXT_RAGGED_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(
+            features["unigrams"],
+            [[[b"tensorflow"], [b"learning", b"to", b"rank"]], [[b"gbdt"], []]])
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
+  def test_parse_from_example_list_padding(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      # Padding since list_size 3 is larger than 2.
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          list_size=3,
+          context_feature_spec=CONTEXT_RAGGED_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(features["unigrams"],
+                            [[[b"tensorflow"], [b"learning", b"to", b"rank"],
+                              []], [[b"gbdt"], [], []]])
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"],
+                            [[[0.], [1.0], [-1.]], [[0.], [-1.], [-1.]]])
+
+  def test_parse_from_example_list_truncate(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      # Truncate number of examples from 2 to 1.
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          list_size=1,
+          context_feature_spec=CONTEXT_RAGGED_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(features["unigrams"],
+                            [[[b"tensorflow"]], [[b"gbdt"]]])
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[0.]], [[0.]]])
+
+  def test_parse_from_example_list_shuffle(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      # Trunate number of examples from 2 to 1.
+      features = data_lib.parse_from_example_list(
+          serialized_example_lists,
+          list_size=1,
+          context_feature_spec=CONTEXT_RAGGED_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC,
+          shuffle_examples=True,
+          seed=1)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        # With `shuffle_examples` and seed=1, the example `tensorflow` and the
+        # example `learning to rank` in EXAMPLE_LIST_PROTO_1 switch order. After
+        # truncation at list_size=1, only `learning to rank` in
+        # EXAMPLE_LIST_PROTO_1 and `gbdt` in EXAMPLE_LIST_PROTO_2 are left in
+        # serialized features.
+        self.assertAllEqual(features["unigrams"],
+                            [[[b"learning", b"to", b"rank"]], [[b"gbdt"]]])
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[1.]], [[0.]]])
+
+  def test_parse_from_example_list_shape(self):
+    with tf.Graph().as_default():
+      serialized_example_lists = [
+          EXAMPLE_LIST_PROTO_1.SerializeToString(),
+          EXAMPLE_LIST_PROTO_2.SerializeToString()
+      ]
+      feature_map_list = []
+      for list_size in [None, 100, 1]:
+        feature_map_list.append(
+            data_lib.parse_from_example_list(
+                serialized_example_lists,
+                list_size=list_size,
+                context_feature_spec=CONTEXT_RAGGED_FEATURE_SPEC,
+                example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC))
+      # Shape can only be checked for non-ragged tensors.
+      for features, static_shape in zip(feature_map_list, [
+          [2, 2, 1],
+          [2, 100, 1],
+          [2, 1, 1],
+      ]):
+        self.assertAllEqual(static_shape,
+                            features["utility"].get_shape().as_list())
+
+
 def _example_in_example(context, examples):
   """Returns an Example in Example."""
   example_in_example = tf.train.Example()
@@ -499,6 +624,55 @@ class ExampleInExampleTest(tf.test.TestCase):
         sess.run(tf.compat.v1.local_variables_initializer())
         features = sess.run(features)
         self.assertAllEqual(features[_SIZE], [2, 1])
+
+
+class ExampleInExampleWithRaggedTest(tf.test.TestCase):
+
+  def test_parse_from_example_in_example(self):
+    with tf.Graph().as_default():
+      serialized_example_in_example = [
+          _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+          _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+      ]
+      features = data_lib.parse_from_example_in_example(
+          serialized_example_in_example,
+          context_feature_spec=CONTEXT_RAGGED_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        self.assertAllEqual(
+            features["unigrams"],
+            [[[b"tensorflow"], [b"learning", b"to", b"rank"]], [[b"gbdt"], []]])
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[0.], [1.0]], [[0.], [-1.]]])
+
+  def test_parse_from_example_in_example_shuffle(self):
+    with tf.Graph().as_default():
+      serialized_example_in_example = [
+          _example_in_example(CONTEXT_1, EXAMPLES_1).SerializeToString(),
+          _example_in_example(CONTEXT_2, EXAMPLES_2).SerializeToString(),
+      ]
+      features = data_lib.parse_from_example_in_example(
+          serialized_example_in_example,
+          list_size=1,
+          context_feature_spec=CONTEXT_RAGGED_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC,
+          shuffle_examples=True,
+          seed=1)
+
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.local_variables_initializer())
+        features = sess.run(features)
+        # With `shuffle_examples` and seed=1, the example `tensorflow` and the
+        # example `learning to rank` in EXAMPLES_1 switch order. After
+        # truncation at list_size=1, only `learning to rank` in EXAMPLES_1
+        # and `gbdt` in EXAMPLES_2 are left in serialized features.
+        self.assertAllEqual(features["unigrams"],
+                            [[[b"learning", b"to", b"rank"]], [[b"gbdt"]]])
+        self.assertAllEqual(features["query_length"], [[3], [2]])
+        self.assertAllEqual(features["utility"], [[[1.]], [[0.]]])
 
 
 class SequenceExampleTest(tf.test.TestCase):
