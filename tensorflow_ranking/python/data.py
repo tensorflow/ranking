@@ -847,7 +847,8 @@ def build_ranking_dataset_with_parsing_fn(
     reader_num_threads=tf.data.experimental.AUTOTUNE,
     sloppy_ordering=False,
     drop_final_batch=False,
-    num_parser_threads=tf.data.experimental.AUTOTUNE):
+    num_parser_threads=tf.data.experimental.AUTOTUNE,
+    filter_fn=None):
   """Builds a ranking tf.dataset using the provided `parsing_fn`.
 
   Args:
@@ -883,6 +884,7 @@ def build_ranking_dataset_with_parsing_fn(
       Defaults to `False`. If `True`, the batch_size can be statically inferred.
     num_parser_threads: (int) Optional number of threads to be used with
       dataset.map() when invoking parsing_fn. Defaults to auto-tune.
+    filter_fn: (function) Arbitrary filtering. See `tf.data.Dataset.filter`.
 
   Returns:
     A dataset of `dict` elements. Each `dict` maps feature keys to
@@ -905,6 +907,9 @@ def build_ranking_dataset_with_parsing_fn(
   options = tf.data.Options()
   options.experimental_deterministic = not sloppy_ordering
   dataset = dataset.with_options(options)
+  
+  if filter_fn:
+    dataset = dataset.filter(filter_fn)
 
   # Extract values if tensors are stored as key-value tuples.
   if tf.compat.v1.data.get_output_types(dataset) == (tf.string, tf.string):
