@@ -67,7 +67,7 @@ py_library(
         # tensorflow_models/official/nlp:optimization dep,
         # tensorflow_models/official/nlp/bert:configs dep,
         # tensorflow_models/official/nlp/bert:tokenization dep,
-        # tensorflow_models/official/nlp/modeling/networks dep,
+        # tensorflow_models/official/nlp/modeling dep,
         "//tensorflow_ranking/python:estimator",
         "//tensorflow_ranking/python:head",
         "//tensorflow_ranking/python:losses",
