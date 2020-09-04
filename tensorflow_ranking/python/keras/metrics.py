@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from typing import Any, Dict, List, Optional
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python import metrics_impl
@@ -28,26 +29,116 @@ _DEFAULT_GAIN_FN = lambda label: tf.pow(2.0, label) - 1
 _DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
 
 
-def default_keras_metrics():
+class RankingMetricKey(object):
+  """Ranking metric key strings."""
+  # Mean Reciprocal Rank. For binary relevance.
+  MRR = "mrr"
+
+  # Average Relevance Position.
+  ARP = "arp"
+
+  # Normalized Discounted Cumulative Gain.
+  NDCG = "ndcg"
+
+  # Discounted Cumulative Gain.
+  DCG = "dcg"
+
+  # Precision. For binary relevance.
+  PRECISION = "precision"
+
+  # Mean Average Precision. For binary relevance.
+  MAP = "map"
+
+  # Intent-aware Precision. For binary relevance of subtopics.
+  PRECISION_IA = "precision_ia"
+
+  # Ordered Pair Accuracy.
+  ORDERED_PAIR_ACCURACY = "ordered_pair_accuracy"
+
+  # Alpha Discounted Cumulative Gain.
+  ALPHA_DCG = "alpha_dcg"
+
+
+def get(key: str,
+        name: Optional[str] = None,
+        dtype: Optional[tf.dtypes.DType] = None,
+        topn: Optional[int] = None,
+        **kwargs: Dict[str, Any]) -> tf.keras.metrics.Metric:
+  """Factory method to get a list of ranking metrics.
+
+  Example Usage:
+  ```python
+    metric = tfr.keras.metics.get(tfr.keras.metrics.RankingMetricKey.MRR)
+  ```
+  to get Mean Reciprocal Rank.
+  ```python
+    metric = tfr.keras.metics.get(tfr.keras.metrics.RankingMetricKey.MRR,
+                                  topn=2)
+  ```
+  to get MRR@2.
+
+  Args:
+    key: An attribute of `RankingMetricKey`, defining which metric objects to
+      return.
+    name: Name of metrics.
+    dtype: Dtype of the metrics.
+    topn: Cutoff of how many items are considered in the metric.
+    **kwargs: Keyword arguments for the metric object.
+
+  Returns:
+    A tf.keras.metrics.Metric. See `_RankingMetric` signature for more details.
+
+  Raises:
+    ValueError: If key is unsupported.
+  """
+  if not isinstance(key, str):
+    raise ValueError("Input `key` needs to be string.")
+
+  key_to_cls = {
+      RankingMetricKey.MRR: MRRMetric,
+      RankingMetricKey.ARP: ARPMetric,
+      RankingMetricKey.PRECISION: PrecisionMetric,
+      RankingMetricKey.MAP: MeanAveragePrecisionMetric,
+      RankingMetricKey.NDCG: NDCGMetric,
+      RankingMetricKey.DCG: DCGMetric,
+      RankingMetricKey.ORDERED_PAIR_ACCURACY: OPAMetric,
+  }
+
+  metric_kwargs = {"name": name, "dtype": dtype}
+  if topn:
+    metric_kwargs.update({"topn": topn})
+
+  if kwargs:
+    metric_kwargs.update(kwargs)
+
+  if key in key_to_cls:
+    metric_cls = key_to_cls[key]
+    metric_obj = metric_cls(**metric_kwargs)
+  else:
+    raise ValueError("Unsupported metric: {}".format(key))
+
+  return metric_obj
+
+
+def default_keras_metrics() -> List[tf.keras.metrics.Metric]:
   """Returns a list of ranking metrics.
 
   Returns:
     A list of metrics of type `tf.keras.metrics.Metric`.
   """
-  metrics = [
-      NDCGMetric(name="metric/ndcg_{}".format(topn), topn=topn)
+  list_kwargs = [
+      dict(key="ndcg", topn=topn, name="metric/ndcg_{}".format(topn))
       for topn in [1, 3, 5, 10]
+  ] + [
+      dict(key="arp", name="metric/arp"),
+      dict(key="ordered_pair_accuracy", name="metric/opa"),
+      dict(key="mrr", name="metric/mrr"),
+      dict(key="precision", name="metric/prec"),
+      dict(key="map", name="metric/map"),
+      dict(key="dcg", name="metric/dcg"),
+      dict(key="ndcg", name="metric/ndcg")
   ]
-  metrics.extend([
-      ARPMetric(name="metric/arp"),
-      OPAMetric(name="metric/ordered_pair_accuracy"),
-      MRRMetric(name="metric/mrr"),
-      PrecisionMetric(name="metric/precision"),
-      MeanAveragePrecisionMetric(name="metric/map"),
-      DCGMetric(name="metric/dcg"),
-      NDCGMetric(name="metric/ndcg")
-  ])
-  return metrics
+  return [get(**kwargs) for kwargs in list_kwargs]
 
 
 class _RankingMetric(tf.keras.metrics.Mean):

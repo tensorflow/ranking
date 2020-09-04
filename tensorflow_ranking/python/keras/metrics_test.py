@@ -20,7 +20,6 @@ from __future__ import print_function
 
 import functools
 import math
-import six
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python.keras import metrics as metrics_lib
@@ -177,7 +176,7 @@ class MetricsSerializationTest(tf.test.TestCase):
     self.assertIsNotNone(config)
 
     restored_metric_obj = metric_cls.from_config(config)
-    for init_name, init_value in six.iteritems(init_args):
+    for init_name, init_value in init_args.items():
       self.assertEqual(init_value, getattr(restored_metric_obj,
                                            '_' + init_name))
 
@@ -822,7 +821,7 @@ class MetricsTest(tf.test.TestCase):
     self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
                            places=5)
 
-   # Test different gain and discount functions.
+    # Test different gain and discount functions.
     alpha = 0.2
     rank_discount_fn = lambda rank: 1. / rank
 
@@ -985,6 +984,42 @@ class MetricsTest(tf.test.TestCase):
     self.assertLen(default_metrics, 11)
     for metric in default_metrics:
       self.assertIsInstance(metric, tf.keras.metrics.Metric)
+
+
+class GetMetricsTest(tf.test.TestCase):
+
+  def test_get_single_metric(self):
+    scores = [[1., 3., 2.], [1., 2., 3.], [3., 1., 2.]]
+    # Note that scores are ranked in descending order.
+    # ranks = [[3, 1, 2], [3, 2, 1], [1, 3, 2]]
+    labels = [[0., 0., 1.], [0., 1., 2.], [0., 1., 0.]]
+    # Note that the definition of MRR only uses the highest ranked
+    # relevant item, where an item is relevant if its label is > 0.
+    rel_rank = [2, 1, 3]
+    num_queries = len(scores)
+    self.assertAlmostEqual(num_queries, 3)
+
+    metric_ = metrics_lib.get('mrr', name='metric')
+    metric_.update_state(labels, scores)
+    expected_result = sum([1. / rel_rank[ind] for ind in range(num_queries)
+                          ]) / num_queries
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.get('mrr', name='metric', topn=2)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1. / rel_rank[0], 1. / rel_rank[1], 0.
+                          ]) / num_queries
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_result, places=5)
+
+  def test_get_metric_error(self):
+    with self.assertRaisesRegexp(
+        ValueError, 'Input `key` needs to be string.'):
+      metrics_lib.get(1, name='metric')
+    with self.assertRaisesRegexp(ValueError, 'Unsupported metric: dummymetric'):
+      metrics_lib.get('dummymetric', name='metric')
+
 
 if __name__ == '__main__':
   tf.enable_v2_behavior()

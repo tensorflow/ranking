@@ -176,7 +176,7 @@ py_test(
 py_library(
     name = "metrics",
     srcs = ["metrics.py"],
-    srcs_version = "PY2AND3",
+    srcs_version = "PY3",
     deps = [
         # py/tensorflow dep,
         "//tensorflow_ranking/python:metrics_impl",
@@ -196,6 +196,5 @@ py_test(
     deps = [
         ":metrics",
         # py/tensorflow dep,
-        "//tensorflow_ranking/python:metrics_impl",
     ],
 )
