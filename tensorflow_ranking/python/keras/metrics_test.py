@@ -121,6 +121,7 @@ def _label_boost(boost_form, label):
       'PRECISION': 1.0 if label >= 1.0 else 0.0,
       'MAP': 1.0 if label >= 1.0 else 0.0,
       'ALPHADCG': 1.0 if label >= 1.0 else 0.0,
+      'RECALL': 1.0 if label >= 1.0 else 0.0,
   }
   return boost[boost_form]
 
@@ -977,6 +978,53 @@ class MetricsTest(tf.test.TestCase):
     metric_ = metrics_lib.OPAMetric()
     metric_.update_state(labels, scores, item_weights)
     expected_result = (0. + 2. + 3. + 3.) / (1. + 2. + 3. + 3.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_recall(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 1., 2.]]
+
+    metric_ = metrics_lib.RecallMetric()
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 1.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.RecallMetric(topn=1)
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 0.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.RecallMetric(topn=2)
+    metric_.update_state(labels, scores)
+    expected_result = (1. + 1.) / 2.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_recall_with_zero_relevance(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 0.], [0., 1., 2.]]
+
+    metric_ = metrics_lib.RecallMetric()
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 0.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.RecallMetric()
+    metric_.update_state(labels, scores)
+    expected_result = (0. + 1.) / 2.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_recall_weights_with_zero_relevance(self):
+    scores = [[1., 3., 2.], [1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 0.], [0., 0., 1.], [0., 1., 2.]]
+    weights = [[0., 0., 1.], [1., 2., 3.], [4., 5., 6.]]
+    as_list_weights = _example_weights_to_list_weights(weights, labels,
+                                                       'RECALL')
+    self.assertAllClose(as_list_weights, [(3 + 5.5) / 2., 3, 5.5])
+    metric_ = metrics_lib.RecallMetric(topn=1)
+    metric_.update_state(labels, scores, weights)
+    expected_result = (0. * as_list_weights[0] +
+                       (0. / 1.) * as_list_weights[1] +
+                       (1. / 2.) * as_list_weights[2]) / sum(as_list_weights)
     self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
   def test_default_keras_metrics(self):

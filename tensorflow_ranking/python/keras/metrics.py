@@ -219,6 +219,23 @@ class PrecisionMetric(_RankingMetric):
     return config
 
 
+# TODO Add recall metrics to TF1 in another cl.
+class RecallMetric(_RankingMetric):
+  """Implements recall@k."""
+
+  def __init__(self, name=None, topn=None, dtype=None, **kwargs):
+    super(RecallMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    self._topn = topn
+    self._metric = metrics_impl.RecallMetric(name=name, topn=topn)
+
+  def get_config(self):
+    config = super(RecallMetric, self).get_config()
+    config.update({
+        "topn": self._topn,
+    })
+    return config
+
+
 class PrecisionIAMetric(_RankingMetric):
   """Implements PrecisionIA@k (Pre-IA@k)."""
 

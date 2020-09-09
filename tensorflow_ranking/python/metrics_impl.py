@@ -142,6 +142,30 @@ def _discounted_cumulative_gain(labels,
       input_tensor=weights * gain * discount, axis=1, keepdims=True)
 
 
+def _per_list_recall(labels, predictions, topn):
+  """Computes the recall@k for each query in the batch.
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    topn: A cutoff for how many examples to consider for this metric.
+
+  Returns:
+    A `Tensor` of size [batch_size, 1] containing the precision of each query
+    respectively.
+  """
+  sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn)[0]
+  topn_positives = tf.cast(
+      tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
+  labels = tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32)
+  per_list_recall = tf.compat.v1.math.divide_no_nan(
+      tf.reduce_sum(input_tensor=topn_positives, axis=1, keepdims=True),
+      tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True))
+  return per_list_recall
+
+
 def _per_list_precision(labels, predictions, topn):
   """Computes the precision for each query in the batch.
 
@@ -397,6 +421,32 @@ class ARPMetric(_RankingMetric):
     # TODO: Consider to add a cap position topn + 1 when there is no
     # relevant examples.
     return position * tf.ones_like(relevance), relevance
+
+
+class RecallMetric(_RankingMetric):
+  """Implements recall@k (r@k)."""
+
+  def __init__(self, name, topn):
+    """Constructor."""
+    super(RecallMetric, self).__init__()
+    self._name = name
+    self._topn = topn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+    labels, predictions, weights, topn = _prepare_and_validate_params(
+        labels, predictions, weights, self._topn)
+    per_list_recall = _per_list_recall(labels, predictions, topn)
+    # per_list_weights are computed from the whole list to avoid the problem of
+    # 0 when there is no relevant example in topn.
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights, tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
+    return per_list_recall, per_list_weights
 
 
 class PrecisionMetric(_RankingMetric):
