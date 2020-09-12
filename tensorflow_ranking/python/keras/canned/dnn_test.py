@@ -83,22 +83,15 @@ class DNNRankingNetworkTest(tf.test.TestCase):
     # Check save and restore config.
     restored_network = dnn.DNNRankingNetwork.from_config(
         self.network.get_config())
-    self.assertEqual(restored_network.context_feature_columns,
-                     self.context_feature_columns)
-    self.assertEqual(restored_network.example_feature_columns["utility"],
-                     self.network.example_feature_columns["utility"])
-    # TODO: Deserialized embedding feature column behavior is the
-    # same but config is different. Hence we check for individual attributes.
-    self.assertEqual(restored_network.example_feature_columns["unigrams"].name,
-                     "unigrams_embedding")
     self.assertEqual(
-        restored_network.example_feature_columns["unigrams"].initializer.mean,
-        0.0)
-    self.assertCountEqual(
-        restored_network.example_feature_columns["unigrams"].categorical_column
-        .vocabulary_list,
-        ["ranking", "regression", "classification", "ordinal"])
-
+        restored_network.context_feature_columns["query_length"].get_config(),
+        self.context_feature_columns["query_length"].get_config())
+    self.assertEqual(
+        restored_network.example_feature_columns["utility"].get_config(),
+        self.example_feature_columns["utility"].get_config())
+    self.assertEqual(
+        restored_network.example_feature_columns["unigrams"].get_config(),
+        self.example_feature_columns["unigrams"].get_config())
     self.assertEqual(restored_network._hidden_layer_dims, [10, 10, 10])
     self.assertEqual(restored_network._activation, tf.nn.relu)
     self.assertEqual(restored_network._dropout, 0.5)

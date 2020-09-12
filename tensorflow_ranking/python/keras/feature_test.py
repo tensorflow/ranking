@@ -122,21 +122,15 @@ class EncodeListwiseFeaturesTest(tf.test.TestCase):
     # Check save and restore config.
     restored_layer = _clone_keras_obj(
         self._listwise_dense_layer, custom_objects=self._custom_objects)
-    self.assertEqual(restored_layer.context_feature_columns,
-                     self._context_feature_columns)
-    self.assertEqual(restored_layer.example_feature_columns['utility'],
-                     self._example_feature_columns['utility'])
-    # TODO: Deserialized embedding feature column behavior is the
-    # same but config is different. Hence we check for individual attributes.
-    self.assertEqual(restored_layer.example_feature_columns['unigrams'].name,
-                     'unigrams_embedding')
     self.assertEqual(
-        restored_layer.example_feature_columns['unigrams'].initializer.mean,
-        0.0)
-    self.assertCountEqual(
-        restored_layer.example_feature_columns['unigrams'].categorical_column
-        .vocabulary_list,
-        ['ranking', 'regression', 'classification', 'ordinal'])
+        restored_layer._context_feature_columns['query_length'].get_config(),
+        self._context_feature_columns['query_length'].get_config())
+    self.assertEqual(
+        restored_layer._example_feature_columns['utility'].get_config(),
+        self._example_feature_columns['utility'].get_config())
+    self.assertEqual(
+        restored_layer._example_feature_columns['unigrams'].get_config(),
+        self._example_feature_columns['unigrams'].get_config())
 
   def test_listwise_dense_layer(self):
     context_features, example_features = self._listwise_dense_layer(
@@ -210,19 +204,12 @@ class GenerateMaskTest(tf.test.TestCase):
     # Check save and restore config.
     restored_layer = _clone_keras_obj(
         self._mask_generator_layer, custom_objects=self._custom_objects)
-    self.assertEqual(restored_layer.example_feature_columns['utility'],
-                     self._example_feature_columns['utility'])
-    # TODO: Deserialized embedding feature column behavior is the
-    # same but config is different. Hence we check for individual attributes.
-    self.assertEqual(restored_layer.example_feature_columns['unigrams'].name,
-                     'unigrams_embedding')
     self.assertEqual(
-        restored_layer.example_feature_columns['unigrams'].initializer.mean,
-        0.0)
-    self.assertCountEqual(
-        restored_layer.example_feature_columns['unigrams'].categorical_column
-        .vocabulary_list,
-        ['ranking', 'regression', 'classification', 'ordinal'])
+        restored_layer.example_feature_columns['utility'].get_config(),
+        self._example_feature_columns['utility'].get_config())
+    self.assertEqual(
+        restored_layer.example_feature_columns['unigrams'].get_config(),
+        self._example_feature_columns['unigrams'].get_config())
 
   def test_mask_generator_layer(self):
     mask = self._mask_generator_layer(inputs=self._features, training=False)
@@ -243,16 +230,10 @@ class FeatureColumnSerializationTest(tf.test.TestCase):
         self._feature_columns)
     restored_feature_columns = feature.deserialize_feature_columns(
         serialized_feature_columns, custom_objects=self._custom_objects)
-    self.assertEqual(restored_feature_columns['utility'],
-                     self._feature_columns['utility'])
-    # TODO: Deserialized embedding feature column behavior is the
-    # same but config is different. Hence we check for individual attributes.
-    self.assertEqual(restored_feature_columns['unigrams'].name,
-                     'unigrams_embedding')
-    self.assertEqual(restored_feature_columns['unigrams'].initializer.mean, 0.0)
-    self.assertCountEqual(
-        restored_feature_columns['unigrams'].categorical_column.vocabulary_list,
-        ['ranking', 'regression', 'classification', 'ordinal'])
+    self.assertEqual(restored_feature_columns['utility'].get_config(),
+                     self._feature_columns['utility'].get_config())
+    self.assertEqual(restored_feature_columns['unigrams'].get_config(),
+                     self._feature_columns['unigrams'].get_config())
 
 
 if __name__ == '__main__':
