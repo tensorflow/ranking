@@ -131,9 +131,9 @@ def default_keras_metrics() -> List[tf.keras.metrics.Metric]:
       for topn in [1, 3, 5, 10]
   ] + [
       dict(key="arp", name="metric/arp"),
-      dict(key="ordered_pair_accuracy", name="metric/opa"),
+      dict(key="ordered_pair_accuracy", name="metric/ordered_pair_accuracy"),
       dict(key="mrr", name="metric/mrr"),
-      dict(key="precision", name="metric/prec"),
+      dict(key="precision", name="metric/precision"),
       dict(key="map", name="metric/map"),
       dict(key="dcg", name="metric/dcg"),
       dict(key="ndcg", name="metric/ndcg")
