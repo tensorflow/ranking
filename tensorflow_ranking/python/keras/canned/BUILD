@@ -4,8 +4,6 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
 
-exports_files(["LICENSE"])
-
 py_library(
     name = "canned",
     srcs = ["__init__.py"],

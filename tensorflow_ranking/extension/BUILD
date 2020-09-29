@@ -9,8 +9,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-exports_files(["LICENSE"])
-
 py_library(
     name = "extension",
     srcs = ["__init__.py"],

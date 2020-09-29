@@ -9,8 +9,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-exports_files(["LICENSE"])
-
 py_library(
     name = "keras_m2e_tfrecord_lib",
     srcs = ["keras_m2e_tfrecord.py"],
