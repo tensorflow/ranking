@@ -3,8 +3,6 @@
 
 licenses(["notice"])  # Apache 2.0
 
-exports_files(["LICENSE"])
-
 COMMON_PIP_DEPS = [
     "//tensorflow_ranking",
 ]
