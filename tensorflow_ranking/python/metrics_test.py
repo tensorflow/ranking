@@ -661,6 +661,12 @@ class MetricsTest(tf.test.TestCase):
           (m(labels, scores, [[0.], [0.]]), 0.),
           (m([[0., 0., 0.]], [scores[0]], weights[0], topn=1), 0.),
       ])
+      self._check_metrics([
+          # The 2nd list is ignored due to 0 weight.
+          (m(labels, scores, [[1.], [0.]]), _dcg(1., 2.) / _dcg(1., 1.)),
+          # The 1st list is ignored due to 0 weight.
+          (m(labels, scores, [[0.], [1.]]), 1.0),
+      ])
 
   def test_make_normalized_discounted_cumulative_gain_fn(self):
     with tf.Graph().as_default():

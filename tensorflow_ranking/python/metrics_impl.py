@@ -67,9 +67,9 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   The per-list weights are computed as:
     per_list_weights = sum(weights * relevance) / sum(relevance).
 
-  For the list with sum(relevance) = 0, we set a default weight as the following
-  average weight:
-    sum(per_list_weights) / num(sum(relevance) != 0)
+  For a list with sum(relevance) = 0, we set a default weight as the following
+  average weight while all the lists with sum(weights) = 0 are ignored.
+    sum(per_list_weights) / num(sum(relevance) != 0 && sum(weights) != 0)
 
   Such a computation is good for the following scenarios:
     - When all the weights are 1.0, the per list weights will be 1.0 everywhere,
@@ -79,7 +79,7 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
     - When every list has a nonzero weight, the default weight is not used. This
       handles the unbiased metrics well.
     - For the mixture of the above 2 scenario, the weights for lists with
-      nonzero relevance is proportional to
+      nonzero relevance and nonzero weights is proportional to
         per_list_weights / sum(per_list_weights) *
         num(sum(relevance) != 0) / num(lists).
       The rest have weights 1.0 / num(lists).
@@ -91,9 +91,13 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   Returns:
     The per list `Tensor` of shape [batch_size, 1]
   """
+  nonzero_weights = tf.greater(
+      tf.reduce_sum(input_tensor=weights, axis=1, keepdims=True), 0.0)
   per_list_relevance = tf.reduce_sum(
       input_tensor=relevance, axis=1, keepdims=True)
-  nonzero_relevance = tf.cast(tf.greater(per_list_relevance, 0.0), tf.float32)
+  nonzero_relevance = tf.compat.v1.where(
+      nonzero_weights, tf.cast(tf.greater(per_list_relevance, 0.0), tf.float32),
+      tf.zeros_like(per_list_relevance))
   nonzero_relevance_count = tf.reduce_sum(
       input_tensor=nonzero_relevance, axis=0, keepdims=True)
 
@@ -106,8 +110,11 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   avg_weight = tf.compat.v1.math.divide_no_nan(sum_weights,
                                                nonzero_relevance_count)
   return tf.compat.v1.where(
-      tf.greater(per_list_relevance, 0.0), per_list_weights,
-      tf.ones_like(per_list_weights) * avg_weight)
+      nonzero_weights,
+      tf.where(
+          tf.greater(per_list_relevance, 0.0), per_list_weights,
+          tf.ones_like(per_list_weights) * avg_weight),
+      tf.zeros_like(per_list_weights))
 
 
 def _discounted_cumulative_gain(labels,
@@ -285,10 +292,7 @@ class _DivRankingMetric(_RankingMetric):
       A tf per-list metric.
     """
 
-  def _prepare_and_validate_params(self,
-                                   labels,
-                                   predictions,
-                                   weights=None):
+  def _prepare_and_validate_params(self, labels, predictions, weights=None):
     """Prepares and validates the parameters.
 
     Args:
@@ -357,8 +361,8 @@ class _DivRankingMetric(_RankingMetric):
     """
     labels, predictions, weights, topn = (
         self._prepare_and_validate_params(labels, predictions, weights))
-    per_list_metric = self._compute_per_list_metric(
-        labels, predictions, weights, topn)
+    per_list_metric = self._compute_per_list_metric(labels, predictions,
+                                                    weights, topn)
     per_list_weights = self._compute_per_list_weights(weights, labels)
     return per_list_metric, per_list_weights
 
@@ -693,8 +697,7 @@ class AlphaDCGMetric(_DivRankingMetric):
     """See `_DivRankingMetric`."""
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn, seed=self._seed)
-    alpha_dcg = _discounted_cumulative_gain(sorted_labels,
-                                            sorted_weights,
+    alpha_dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights,
                                             self._gain_fn,
                                             self._rank_discount_fn)
     per_list_weights = self._compute_per_list_weights(weights, labels)
