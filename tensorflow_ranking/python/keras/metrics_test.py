@@ -18,7 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import functools
+import json
 import math
 import tensorflow.compat.v2 as tf
 
@@ -180,6 +180,10 @@ class MetricsSerializationTest(tf.test.TestCase):
     for init_name, init_value in init_args.items():
       self.assertEqual(init_value, getattr(restored_metric_obj,
                                            '_' + init_name))
+    self.assertAllEqual(restored_metric_obj.get_config(), config)
+    # Check that config is json-serializable.
+    self.assertJsonEqual(
+        json.dumps(restored_metric_obj.get_config()), json.dumps(config))
 
   def test_mean_reciprocal_rank(self):
     self._check_config(metrics_lib.MRRMetric, {'topn': 1})
@@ -200,25 +204,17 @@ class MetricsSerializationTest(tf.test.TestCase):
     self._check_config(
         metrics_lib.NDCGMetric, {
             'topn': 1,
-            'gain_fn': lambda rel: rel,
-            'rank_discount_fn': lambda rank: rank
         })
 
   def test_discounted_cumulative_gain(self):
-    gain_fn = lambda rel: rel
-    rank_discount_fn = lambda rank: rank
     self._check_config(metrics_lib.DCGMetric, {
         'topn': 1,
-        'gain_fn': gain_fn,
-        'rank_discount_fn': rank_discount_fn
     })
 
   def test_alpha_discounted_cumulative_gain(self):
-    rank_discount_fn = lambda rank: rank
     self._check_config(metrics_lib.AlphaDCGMetric, {
         'topn': 1,
         'alpha': 0.5,
-        'rank_discount_fn': rank_discount_fn,
         'seed': 1,
     })
 
@@ -618,7 +614,7 @@ class MetricsTest(tf.test.TestCase):
   def test_normalized_discounted_cumulative_gain(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     # Note that scores are ranked in descending order.
-    ranks = [[3, 1, 2], [3, 2, 1]]
+    # ranks = [[3, 1, 2], [3, 2, 1]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
 
     metric_ = metrics_lib.NDCGMetric()
@@ -635,27 +631,30 @@ class MetricsTest(tf.test.TestCase):
     expected_ndcg = (expected_ndcg_1 + expected_ndcg_2) / 2.0
     self.assertAlmostEqual(metric_.result().numpy(), expected_ndcg, places=5)
 
-    # Test different gain and discount functions.
-    gain_fn = lambda rel: rel
-    rank_discount_fn = lambda rank: rank
-    metric_ = metrics_lib.NDCGMetric(
-        gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
-    metric_.update_state([labels[0]], [scores[0]])
+  def test_restored_normalized_discounted_cumulative_gain(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    # Note that scores are ranked in descending order.
+    # ranks = [[3, 1, 2], [3, 2, 1]]
+    labels = [[0., 0., 1.], [0., 1., 2.]]
 
-    def mod_dcg_fn(l, r):
-      return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
-
-    list_size = len(scores[0])
-    ideal_labels = sorted(labels[0], reverse=True)
-    list_dcgs = [
-        mod_dcg_fn(labels[0][ind], ranks[0][ind]) for ind in range(list_size)
-    ]
-    ideal_dcgs = [
-        mod_dcg_fn(ideal_labels[ind], ind + 1) for ind in range(list_size)
-    ]
-    expected_modified_ndcg_1 = sum(list_dcgs) / sum(ideal_dcgs)
+    metric_ = metrics_lib.NDCGMetric()
+    restored_metric_ = metrics_lib.NDCGMetric.from_config(metric_.get_config())
+    restored_metric_.update_state([labels[0]], [scores[0]])
+    expected_ndcg = (_dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)) / (
+        _dcg(1., 1) + _dcg(0., 2) + _dcg(0., 3))
     self.assertAlmostEqual(
-        metric_.result().numpy(), expected_modified_ndcg_1, places=5)
+        restored_metric_.result().numpy(), expected_ndcg, places=5)
+
+    metric_ = metrics_lib.NDCGMetric()
+    restored_metric_ = metrics_lib.NDCGMetric.from_config(metric_.get_config())
+
+    restored_metric_.update_state(labels, scores)
+    expected_ndcg_1 = (_dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)) / (
+        _dcg(1., 1) + _dcg(0., 2) + _dcg(0., 3))
+    expected_ndcg_2 = 1.0
+    expected_ndcg = (expected_ndcg_1 + expected_ndcg_2) / 2.0
+    self.assertAlmostEqual(
+        restored_metric_.result().numpy(), expected_ndcg, places=5)
 
   def test_normalized_discounted_cumulative_gain_with_zero_relevance(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -753,7 +752,7 @@ class MetricsTest(tf.test.TestCase):
   def test_discounted_cumulative_gain(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     # Note that scores are ranked in descending order.
-    ranks = [[3, 1, 2], [3, 2, 1]]
+    # ranks = [[3, 1, 2], [3, 2, 1]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
     weights = [[1., 1., 1.], [2., 2., 1.]]
 
@@ -777,22 +776,26 @@ class MetricsTest(tf.test.TestCase):
                     expected_dcg_2_weighted) / (1. + expected_weight_2)
     self.assertAlmostEqual(metric_.result().numpy(), expected_dcg, places=5)
 
-    # Test different gain and discount functions.
-    gain_fn = lambda rel: rel
-    rank_discount_fn = lambda rank: 1. / rank
+  def test_restored_discounted_cumulative_gain(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    # Note that scores are ranked in descending order.
+    labels = [[0., 0., 1.], [0., 1., 2.]]
 
-    def mod_dcg_fn(l, r):
-      return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
+    expected_dcg_1 = _dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)
+    expected_dcg_2 = _dcg(2., 1) + _dcg(1., 2)
 
-    list_size = len(scores[0])
-    expected_modified_dcg_1 = sum(
-        [mod_dcg_fn(labels[0][ind], ranks[0][ind]) for ind in range(list_size)])
-
-    metric_ = metrics_lib.DCGMetric(
-        gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
-    metric_.update_state([labels[0]], [scores[0]])
+    metric_ = metrics_lib.DCGMetric()
+    restored_metric_ = metrics_lib.DCGMetric.from_config(metric_.get_config())
+    restored_metric_.update_state([labels[0]], [scores[0]])
     self.assertAlmostEqual(
-        metric_.result().numpy(), expected_modified_dcg_1, places=5)
+        restored_metric_.result().numpy(), expected_dcg_1, places=5)
+
+    metric_ = metrics_lib.DCGMetric()
+    restored_metric_ = metrics_lib.DCGMetric.from_config(metric_.get_config())
+    restored_metric_.update_state(labels, scores)
+    expected_dcg = (expected_dcg_1 + expected_dcg_2) / 2.0
+    self.assertAlmostEqual(
+        restored_metric_.result().numpy(), expected_dcg, places=5)
 
   def test_alpha_discounted_cumulative_gain(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -820,24 +823,41 @@ class MetricsTest(tf.test.TestCase):
                            _alpha_dcg([1., 0.], [1., 1.], 2) +
                            _alpha_dcg([0., 0.], [2., 1.], 3))
     expected_alphadcg = (expected_alphadcg_1 + expected_alphadcg_2) / 2.0
-    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
-                           places=5)
-
-    # Test different gain and discount functions.
-    alpha = 0.2
-    rank_discount_fn = lambda rank: 1. / rank
-
-    mod_alpha_dcg_fn = functools.partial(_alpha_dcg, alpha=alpha,
-                                         rank_discount_fn=rank_discount_fn)
-
-    metric_ = metrics_lib.AlphaDCGMetric(
-        alpha=alpha, rank_discount_fn=rank_discount_fn)
-    metric_.update_state([labels[0]], [scores[0]])
-    expected_modified_alphadcg_1 = (mod_alpha_dcg_fn([0., 1.], [0., 0.], 1) +
-                                    mod_alpha_dcg_fn([0., 1.], [0., 1.], 2) +
-                                    mod_alpha_dcg_fn([0., 0.], [0., 2.], 3))
     self.assertAlmostEqual(
-        metric_.result().numpy(), expected_modified_alphadcg_1, places=5)
+        metric_.result().numpy(), expected_alphadcg, places=5)
+
+  def test_restored_alpha_discounted_cumulative_gain(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    # Note that scores are ranked in descending order.
+    # ranks = [[3, 1, 2], [3, 2, 1]]
+    labels = [[[0., 0.], [0., 1.], [0., 1.]], [[0., 0.], [1., 0.], [1., 1.]]]
+    # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
+    #               [[2., 1.], [1., 1.], [0., 0.]]]
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    restored_metric_ = metrics_lib.AlphaDCGMetric.from_config(
+        metric_.get_config())
+
+    restored_metric_.update_state([labels[0]], [scores[0]])
+    expected_alphadcg = (
+        _alpha_dcg([0., 1.], [0., 0.], 1) + _alpha_dcg([0., 1.], [0., 1.], 2) +
+        _alpha_dcg([0., 0.], [0., 2.], 3))
+    self.assertAlmostEqual(
+        restored_metric_.result().numpy(), expected_alphadcg, places=5)
+
+    metric_ = metrics_lib.AlphaDCGMetric()
+    restored_metric_ = metrics_lib.AlphaDCGMetric.from_config(
+        metric_.get_config())
+    restored_metric_.update_state(labels, scores)
+    expected_alphadcg_1 = (
+        _alpha_dcg([0., 1.], [0., 0.], 1) + _alpha_dcg([0., 1.], [0., 1.], 2) +
+        _alpha_dcg([0., 0.], [0., 2.], 3))
+    expected_alphadcg_2 = (
+        _alpha_dcg([1., 1.], [0., 0.], 1) + _alpha_dcg([1., 0.], [1., 1.], 2) +
+        _alpha_dcg([0., 0.], [2., 1.], 3))
+    expected_alphadcg = (expected_alphadcg_1 + expected_alphadcg_2) / 2.0
+    self.assertAlmostEqual(
+        restored_metric_.result().numpy(), expected_alphadcg, places=5)
 
   def test_alpha_discounted_cumulative_gain_with_zero_relevance(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]

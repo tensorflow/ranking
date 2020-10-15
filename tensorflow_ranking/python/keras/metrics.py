@@ -280,26 +280,20 @@ class NDCGMetric(_RankingMetric):
   def __init__(self,
                name=None,
                topn=None,
-               gain_fn=_DEFAULT_GAIN_FN,
-               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
                dtype=None,
                **kwargs):
     super(NDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
-    self._gain_fn = gain_fn
-    self._rank_discount_fn = rank_discount_fn
     self._metric = metrics_impl.NDCGMetric(
         name=name,
         topn=topn,
-        gain_fn=gain_fn,
-        rank_discount_fn=rank_discount_fn)
+        gain_fn=_DEFAULT_GAIN_FN,
+        rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN)
 
   def get_config(self):
     base_config = super(NDCGMetric, self).get_config()
     config = {
         "topn": self._topn,
-        "gain_fn": self._gain_fn,
-        "rank_discount_fn": self._rank_discount_fn
     }
     config.update(base_config)
     return config
@@ -311,27 +305,22 @@ class DCGMetric(_RankingMetric):
   def __init__(self,
                name=None,
                topn=None,
-               gain_fn=_DEFAULT_GAIN_FN,
-               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
                dtype=None,
                **kwargs):
     super(DCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
-    self._gain_fn = gain_fn
-    self._rank_discount_fn = rank_discount_fn
     self._metric = metrics_impl.DCGMetric(
         name=name,
         topn=topn,
-        gain_fn=gain_fn,
-        rank_discount_fn=rank_discount_fn)
+        gain_fn=_DEFAULT_GAIN_FN,
+        rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN)
 
   def get_config(self):
-    config = super(DCGMetric, self).get_config()
-    config.update({
+    base_config = super(DCGMetric, self).get_config()
+    config = {
         "topn": self._topn,
-        "gain_fn": self._gain_fn,
-        "rank_discount_fn": self._rank_discount_fn
-    })
+    }
+    config.update(base_config)
     return config
 
 
@@ -341,7 +330,6 @@ class AlphaDCGMetric(_RankingMetric):
   def __init__(self,
                topn=None,
                alpha=0.5,
-               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
                seed=None,
                dtype=None,
                name="alpha_dcg_metric",
@@ -353,8 +341,6 @@ class AlphaDCGMetric(_RankingMetric):
       alpha: A float between 0 and 1, parameter used in definition of alpha-DCG.
         Introduced as an assessor error in judging whether a document is
         covering a subtopic of the query.
-      rank_discount_fn: A function of rank discounts. Default is set to
-        discount = 1 / log2(rank+1).
       seed: The ops-level random seed used in shuffle ties in `sort_by_scores`.
       dtype: Data type of the metric output. See `tf.keras.metrics.Metric`.
       name: A string used as the name for this metric.
@@ -363,13 +349,12 @@ class AlphaDCGMetric(_RankingMetric):
     super(AlphaDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
     self._alpha = alpha
-    self._rank_discount_fn = rank_discount_fn
     self._seed = seed
     self._metric = metrics_impl.AlphaDCGMetric(
         name=name,
         topn=topn,
         alpha=alpha,
-        rank_discount_fn=rank_discount_fn,
+        rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
         seed=seed)
 
   def get_config(self):
@@ -377,7 +362,6 @@ class AlphaDCGMetric(_RankingMetric):
     config.update({
         "topn": self._topn,
         "alpha": self._alpha,
-        "rank_discount_fn": self._rank_discount_fn,
         "seed": self._seed,
     })
     return config
