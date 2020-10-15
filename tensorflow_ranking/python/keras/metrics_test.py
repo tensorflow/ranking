@@ -65,7 +65,7 @@ def _alpha_dcg(label,
     A single alpha dcg addend. e.g.
     weight*(relevance*SUM((1-alpha)^SUM(relevance)))/log2(rank+1).
   """
-  gain = sum(l * (1-alpha)**cl for l, cl in zip(label, cum_label))
+  gain = sum(l * (1 - alpha)**cl for l, cl in zip(label, cum_label))
   return weight * gain * rank_discount_fn(rank)
 
 
@@ -100,7 +100,7 @@ def _ap(relevances, scores, topn=None):
   precision = {}
   for k in range(1, num_docs + 1):
     precision[k] = sum(ranked_relevances[:k]) / k
-  num_rel = sum(ranked_relevances[:num_docs])
+  num_rel = sum(relevances)
   average_precision = sum(precision[k] * ranked_relevances[k - 1]
                           for k in precision) / num_rel if num_rel else 0
   return average_precision
@@ -589,15 +589,16 @@ class MetricsTest(tf.test.TestCase):
 
     metric_ = metrics_lib.MeanAveragePrecisionMetric(topn=1)
     metric_.update_state(labels, scores, weights)
-    expected_result = ((0 * as_list_weights[0] + ((1. / 1.) * 6.) /
-                        (1 * 6) * as_list_weights[1]) / sum(as_list_weights))
+    expected_result = ((0. / (1 * 3) * as_list_weights[0] + ((1. / 1.) * 6.) /
+                        (1 * 5 + 1 * 6) * as_list_weights[1]) /
+                       sum(as_list_weights))
     self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
     metric_ = metrics_lib.MeanAveragePrecisionMetric(topn=2)
     metric_.update_state(labels, scores, weights)
     expected_result = (
-        ((1. / 2.) * 3.) / (0 * 1 + 1 * 3) * as_list_weights[0] +
-        ((1. / 1.) * 6. + (2. / 2.) * 5.) /
+        ((1. / 2.) * 3.) / (1 * 3) * as_list_weights[0] + ((1. / 1.) * 6. +
+                                                           (2. / 2.) * 5.) /
         (1 * 5 + 1 * 6) * as_list_weights[1]) / sum(as_list_weights)
     self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 

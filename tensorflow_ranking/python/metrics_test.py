@@ -66,7 +66,7 @@ def _alpha_dcg(label,
     A single alpha dcg addend. e.g.
     weight*(relevance*SUM((1-alpha)^SUM(relevance)))/log2(rank+1).
   """
-  gain = sum(l * (1-alpha)**cl for l, cl in zip(label, cum_label))
+  gain = sum(l * (1 - alpha)**cl for l, cl in zip(label, cum_label))
   return weight * gain * rank_discount_fn(rank)
 
 
@@ -101,7 +101,7 @@ def _ap(relevances, scores, topn=None):
   precision = {}
   for k in range(1, num_docs + 1):
     precision[k] = sum(ranked_relevances[:k]) / k
-  num_rel = sum(ranked_relevances[:num_docs])
+  num_rel = sum(relevances)
   average_precision = sum(precision[k] * ranked_relevances[k - 1]
                           for k in precision) / num_rel if num_rel else 0
   return average_precision
@@ -413,13 +413,17 @@ class MetricsTest(tf.test.TestCase):
             ((1. / 1.) * 6. +
              (2. / 2.) * 5.) / (0 * 4 + 1 * 5 + 1 * 6) * as_list_weights[1]) /
            sum(as_list_weights)),
-          (m(labels, scores, weights,
-             topn=1), ((0 * as_list_weights[0] + ((1. / 1.) * 6.) /
-                        (1 * 6) * as_list_weights[1]) / sum(as_list_weights))),
+      ])
+      self._check_metrics([
+          (m(labels, scores, weights, topn=1),
+           ((0 / (1. * 3.) * as_list_weights[0] + ((1. / 1.) * 6.) /
+             (1 * 6 + 1 * 5) * as_list_weights[1]) / sum(as_list_weights))),
           (m(labels, scores, weights, topn=2),
-           (((1. / 2.) * 3.) / (0 * 1 + 1 * 3) * as_list_weights[0] +
+           (((1. / 2.) * 3.) / (1. * 3.) * as_list_weights[0] +
             ((1. / 1.) * 6. + (2. / 2.) * 5.) /
             (1 * 5 + 1 * 6) * as_list_weights[1]) / sum(as_list_weights)),
+      ])
+      self._check_metrics([
           # Per list weight.
           (m(labels, scores, list_weights),
            sum(_ap(rels[i], scores[i]) * list_weights[i][0] for i in range(2)) /

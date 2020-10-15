@@ -497,11 +497,10 @@ class MeanAveragePrecisionMetric(_RankingMetric):
     """See `_RankingMetric`."""
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, weights, self._topn)
-    sorted_labels, sorted_weights = utils.sort_by_scores(
-        predictions, [labels, weights], topn=topn)
     # Relevance = 1.0 when labels >= 1.0.
-    sorted_relevance = tf.cast(
-        tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
+    relevance = tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32)
+    sorted_relevance, sorted_weights = utils.sort_by_scores(
+        predictions, [relevance, weights], topn=topn)
     per_list_relevant_counts = tf.cumsum(sorted_relevance, axis=1)
     per_list_cutoffs = tf.cumsum(tf.ones_like(sorted_relevance), axis=1)
     per_list_precisions = tf.math.divide_no_nan(per_list_relevant_counts,
@@ -510,13 +509,16 @@ class MeanAveragePrecisionMetric(_RankingMetric):
         input_tensor=per_list_precisions * sorted_weights * sorted_relevance,
         axis=1,
         keepdims=True)
+
+    # Compute the total relevance regardless of self._topn.
     total_relevance = tf.reduce_sum(
-        input_tensor=sorted_weights * sorted_relevance, axis=1, keepdims=True)
+        input_tensor=weights * relevance, axis=1, keepdims=True)
+
     per_list_map = tf.math.divide_no_nan(total_precision, total_relevance)
     # per_list_weights are computed from the whole list to avoid the problem of
     # 0 when there is no relevant example in topn.
     per_list_weights = _per_example_weights_to_per_list_weights(
-        weights, tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
+        weights, relevance)
     return per_list_map, per_list_weights
 
 
