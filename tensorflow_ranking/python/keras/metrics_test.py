@@ -173,17 +173,20 @@ class MetricsSerializationTest(tf.test.TestCase):
         'dtype': tf.float32,
     })
     metric_obj = metric_cls(**init_args)
-    config = metric_obj.get_config()
+    config = tf.keras.utils.serialize_keras_object(metric_obj)
     self.assertIsNotNone(config)
 
-    restored_metric_obj = metric_cls.from_config(config)
+    with tf.keras.utils.custom_object_scope({metric_cls.__name__: metric_cls}):
+      restored_metric_obj = tf.keras.utils.deserialize_keras_object(config)
+    restored_config = tf.keras.utils.serialize_keras_object(restored_metric_obj)
+
     for init_name, init_value in init_args.items():
       self.assertEqual(init_value, getattr(restored_metric_obj,
                                            '_' + init_name))
-    self.assertAllEqual(restored_metric_obj.get_config(), config)
+
+    self.assertAllEqual(restored_config, config)
     # Check that config is json-serializable.
-    self.assertJsonEqual(
-        json.dumps(restored_metric_obj.get_config()), json.dumps(config))
+    self.assertJsonEqual(json.dumps(restored_config), json.dumps(config))
 
   def test_mean_reciprocal_rank(self):
     self._check_config(metrics_lib.MRRMetric, {'topn': 1})
