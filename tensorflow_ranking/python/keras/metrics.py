@@ -179,6 +179,7 @@ class _RankingMetric(tf.keras.metrics.Mean):
         per_list_metric_val, sample_weight=per_list_metric_weights)
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class MRRMetric(_RankingMetric):
   """Implements mean reciprocal rank (MRR)."""
 
@@ -195,6 +196,7 @@ class MRRMetric(_RankingMetric):
     return config
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class ARPMetric(_RankingMetric):
   """Implements average relevance position (ARP)."""
 
@@ -203,6 +205,7 @@ class ARPMetric(_RankingMetric):
     self._metric = metrics_impl.ARPMetric(name=name)
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class PrecisionMetric(_RankingMetric):
   """Implements precision@k (P@k)."""
 
@@ -220,6 +223,7 @@ class PrecisionMetric(_RankingMetric):
 
 
 # TODO Add recall metrics to TF1 in another cl.
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class RecallMetric(_RankingMetric):
   """Implements recall@k."""
 
@@ -236,6 +240,7 @@ class RecallMetric(_RankingMetric):
     return config
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class PrecisionIAMetric(_RankingMetric):
   """Implements PrecisionIA@k (Pre-IA@k)."""
 
@@ -256,6 +261,7 @@ class PrecisionIAMetric(_RankingMetric):
     return config
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class MeanAveragePrecisionMetric(_RankingMetric):
   """Implements mean average precision (MAP)."""
 
@@ -274,6 +280,7 @@ class MeanAveragePrecisionMetric(_RankingMetric):
     return config
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class NDCGMetric(_RankingMetric):
   """Implements normalized discounted cumulative gain (NDCG)."""
 
@@ -299,6 +306,7 @@ class NDCGMetric(_RankingMetric):
     return config
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class DCGMetric(_RankingMetric):
   """Implements discounted cumulative gain (DCG)."""
 
@@ -324,6 +332,7 @@ class DCGMetric(_RankingMetric):
     return config
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class AlphaDCGMetric(_RankingMetric):
   """Implements alpha discounted cumulative gain (alphaDCG)."""
 
@@ -367,6 +376,7 @@ class AlphaDCGMetric(_RankingMetric):
     return config
 
 
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class OPAMetric(_RankingMetric):
   """Implements ordered pair accuracy (OPA)."""
 
