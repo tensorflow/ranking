@@ -42,6 +42,22 @@ py_library(
     ],
 )
 
+py_test(
+    name = "metrics_impl_test",
+    size = "medium",
+    srcs = ["metrics_impl_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":metrics_impl",
+        # py/tensorflow dep,
+    ],
+)
+
 py_library(
     name = "metrics",
     srcs = ["metrics.py"],
