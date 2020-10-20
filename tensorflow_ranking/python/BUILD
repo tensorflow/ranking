@@ -105,6 +105,22 @@ py_library(
     ],
 )
 
+py_test(
+    name = "losses_impl_test",
+    size = "medium",
+    srcs = ["losses_impl_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":losses_impl",
+        # py/tensorflow dep,
+    ],
+)
+
 py_library(
     name = "losses",
     srcs = ["losses.py"],
