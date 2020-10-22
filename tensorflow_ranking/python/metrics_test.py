@@ -210,19 +210,6 @@ class MetricsTest(tf.test.TestCase):
                features), (sum([0., 1. / rel_rank[1], 0.]) / num_queries)),
       ])
 
-  def test_average_relevance_position(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 1., 2.]]
-      weights = [[1., 2., 3.], [4., 5., 6.]]
-      m = metrics_lib.average_relevance_position
-      self._check_metrics([
-          (m([labels[0]], [scores[0]]), 2.),
-          (m(labels, scores), (1. * 2. + 2. * 1. + 1. * 2.) / 4.),
-          (m(labels, scores, weights),
-           (3. * 1. * 2. + 6. * 2. * 1. + 5 * 1. * 2.) / (3. + 12. + 5.)),
-      ])
-
   def test_make_average_relevance_position_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
