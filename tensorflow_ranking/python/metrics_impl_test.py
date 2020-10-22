@@ -272,6 +272,88 @@ class RecallMetricTest(tf.test.TestCase):
       self.assertAllClose(output_weights, [[0.]])
 
 
+class PrecisionMetricTest(tf.test.TestCase):
+
+  def test_precision_should_be_single_value(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 1.]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[1. / 3.]])
+
+  def test_precision_should_be_0_when_no_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 0.]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_precision_should_be_single_value_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2., 4.], [4., 1., 3., 2.]]
+      labels = [[0., 0., 1., 1.], [0., 0., 1., 0.]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[2. / 4.], [1. / 4.]])
+
+  def test_precision_should_handle_topn(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.], [3., 2., 1.], [3., 2., 1.]]
+      labels = [[1., 0., 1.], [0., 1., 0.], [0., 0., 1.]]
+
+      metric_top1 = metrics_impl.PrecisionMetric(name=None, topn=1)
+      metric_top2 = metrics_impl.PrecisionMetric(name=None, topn=2)
+      metric_top6 = metrics_impl.PrecisionMetric(name=None, topn=6)
+      output_top1, _ = metric_top1.compute(labels, scores, None)
+      output_top2, _ = metric_top2.compute(labels, scores, None)
+      output_top6, _ = metric_top6.compute(labels, scores, None)
+
+      self.assertAllClose(output_top1, [[1. / 1.], [0. / 1.], [0. / 1.]])
+      self.assertAllClose(output_top2, [[1. / 2.], [1. / 2.], [0. / 2.]])
+      self.assertAllClose(output_top6, [[2. / 3.], [1. / 3.], [1. / 3.]])
+
+  def test_precision_weights_should_be_avg_of_weights_of_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[1., 0., 2.]]
+      weights = [[13., 7., 29.]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=None)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[(13. + 29.) / 2.]])
+
+  def test_precision_weights_should_ignore_topn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[1., 1., 0.]]
+      weights = [[3., 7., 15.]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=1)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[(3. + 7.) / 2.]])
+
+  def test_precision_weights_should_be_0_when_no_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 0.]]
+      weights = [[3., 7., 15.]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=1)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[0.]])
+
+
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()
   tf.test.main()
