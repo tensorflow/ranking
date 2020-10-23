@@ -1012,6 +1012,169 @@ class PrecisionIAMetricTest(tf.test.TestCase):
       self.assertAllClose(output_weights, [[0.]])
 
 
+class AlphaDCGMetricTest(tf.test.TestCase):
+
+  def test_alphadcg_should_be_single_value(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[[0., 0.], [1., 0.], [0., 1.]]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(2.)]])
+
+  def test_alphadcg_should_handle_single_subtopic(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[[0.], [0.], [1.]]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[(1. * (1. - 0.5) ** 0.) / log2p1(2.)]])
+
+  def test_alphadcg_should_handle_multiple_subtopics(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[[0., 1., 0., 0.], [1., 1., 0., 1.], [0., 1., 1., 0.]]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 1.) / log2p1(2.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(2.) +
+                                    (1. * (1. - 0.5) ** 2.) / log2p1(3.)]])
+
+  def test_alphadcg_should_be_0_when_no_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[[0., 0.], [0., 0.], [0., 0.]]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_alphadcg_should_be_single_value_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2., 4.], [4., 1., 3., 2.]]
+      labels = [[[0., 0.], [0., 0.], [1., 1.], [1., 0.]],
+                [[1., 0.], [1., 1.], [1., 0.], [0., 1.]]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[(1.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(3.) +
+                                    (1. * (1. - 0.5) ** 1.) / log2p1(3.)],
+                                   [(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 1.) / log2p1(2.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(3.) +
+                                    (1. * (1. - 0.5) ** 1.) / log2p1(4.) +
+                                    (1. * (1. - 0.5) ** 2.) / log2p1(4.)]])
+
+  def test_alphadcg_should_handle_custom_alpha(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2., 4.]]
+      labels = [[[1., 1.], [0., 1.], [0., 1.], [1., 0.]]]
+
+      metric_alpha2 = metrics_impl.AlphaDCGMetric(name=None, topn=None,
+                                                  alpha=0.2)
+      metric_alpha95 = metrics_impl.AlphaDCGMetric(name=None, topn=None,
+                                                   alpha=0.95)
+      output_alpha2, _ = metric_alpha2.compute(labels, scores, None)
+      output_alpha95, _ = metric_alpha95.compute(labels, scores, None)
+
+      self.assertAllClose(output_alpha2,
+                          [[(1. * (1. - 0.2) ** 0.) / log2p1(1.) +
+                            (1. * (1. - 0.2) ** 0.) / log2p1(2.) +
+                            (1. * (1. - 0.2) ** 1.) / log2p1(3.) +
+                            (1. * (1. - 0.2) ** 1.) / log2p1(4.) +
+                            (1. * (1. - 0.2) ** 2.) / log2p1(4.)]])
+      self.assertAllClose(output_alpha95,
+                          [[(1. * (1. - 0.95) ** 0.) / log2p1(1.) +
+                            (1. * (1. - 0.95) ** 0.) / log2p1(2.) +
+                            (1. * (1. - 0.95) ** 1.) / log2p1(3.) +
+                            (1. * (1. - 0.95) ** 1.) / log2p1(4.) +
+                            (1. * (1. - 0.95) ** 2.) / log2p1(4.)]])
+
+  def test_alphadcg_should_handle_custom_rank_discount_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2., 4.]]
+      labels = [[[1., 0.], [1., 1.], [0., 1.], [1., 0.]]]
+      rank_discount_fn = lambda rank: 1. / (10. + rank)
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None,
+                                           rank_discount_fn=rank_discount_fn)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[(1. * (1. - 0.5) ** 0.) / (10. + 1.) +
+                                    (1. * (1. - 0.5) ** 0.) / (10. + 2.) +
+                                    (1. * (1. - 0.5) ** 1.) / (10. + 2.) +
+                                    (1. * (1. - 0.5) ** 1.) / (10. + 3.) +
+                                    (1. * (1. - 0.5) ** 2.) / (10. + 4.)]])
+
+  def test_alphadcg_should_handle_topn(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1., 4., 5.]]
+      labels = [[[1., 0.], [0., 0.], [1., 0.], [1., 1.], [0., 1.]]]
+
+      metric_top1 = metrics_impl.AlphaDCGMetric(name=None, topn=1)
+      metric_top2 = metrics_impl.AlphaDCGMetric(name=None, topn=2)
+      metric_top6 = metrics_impl.AlphaDCGMetric(name=None, topn=6)
+      output_top1, _ = metric_top1.compute(labels, scores, None)
+      output_top2, _ = metric_top2.compute(labels, scores, None)
+      output_top6, _ = metric_top6.compute(labels, scores, None)
+
+      self.assertAllClose(output_top1, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.)]])
+      self.assertAllClose(output_top2, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                         (1. * (1. - 0.5) ** 0.) / log2p1(2.) +
+                                         (1. * (1. - 0.5) ** 1.) / log2p1(2.)]])
+      self.assertAllClose(output_top6, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                         (1. * (1. - 0.5) ** 0.) / log2p1(2.) +
+                                         (1. * (1. - 0.5) ** 1.) / log2p1(2.) +
+                                         (1. * (1. - 0.5) ** 1.) / log2p1(3.) +
+                                         (1. * (1. - 0.5) ** 2.) / log2p1(5.)]])
+
+  def test_alphadcg_weights_should_be_avg_of_weights_of_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[[0., 1.], [0., 0.], [1., 1.]]]
+      weights = [[3., 7., 9.]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[(3. + 9.) / 2.]])
+
+  def test_alphadcg_weights_should_ignore_topn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[[1., 1.], [1., 0.], [0., 0.]]]
+      weights = [[3., 4., 5.]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=1)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[(3. + 4.) / 2.]])
+
+  def test_alphadcg_weights_should_be_0_when_no_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[[0., 0.], [0., 0.], [0., 0.]]]
+      weights = [[3., 7., 2.]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[0.]])
+
+
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()
   tf.test.main()
