@@ -456,44 +456,6 @@ class MetricsTest(tf.test.TestCase):
           (m_mod([labels[0]], [scores[0]], features), expected_modified_dcg_1),
       ])
 
-  def test_discounted_cumulative_gain(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      # Note that scores are ranked in descending order.
-      ranks = [[3, 1, 2], [3, 2, 1]]
-      labels = [[0., 0., 1.], [0., 1., 2.]]
-      weights = [[1., 1., 1.], [2., 2., 1.]]
-      m = metrics_lib.discounted_cumulative_gain
-      expected_dcg_1 = _dcg(0., 1) + _dcg(1., 2) + _dcg(0., 3)
-      self._check_metrics([
-          (m([labels[0]], [scores[0]]), expected_dcg_1),
-      ])
-      expected_dcg_2 = _dcg(2., 1) + _dcg(1., 2)
-      expected_dcg_2_weighted = _dcg(2., 1) + _dcg(1., 2) * 2.
-      expected_weight_2 = ((4 - 1) * 1. + (2 - 1) * 2.) / (4 - 1 + 2 - 1)
-      self._check_metrics([
-          (m(labels, scores), (expected_dcg_1 + expected_dcg_2) / 2.0),
-          (m(labels, scores,
-             weights), (expected_dcg_1 + expected_dcg_2_weighted) /
-           (1. + expected_weight_2)),
-      ])
-      # Test different gain and discount functions.
-      gain_fn = lambda rel: rel
-      rank_discount_fn = lambda rank: 1. / rank
-
-      def mod_dcg_fn(l, r):
-        return _dcg(l, r, gain_fn=gain_fn, rank_discount_fn=rank_discount_fn)
-
-      list_size = len(scores[0])
-      expected_modified_dcg_1 = sum([
-          mod_dcg_fn(labels[0][ind], ranks[0][ind]) for ind in range(list_size)
-      ])
-      self._check_metrics([
-          (m([labels[0]], [scores[0]],
-             gain_fn=gain_fn,
-             rank_discount_fn=rank_discount_fn), expected_modified_dcg_1),
-      ])
-
   def test_make_discounted_cumulative_gain_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
