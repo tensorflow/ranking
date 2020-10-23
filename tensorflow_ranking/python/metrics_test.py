@@ -502,22 +502,6 @@ class MetricsTest(tf.test.TestCase):
           (m_mod([labels[0]], [scores[0]], features), expected_modified_dcg_1),
       ])
 
-  def test_ordered_pair_accuracy(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[-1., 0., 1.], [0., 1., 2.]]
-      weights = [[1.], [2.]]
-      item_weights = [[1., 1., 1.], [2., 2., 3.]]
-      m = metrics_lib.ordered_pair_accuracy
-      self._check_metrics([
-          (m([labels[0]], [scores[0]]), 0.),
-          (m([labels[1]], [scores[1]]), 1.),
-          (m(labels, scores), (0. + 3.) / (1. + 3.)),
-          (m(labels, scores, weights), (0. + 3. * 2.) / (1. + 3. * 2.)),
-          (m(labels, scores,
-             item_weights), (0. + 2. + 3. + 3.) / (1. + 2. + 3. + 3.)),
-      ])
-
   def test_make_ordered_pair_accuracy_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
