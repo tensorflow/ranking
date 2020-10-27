@@ -24,9 +24,28 @@ import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python import metrics_impl
 
-_DEFAULT_GAIN_FN = lambda label: tf.pow(2.0, label) - 1
 
-_DEFAULT_RANK_DISCOUNT_FN = lambda rank: tf.math.log(2.) / tf.math.log1p(rank)
+# The following functions are used to transform labels and ranks for metrics
+# computation. User customized functions can be defined similarly by following
+# the same annotations.
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+def identity(label):
+  return label
+
+
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+def inverse(rank):
+  return tf.math.div_no_nan(1., rank)
+
+
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+def pow_minus_1(label):
+  return tf.pow(2., label) - 1.
+
+
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+def log2_inverse(rank):
+  return tf.math.log(2.) / tf.math.log1p(rank)
 
 
 class RankingMetricKey(object):
@@ -282,25 +301,36 @@ class MeanAveragePrecisionMetric(_RankingMetric):
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class NDCGMetric(_RankingMetric):
-  """Implements normalized discounted cumulative gain (NDCG)."""
+  """Implements normalized discounted cumulative gain (NDCG).
+
+  The `gain_fn` and `rank_discount_fn` should be keras serializable. Please see
+  the `pow_minus_1` and `log2_inverse` above as examples when defining user
+  customized functions.
+  """
 
   def __init__(self,
                name=None,
                topn=None,
+               gain_fn=None,
+               rank_discount_fn=None,
                dtype=None,
                **kwargs):
     super(NDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
+    self._gain_fn = gain_fn or pow_minus_1
+    self._rank_discount_fn = rank_discount_fn or log2_inverse
     self._metric = metrics_impl.NDCGMetric(
         name=name,
         topn=topn,
-        gain_fn=_DEFAULT_GAIN_FN,
-        rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN)
+        gain_fn=self._gain_fn,
+        rank_discount_fn=self._rank_discount_fn)
 
   def get_config(self):
     base_config = super(NDCGMetric, self).get_config()
     config = {
         "topn": self._topn,
+        "gain_fn": self._gain_fn,
+        "rank_discount_fn": self._rank_discount_fn,
     }
     config.update(base_config)
     return config
@@ -308,25 +338,36 @@ class NDCGMetric(_RankingMetric):
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class DCGMetric(_RankingMetric):
-  """Implements discounted cumulative gain (DCG)."""
+  """Implements discounted cumulative gain (DCG).
+
+  The `gain_fn` and `rank_discount_fn` should be keras serializable. Please see
+  the `pow_minus_1` and `log2_inverse` above as examples when defining user
+  customized functions.
+  """
 
   def __init__(self,
                name=None,
                topn=None,
+               gain_fn=None,
+               rank_discount_fn=None,
                dtype=None,
                **kwargs):
     super(DCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
+    self._gain_fn = gain_fn or pow_minus_1
+    self._rank_discount_fn = rank_discount_fn or log2_inverse
     self._metric = metrics_impl.DCGMetric(
         name=name,
         topn=topn,
-        gain_fn=_DEFAULT_GAIN_FN,
-        rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN)
+        gain_fn=self._gain_fn,
+        rank_discount_fn=self._rank_discount_fn)
 
   def get_config(self):
     base_config = super(DCGMetric, self).get_config()
     config = {
         "topn": self._topn,
+        "gain_fn": self._gain_fn,
+        "rank_discount_fn": self._rank_discount_fn,
     }
     config.update(base_config)
     return config
@@ -334,11 +375,16 @@ class DCGMetric(_RankingMetric):
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class AlphaDCGMetric(_RankingMetric):
-  """Implements alpha discounted cumulative gain (alphaDCG)."""
+  """Implements alpha discounted cumulative gain (alphaDCG).
+
+  The `rank_discount_fn` should be keras serializable. Please see the
+  `log2_inverse` above examples when defining user customized functions.
+  """
 
   def __init__(self,
                topn=None,
                alpha=0.5,
+               rank_discount_fn=None,
                seed=None,
                dtype=None,
                name="alpha_dcg_metric",
@@ -350,6 +396,10 @@ class AlphaDCGMetric(_RankingMetric):
       alpha: A float between 0 and 1, parameter used in definition of alpha-DCG.
         Introduced as an assessor error in judging whether a document is
         covering a subtopic of the query.
+      rank_discount_fn: A function of rank discounts. Default is set to discount
+        = 1 / log2(rank+1). The `rank_discount_fn` should be keras serializable.
+        Please see the `log2_inverse` above as an example when defining user
+        customized functions.
       seed: The ops-level random seed used in shuffle ties in `sort_by_scores`.
       dtype: Data type of the metric output. See `tf.keras.metrics.Metric`.
       name: A string used as the name for this metric.
@@ -358,12 +408,13 @@ class AlphaDCGMetric(_RankingMetric):
     super(AlphaDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
     self._alpha = alpha
+    self._rank_discount_fn = rank_discount_fn or log2_inverse
     self._seed = seed
     self._metric = metrics_impl.AlphaDCGMetric(
         name=name,
         topn=topn,
         alpha=alpha,
-        rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
+        rank_discount_fn=self._rank_discount_fn,
         seed=seed)
 
   def get_config(self):
@@ -371,6 +422,7 @@ class AlphaDCGMetric(_RankingMetric):
     config.update({
         "topn": self._topn,
         "alpha": self._alpha,
+        "rank_discount_fn": self._rank_discount_fn,
         "seed": self._seed,
     })
     return config

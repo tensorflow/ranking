@@ -18,7 +18,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import json
 import math
 import tensorflow.compat.v2 as tf
 
@@ -173,19 +172,12 @@ class MetricsSerializationTest(tf.test.TestCase):
         'dtype': tf.float32,
     })
     metric_obj = metric_cls(**init_args)
-    config = tf.keras.utils.serialize_keras_object(metric_obj)
-    self.assertIsNotNone(config)
+    serialized = tf.keras.utils.serialize_keras_object(metric_obj)
+    self.assertIsNotNone(serialized)
 
-    restored_metric_obj = tf.keras.utils.deserialize_keras_object(config)
-    restored_config = tf.keras.utils.serialize_keras_object(restored_metric_obj)
-
-    for init_name, init_value in init_args.items():
-      self.assertEqual(init_value, getattr(restored_metric_obj,
-                                           '_' + init_name))
-
-    self.assertAllEqual(restored_config, config)
-    # Check that config is json-serializable.
-    self.assertJsonEqual(json.dumps(restored_config), json.dumps(config))
+    restored_metric_obj = tf.keras.utils.deserialize_keras_object(serialized)
+    self.assertAllEqual(metric_obj.get_config(),
+                        restored_metric_obj.get_config())
 
   def test_mean_reciprocal_rank(self):
     self._check_config(metrics_lib.MRRMetric, {'topn': 1})
@@ -206,19 +198,26 @@ class MetricsSerializationTest(tf.test.TestCase):
     self._check_config(
         metrics_lib.NDCGMetric, {
             'topn': 1,
+            'gain_fn': metrics_lib.identity,
+            'rank_discount_fn': metrics_lib.inverse,
         })
 
   def test_discounted_cumulative_gain(self):
-    self._check_config(metrics_lib.DCGMetric, {
-        'topn': 1,
-    })
+    self._check_config(
+        metrics_lib.DCGMetric, {
+            'topn': 1,
+            'gain_fn': metrics_lib.identity,
+            'rank_discount_fn': metrics_lib.inverse,
+        })
 
   def test_alpha_discounted_cumulative_gain(self):
-    self._check_config(metrics_lib.AlphaDCGMetric, {
-        'topn': 1,
-        'alpha': 0.5,
-        'seed': 1,
-    })
+    self._check_config(
+        metrics_lib.AlphaDCGMetric, {
+            'topn': 1,
+            'alpha': 0.5,
+            'rank_discount_fn': metrics_lib.inverse,
+            'seed': 1,
+        })
 
   def test_ordered_pair_accuracy(self):
     self._check_config(metrics_lib.OPAMetric, {})
@@ -433,8 +432,7 @@ class MetricsTest(tf.test.TestCase):
 
   def test_precision_ia(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
-    labels = [[[0., 0.], [0., 0.], [1., 0.]],
-              [[0., 0.], [1., 0.], [1., 1.]]]
+    labels = [[[0., 0.], [0., 0.], [1., 0.]], [[0., 0.], [1., 0.], [1., 1.]]]
 
     metric_ = metrics_lib.PrecisionIAMetric()
     metric_.update_state([labels[0]], [scores[0]])
@@ -453,8 +451,7 @@ class MetricsTest(tf.test.TestCase):
 
   def test_precision_ia_with_zero_relevance(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
-    labels = [[[0., 0.], [0., 0.], [0., 0.]],
-              [[0., 0.], [1., 0.], [1., 1.]]]
+    labels = [[[0., 0.], [0., 0.], [0., 0.]], [[0., 0.], [1., 0.], [1., 1.]]]
 
     metric_ = metrics_lib.PrecisionIAMetric()
     metric_.update_state([labels[0]], [scores[0]])
@@ -468,8 +465,7 @@ class MetricsTest(tf.test.TestCase):
 
   def test_precision_ia_with_weights(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
-    labels = [[[0., 0.], [0., 0.], [1., 0.]],
-              [[0., 0.], [1., 0.], [1., 1.]]]
+    labels = [[[0., 0.], [0., 0.], [1., 0.]], [[0., 0.], [1., 0.], [1., 1.]]]
     weights = [[1., 2., 3.], [4., 5., 6.]]
     list_weights = [[1.], [2.]]
     as_list_weights = _example_weights_to_list_weights(
@@ -501,8 +497,7 @@ class MetricsTest(tf.test.TestCase):
 
   def test_precision_ia_weights_with_zero_relevance(self):
     scores = [[1., 3., 2.], [1., 3., 2.], [1., 2., 3.]]
-    labels = [[[0., 0.], [0., 0.], [0., 0.]],
-              [[0., 0.], [0., 0.], [1., 0.]],
+    labels = [[[0., 0.], [0., 0.], [0., 0.]], [[0., 0.], [0., 0.], [1., 0.]],
               [[0., 0.], [1., 0.], [1., 1.]]]
     weights = [[0., 0., 1.], [1., 2., 3.], [4., 5., 6.]]
     as_list_weights = _example_weights_to_list_weights(
@@ -803,27 +798,26 @@ class MetricsTest(tf.test.TestCase):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     # Note that scores are ranked in descending order.
     # ranks = [[3, 1, 2], [3, 2, 1]]
-    labels = [[[0., 0.], [0., 1.], [0., 1.]],
-              [[0., 0.], [1., 0.], [1., 1.]]]
+    labels = [[[0., 0.], [0., 1.], [0., 1.]], [[0., 0.], [1., 0.], [1., 1.]]]
     # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
     #               [[2., 1.], [1., 1.], [0., 0.]]]
 
     metric_ = metrics_lib.AlphaDCGMetric()
     metric_.update_state([labels[0]], [scores[0]])
-    expected_alphadcg = (_alpha_dcg([0., 1.], [0., 0.], 1) +
-                         _alpha_dcg([0., 1.], [0., 1.], 2) +
-                         _alpha_dcg([0., 0.], [0., 2.], 3))
-    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
-                           places=5)
+    expected_alphadcg = (
+        _alpha_dcg([0., 1.], [0., 0.], 1) + _alpha_dcg([0., 1.], [0., 1.], 2) +
+        _alpha_dcg([0., 0.], [0., 2.], 3))
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_alphadcg, places=5)
 
     metric_ = metrics_lib.AlphaDCGMetric()
     metric_.update_state(labels, scores)
-    expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1) +
-                           _alpha_dcg([0., 1.], [0., 1.], 2) +
-                           _alpha_dcg([0., 0.], [0., 2.], 3))
-    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1) +
-                           _alpha_dcg([1., 0.], [1., 1.], 2) +
-                           _alpha_dcg([0., 0.], [2., 1.], 3))
+    expected_alphadcg_1 = (
+        _alpha_dcg([0., 1.], [0., 0.], 1) + _alpha_dcg([0., 1.], [0., 1.], 2) +
+        _alpha_dcg([0., 0.], [0., 2.], 3))
+    expected_alphadcg_2 = (
+        _alpha_dcg([1., 1.], [0., 0.], 1) + _alpha_dcg([1., 0.], [1., 1.], 2) +
+        _alpha_dcg([0., 0.], [2., 1.], 3))
     expected_alphadcg = (expected_alphadcg_1 + expected_alphadcg_2) / 2.0
     self.assertAlmostEqual(
         metric_.result().numpy(), expected_alphadcg, places=5)
@@ -863,23 +857,21 @@ class MetricsTest(tf.test.TestCase):
 
   def test_alpha_discounted_cumulative_gain_with_zero_relevance(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
-    labels = [[[0., 0.], [0., 0.], [0., 0.]],
-              [[0., 0.], [1., 0.], [1., 1.]]]
+    labels = [[[0., 0.], [0., 0.], [0., 0.]], [[0., 0.], [1., 0.], [1., 1.]]]
     # cum_labels = [[[0., 0.], [0., 0.], [0., 0.]],
     #               [[2., 1.], [1., 1.], [0., 0.]]]
 
     metric_ = metrics_lib.AlphaDCGMetric()
     metric_.update_state(labels, scores)
-    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1) +
-                           _alpha_dcg([1., 0.], [1., 1.], 2) +
-                           _alpha_dcg([0., 0.], [2., 1.], 3))
-    self.assertAlmostEqual(metric_.result().numpy(),
-                           (0. + expected_alphadcg_2) / 2.0, places=5)
+    expected_alphadcg_2 = (
+        _alpha_dcg([1., 1.], [0., 0.], 1) + _alpha_dcg([1., 0.], [1., 1.], 2) +
+        _alpha_dcg([0., 0.], [2., 1.], 3))
+    self.assertAlmostEqual(
+        metric_.result().numpy(), (0. + expected_alphadcg_2) / 2.0, places=5)
 
   def test_alpha_discounted_cumulative_gain_with_weights(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
-    labels = [[[0., 0.], [0., 1.], [0., 1.]],
-              [[0., 0.], [1., 0.], [1., 1.]]]
+    labels = [[[0., 0.], [0., 1.], [0., 1.]], [[0., 0.], [1., 0.], [1., 1.]]]
     # cum_labels = [[[0., 2.], [0., 0.], [0., 1.]],
     #               [[2., 1.], [1., 1.], [0., 0.]]]
     sum_labels = [[0., 1., 1.], [0., 1., 2.]]
@@ -911,8 +903,8 @@ class MetricsTest(tf.test.TestCase):
     expected_alphadcg = (
         expected_alphadcg_1 * as_list_weights[0] +
         expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
-    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
-                           places=5)
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_alphadcg, places=5)
 
     metric_ = metrics_lib.AlphaDCGMetric(topn=1)
     metric_.update_state(labels, scores, weights)
@@ -921,20 +913,20 @@ class MetricsTest(tf.test.TestCase):
     expected_alphadcg = (
         expected_alphadcg_1 * as_list_weights[0] +
         expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
-    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
-                           places=5)
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_alphadcg, places=5)
 
     metric_ = metrics_lib.AlphaDCGMetric()
     metric_.update_state(labels, scores, list_weights)
-    expected_alphadcg_1 = (_alpha_dcg([0., 1.], [0., 0.], 1, 1.) +
-                           _alpha_dcg([0., 1.], [0., 1.], 2, 1.) +
-                           _alpha_dcg([0., 0.], [0., 2.], 3, 1.))
-    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 2.) +
-                           _alpha_dcg([1., 0.], [1., 1.], 2, 2.) +
-                           _alpha_dcg([0., 0.], [2., 1.], 3, 2.)) / 2.
+    expected_alphadcg_1 = (
+        _alpha_dcg([0., 1.], [0., 0.], 1, 1.) +
+        _alpha_dcg([0., 1.], [0., 1.], 2, 1.) +
+        _alpha_dcg([0., 0.], [0., 2.], 3, 1.))
+    expected_alphadcg_2 = (_alpha_dcg([1., 1.], [0., 0.], 1, 2.) + _alpha_dcg(
+        [1., 0.], [1., 1.], 2, 2.) + _alpha_dcg([0., 0.], [2., 1.], 3, 2.)) / 2.
     expected_alphadcg = (expected_alphadcg_1 + 2. * expected_alphadcg_2) / 3.
-    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
-                           places=5)
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_alphadcg, places=5)
 
     # Test zero alphaDCG cases.
     metric_ = metrics_lib.AlphaDCGMetric()
@@ -946,11 +938,9 @@ class MetricsTest(tf.test.TestCase):
                          weights[0])
     self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
 
-  def test_alpha_discounted_cumulative_gain_with_weights_zero_relevance(
-      self):
+  def test_alpha_discounted_cumulative_gain_with_weights_zero_relevance(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
-    labels = [[[0., 0.], [0., 0.], [0., 0.]],
-              [[0., 0.], [1., 0.], [1., 1.]]]
+    labels = [[[0., 0.], [0., 0.], [0., 0.]], [[0., 0.], [1., 0.], [1., 1.]]]
     # cum_labels = [[[0., 0.], [0., 0.], [0., 0.]],
     #               [[2., 1.], [1., 1.], [0., 0.]]]
     sum_labels = [[0., 0., 0.], [0., 1., 2.]]
@@ -967,8 +957,8 @@ class MetricsTest(tf.test.TestCase):
         expected_alphadcg_2 * as_list_weights[1]) / sum(as_list_weights)
     metric_ = metrics_lib.AlphaDCGMetric()
     metric_.update_state(labels, scores, weights)
-    self.assertAlmostEqual(metric_.result().numpy(), expected_alphadcg,
-                           places=5)
+    self.assertAlmostEqual(
+        metric_.result().numpy(), expected_alphadcg, places=5)
     # Test zero AlphaDCG cases.
     metric_ = metrics_lib.AlphaDCGMetric()
     metric_.update_state(labels, scores, [[0.], [0.]])
@@ -1074,19 +1064,16 @@ class GetMetricsTest(tf.test.TestCase):
     metric_.update_state(labels, scores)
     expected_result = sum([1. / rel_rank[ind] for ind in range(num_queries)
                           ]) / num_queries
-    self.assertAlmostEqual(
-        metric_.result().numpy(), expected_result, places=5)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
     metric_ = metrics_lib.get('mrr', name='metric', topn=2)
     metric_.update_state(labels, scores)
     expected_result = sum([1. / rel_rank[0], 1. / rel_rank[1], 0.
                           ]) / num_queries
-    self.assertAlmostEqual(
-        metric_.result().numpy(), expected_result, places=5)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
   def test_get_metric_error(self):
-    with self.assertRaisesRegexp(
-        ValueError, 'Input `key` needs to be string.'):
+    with self.assertRaisesRegexp(ValueError, 'Input `key` needs to be string.'):
       metrics_lib.get(1, name='metric')
     with self.assertRaisesRegexp(ValueError, 'Unsupported metric: dummymetric'):
       metrics_lib.get('dummymetric', name='metric')
