@@ -512,8 +512,9 @@ def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
   metric = metrics_impl.OPAMetric(name)
   with tf.compat.v1.name_scope(metric.name, 'ordered_pair_accuracy',
                                (labels, predictions, weights)):
-    correct_pairs, pair_weights = metric.compute(labels, predictions, weights)
-  return tf.compat.v1.metrics.mean(correct_pairs, pair_weights)
+    per_list_opa, per_list_weights = metric.compute(labels, predictions,
+                                                    weights)
+  return tf.compat.v1.metrics.mean(per_list_opa, per_list_weights)
 
 
 def eval_metric(metric_fn, **kwargs):

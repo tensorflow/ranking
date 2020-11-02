@@ -782,12 +782,8 @@ class OPAMetricTest(tf.test.TestCase):
 
       # The correctly ordered pair is:
       # scores[1] > scores[2]
-      self.assertAllClose(output, [[[0., 0., 0.],
-                                    [0., 0., 1.],
-                                    [0., 0., 0.]]])
-      self.assertAllClose(output_weights, [[[0., 0., 0.],
-                                            [1., 0., 1.],
-                                            [0., 0., 0.]]])
+      self.assertAllClose(output, [[1. / 2.]])
+      self.assertAllClose(output_weights, [[2.]])
 
   def test_opa_should_be_0_when_no_rel_items(self):
     with tf.Graph().as_default():
@@ -797,12 +793,8 @@ class OPAMetricTest(tf.test.TestCase):
       metric = metrics_impl.OPAMetric(name=None)
       output, output_weights = metric.compute(labels, scores, None)
 
-      self.assertAllClose(output, [[[0., 0., 0.],
-                                    [0., 0., 0.],
-                                    [0., 0., 0.]]])
-      self.assertAllClose(output_weights, [[[0., 0., 0.],
-                                            [0., 0., 0.],
-                                            [0., 0., 0.]]])
+      self.assertAllClose(output, [[0.]])
+      self.assertAllClose(output_weights, [[0.]])
 
   def test_opa_should_operate_on_graded_relevance(self):
     with tf.Graph().as_default():
@@ -815,14 +807,8 @@ class OPAMetricTest(tf.test.TestCase):
       # The correctly ordered pairs are:
       # scores[0] > scores[2]
       # scores[1] > scores[2], scores[1] > scores[3]
-      self.assertAllClose(output, [[[0., 0., 1., 0.],
-                                    [0., 0., 1., 1.],
-                                    [0., 0., 0., 0.],
-                                    [0., 0., 0., 0.]]])
-      self.assertAllClose(output_weights, [[[0., 0., 1., 0.],
-                                            [1., 0., 1., 1.],
-                                            [0., 0., 0., 0.],
-                                            [0., 0., 1., 0.]]])
+      self.assertAllClose(output, [[3. / 5.]])
+      self.assertAllClose(output_weights, [[5.]])
 
   def test_opa_should_ignore_padded_items(self):
     with tf.Graph().as_default():
@@ -834,14 +820,8 @@ class OPAMetricTest(tf.test.TestCase):
 
       # The correctly ordered pairs are:
       # scores[0] > scores[2], scores[0] > scores[3]
-      self.assertAllClose(output, [[[0., 1., 1., 1.],
-                                    [0., 0., 0., 0.],
-                                    [0., 1., 0., 0.],
-                                    [0., 0., 0., 0.]]])
-      self.assertAllClose(output_weights, [[[0., 0., 1., 1.],
-                                            [0., 0., 0., 0.],
-                                            [0., 0., 0., 1.],
-                                            [0., 0., 0., 0.]]])
+      self.assertAllClose(output, [[2. / 3.]])
+      self.assertAllClose(output_weights, [[3.]])
 
   def test_opa_should_return_correct_pair_matrix_per_list(self):
     with tf.Graph().as_default():
@@ -854,20 +834,23 @@ class OPAMetricTest(tf.test.TestCase):
       # The correctly ordered pairs are:
       # list 1: scores[1] > scores[2]
       # list 2: scores[0] > scores[1], scores[2] > scores[1]
-      self.assertAllClose(output, [[[0., 0., 0.],
-                                    [0., 0., 1.],
-                                    [0., 0., 0.]],
-                                   [[0., 1., 0.],
-                                    [0., 0., 0.],
-                                    [0., 1., 0.]]])
-      self.assertAllClose(output_weights, [[[0., 0., 0.],
-                                            [1., 0., 1.],
-                                            [0., 0., 0.]],
-                                           [[0., 1., 0.],
-                                            [0., 0., 0.],
-                                            [0., 1., 0.]]])
+      self.assertAllClose(output, [[1. / 2.], [2. / 2.]])
+      self.assertAllClose(output_weights, [[2.], [2.]])
 
-  def test_opa_weights_should_be_per_pair(self):
+  def test_opa_should_weight_pairs_with_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[1., 0., 2.]]
+      weights = [[3., 7., 9.]]
+
+      metric = metrics_impl.OPAMetric(name=None)
+      output, _ = metric.compute(labels, scores, weights)
+
+      # The correctly ordered pair is:
+      # scores[2] > scores[0] (with weight 9.)
+      self.assertAllClose(output, [[9. / (9. + 9. + 3.)]])
+
+  def test_opa_weights_should_be_sum_of_pair(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[1., 0., 2.]]
@@ -880,9 +863,7 @@ class OPAMetricTest(tf.test.TestCase):
       # labels[0] > labels[1] (with weight 3.)
       # labels[2] > labels[0] (with weight 9.)
       # labels[2] > labels[1] (with weight 9.)
-      self.assertAllClose(output_weights, [[[0., 3., 0.],
-                                            [0., 0., 0.],
-                                            [9., 9., 0.]]])
+      self.assertAllClose(output_weights, [[9. + 9. + 3.]])
 
   def test_opa_weights_should_be_0_when_no_rel_items(self):
     with tf.Graph().as_default():
@@ -893,9 +874,7 @@ class OPAMetricTest(tf.test.TestCase):
       metric = metrics_impl.OPAMetric(name=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[[0., 0., 0.],
-                                            [0., 0., 0.],
-                                            [0., 0., 0.]]])
+      self.assertAllClose(output_weights, [[0.]])
 
 
 class PrecisionIAMetricTest(tf.test.TestCase):

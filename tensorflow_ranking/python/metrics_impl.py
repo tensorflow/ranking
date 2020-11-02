@@ -636,7 +636,13 @@ class OPAMetric(_RankingMetric):
         pair_label_diff > 0, dtype=tf.float32) * tf.expand_dims(
             weights, 2) * tf.cast(
                 valid_pair, dtype=tf.float32)
-    return correct_pairs, pair_weights
+    per_list_weights = tf.expand_dims(tf.reduce_sum(pair_weights, axis=[1, 2]),
+                                      1)
+    per_list_opa = tf.compat.v1.math.divide_no_nan(
+        tf.expand_dims(tf.reduce_sum(correct_pairs * pair_weights, axis=[1, 2]),
+                       1),
+        per_list_weights)
+    return per_list_opa, per_list_weights
 
 
 class PrecisionIAMetric(_DivRankingMetric):
