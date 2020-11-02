@@ -292,8 +292,9 @@ def average_relevance_position(labels, predictions, weights=None, name=None):
   metric = metrics_impl.ARPMetric(name)
   with tf.compat.v1.name_scope(metric.name, 'average_relevance_position',
                                (labels, predictions, weights)):
-    arp, per_list_weights = metric.compute(labels, predictions, weights)
-  return tf.compat.v1.metrics.mean(arp, per_list_weights)
+    per_list_arp, per_list_weights = metric.compute(labels, predictions,
+                                                    weights)
+  return tf.compat.v1.metrics.mean(per_list_arp, per_list_weights)
 
 
 def precision(labels, predictions, weights=None, topn=None, name=None):

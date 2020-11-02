@@ -420,11 +420,16 @@ class ARPMetric(_RankingMetric):
         labels, predictions, weights, list_size)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
-    relevance = sorted_labels * sorted_weights
-    position = tf.cast(tf.range(1, topn + 1), dtype=tf.float32)
+    weighted_labels = sorted_labels * sorted_weights
+    position = (tf.cast(tf.range(1, topn + 1), dtype=tf.float32) *
+                tf.ones_like(weighted_labels))
+    per_list_weights = tf.reduce_sum(weighted_labels, axis=1, keepdims=True)
+    per_list_arp = tf.compat.v1.div_no_nan(
+        tf.reduce_sum(position * weighted_labels, axis=1, keepdims=True),
+        per_list_weights)
     # TODO: Consider to add a cap position topn + 1 when there is no
     # relevant examples.
-    return position * tf.ones_like(relevance), relevance
+    return per_list_arp, per_list_weights
 
 
 class RecallMetric(_RankingMetric):
