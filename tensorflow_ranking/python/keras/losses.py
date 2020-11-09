@@ -175,7 +175,7 @@ class _RankingLoss(tf.keras.losses.Loss):
   """
 
   def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
-    super().__init__(reduction, name)
+    super(_RankingLoss, self).__init__(reduction, name)
     # An instance of loss in `losses_impl`. Overwrite this in subclasses.
     self._loss = None
 
@@ -184,7 +184,7 @@ class _RankingLoss(tf.keras.losses.Loss):
     if self._loss is None:
       raise ValueError('self._loss is not defined. Please use a subclass.')
     sample_weight = self._loss.normalize_weights(y_true, sample_weight)
-    return super().__call__(y_true, y_pred, sample_weight)
+    return super(_RankingLoss, self).__call__(y_true, y_pred, sample_weight)
 
   def call(self, y_true, y_pred):
     """See tf.keras.losses.Loss."""
@@ -195,36 +195,12 @@ class _RankingLoss(tf.keras.losses.Loss):
 
 
 class _PairwiseLoss(_RankingLoss):
-  """Base class for pairwise ranking losses."""
+  """Base class for pairwise ranking losses.
 
-  def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               **kwargs):
-    super().__init__(reduction, name)
-    self._lambda_weight = lambda_weight
-    self._temperature = temperature
-
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-        'lambda_weight':
-            tf.keras.utils.serialize_keras_object(self._lambda_weight),
-        'temperature':
-            self._temperature,
-    })
-    return config
-
-  @classmethod
-  def from_config(cls, config, custom_objects=None):
-    config = config.copy()
-    config.update({
-        'lambda_weight':
-            tf.keras.utils.deserialize_keras_object(config['lambda_weight']),
-    })
-    return cls(**config)
+  Please see tf.keras.losses.Loss for more information about such a class and
+  https://www.tensorflow.org/tutorials/distribute/custom_training on how to do
+  customized training.
+  """
 
   def call(self, y_true, y_pred):
     """See _RankingLoss."""
@@ -238,7 +214,6 @@ class _PairwiseLoss(_RankingLoss):
     return tf.reduce_sum(losses, axis=2)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseHingeLoss(_PairwiseLoss):
   """For pairwise hinge loss."""
 
@@ -246,16 +221,14 @@ class PairwiseHingeLoss(_PairwiseLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=1.0,
-               **kwargs):
-    super().__init__(reduction, name, lambda_weight, temperature)
+               temperature=1.0):
+    super(PairwiseHingeLoss, self).__init__(reduction, name)
     self._loss = losses_impl.PairwiseHingeLoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseLogisticLoss(_PairwiseLoss):
   """For pairwise logistic loss."""
 
@@ -263,16 +236,14 @@ class PairwiseLogisticLoss(_PairwiseLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=1.0,
-               **kwargs):
-    super().__init__(reduction, name, lambda_weight, temperature)
+               temperature=1.0):
+    super(PairwiseLogisticLoss, self).__init__(reduction, name)
     self._loss = losses_impl.PairwiseLogisticLoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseSoftZeroOneLoss(_PairwiseLoss):
   """For pairwise soft zero-one loss."""
 
@@ -280,61 +251,25 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=1.0,
-               **kwargs):
-    super().__init__(reduction, name, lambda_weight, temperature)
+               temperature=1.0):
+    super(PairwiseSoftZeroOneLoss, self).__init__(reduction, name)
     self._loss = losses_impl.PairwiseSoftZeroOneLoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
 
-class _ListwiseLoss(_RankingLoss):
-  """Base class for listwise ranking losses."""
-
-  def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               **kwargs):
-    super().__init__(reduction, name)
-    self._lambda_weight = lambda_weight
-    self._temperature = temperature
-
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-        'lambda_weight':
-            tf.keras.utils.serialize_keras_object(self._lambda_weight),
-        'temperature':
-            self._temperature,
-    })
-    return config
-
-  @classmethod
-  def from_config(cls, config, custom_objects=None):
-    config = config.copy()
-    config.update({
-        'lambda_weight':
-            tf.keras.utils.deserialize_keras_object(config['lambda_weight']),
-    })
-    return cls(**config)
-
-
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
-class SoftmaxLoss(_ListwiseLoss):
+class SoftmaxLoss(_RankingLoss):
   """For softmax cross entropy loss."""
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=1.0,
-               **kwargs):
-    super().__init__(reduction, name, lambda_weight, temperature)
+               temperature=1.0):
+    super(SoftmaxLoss, self).__init__(reduction, name)
     self._loss = losses_impl.SoftmaxLoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
@@ -346,8 +281,7 @@ class SoftmaxLoss(_ListwiseLoss):
     return super(SoftmaxLoss, self).__call__(y_true, y_pred)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
-class UniqueSoftmaxLoss(_ListwiseLoss):
+class UniqueSoftmaxLoss(_RankingLoss):
   """For unique softmax cross entropy loss."""
 
   def __init__(self,
@@ -355,15 +289,14 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0):
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super(UniqueSoftmaxLoss, self).__init__(reduction, name)
     self._loss = losses_impl.UniqueSoftmaxLoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
-class ListMLELoss(_ListwiseLoss):
+class ListMLELoss(_RankingLoss):
   """For List MLE loss."""
 
   def __init__(self,
@@ -371,15 +304,14 @@ class ListMLELoss(_ListwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0):
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super(ListMLELoss, self).__init__(reduction, name)
     self._loss = losses_impl.ListMLELoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
-class ApproxMRRLoss(_ListwiseLoss):
+class ApproxMRRLoss(_RankingLoss):
   """For approximate MRR loss."""
 
   def __init__(self,
@@ -387,15 +319,14 @@ class ApproxMRRLoss(_ListwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=0.1):
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super(ApproxMRRLoss, self).__init__(reduction, name)
     self._loss = losses_impl.ApproxMRRLoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
-class ApproxNDCGLoss(_ListwiseLoss):
+class ApproxNDCGLoss(_RankingLoss):
   """For approximate NDCG loss."""
 
   def __init__(self,
@@ -403,14 +334,13 @@ class ApproxNDCGLoss(_ListwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=0.1):
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super(ApproxNDCGLoss, self).__init__(reduction, name)
     self._loss = losses_impl.ApproxNDCGLoss(
-        name='{}_impl'.format(name) if name else None,
+        name='{}_impl'.format(name),
         lambda_weight=lambda_weight,
         temperature=temperature)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class GumbelApproxNDCGLoss(ApproxNDCGLoss):
   """For Gumbel approximate NDCG loss."""
 
@@ -422,25 +352,13 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
                sample_size=8,
                gumbel_temperature=1.0,
                seed=None):
-    super().__init__(reduction, name, lambda_weight, temperature=temperature)
-    self._sample_size = sample_size
-    self._gumbel_temperature = gumbel_temperature
-    self._seed = seed
-
+    super(GumbelApproxNDCGLoss, self).__init__(
+        reduction, name, lambda_weight, temperature=temperature)
     self._gumbel_sampler = losses_impl.GumbelSampler(
         name=name,
         sample_size=sample_size,
         temperature=gumbel_temperature,
         seed=seed)
-
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-        'sample_size': self._sample_size,
-        'gumbel_temperature': self._gumbel_temperature,
-        'seed': self._seed,
-    })
-    return config
 
   def __call__(self, y_true, y_pred, sample_weight=None):
     """See _RankingLoss."""
@@ -448,24 +366,22 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
     # to sort the documents.
     gbl_labels, gbl_logits, gbl_weights = self._gumbel_sampler.sample(
         y_true, y_pred, weights=sample_weight)
-    return super().__call__(gbl_labels, gbl_logits, gbl_weights)
+    return super(GumbelApproxNDCGLoss, self).__call__(gbl_labels, gbl_logits,
+                                                      gbl_weights)
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class SigmoidCrossEntropyLoss(_RankingLoss):
   """For sigmoid cross-entropy loss."""
 
   def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
-    super().__init__(reduction, name)
+    super(SigmoidCrossEntropyLoss, self).__init__(reduction, name)
     self._loss = losses_impl.SigmoidCrossEntropyLoss(
-        name='{}_impl'.format(name) if name else None)
+        name='{}_impl'.format(name))
 
 
-@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class MeanSquaredLoss(_RankingLoss):
   """For mean squared error loss."""
 
   def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
     super(MeanSquaredLoss, self).__init__(reduction, name)
-    self._loss = losses_impl.MeanSquaredLoss(
-        name='{}_impl'.format(name) if name else None)
+    self._loss = losses_impl.MeanSquaredLoss(name='{}_impl'.format(name))
