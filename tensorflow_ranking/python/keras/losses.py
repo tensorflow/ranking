@@ -133,8 +133,8 @@ class NDCGLambdaWeight(DCGLambdaWeight):
                **kwargs):
     super().__init__(
         topn,
-        gain_fn,
-        rank_discount_fn,
+        gain_fn or utils.pow_minus_1,
+        rank_discount_fn or utils.log2_inverse,
         normalized=True,
         smooth_fraction=smooth_fraction)
 
