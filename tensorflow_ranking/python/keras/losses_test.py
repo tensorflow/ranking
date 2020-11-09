@@ -24,6 +24,7 @@ import math
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python.keras import losses
+from tensorflow_ranking.python.keras import utils
 
 
 def ln(x):
@@ -960,6 +961,30 @@ class GetLossesTest(tf.test.TestCase):
     loss = losses.get(loss=losses.RankingLossKey.MEAN_SQUARED_LOSS)
     self.assertAlmostEqual(
         loss(labels, scores).numpy(), (1. + 1.) / 3., places=5)
+
+
+class LambdaWeightTest(tf.test.TestCase):
+
+  def _is_serializable(self, obj):
+    serialized = tf.keras.utils.serialize_keras_object(obj)
+    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    self.assertDictEqual(obj.get_config(), deserialized.get_config())
+
+  def test_dcg_lambda_weight_is_serializable(self):
+    self._is_serializable(losses.DCGLambdaWeight())
+    self._is_serializable(
+        losses.DCGLambdaWeight(
+            gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse))
+    self._is_serializable(losses.NDCGLambdaWeight())
+    self._is_serializable(
+        losses.NDCGLambdaWeight(
+            gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse))
+
+  def test_precision_lambda_weight_is_serializable(self):
+    self._is_serializable(losses.PrecisionLambdaWeight())
+    self._is_serializable(
+        losses.PrecisionLambdaWeight(
+            topn=5, positive_fn=utils.is_greater_equal_1))
 
 
 if __name__ == '__main__':

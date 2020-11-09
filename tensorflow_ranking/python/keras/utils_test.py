@@ -22,7 +22,11 @@ class UtilsTest(tf.test.TestCase):
 
   def test_functions_are_serializable(self):
     for fn in [
-        utils.identity, utils.inverse, utils.pow_minus_1, utils.log2_inverse
+        utils.identity,
+        utils.inverse,
+        utils.pow_minus_1,
+        utils.log2_inverse,
+        utils.is_greater_equal_1,
     ]:
       self.assertIsNotNone(tf.keras.utils.serialize_keras_object(fn))
 

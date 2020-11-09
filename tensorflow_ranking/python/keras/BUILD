@@ -176,6 +176,7 @@ py_library(
     srcs = ["losses.py"],
     srcs_version = "PY2AND3",
     deps = [
+        ":utils",
         # py/tensorflow dep,
         "//tensorflow_ranking/python:losses_impl",
     ],
@@ -193,6 +194,7 @@ py_test(
     ],
     deps = [
         ":losses",
+        ":utils",
         # py/tensorflow dep,
     ],
 )

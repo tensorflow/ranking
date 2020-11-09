@@ -39,3 +39,8 @@ def pow_minus_1(label):
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def log2_inverse(rank):
   return tf.math.log(2.) / tf.math.log1p(rank)
+
+
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+def is_greater_equal_1(label):
+  return tf.greater_equal(label, 1.0)

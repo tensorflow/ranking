@@ -15,18 +15,10 @@
 # Lint as: python3
 """Keras losses in TF-Ranking."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python import losses_impl
-
-# Import a few _LambdaWeight into keras.
-DCGLambdaWeight = losses_impl.DCGLambdaWeight
-PrecisionLambdaWeight = losses_impl.PrecisionLambdaWeight
-ListMLELambdaWeight = losses_impl.ListMLELambdaWeight
+from tensorflow_ranking.python.keras import utils
 
 
 class RankingLossKey(object):
@@ -101,6 +93,77 @@ def get(loss,
     raise ValueError('unsupported loss: {}'.format(loss))
 
   return loss_obj
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class DCGLambdaWeight(losses_impl.DCGLambdaWeight):
+  """Keras serializable class for DCG."""
+
+  def __init__(self,
+               topn=None,
+               gain_fn=None,
+               rank_discount_fn=None,
+               normalized=False,
+               smooth_fraction=0.,
+               **kwargs):
+    gain_fn = gain_fn or utils.identity
+    rank_discount_fn = rank_discount_fn or utils.inverse
+    super().__init__(topn, gain_fn, rank_discount_fn, normalized,
+                     smooth_fraction)
+
+  def get_config(self):
+    return {
+        'topn': self._topn,
+        'gain_fn': self._gain_fn,
+        'rank_discount_fn': self._rank_discount_fn,
+        'normalized': self._normalized,
+        'smooth_fraction': self._smooth_fraction,
+    }
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class NDCGLambdaWeight(DCGLambdaWeight):
+  """Keras serializable class for NDCG."""
+
+  def __init__(self,
+               topn=None,
+               gain_fn=None,
+               rank_discount_fn=None,
+               smooth_fraction=0.,
+               **kwargs):
+    super().__init__(
+        topn,
+        gain_fn,
+        rank_discount_fn,
+        normalized=True,
+        smooth_fraction=smooth_fraction)
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class PrecisionLambdaWeight(losses_impl.PrecisionLambdaWeight):
+  """Keras serializable class for Precision."""
+
+  def __init__(self, topn=None, positive_fn=None, **kwargs):
+    positive_fn = positive_fn or utils.is_greater_equal_1
+    super().__init__(topn, positive_fn)
+
+  def get_config(self):
+    return {
+        'topn': self._topn,
+        'positive_fn': self._positive_fn,
+    }
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class ListMLELambdaWeight(losses_impl.ListMLELambdaWeight):
+
+  def __init__(self, rank_discount_fn, **kwargs):
+    super().__init__(rank_discount_fn)
+
+  def get_config(self):
+    return {
+        'rank_discount_fn': self._rank_discount_fn,
+    }
 
 
 class _RankingLoss(tf.keras.losses.Loss):
