@@ -918,6 +918,12 @@ class GetLossesTest(tf.test.TestCase):
         -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)) / 3.,
         places=5)
 
+    deserialized = tf.keras.utils.deserialize_keras_object(
+        tf.keras.utils.serialize_keras_object(loss))
+    self.assertAlmostEqual(
+        loss(labels, scores, weights).numpy(),
+        deserialized(labels, scores, weights).numpy())
+
   def test_pairwise_logistic_loss_with_invalid_labels(self):
     scores = [[1., 3., 2.]]
     labels = [[0., -1., 1.]]
@@ -963,28 +969,70 @@ class GetLossesTest(tf.test.TestCase):
         loss(labels, scores).numpy(), (1. + 1.) / 3., places=5)
 
 
-class LambdaWeightTest(tf.test.TestCase):
+class SerializationTest(tf.test.TestCase):
 
-  def _is_serializable(self, obj):
+  def setUp(self):
+    super().setUp()
+    self._scores = [[1., 3., 2.]]
+    self._labels = [[0., -1., 1.]]
+    self._lambda_weight = losses.NDCGLambdaWeight(
+        gain_fn=utils.pow_minus_1, rank_discount_fn=utils.log2_inverse)
+
+  def assertIsLossSerializable(self, obj):
+    serialized = tf.keras.utils.serialize_keras_object(obj)
+    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    self.assertDictEqual(obj.get_config(), deserialized.get_config())
+    self.assertAllClose(
+        obj(self._labels, self._scores).numpy(),
+        deserialized(self._labels, self._scores).numpy())
+
+  def assertIsSerializable(self, obj):
     serialized = tf.keras.utils.serialize_keras_object(obj)
     deserialized = tf.keras.utils.deserialize_keras_object(serialized)
     self.assertDictEqual(obj.get_config(), deserialized.get_config())
 
   def test_dcg_lambda_weight_is_serializable(self):
-    self._is_serializable(losses.DCGLambdaWeight())
-    self._is_serializable(
+    self.assertIsSerializable(losses.DCGLambdaWeight())
+    self.assertIsSerializable(
         losses.DCGLambdaWeight(
             gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse))
-    self._is_serializable(losses.NDCGLambdaWeight())
-    self._is_serializable(
+    self.assertIsSerializable(losses.NDCGLambdaWeight())
+    self.assertIsSerializable(
         losses.NDCGLambdaWeight(
             gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse))
 
   def test_precision_lambda_weight_is_serializable(self):
-    self._is_serializable(losses.PrecisionLambdaWeight())
-    self._is_serializable(
+    self.assertIsSerializable(losses.PrecisionLambdaWeight())
+    self.assertIsSerializable(
         losses.PrecisionLambdaWeight(
             topn=5, positive_fn=utils.is_greater_equal_1))
+
+  def test_pairwise_losses_are_serializable(self):
+    self.assertIsLossSerializable(
+        losses.PairwiseHingeLoss(lambda_weight=self._lambda_weight))
+
+    self.assertIsLossSerializable(
+        losses.PairwiseLogisticLoss(lambda_weight=self._lambda_weight))
+
+    self.assertIsLossSerializable(
+        losses.PairwiseSoftZeroOneLoss(lambda_weight=self._lambda_weight))
+
+  def test_listwise_losses_are_serializable(self):
+    self.assertIsLossSerializable(
+        losses.SoftmaxLoss(lambda_weight=self._lambda_weight))
+    self.assertIsLossSerializable(
+        losses.ListMLELoss(lambda_weight=self._lambda_weight))
+    self.assertIsLossSerializable(
+        losses.ApproxMRRLoss(lambda_weight=self._lambda_weight))
+    self.assertIsLossSerializable(
+        losses.ApproxNDCGLoss(lambda_weight=self._lambda_weight))
+    # TODO: Debug assertIsLossSerializable for Gumbel loss. Right now,
+    # the loss values got from obj and the deserialized don't match exactly.
+    self.assertIsSerializable(losses.GumbelApproxNDCGLoss(seed=1))
+
+  def test_pointwise_losses_are_serializable(self):
+    self.assertIsLossSerializable(losses.SigmoidCrossEntropyLoss())
+    self.assertIsLossSerializable(losses.MeanSquaredLoss())
 
 
 if __name__ == '__main__':
