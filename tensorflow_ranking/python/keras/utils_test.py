@@ -12,13 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""TensorFlow Ranking Keras Module."""
+"""Tests for utils.py."""
 
-from tensorflow_ranking.python.keras import canned
-from tensorflow_ranking.python.keras import estimator
-from tensorflow_ranking.python.keras import feature
-from tensorflow_ranking.python.keras import losses
-from tensorflow_ranking.python.keras import metrics
-from tensorflow_ranking.python.keras import model
-from tensorflow_ranking.python.keras import network
+import tensorflow.compat.v2 as tf
 from tensorflow_ranking.python.keras import utils
+
+
+class UtilsTest(tf.test.TestCase):
+
+  def test_functions_are_serializable(self):
+    for fn in [
+        utils.identity, utils.inverse, utils.pow_minus_1, utils.log2_inverse
+    ]:
+      self.assertIsNotNone(tf.keras.utils.serialize_keras_object(fn))
+
+
+if __name__ == '__main__':
+  tf.enable_v2_behavior()
+  tf.test.main()

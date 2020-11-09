@@ -19,7 +19,33 @@ py_library(
         ":losses",
         ":metrics",
         ":model",
+        ":utils",
         "//tensorflow_ranking/python/keras/canned",
+    ],
+)
+
+py_library(
+    name = "utils",
+    srcs = ["utils.py"],
+    srcs_version = "PY3",
+    deps = [
+        # py/tensorflow dep,
+    ],
+)
+
+py_test(
+    name = "utils_test",
+    size = "small",
+    srcs = ["utils_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":utils",
+        # py/tensorflow dep,
     ],
 )
 
@@ -176,6 +202,7 @@ py_library(
     srcs = ["metrics.py"],
     srcs_version = "PY3",
     deps = [
+        ":utils",
         # py/tensorflow dep,
         "//tensorflow_ranking/python:metrics_impl",
     ],

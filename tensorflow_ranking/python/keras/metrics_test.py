@@ -22,6 +22,7 @@ import math
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python.keras import metrics as metrics_lib
+from tensorflow_ranking.python.keras import utils
 
 
 def _dcg(label,
@@ -195,29 +196,26 @@ class MetricsSerializationTest(tf.test.TestCase):
     self._check_config(metrics_lib.MeanAveragePrecisionMetric, {'topn': 1})
 
   def test_normalized_discounted_cumulative_gain(self):
-    self._check_config(
-        metrics_lib.NDCGMetric, {
-            'topn': 1,
-            'gain_fn': metrics_lib.identity,
-            'rank_discount_fn': metrics_lib.inverse,
-        })
+    self._check_config(metrics_lib.NDCGMetric, {
+        'topn': 1,
+        'gain_fn': utils.identity,
+        'rank_discount_fn': utils.inverse,
+    })
 
   def test_discounted_cumulative_gain(self):
-    self._check_config(
-        metrics_lib.DCGMetric, {
-            'topn': 1,
-            'gain_fn': metrics_lib.identity,
-            'rank_discount_fn': metrics_lib.inverse,
-        })
+    self._check_config(metrics_lib.DCGMetric, {
+        'topn': 1,
+        'gain_fn': utils.identity,
+        'rank_discount_fn': utils.inverse,
+    })
 
   def test_alpha_discounted_cumulative_gain(self):
-    self._check_config(
-        metrics_lib.AlphaDCGMetric, {
-            'topn': 1,
-            'alpha': 0.5,
-            'rank_discount_fn': metrics_lib.inverse,
-            'seed': 1,
-        })
+    self._check_config(metrics_lib.AlphaDCGMetric, {
+        'topn': 1,
+        'alpha': 0.5,
+        'rank_discount_fn': utils.inverse,
+        'seed': 1,
+    })
 
   def test_ordered_pair_accuracy(self):
     self._check_config(metrics_lib.OPAMetric, {})
