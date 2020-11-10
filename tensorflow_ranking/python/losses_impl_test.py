@@ -449,8 +449,9 @@ class LossesImplTest(tf.test.TestCase):
 
         # Multiple lists.
         self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights=listwise_weights,
-                            reduction=reduction).eval(),
+            loss_fn.compute(
+                labels, scores, weights=listwise_weights,
+                reduction=reduction).eval(),
             _batch_aggregation([
                 _pairwise_loss(labels[0], scores[0],
                                listwise_weights_expanded[0], loss_form),
@@ -466,9 +467,7 @@ class LossesImplTest(tf.test.TestCase):
         loss_fn = loss_form(name=None, lambda_weight=lambda_weight)
         self.assertAlmostEqual(
             loss_fn.compute(
-                labels,
-                scores,
-                weights=listwise_weights,
+                labels, scores, weights=listwise_weights,
                 reduction=reduction).eval(),
             _batch_aggregation([
                 _pairwise_loss(
@@ -526,8 +525,8 @@ class LossesImplTest(tf.test.TestCase):
         # Test LambdaWeight.
         lambda_weight = losses_impl.DCGLambdaWeight(
             rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
-        loss_fn = losses_impl.SoftmaxLoss(name=None,
-                                          lambda_weight=lambda_weight)
+        loss_fn = losses_impl.SoftmaxLoss(
+            name=None, lambda_weight=lambda_weight)
         self.assertAlmostEqual(
             loss_fn.compute(labels, scores, None, reduction).eval(),
             -(math.log(_softmax(scores[0])[2]) / math.log(1. + 2.) +
@@ -553,6 +552,27 @@ class LossesImplTest(tf.test.TestCase):
             -(math.log(_softmax(scores[0])[2]) * 2. +
               math.log(_softmax(scores[1][:2])[1]) * 1. +
               math.log(_softmax(scores[1])[2]) * 3. * 1.) / 3.,
+            places=5)
+
+  def test_click_em_loss(self):
+    with tf.Graph().as_default():
+      loss_fn = losses_impl.ClickEMLoss(name=None)
+      clicks = [[1., 0, 0, 0]]
+      exam_logits = [[3., 3, 4, 100]]
+      rel_logits = [[3., 2, 1, 100]]
+      logits = tf.stack([exam_logits, rel_logits], axis=2)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+      with self.cached_session():
+        exam_given_clicks, rel_given_clicks = loss_fn._compute_latent_prob(
+            clicks, exam_logits, rel_logits)
+        self.assertAllClose(exam_given_clicks, [[1., 0.70538, 0.936236, 0.]])
+        self.assertAllClose(rel_given_clicks, [[1., 0.259496, 0.046613, 0.]])
+
+        self.assertAlmostEqual(
+            loss_fn.compute(clicks, logits, None, reduction).eval(),
+            _sigmoid_cross_entropy([1., 0.70538, 0.936236, 0.],
+                                   exam_logits[0]) +
+            _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.], rel_logits[0]),
             places=5)
 
   def test_sigmoid_cross_entropy_loss(self):
