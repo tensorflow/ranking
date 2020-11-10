@@ -269,6 +269,18 @@ class LossesTest(tf.test.TestCase):
           + ln(_softmax(scores[1])[2]) * 3. * 1.) / 9.,
         places=5)
 
+  def test_click_em_loss(self):
+    clicks = [[1., 0, 0, 0]]
+    exam_logits = [[3., 3, 4, 100]]
+    rel_logits = [[3., 2, 1, 100]]
+    logits = tf.stack([exam_logits, rel_logits], axis=2)
+    loss = losses.ClickEMLoss()
+    self.assertAlmostEqual(
+        loss(clicks, logits).numpy() * 4.,
+        _sigmoid_cross_entropy([1., 0.70538, 0.936236, 0.], exam_logits[0]) +
+        _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.], rel_logits[0]),
+        places=5)
+
   def test_sigmoid_cross_entropy_loss(self):
     scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
     labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
@@ -982,9 +994,12 @@ class SerializationTest(tf.test.TestCase):
     serialized = tf.keras.utils.serialize_keras_object(obj)
     deserialized = tf.keras.utils.deserialize_keras_object(serialized)
     self.assertDictEqual(obj.get_config(), deserialized.get_config())
+    scores = self._scores
+    if isinstance(obj, losses.ClickEMLoss):
+      scores = tf.stack([scores, scores], axis=2)
     self.assertAllClose(
-        obj(self._labels, self._scores).numpy(),
-        deserialized(self._labels, self._scores).numpy())
+        obj(self._labels, scores).numpy(),
+        deserialized(self._labels, scores).numpy())
 
   def assertIsSerializable(self, obj):
     serialized = tf.keras.utils.serialize_keras_object(obj)
@@ -1031,6 +1046,7 @@ class SerializationTest(tf.test.TestCase):
     self.assertIsSerializable(losses.GumbelApproxNDCGLoss(seed=1))
 
   def test_pointwise_losses_are_serializable(self):
+    self.assertIsLossSerializable(losses.ClickEMLoss())
     self.assertIsLossSerializable(losses.SigmoidCrossEntropyLoss())
     self.assertIsLossSerializable(losses.MeanSquaredLoss())
 

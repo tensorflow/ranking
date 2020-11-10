@@ -452,6 +452,16 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class ClickEMLoss(_RankingLoss):
+  """For click EM loss."""
+
+  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
+    super(ClickEMLoss, self).__init__(reduction, name)
+    self._loss = losses_impl.ClickEMLoss(
+        name='{}_impl'.format(name) if name else None)
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class SigmoidCrossEntropyLoss(_RankingLoss):
   """For sigmoid cross-entropy loss."""
 
