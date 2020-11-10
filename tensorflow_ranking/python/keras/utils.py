@@ -28,7 +28,7 @@ def identity(label):
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def inverse(rank):
-  return tf.math.div_no_nan(1., rank)
+  return tf.math.divide_no_nan(1., rank)
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
@@ -38,7 +38,7 @@ def pow_minus_1(label):
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def log2_inverse(rank):
-  return tf.math.log(2.) / tf.math.log1p(rank)
+  return tf.math.divide_no_nan(tf.math.log(2.), tf.math.log1p(rank))
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")

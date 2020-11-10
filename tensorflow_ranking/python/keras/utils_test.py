@@ -30,6 +30,13 @@ class UtilsTest(tf.test.TestCase):
     ]:
       self.assertIsNotNone(tf.keras.utils.serialize_keras_object(fn))
 
+  def test_functions_are_callable(self):
+    self.assertEqual(utils.identity(1.0), 1.0)
+    self.assertEqual(utils.inverse(1.0), 1.0)
+    self.assertEqual(utils.pow_minus_1(1.0), 1.0)
+    self.assertEqual(utils.log2_inverse(1.0), 1.0)
+    self.assertEqual(utils.is_greater_equal_1(1.0), True)
+
 
 if __name__ == '__main__':
   tf.enable_v2_behavior()
