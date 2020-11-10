@@ -174,7 +174,7 @@ py_test(
 py_library(
     name = "losses",
     srcs = ["losses.py"],
-    srcs_version = "PY2AND3",
+    srcs_version = "PY3",
     deps = [
         ":utils",
         # py/tensorflow dep,
