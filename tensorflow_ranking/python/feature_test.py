@@ -170,6 +170,77 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllEqual(expected_lookups_a, embedding_lookup_a.eval())
         self.assertAllEqual(expected_lookups_b, embedding_lookup_b.eval())
 
+  def test_encode_features_sequence_column(self):
+    with tf.Graph().as_default():
+      # Inputs.
+      vocabulary_size = 4
+      # Sequence of ids. -1 values are ignored.
+      input_seq_ids = np.array([
+          [3, -1, -1],  # example 0
+          [0, 1, -1],  # example 1
+      ])
+      # Sequence of numeric values.
+      # input_seq_nums = [
+      #  [1.],  # example 0.
+      #  [2., 3.],  # example 1
+      # ]
+      input_seq_nums = tf.sparse.SparseTensor(
+          indices=[[0, 0], [1, 0], [1, 1]],
+          values=[1., 2., 3.],
+          dense_shape=(2, 3))
+
+      input_features = {"seq_ids": input_seq_ids, "seq_nums": input_seq_nums}
+
+      # Embedding variable.
+      embedding_dimension = 2
+      embedding_values = (
+          (1., 2.),  # id 0
+          (3., 5.),  # id 1
+          (7., 11.),  # id 2
+          (9., 13.)  # id 3
+      )
+
+      # Expected sequence embeddings for input_seq_ids.
+      expected_seq_embed = [
+          # example 0:
+          [[9., 13.], [0., 0.], [0., 0.]],
+          # example 1:
+          [[1., 2.], [3., 5.], [0., 0.]],
+      ]
+      expected_seq_nums = [
+          # example 0:
+          [[1.], [0.], [0.]],
+          # example 1:
+          [[2.], [3.], [0.]],
+      ]
+
+      # Build columns.
+      seq_categorical_column = (
+          feature_column.sequence_categorical_column_with_identity(
+              key="seq_ids", num_buckets=vocabulary_size))
+      seq_embed_column = feature_column.embedding_column(
+          seq_categorical_column, dimension=embedding_dimension,
+          initializer=lambda shape, dtype, partition_info: embedding_values)
+      seq_numeric_column = feature_column.sequence_numeric_column("seq_nums")
+
+      cols_to_tensors = feature_lib.encode_features(
+          input_features,
+          [seq_embed_column, seq_numeric_column],
+          mode=tf.estimator.ModeKeys.EVAL)
+      actual_seq_embed = cols_to_tensors[seq_embed_column]
+      actual_seq_nums = cols_to_tensors[seq_numeric_column]
+
+      # Assert embedding variable and encoded sequence features.
+      global_vars = tf.compat.v1.get_collection(
+          tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
+      embedding_var = global_vars[0]
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
+        sess.run(tf.compat.v1.tables_initializer())
+        self.assertAllEqual(embedding_values, embedding_var.eval())
+        self.assertAllEqual(expected_seq_embed, actual_seq_embed)
+        self.assertAllEqual(expected_seq_nums, actual_seq_nums)
+
   def test_encode_listwise_features(self):
     with tf.Graph().as_default():
       # Batch size = 2, list_size = 2.

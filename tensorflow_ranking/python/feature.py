@@ -62,6 +62,19 @@ def make_identity_transform_fn(context_feature_names):
   return _transform_fn
 
 
+def _is_sequence_column_v2(feature_column):
+  """Returns whether the feature column is a V2 Sequence Feature Column."""
+  if isinstance(feature_column, feature_column_lib.SequenceCategoricalColumn):
+    return True
+  if isinstance(feature_column, feature_column_lib.SequenceNumericColumn):
+    return True
+  if hasattr(feature_column, "categorical_column") and isinstance(
+      feature_column.categorical_column,
+      feature_column_lib.SequenceCategoricalColumn):
+    return True
+  return False
+
+
 def encode_features(features,
                     feature_columns,
                     mode=tf.estimator.ModeKeys.TRAIN,
@@ -91,11 +104,24 @@ def encode_features(features,
   # TODO: Ensure only v2 Feature Columns are used.
   if hasattr(feature_column_lib, "is_feature_column_v2"
             ) and feature_column_lib.is_feature_column_v2(feature_columns):
-    dense_layer = feature_column_lib.DenseFeatures(
-        feature_columns=feature_columns,
-        name="encoding_layer",
-        trainable=trainable)
-    dense_layer(features, cols_to_output_tensors=cols_to_tensors)
+    dense_feature_columns = [
+        col for col in feature_columns if not _is_sequence_column_v2(col)
+    ]
+    sequence_feature_columns = [
+        col for col in feature_columns if _is_sequence_column_v2(col)
+    ]
+
+    if dense_feature_columns:
+      dense_layer = feature_column_lib.DenseFeatures(
+          feature_columns=dense_feature_columns,
+          name="encoding_layer",
+          trainable=trainable)
+      dense_layer(features, cols_to_output_tensors=cols_to_tensors)
+
+    for col in sequence_feature_columns:
+      sequence_feature_layer = tf.keras.experimental.SequenceFeatures(col)
+      sequence_input, _ = sequence_feature_layer(features)
+      cols_to_tensors[col] = sequence_input
   else:
     tf.compat.v1.feature_column.input_layer(
         features=features,
