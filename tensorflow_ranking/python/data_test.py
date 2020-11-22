@@ -28,8 +28,9 @@ from google.protobuf import text_format
 from tensorflow_ranking.python import data as data_lib
 from tensorflow_serving.apis import input_pb2
 
-# Feature name for example list sizes.
+# Feature name for example list sizes and masks.
 _SIZE = "__list_size__"
+_MASK = "__mask__"
 
 EXAMPLE_LIST_PROTO_1 = text_format.Parse(
     """
@@ -327,12 +328,15 @@ class ExampleListTest(tf.test.TestCase):
           list_size=3,
           context_feature_spec=CONTEXT_FEATURE_SPEC,
           example_feature_spec=EXAMPLE_FEATURE_SPEC,
-          size_feature_name=_SIZE)
+          size_feature_name=_SIZE,
+          mask_feature_name=_MASK)
 
       with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.local_variables_initializer())
         features = sess.run(features)
         self.assertAllEqual(features[_SIZE], [2, 1])
+        self.assertAllEqual(features[_MASK],
+                            [[True, True, False], [True, False, False]])
 
   def test_parse_from_example_list_truncate(self):
     with tf.Graph().as_default():
@@ -618,12 +622,15 @@ class ExampleInExampleTest(tf.test.TestCase):
           list_size=3,
           context_feature_spec=CONTEXT_FEATURE_SPEC,
           example_feature_spec=EXAMPLE_FEATURE_SPEC,
-          size_feature_name=_SIZE)
+          size_feature_name=_SIZE,
+          mask_feature_name=_MASK)
 
       with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.local_variables_initializer())
         features = sess.run(features)
         self.assertAllEqual(features[_SIZE], [2, 1])
+        self.assertAllEqual(features[_MASK],
+                            [[True, True, False], [True, False, False]])
 
 
 class ExampleInExampleWithRaggedTest(tf.test.TestCase):
@@ -715,12 +722,14 @@ class SequenceExampleTest(tf.test.TestCase):
           ]),
           context_feature_spec=CONTEXT_FEATURE_SPEC,
           example_feature_spec=EXAMPLE_FEATURE_SPEC,
-          size_feature_name=_SIZE)
+          size_feature_name=_SIZE,
+          mask_feature_name=_MASK)
 
       with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.local_variables_initializer())
         features = sess.run(features)
         self.assertAllEqual(features[_SIZE], [2, 1])
+        self.assertAllEqual(features[_MASK], [[True, True], [True, False]])
 
   def test_parse_from_sequence_example_with_large_list_size(self):
     with tf.Graph().as_default():
@@ -1167,20 +1176,6 @@ class SequenceExampleDatasetTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllEqual(feature_map["query_length"], [[3], [2]])
         self.assertAllEqual(feature_map["utility"],
                             [[[0.], [1.0]], [[0.], [-1.]]])
-
-
-class LibSVMUnitTest(tf.test.TestCase, parameterized.TestCase):
-
-  def test_libsvm_parse_line(self):
-    data = "1 qid:10 32:0.14 48:0.97  51:0.45"
-    qid, features = data_lib._libsvm_parse_line(data)
-    self.assertEqual(qid, 10)
-    self.assertDictEqual(features, {
-        "32": 0.14,
-        "48": 0.97,
-        "51": 0.45,
-        "label": 1.0
-    })
 
 
 if __name__ == "__main__":

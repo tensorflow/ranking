@@ -105,6 +105,7 @@ class _RankingDataParser(object):
                context_feature_spec=None,
                example_feature_spec=None,
                size_feature_name=None,
+               mask_feature_name=None,
                shuffle_examples=False,
                seed=None):
     """Constructor."""
@@ -118,6 +119,7 @@ class _RankingDataParser(object):
     self._context_feature_spec = context_feature_spec
     self._example_feature_spec = example_feature_spec
     self._size_feature_name = size_feature_name
+    self._mask_feature_name = mask_feature_name
     self._shuffle_examples = shuffle_examples
     self._seed = seed
 
@@ -200,6 +202,8 @@ class _ExampleInExampleParser(_RankingDataParser):
     # Add example list sizes to features, if needed.
     if self._size_feature_name:
       features[self._size_feature_name] = sizes
+    if self._mask_feature_name:
+      features[self._mask_feature_name] = tf.sequence_mask(sizes, list_size)
     return features
 
 
@@ -208,6 +212,7 @@ def parse_from_example_in_example(serialized,
                                   context_feature_spec=None,
                                   example_feature_spec=None,
                                   size_feature_name=None,
+                                  mask_feature_name=None,
                                   shuffle_examples=False,
                                   seed=None):
   """Parses an ExampleInExample batch to a feature map.
@@ -351,6 +356,10 @@ def parse_from_example_in_example(serialized,
       the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
       this feature name. If None, which is default, this feature is not
       generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
     shuffle_examples: (bool) A boolean to indicate whether examples within a
       list are shuffled before the list is trimmed down to list_size elements
       (when list has more than list_size elements).
@@ -364,6 +373,7 @@ def parse_from_example_in_example(serialized,
       context_feature_spec=context_feature_spec,
       example_feature_spec=example_feature_spec,
       size_feature_name=size_feature_name,
+      mask_feature_name=mask_feature_name,
       shuffle_examples=shuffle_examples,
       seed=seed)
   return parser.parse(serialized)
@@ -382,6 +392,7 @@ def parse_from_example_list(serialized,
                             context_feature_spec=None,
                             example_feature_spec=None,
                             size_feature_name=None,
+                            mask_feature_name=None,
                             shuffle_examples=False,
                             seed=None):
   """Parses an `ExampleListWithContext` batch to a feature map.
@@ -504,6 +515,10 @@ def parse_from_example_list(serialized,
       the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
       this feature name. If None, which is default, this feature is not
       generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
     shuffle_examples: (bool) A boolean to indicate whether examples within a
       list are shuffled before the list is trimmed down to list_size elements
       (when list has more than list_size elements).
@@ -517,6 +532,7 @@ def parse_from_example_list(serialized,
       context_feature_spec=context_feature_spec,
       example_feature_spec=example_feature_spec,
       size_feature_name=size_feature_name,
+      mask_feature_name=mask_feature_name,
       shuffle_examples=shuffle_examples,
       seed=seed)
   return parser.parse(serialized)
@@ -641,12 +657,13 @@ class _SequenceExampleParser(_RankingDataParser):
         static_shape[1] = list_size_arg
         tensor.set_shape(static_shape)
       features[k] = tensor
+    example_sizes = tf.stack([sizes[k] for k in sorted(sizes.keys())], axis=1)
+    sizes = tf.reduce_max(input_tensor=example_sizes, axis=1)
 
     if self._size_feature_name:
-      example_sizes = tf.stack([sizes[k] for k in sorted(sizes.keys())], axis=1)
-      features[self._size_feature_name] = tf.reduce_max(
-          input_tensor=example_sizes, axis=1)
-
+      features[self._size_feature_name] = sizes
+    if self._mask_feature_name:
+      features[self._mask_feature_name] = tf.sequence_mask(sizes, list_size)
     return features
 
 
@@ -655,6 +672,7 @@ def parse_from_sequence_example(serialized,
                                 context_feature_spec=None,
                                 example_feature_spec=None,
                                 size_feature_name=None,
+                                mask_feature_name=None,
                                 shuffle_examples=False,
                                 seed=None):
   """Parses SequenceExample to feature maps.
@@ -770,6 +788,10 @@ def parse_from_sequence_example(serialized,
       the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
       this feature name. If None, which is default, this feature is not
       generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
     shuffle_examples: (bool) A boolean to indicate whether examples within a
       list are shuffled before the list is trimmed down to list_size elements
       (when list has more than list_size elements).
@@ -783,6 +805,7 @@ def parse_from_sequence_example(serialized,
       context_feature_spec=context_feature_spec,
       example_feature_spec=example_feature_spec,
       size_feature_name=size_feature_name,
+      mask_feature_name=mask_feature_name,
       shuffle_examples=shuffle_examples,
       seed=seed)
   return parser.parse(serialized)
@@ -793,6 +816,7 @@ def make_parsing_fn(data_format,
                     context_feature_spec=None,
                     example_feature_spec=None,
                     size_feature_name=None,
+                    mask_feature_name=None,
                     shuffle_examples=False,
                     seed=None):
   """Returns a parsing fn for a standard data format.
@@ -810,6 +834,10 @@ def make_parsing_fn(data_format,
       the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
       this feature name. If None, which is default, this feature is not
       generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
     shuffle_examples: (bool) A boolean to indicate whether examples within a
       list are shuffled before the list is trimmed down to list_size elements
       (when list has more than list_size elements).
@@ -825,6 +853,7 @@ def make_parsing_fn(data_format,
       "context_feature_spec": context_feature_spec,
       "example_feature_spec": example_feature_spec,
       "size_feature_name": size_feature_name,
+      "mask_feature_name": mask_feature_name,
       "shuffle_examples": shuffle_examples,
       "seed": seed
   }
@@ -943,6 +972,7 @@ def build_ranking_dataset(file_pattern,
                           example_feature_spec,
                           list_size=None,
                           size_feature_name=None,
+                          mask_feature_name=None,
                           shuffle_examples=False,
                           seed=None,
                           **kwargs):
@@ -959,6 +989,10 @@ def build_ranking_dataset(file_pattern,
       the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
       this feature name. If None, which is default, this feature is not
       generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
     shuffle_examples: (bool) A boolean to indicate whether examples within a
       list are shuffled before the list is trimmed down to list_size elements
       (when list has more than list_size elements).
@@ -974,6 +1008,7 @@ def build_ranking_dataset(file_pattern,
       context_feature_spec,
       example_feature_spec,
       size_feature_name=size_feature_name,
+      mask_feature_name=mask_feature_name,
       shuffle_examples=shuffle_examples,
       seed=seed)
 
@@ -1016,6 +1051,7 @@ def build_ranking_serving_input_receiver_fn(data_format,
                                             example_feature_spec,
                                             list_size=None,
                                             size_feature_name=None,
+                                            mask_feature_name=None,
                                             receiver_name="input_ranking_data",
                                             default_batch_size=None):
   """Returns a serving input receiver fn for a standard data format.
@@ -1033,6 +1069,10 @@ def build_ranking_serving_input_receiver_fn(data_format,
       the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
       this feature name. If None, which is default, this feature is not
       generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
     receiver_name: (string) The name for the receiver tensor.
     default_batch_size: (int) Number of instances expected per batch. Leave
       unset for variable batch size (recommended).
@@ -1046,6 +1086,7 @@ def build_ranking_serving_input_receiver_fn(data_format,
       data_format,
       list_size=list_size,
       size_feature_name=size_feature_name,
+      mask_feature_name=mask_feature_name,
       context_feature_spec=context_feature_spec,
       example_feature_spec=example_feature_spec)
   return build_ranking_serving_input_receiver_fn_with_parsing_fn(
@@ -1250,24 +1291,3 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
       list_size=input_size,
       receiver_name="sequence_example",
       default_batch_size=default_batch_size)
-
-
-def _libsvm_parse_line(libsvm_line):
-  """Parses a single LibSVM line to a query ID and a feature dictionary.
-
-  Args:
-    libsvm_line: (string) input line in LibSVM format.
-
-  Returns:
-    A tuple of query ID and a dict mapping from feature ID (string) to value
-    (float). "label" is a special feature ID that represents the relevance
-    grade.
-  """
-  tokens = libsvm_line.split()
-  qid = int(tokens[1].split(":")[1])
-
-  features = {_LABEL_FEATURE: float(tokens[0])}
-  key_values = [key_value.split(":") for key_value in tokens[2:]]
-  features.update({key: float(value) for (key, value) in key_values})
-
-  return qid, features
