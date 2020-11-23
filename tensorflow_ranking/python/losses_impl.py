@@ -608,6 +608,26 @@ class _RankingLoss(object):
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
 
+  def eval_metric_unreduced(self, labels, logits, weights):
+    """Computes the unreduced eval metric for the loss.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+
+    Returns:
+      A pair of `Tensor` objects containing losses and weights for use in
+      a weighted average.
+    """
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+    return losses, weights
+
   def eval_metric(self, labels, logits, weights):
     """Computes the eval metric for the loss in tf.estimator (not tf.keras).
 
@@ -625,8 +645,7 @@ class _RankingLoss(object):
     Returns:
       A metric op.
     """
-    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
-    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+    losses, weights = self.eval_metric_unreduced(labels, logits, weights)
     return tf.compat.v1.metrics.mean(losses, weights)
 
 
@@ -763,12 +782,11 @@ class SoftmaxLoss(_ListwiseLoss):
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
 
-  def eval_metric(self, labels, logits, weights):
+  def eval_metric_unreduced(self, labels, logits, weights):
     """See `_RankingLoss`."""
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights)
-    losses, weights = self.compute_unreduced_loss(labels, logits)
-    return tf.compat.v1.metrics.mean(losses, weights)
+    return self.compute_unreduced_loss(labels, logits)
 
 
 class UniqueSoftmaxLoss(_ListwiseLoss):
