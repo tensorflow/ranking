@@ -903,7 +903,7 @@ class ClickEMLoss(_PointwiseLoss):
         labels=exam_latent_prob,
         logits=exam_logits) + tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
             labels=rel_latent_prob, logits=rel_logits)
-    return losses, 1.
+    return losses, tf.ones_like(losses)
 
 
 class SigmoidCrossEntropyLoss(_PointwiseLoss):
@@ -926,7 +926,7 @@ class SigmoidCrossEntropyLoss(_PointwiseLoss):
         utils.is_label_valid(labels), logits, tf.zeros_like(logits))
     losses = tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
-    return losses, 1.
+    return losses, tf.ones_like(losses)
 
 
 class MeanSquaredLoss(_PointwiseLoss):
@@ -947,7 +947,7 @@ class MeanSquaredLoss(_PointwiseLoss):
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(is_valid, logits, tf.zeros_like(logits))
     losses = tf.compat.v1.squared_difference(labels, logits)
-    return losses, 1.
+    return losses, tf.ones_like(losses)
 
 
 class ListMLELoss(_ListwiseLoss):
@@ -984,7 +984,7 @@ class ListMLELoss(_ListwiseLoss):
 
     negative_log_likelihood = tf.reduce_sum(
         input_tensor=sums, axis=1, keepdims=True)
-    return negative_log_likelihood, 1.
+    return negative_log_likelihood, tf.ones_like(negative_log_likelihood)
 
 
 class ApproxNDCGLoss(_ListwiseLoss):
