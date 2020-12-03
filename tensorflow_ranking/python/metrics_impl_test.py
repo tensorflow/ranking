@@ -1165,6 +1165,180 @@ class AlphaDCGMetricTest(tf.test.TestCase):
       self.assertAllClose(output_weights, [[0.]])
 
 
+class BPrefMetricTest(tf.test.TestCase):
+
+  def test_bpref_should_be_a_single_value(self):
+    with tf.Graph().as_default():
+      scores = [[4., 3., 2., 1.]]
+      labels = [[0., 1., 0., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output,
+                          [[1. / 2. * ((1. - 1. / 2.) + (1. - 2. / 2.))]])
+
+  def test_bpref_should_convert_graded_relevance_to_binary(self):
+    with tf.Graph().as_default():
+      scores = [[4., 3., 2., 1.]]
+      labels = [[0., 1., 0., 2.]]  # should be equivalent to [[0., 1., 0., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output,
+                          [[1. / 2. * ((1. - 1. / 2.) + (1. - 2. / 2.))]])
+
+  def test_bpref_should_be_zero_when_only_irrelevant_items(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.]]
+      labels = [[0., 0., 0.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_trec_bpref_should_be_one_when_only_relevant_items(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.]]
+      labels = [[1., 1., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[1.]])
+
+  def test_non_trec_bpref_should_be_one_when_only_relevant_items(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.]]
+      labels = [[1., 1., 1.]]
+
+      metric = metrics_impl.BPrefMetric(
+          name=None, topn=None, use_trec_version=False)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[1.]])
+
+  def test_bpref_should_be_zero_without_input_items(self):
+    with tf.Graph().as_default():
+      scores = [[]]
+      labels = [[]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_trec_bpref_divides_with_min_and_is_0_when_one_irrelevant_first(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.]]
+      labels = [[0., 1., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_bpref_divides_with_r_when_use_trec_version_is_false(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.]]
+      labels = [[0., 1., 1.]]
+
+      metric = metrics_impl.BPrefMetric(
+          name=None, topn=None, use_trec_version=False)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.5]])
+
+  def test_bpref_should_be_0_when_no_rel_item_in_topn_but_relevant_later(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1., 0.]]
+      labels = [[0., 0., 0., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=3)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_non_trec_bpref_should_handle_topn(self):
+    with tf.Graph().as_default():
+      # This is the example case in bpref_bug in TREC_EVAL-8.0+
+      scores = [[5., 4., 3., 2., 1., 0., 0., 0., 0., 0.]]
+      labels = [[0., 1., 1., 1., 1., 0., 0., 0., 1., 1.]]
+
+      metric = metrics_impl.BPrefMetric(
+          name=None, topn=5, use_trec_version=False)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[(4. * (1. - 1. / 6.)) / 6.]])
+
+  def test_trec_bpref_should_handle_topn(self):
+    with tf.Graph().as_default():
+      # This is the example case in bpref_bug in TREC_EVAL-8.0+
+      scores = [[5., 4., 3., 2., 1., 0., 0., 0., 0., 0.]]
+      labels = [[0., 1., 1., 1., 1., 0., 0., 0., 1., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=5)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[(4. * (1. - 1. / 4.)) / 6.]])  # = 0.5
+
+  def test_bpref_should_ignore_padded_items(self):
+    with tf.Graph().as_default():
+      scores = [[6., 5., 4., 3., 2., 1.]]
+      labels = [[-1., 0., -1., 1., 0., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output,
+                          [[1. / 2. * ((1. - 1. / 2.) + (1. - 2. / 2.))]])
+
+  def test_bpref_weights_should_be_avg_of_weights_of_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[1., 0., 2.]]
+      weights = [[13., 7., 29.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[(13. + 29.) / 2.]])
+
+  def test_bpref_weights_should_ignore_topn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[1., 1., 0.]]
+      weights = [[3., 7., 15.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=1)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[(3. + 7.) / 2.]])
+
+  def test_bpref_weights_should_be_0_when_no_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 0.]]
+      weights = [[3., 7., 15.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[0.]])
+
+  def test_bpref_should_give_a_value_for_each_list_in_batch_inputs(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 1., 1.]]
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose([[0.], [1.]], output)
+
+
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()
   tf.test.main()

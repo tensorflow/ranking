@@ -715,3 +715,82 @@ class AlphaDCGMetric(_DivRankingMetric):
                                             self._rank_discount_fn)
     per_list_weights = self._compute_per_list_weights(weights, labels)
     return tf.compat.v1.math.divide_no_nan(alpha_dcg, per_list_weights)
+
+
+class BPrefMetric(_RankingMetric):
+  """Implements binary preference (BPref) metric.
+
+  In this implementation, the 0 labels are considered negative,
+  any unlabelled examples should be removed or labeled as -1 prior to
+  calculating BPref.
+  Graded labels will be converted to binary labels by clipping to max 1.
+
+  BPref is used in scenarios when the relevance judgements are incomplete.
+  It is based on relative ranks of the judged documents and measures the
+  preference for the retrieval of judged relevant documents ahead of judged
+  irrelevant documents.
+  The version of BPref that is used as default here was introduced in the TREC
+  competition in 2005 and is described in
+  https://trec.nist.gov/pubs/trec15/appendices/CE.MEASURES06.pdf :
+    BPref = 1 / R SUM_r(1- |n ranked higher than r| / min(R, N))
+
+    R = total number of relevant documents
+    N = total number of irrelevant documents
+    r = retrieved relevant document
+    n = retrieved irrelevant document
+
+  Note that the above trec formula is different from the other commonly cited
+  version where R is used to divide |n ranked higher than r|
+  instead of min(R, N):
+      BPref = 1 / R SUM_r(1- |n ranked higher than r| / R)
+  The potential issue of this definition is that the metric may not be monotonic
+  when N > R: i.e. When a lot of irrelevant documents ranked higher than the
+  relevant ones, the metric could be very positive. To use the latter formula,
+  set use_trec_version to False.
+  """
+
+  def __init__(self, name, topn, use_trec_version=True):
+    """Constructor."""
+    super(BPrefMetric, self).__init__()
+    self._name = name
+    self._topn = topn
+    self._use_trec_version = use_trec_version
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights):
+    """See `_RankingMetric`."""
+
+    mask = utils.is_label_valid(labels)
+    labels, predictions, weights, topn = _prepare_and_validate_params(
+        labels, predictions, weights, self._topn)
+
+    # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
+    relevance = tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32)
+    irrelevance = tf.cast(mask, tf.float32) - relevance
+
+    total_relevance = tf.reduce_sum(relevance, axis=1, keepdims=True)
+    total_irrelevance = tf.reduce_sum(irrelevance, axis=1, keepdims=True)
+
+    sorted_relevance, sorted_irrelevance = utils.sort_by_scores(
+        predictions, [relevance, irrelevance], topn=topn)
+
+    numerator = tf.minimum(
+        tf.cumsum(sorted_irrelevance, axis=1), total_relevance)
+    denominator = tf.minimum(
+        total_irrelevance,
+        total_relevance) if self._use_trec_version else total_relevance
+
+    bpref = tf.math.divide_no_nan(
+        tf.reduce_sum(((1. - tf.math.divide_no_nan(numerator, denominator)) *
+                       sorted_relevance),
+                      axis=1, keepdims=True), total_relevance)
+
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights=weights,
+        relevance=tf.cast(tf.greater_equal(relevance, 1.0), dtype=tf.float32))
+
+    return bpref, per_list_weights
