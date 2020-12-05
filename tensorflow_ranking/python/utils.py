@@ -40,6 +40,33 @@ def _to_nd_indices(indices):
   return tf.stack([batch_ids, indices], axis=-1)
 
 
+def gather_per_row(inputs, indices):
+  """Gathers the values from input tensor based on per-row indices.
+
+  Example Usage:
+  ```python
+  scores = [[1., 3., 2.], [1., 2., 3.]]
+  indices = [[1, 2], [2, 1]]
+  tfr.utils.gather_per_row(scores, indices)
+  ```
+  Returns [[3., 2.], [3., 2.]]
+
+  Args:
+    inputs: (tf.Tensor) A tensor of shape [batch_size, list_size] or
+      [batch_size, list_size, feature_dims].
+    indices: (tf.Tensor) A tensor of shape [batch_size, size] of positions to
+      gather inputs from. Each index corresponds to a row entry in input_tensor.
+
+  Returns:
+    A tensor of values gathered from inputs, of shape [batch_size, size] or
+      [batch_size, size, feature_dims], depending on whether the input was 2D or
+      3D.
+  """
+  indices = tf.cast(indices, dtype=tf.int32)
+  gather_idx = _to_nd_indices(indices)
+  return tf.gather_nd(inputs, gather_idx)
+
+
 def is_label_valid(labels):
   """Returns a boolean `Tensor` for label validity."""
   labels = tf.convert_to_tensor(value=labels)

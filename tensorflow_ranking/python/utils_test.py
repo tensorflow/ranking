@@ -26,7 +26,7 @@ from tensorflow_ranking.python import utils
 class UtilsTest(tf.test.TestCase):
 
   def setUp(self):
-    super(UtilsTest, self).setUp()
+    super().setUp()
     tf.compat.v1.reset_default_graph()
 
   def test_is_label_valid(self):
@@ -37,7 +37,44 @@ class UtilsTest(tf.test.TestCase):
         is_valid = sess.run(utils.is_label_valid(labels))
         self.assertAllEqual(is_valid, labels_validity)
 
-  def test_sort_by_scores(self):
+  def test_gather_per_row_2d(self):
+    with tf.Graph().as_default():
+      indices = [[1, 2, 0], [2, 1, 0]]
+      names = [['a', 'b', 'c'], ['d', 'e', 'f']]
+      with tf.compat.v1.Session() as sess:
+        gathered_names = sess.run(
+            utils.gather_per_row(inputs=names, indices=indices))
+        self.assertAllEqual(gathered_names,
+                            [[b'b', b'c', b'a'], [b'f', b'e', b'd']])
+
+      indices = [[2, 0], [1, 0]]
+      with tf.compat.v1.Session() as sess:
+        gathered_names = sess.run(
+            utils.gather_per_row(inputs=names, indices=indices))
+        self.assertAllEqual(gathered_names, [[b'c', b'a'], [b'e', b'd']])
+
+  def test_gather_per_row_3d(self):
+    with tf.Graph().as_default():
+      example_feature = [[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]],
+                         [[10., 20., 30.], [40., 50., 60.], [70., 80., 90.]]]
+      indices = [[1, 2, 0], [2, 1, 0]]
+      with tf.compat.v1.Session() as sess:
+        gathered_example_feature = sess.run(
+            utils.gather_per_row(inputs=example_feature, indices=indices))
+        self.assertAllEqual(
+            gathered_example_feature,
+            [[[4., 5., 6.], [7., 8., 9.], [1., 2., 3.]],
+             [[70., 80., 90.], [40., 50., 60.], [10., 20., 30.]]])
+
+      indices = [[2, 0], [1, 0]]
+      with tf.compat.v1.Session() as sess:
+        gathered_example_feature = sess.run(
+            utils.gather_per_row(inputs=example_feature, indices=indices))
+        self.assertAllEqual(
+            gathered_example_feature,
+            [[[7., 8., 9.], [1., 2., 3.]], [[40., 50., 60.], [10., 20., 30.]]])
+
+  def test_sort_by_scores_2d(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
       positions = [[1, 2, 3], [4, 5, 6]]
@@ -59,7 +96,7 @@ class UtilsTest(tf.test.TestCase):
         self.assertAllEqual(sorted_positions, [[2, 3, 1]])
         self.assertAllEqual(sorted_names, [[b'b', b'c', b'a']])
 
-  def test_sort_by_scores_for_3d_features(self):
+  def test_sort_by_scores_3d(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
       example_feature = [[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]],
@@ -267,5 +304,4 @@ class UtilsTest(tf.test.TestCase):
 
 
 if __name__ == '__main__':
-  tf.compat.v1.enable_v2_behavior()
   tf.test.main()
