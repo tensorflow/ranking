@@ -197,7 +197,8 @@ def _per_list_precision(labels, predictions, topn):
   return per_list_precision
 
 
-def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
+def _prepare_and_validate_params(labels, predictions, mask, weights=None,
+                                 topn=None):
   """Prepares and validates the parameters.
 
   Args:
@@ -205,6 +206,8 @@ def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
       relevant example.
     predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
       the ranking score of the corresponding example.
+    mask: A `Tensor` of the same shape as predictions indicating which entries
+      are padded.
     weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
       former case is per-example and the latter case is per-list.
     topn: A cutoff for how many examples to consider for this metric.
@@ -224,10 +227,9 @@ def _prepare_and_validate_params(labels, predictions, weights=None, topn=None):
     topn = tf.shape(input=predictions)[1]
 
   # All labels should be >= 0. Invalid entries are reset.
-  is_label_valid = utils.is_label_valid(labels)
-  labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
+  labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
   predictions = tf.compat.v1.where(
-      is_label_valid, predictions, -1e-6 * tf.ones_like(predictions) +
+      mask, predictions, -1e-6 * tf.ones_like(predictions) +
       tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
   return labels, predictions, example_weights, topn
 
@@ -383,8 +385,10 @@ class MRRMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
+    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
+        labels, predictions, mask, weights, self._topn)
+
     sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn)
     sorted_list_size = tf.shape(input=sorted_labels)[1]
     # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
@@ -416,8 +420,9 @@ class ARPMetric(_RankingMetric):
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
     list_size = tf.shape(input=predictions)[1]
+    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, list_size)
+        labels, predictions, mask, weights, list_size)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
     weighted_labels = sorted_labels * sorted_weights
@@ -448,8 +453,9 @@ class RecallMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
+    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
+        labels, predictions, mask, weights, self._topn)
     per_list_recall = _per_list_recall(labels, predictions, topn)
     # per_list_weights are computed from the whole list to avoid the problem of
     # 0 when there is no relevant example in topn.
@@ -474,8 +480,9 @@ class PrecisionMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
+    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
+        labels, predictions, mask, weights, self._topn)
     per_list_precision = _per_list_precision(labels, predictions, topn)
     # per_list_weights are computed from the whole list to avoid the problem of
     # 0 when there is no relevant example in topn.
@@ -500,8 +507,9 @@ class MeanAveragePrecisionMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
+    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
+        labels, predictions, mask, weights, self._topn)
     # Relevance = 1.0 when labels >= 1.0.
     relevance = tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32)
     sorted_relevance, sorted_weights = utils.sort_by_scores(
@@ -549,8 +557,9 @@ class NDCGMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
+    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
+        labels, predictions, mask, weights, self._topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
     dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights,
@@ -590,8 +599,9 @@ class DCGMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
+    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
+        labels, predictions, mask, weights, self._topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
         predictions, [labels, weights], topn=topn)
     dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights,
@@ -618,8 +628,9 @@ class OPAMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights):
     """See `_RankingMetric`."""
+    mask = utils.is_label_valid(labels)
     clean_labels, predictions, weights, _ = _prepare_and_validate_params(
-        labels, predictions, weights)
+        labels, predictions, mask, weights)
     label_valid = tf.equal(clean_labels, labels)
     valid_pair = tf.logical_and(
         tf.expand_dims(label_valid, 2), tf.expand_dims(label_valid, 1))
@@ -766,7 +777,7 @@ class BPrefMetric(_RankingMetric):
 
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
-        labels, predictions, weights, self._topn)
+        labels, predictions, mask, weights, self._topn)
 
     # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
     relevance = tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32)

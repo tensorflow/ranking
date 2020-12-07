@@ -81,7 +81,6 @@ py_test(
     ],
     deps = [
         ":metrics",
-        ":metrics_impl",
         # py/tensorflow dep,
     ],
 )

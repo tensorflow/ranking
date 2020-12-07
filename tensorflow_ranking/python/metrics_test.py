@@ -23,7 +23,6 @@ import math
 import tensorflow as tf
 
 from tensorflow_ranking.python import metrics as metrics_lib
-from tensorflow_ranking.python import metrics_impl
 
 
 def _dcg(label,
@@ -172,15 +171,6 @@ class MetricsTest(tf.test.TestCase):
       for (metric_op, update_op), value in metrics_and_values:
         sess.run(update_op)
         self.assertAlmostEqual(sess.run(metric_op), value, places=5)
-
-  def test_reset_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      labels, predictions, _, _ = metrics_impl._prepare_and_validate_params(
-          labels, scores)
-      self.assertAllClose(labels, [[0., 0., 1.]])
-      self.assertAllClose(predictions, [[1., 1. - 1e-6, 2]])
 
   def test_make_mean_reciprocal_rank_fn(self):
     with tf.Graph().as_default():
