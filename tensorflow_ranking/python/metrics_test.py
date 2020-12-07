@@ -557,6 +557,41 @@ class MetricsTest(tf.test.TestCase):
            expected_modified_alphadcg_1),
       ])
 
+  def test_make_bpref_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      # ranks = [[3, 1, 2], [3, 2, 1]]
+      labels = [[0., 0., 1.], [1., 0., 2.]]
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      # BPref = 1 / R SUM_r(1- |n ranked higher than r| / min(R, N))
+
+      m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.BPREF)
+      m_w = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.BPREF,
+          weights_feature_name=weights_feature_name)
+      m_2 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.BPREF, topn=1)
+      m_alt = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.BPREF, use_trec_version=False)
+      self._check_metrics([
+          (m([labels[0]], [scores[0]],
+             features), 1. / 2. * (1. - 1. / 1.)),  # = 0.
+          (m(labels, scores, features),
+           (1. / 2. * (1. - 1. / 1.) +
+            (1. / 2. * ((1. - 0. / 1.) + (1. - 1. / 1.)))) / 2),  # = 0.25
+          (m_w(labels, scores, features),
+           (3. * (1. / 2. * (1. - 1. / 1.)) +
+            5. * (1. / 2. * ((1. - 0. / 1.) + (1. - 1. / 1.)))) / (3. + 5.)),
+          (m_2(labels, scores, features), (0. +
+                                           (1. / 2. * (1. - 0. / 1.))) / 2.),
+          (m_alt(labels, scores, features),
+           (1. / 2. * (1. - 1. / 1.) +
+            (1. / 2. * ((1. - 0. / 2.) + (1. - 1. / 2.)))) / 2),  # = 0.5
+      ])
+
   def test_eval_metric(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.], [3., 1., 2.]]

@@ -63,6 +63,9 @@ class RankingMetricKey(object):
   # Alpha Discounted Cumulative Gain.
   ALPHA_DCG = 'alpha_dcg'
 
+  # Binary Preference.
+  BPREF = 'bpref'
+
 
 def compute_mean(metric_key,
                  labels,
@@ -95,6 +98,7 @@ def compute_mean(metric_key,
       RankingMetricKey.PRECISION: metrics_impl.PrecisionMetric(name, topn),
       RankingMetricKey.MAP: metrics_impl.MeanAveragePrecisionMetric(name, topn),
       RankingMetricKey.ORDERED_PAIR_ACCURACY: metrics_impl.OPAMetric(name),
+      RankingMetricKey.BPREF: metrics_impl.BPrefMetric(name, topn),
   }
   assert metric_key in metric_dict, ('metric_key %s not supported.' %
                                      metric_key)
@@ -227,6 +231,16 @@ def make_ranking_metric_fn(metric_key,
         rank_discount_fn=rank_discount_fn,
         **kwargs)
 
+  def _binary_preference_fn(labels, predictions, features):
+    """Returns binary preference as the metric."""
+    return binary_preference(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name,
+        **kwargs)
+
   metric_fn_dict = {
       RankingMetricKey.ARP: _average_relevance_position_fn,
       RankingMetricKey.MRR: _mean_reciprocal_rank_fn,
@@ -237,6 +251,7 @@ def make_ranking_metric_fn(metric_key,
       RankingMetricKey.PRECISION_IA: _precision_ia_fn,
       RankingMetricKey.ORDERED_PAIR_ACCURACY: _ordered_pair_accuracy_fn,
       RankingMetricKey.ALPHA_DCG: _alpha_discounted_cumulative_gain_fn,
+      RankingMetricKey.BPREF: _binary_preference_fn,
   }
   assert metric_key in metric_fn_dict, ('metric_key %s not supported.' %
                                         metric_key)
@@ -515,6 +530,44 @@ def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
     per_list_opa, per_list_weights = metric.compute(labels, predictions,
                                                     weights)
   return tf.compat.v1.metrics.mean(per_list_opa, per_list_weights)
+
+
+def binary_preference(labels,
+                      predictions,
+                      weights=None,
+                      topn=None,
+                      name=None,
+                      use_trec_version=True):
+  """Computes binary preference (BPref).
+
+  The implementation of BPref is based on the desciption in the following:
+  https://trec.nist.gov/pubs/trec15/appendices/CE.MEASURES06.pdf
+  BPref = 1 / R SUM_r(1 - |n ranked higher than r| / min(R, N))
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: A cutoff for how many examples to consider for this metric.
+    name: A string used as the name for this metric.
+    use_trec_version: A boolean to choose the version of the formula to use.
+      If False, than the alternative BPref formula will be used:
+      BPref = 1 / R SUM_r(1 - |n ranked higher than r| / R)
+
+  Returns:
+    A metric for binary preference metric of the batch.
+
+  """
+  metric = metrics_impl.BPrefMetric(
+      name, topn, use_trec_version=use_trec_version)
+  with tf.compat.v1.name_scope(metric.name, 'binary_preference',
+                               (labels, predictions, weights)):
+    per_list_bpref, per_list_weights = metric.compute(labels, predictions,
+                                                      weights)
+  return tf.compat.v1.metrics.mean(per_list_bpref, per_list_weights)
 
 
 def eval_metric(metric_fn, **kwargs):
