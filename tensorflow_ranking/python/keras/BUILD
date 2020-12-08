@@ -16,9 +16,11 @@ py_library(
     deps = [
         ":estimator",
         ":feature",
+        ":layers",
         ":losses",
         ":metrics",
         ":model",
+        ":network",
         ":utils",
         "//tensorflow_ranking/python/keras/canned",
     ],
@@ -222,6 +224,26 @@ py_test(
     ],
     deps = [
         ":metrics",
+        # py/tensorflow dep,
+    ],
+)
+
+py_library(
+    name = "layers",
+    srcs = ["layers.py"],
+    srcs_version = "PY3",
+    deps = [
+        # py/tensorflow dep,
+        "//tensorflow_ranking/python:utils",
+    ],
+)
+
+py_test(
+    name = "layers_test",
+    srcs = ["layers_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":layers",
         # py/tensorflow dep,
     ],
 )

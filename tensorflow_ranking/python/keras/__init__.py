@@ -17,6 +17,7 @@
 from tensorflow_ranking.python.keras import canned
 from tensorflow_ranking.python.keras import estimator
 from tensorflow_ranking.python.keras import feature
+from tensorflow_ranking.python.keras import layers
 from tensorflow_ranking.python.keras import losses
 from tensorflow_ranking.python.keras import metrics
 from tensorflow_ranking.python.keras import model
