@@ -15,14 +15,14 @@
 # Lint as: python3
 """Defines Keras Layers for TF-Ranking."""
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 import tensorflow as tf
 from tensorflow_ranking.python import utils
 
 _EPSILON = 1e-10
 
 
-@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class FlattenList(tf.keras.layers.Layer):
   """Layer to flatten the example list.
 
@@ -51,24 +51,23 @@ class FlattenList(tf.keras.layers.Layer):
   query in a circular way.
   """
 
-  def __init__(self, name: str = "flatten_list", **kwargs: Dict[Any, Any]):
+  def __init__(self, name: Optional[str] = None, **kwargs: Dict[Any, Any]):
     """Initializes the FlattenList layer."""
     super().__init__(name=name, **kwargs)
 
   def call(
-      self, inputs: Tuple[Dict[str, tf.Tensor], Dict[str, tf.Tensor], tf.Tensor]
-  ) -> Tuple[Dict[str, tf.Tensor], Dict[str, tf.Tensor]]:
-    """call FlattenList layer to flatten context_features and example_features.
+      self, context_features: Dict[str, tf.Tensor],
+      example_features: Dict[str, tf.Tensor],
+      mask: tf.Tensor) -> Tuple[Dict[str, tf.Tensor], Dict[str, tf.Tensor]]:
+    """Call FlattenList layer to flatten context_features and example_features.
 
     Args:
-      inputs: A tuple of (context_features, example_features, mask), which are
-        described below:
-      * `context_features`: A map of context features to 2D tensors of shape
+      context_features: A map of context features to 2D tensors of shape
         [batch_size, feature_dim].
-      * `example_features`: A map of example features to 3D tensors of shape
+      example_features: A map of example features to 3D tensors of shape
         [batch_size, list_size, feature_dim].
-      * `mask`: A Tensor of shape [batch_size, list_size] to mask out the
-        invalid examples.
+      mask: A Tensor of shape [batch_size, list_size] to mask out the invalid
+        examples.
 
     Returns:
       A tuple of (flattened_context_features, flattened_example_fatures) where
@@ -79,10 +78,8 @@ class FlattenList(tf.keras.layers.Layer):
     Raises:
       ValueError: An error if example_features is None or empty.
     """
-    # TODO: Use kwargs arguments once b/165028453 is fixed.
-    context_features, example_features, mask = inputs
     if not example_features:
-      raise ValueError("Need a valid example feature.")
+      raise ValueError('Need a valid example feature.')
     batch_size = tf.shape(mask)[0]
     list_size = tf.shape(mask)[1]
     nd_indices, _ = utils.padded_nd_indices(is_valid=mask)
@@ -105,7 +102,7 @@ class FlattenList(tf.keras.layers.Layer):
     return flattened_context_features, flattened_example_features
 
 
-@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class RestoreList(tf.keras.layers.Layer):
   """Output layer to restore listwise output shape.
 
@@ -145,29 +142,21 @@ class RestoreList(tf.keras.layers.Layer):
   """
 
   def __init__(self,
-               name: str = "restore_list",
+               name: Optional[str] = None,
                by_scatter: bool = False,
                **kwargs: Dict[Any, Any]):
     super().__init__(name=name, **kwargs)
     self._by_scatter = by_scatter
 
-  def get_config(self):
-    config = super().get_config()
-    config.update({
-        "by_scatter": self._by_scatter,
-    })
-    return config
-
-  def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
+  def call(self, flattened_logits: tf.Tensor, mask: tf.Tensor) -> tf.Tensor:
     """Restores listwise shape of flattened_logits.
 
     Args:
-      inputs:  A tuple of (flattened_logits, mask), which are described below.
-      * `flattened_logits`: A `Tensor` of predicted logits for each pair of
-        query and documents, 1D tensor of shape [batch_size * list_size] or 2D
-        tensor of shape [batch_size * list_size, 1].
-      * `mask`: A boolean `Tensor` of shape [batch_size, list_size] to mask out
-        the invalid examples.
+      flattened_logits: A `Tensor` of predicted logits for each pair of query
+        and documents, 1D tensor of shape [batch_size * list_size] or 2D tensor
+        of shape [batch_size * list_size, 1].
+      mask: A boolean `Tensor` of shape [batch_size, list_size] to mask out the
+        invalid examples.
 
     Returns:
       A `Tensor` of shape [batch_size, list_size].
@@ -176,14 +165,11 @@ class RestoreList(tf.keras.layers.Layer):
       ValueError: An error if the shape of `flattened_logits` is neither 1D nor
         2D with shape [batch_size * list_size, 1].
     """
-    # TODO: Use kwargs arguments once b/165028453 is fixed.
-    flattened_logits, mask = inputs
-
     try:
       logits = tf.reshape(flattened_logits, shape=tf.shape(mask))
     except:
-      raise ValueError("`flattened_logits` needs to be either 1D of batch_size "
-                       "* list_size or 2D of [batch_size * list_size, 1].")
+      raise ValueError('`flattened_logits` needs to be either 1D of batch_size '
+                       '* list_size or 2D of [batch_size * list_size, 1].')
     if self._by_scatter:
       nd_indices, _ = utils.padded_nd_indices(is_valid=mask)
       counts = tf.scatter_nd(nd_indices, tf.ones_like(logits), tf.shape(mask))
@@ -194,3 +180,10 @@ class RestoreList(tf.keras.layers.Layer):
       return tf.where(mask, logits, tf.math.log(_EPSILON))
 
     return logits
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+        'by_scatter': self._by_scatter,
+    })
+    return config
