@@ -51,9 +51,20 @@ class FlattenList(tf.keras.layers.Layer):
   query in a circular way.
   """
 
-  def __init__(self, name: Optional[str] = None, **kwargs: Dict[Any, Any]):
-    """Initializes the FlattenList layer."""
+  def __init__(self,
+               circular_padding: bool = True,
+               name: Optional[str] = None,
+               **kwargs: Dict[Any, Any]):
+    """Initializes the FlattenList layer.
+
+    Args:
+      circular_padding: Whether to apply circular padding to replace invalid
+        features with valid ones.
+      name: Name of the layer.
+      **kwargs: keyword arguments.
+    """
     super().__init__(name=name, **kwargs)
+    self._circular_padding = circular_padding
 
   def call(
       self, context_features: Dict[str, tf.Tensor],
@@ -82,8 +93,6 @@ class FlattenList(tf.keras.layers.Layer):
       raise ValueError('Need a valid example feature.')
     batch_size = tf.shape(mask)[0]
     list_size = tf.shape(mask)[1]
-    nd_indices, _ = utils.padded_nd_indices(is_valid=mask)
-
     # Expand context features to be of [batch_size, list_size, ...].
     flattened_context_features = {}
     for name, tensor in context_features.items():
@@ -92,14 +101,26 @@ class FlattenList(tf.keras.layers.Layer):
       flattened_context_features[name] = utils.reshape_first_ndims(
           expanded_tensor, 2, [batch_size * list_size])
 
+    nd_indices = None
+    if self._circular_padding:
+      nd_indices, _ = utils.padded_nd_indices(is_valid=mask)
+
     flattened_example_features = {}
     for name, tensor in example_features.items():
-      # Replace invalid example features with valid ones.
-      padded_tensor = tf.gather_nd(tensor, nd_indices)
+      if nd_indices is not None:
+        # Replace invalid example features with valid ones.
+        tensor = tf.gather_nd(tensor, nd_indices)
       flattened_example_features[name] = utils.reshape_first_ndims(
-          padded_tensor, 2, [batch_size * list_size])
+          tensor, 2, [batch_size * list_size])
 
     return flattened_context_features, flattened_example_features
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+        'circular_padding': self._circular_padding,
+    })
+    return config
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')

@@ -24,7 +24,7 @@ _EPSILON = 1e-10
 
 class FlattenListTest(tf.test.TestCase):
 
-  def test_call(self):
+  def test_call_with_circular_padding(self):
     context_features = {
         'context_feature_1': tf.constant([[1], [0]], dtype=tf.float32)
     }
@@ -49,6 +49,32 @@ class FlattenListTest(tf.test.TestCase):
          mask=mask)
     self.assertAllClose(target_context_features, flattened_context_features)
     self.assertAllClose(target_example_features, flattened_example_features)
+
+  def test_call_without_circular_padding(self):
+    context_features = {
+        'context_feature_1': tf.constant([[1], [0]], dtype=tf.float32)
+    }
+    example_features = {
+        'example_feature_1':
+            tf.constant([[[1], [0], [-1]], [[0], [1], [0]]], dtype=tf.float32)
+    }
+    mask = tf.constant([[True, True, False], [True, False, False]],
+                       dtype=tf.bool)
+    expected_context_features = {
+        'context_feature_1':
+            tf.constant([[1], [1], [1], [0], [0], [0]], dtype=tf.float32)
+    }
+    expected_example_features = {
+        'example_feature_1':
+            tf.constant([[1], [0], [-1], [0], [1], [0]], dtype=tf.float32)
+    }
+    (flattened_context_features,
+     flattened_example_features) = layers.FlattenList(circular_padding=False)(
+         context_features=context_features,
+         example_features=example_features,
+         mask=mask)
+    self.assertAllClose(expected_context_features, flattened_context_features)
+    self.assertAllClose(expected_example_features, flattened_example_features)
 
   def test_call_raise_error(self):
     context_features = {
