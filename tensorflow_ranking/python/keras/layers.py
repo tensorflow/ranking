@@ -208,3 +208,97 @@ class RestoreList(tf.keras.layers.Layer):
         'by_scatter': self._by_scatter,
     })
     return config
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class ConcatFeatures(tf.keras.layers.Layer):
+  """Concatenates context features and example features in a listwise manner.
+
+  Given dicts of `context features`, `example features`, this layer expands
+  list_size times for the `context_features` and concatenates them with
+  example features along the `list_size` axis. The output is a 3-d tensor with
+  shape [batch_size, list_size, sum(feature_dims)], where sum(feature_dims) is
+  the sum of all example feature dimensions and the context feature dimension.
+
+  Example:
+  ```python
+    # Batch size = 2, list_size = 2.
+    context_features = {
+        'context_feature_1': [[1.], [2.]]
+    }
+    example_features = {
+        'example_feature_1':
+            [[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]]
+    }
+    mask = [[True, False], [True, True]]
+    ConcatFeatures()(context_features, example_features, mask)
+    # Returns: [[[1., 1., 0.], [1., 1., 0.]], [[2., 0., 1.], [2., 1., 0.]]])
+
+    ConcatFeatures(circular_padding=False)(
+        context_features, example_features, mask)
+    # Returns: [[[1., 1., 0.], [1., 0., 1.]], [[2., 0., 1.], [2., 1., 0.]]]
+  ```
+  """
+
+  def __init__(self,
+               circular_padding: bool = True,
+               name: Optional[str] = None,
+               **kwargs: Dict[Any, Any]):
+    """Initializes the ConcatFeatures layer.
+
+    Args:
+      circular_padding: Whether to apply circular padding to replace invalid
+        features with valid ones.
+      name: Name of the layer.
+      **kwargs: keyword arguments.
+    """
+    super().__init__(name=name, **kwargs)
+    self._circular_padding = circular_padding
+    self._flatten_list = FlattenList(circular_padding=self._circular_padding)
+
+  def call(
+      self,
+      context_features: Dict[str, tf.Tensor],
+      example_features: Dict[str, tf.Tensor],
+      mask: [tf.Tensor],
+  ) -> tf.Tensor:
+    """Call method for ConcatFeatures layer.
+
+    Args:
+      context_features: A dict of `Tensor`s with shape [batch_size, ...].
+      example_features:  A dict of `Tensor`s with shape [batch_size, list_size,
+        ...].
+      mask: A boolean tensor of shape [batch_size, list_size], which is True for
+        a valid example and False for invalid one.
+
+    Returns:
+      A `Tensor` of shape [batch_size, list_size, ...].
+    """
+    (flattened_context_features,
+     flattened_example_features) = self._flatten_list(
+         context_features=context_features,
+         example_features=example_features,
+         mask=mask)
+    # Concatenate flattened context and example features along `list_size` dim.
+    context_input = [
+        tf.keras.layers.Flatten()(flattened_context_features[name])
+        for name in sorted(flattened_context_features)
+    ]
+    example_input = [
+        tf.keras.layers.Flatten()(flattened_example_features[name])
+        for name in sorted(flattened_example_features)
+    ]
+    flattened_concat_features = tf.concat(context_input + example_input, 1)
+
+    # Reshape to 3D.
+    batch_size = tf.shape(mask)[0]
+    list_size = tf.shape(mask)[1]
+    return utils.reshape_first_ndims(flattened_concat_features, 1,
+                                     [batch_size, list_size])
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+        'circular_padding': self._circular_padding,
+    })
+    return config
