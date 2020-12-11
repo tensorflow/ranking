@@ -234,6 +234,7 @@ py_library(
     srcs_version = "PY3",
     deps = [
         # py/tensorflow dep,
+        # tensorflow_models/official/nlp/modeling dep,
         "//tensorflow_ranking/python:utils",
     ],
 )
@@ -244,6 +245,7 @@ py_test(
     python_version = "PY3",
     deps = [
         ":layers",
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
     ],
 )

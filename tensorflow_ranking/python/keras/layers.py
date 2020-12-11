@@ -17,6 +17,8 @@
 
 from typing import Any, Dict, Optional, Tuple
 import tensorflow as tf
+
+from official.nlp.modeling import layers as nlp_modeling_layers
 from tensorflow_ranking.python import utils
 
 _EPSILON = 1e-10
@@ -300,5 +302,167 @@ class ConcatFeatures(tf.keras.layers.Layer):
     config = super().get_config()
     config.update({
         'circular_padding': self._circular_padding,
+    })
+    return config
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class DocumentInteractionAttention(tf.keras.layers.Layer):
+  """Cross Document Interaction Attention layer.
+
+  This layer implements the cross-document attention described in
+  "Permutation Equivariant Document Interaction Network for Neural Learning to
+  Rank". http://research.google/pubs/pub49364/
+
+  This layer comprises of several layers of Multi-Headed Attention (MHA)
+  applied over the list of documents to attend over itself, using a mask to
+  specify valid documents. Optionally, the user can specify the `topk` documents
+  as the listwise context that is used to compute the attention per document. If
+  `topk` is None, all the documents are used as listwise context to compute the
+  attention.
+
+  MHA uses scaled dot product attention, with residual connection and layer
+  normalization as follows. This transformation is applied for `num_layers`
+  times:
+  h_i := LayerNorm_i(h_{i-1} + MHA_i(h_{i-1}), TopK(h_{i-1}; k))
+
+  Example:
+  ```python
+    # Batch size = 2, list_size = 3.
+    inputs =  [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]]
+    mask = [[True, True, False], [True, False, False]]
+    dia_layer = DocumentInteractionAttention(
+        num_heads=1, head_size=64, num_layers=1, topk=1)
+    dia_output = dia_layer(
+        inputs=inputs,
+        training=False,
+        mask=mask)
+  ```
+  """
+
+  def __init__(self,
+               num_heads: int,
+               head_size: int,
+               num_layers: int = 1,
+               topk: Optional[int] = None,
+               dropout_rate: float = 0.5,
+               name: Optional[str] = None,
+               **kwargs: Dict[Any, Any]):
+    """Initializes the layer.
+
+    Args:
+      num_heads: Number of attention heads (see `MultiHeadAttention` for more
+        details on this argument).
+      head_size: Size of each attention head.
+      num_layers: Number of self-attention layers.
+      topk: top-k positions to attend over. If None, attends over entire list.
+      dropout_rate: Dropout probability.
+      name: Name of the layer.
+      **kwargs: keyword arguments.
+
+    Raises:
+      ValueError: If topk is not None or not a positive integer.
+    """
+    if topk is not None:
+      if topk <= 0 or not isinstance(topk, int):
+        raise ValueError('topk should be either None or a positive integer.')
+    super().__init__(name=name, **kwargs)
+    self._num_heads = num_heads
+    self._head_size = head_size
+    self._num_layers = num_layers
+    self._topk = topk
+    self._dropout_rate = dropout_rate
+
+    # This projects input to head_size, so that this layer can be applied
+    # recursively for `num_layers` times.
+    # Shape: [batch_size, list_size, feature_dims] ->
+    # [batch_size, list_size, head_size].
+    self._input_projection = tf.keras.layers.Dense(
+        units=self._head_size, activation='relu')
+
+    # Self-attention layers.
+    self._attention_layers = []
+    for _ in range(self._num_layers):
+      # Shape: [batch_size, list_size, head_size] ->
+      # [batch_size, list_size, head_size].
+      attention_layer = nlp_modeling_layers.MultiHeadAttention(
+          self._num_heads,
+          self._head_size,
+          dropout=self._dropout_rate,
+          output_shape=self._head_size,
+          **kwargs)
+
+      # Dropout and layer normalization are applied element-wise, and do not
+      # change the shape.
+      dropout_layer = tf.keras.layers.Dropout(rate=self._dropout_rate)
+      norm_layer = tf.keras.layers.LayerNormalization(
+          axis=-1, epsilon=1e-12, dtype=tf.float32)
+      self._attention_layers.append(
+          (attention_layer, dropout_layer, norm_layer))
+
+  def call(self,
+           inputs: tf.Tensor,
+           training: bool = True,
+           mask: Optional[tf.Tensor] = None) -> tf.Tensor:
+    """Calls the document interaction layer to apply cross-document attention.
+
+    Args:
+      inputs: A tensor of shape [batch_size, list_size, feature_dims].
+      training: Whether in training or inference mode.
+      mask: A boolean tensor of shape [batch_size, list_size], which is True for
+        a valid example and False for invalid one. If this is `None`, then all
+        examples are treated as valid.
+
+    Returns:
+      A tensor of shape [batch_size, list_size, head_size].
+    """
+    batch_size = tf.shape(inputs)[0]
+    list_size = tf.shape(inputs)[1]
+    if mask is None:
+      mask = tf.ones(shape=(batch_size, list_size), dtype=tf.bool)
+    input_tensor = self._input_projection(inputs, training=training)
+
+    q_mask = tf.cast(mask, dtype=tf.int32)
+    k_mask = q_mask[:, :self._topk] if self._topk else q_mask
+    attention_mask = nlp_modeling_layers.SelfAttentionMask()([q_mask, k_mask])
+
+    for attention_layer, dropout_layer, norm_layer in self._attention_layers:
+      # k_tensor, the keys and values attended over, is truncated when topk is
+      # specified. Note that the output shape is unchanged, as that is
+      # determined by query_tensor.
+      k_tensor = (
+          input_tensor[:, :self._topk, :] if self._topk else input_tensor)
+      # Since argspec inspection is expensive, for keras layer,
+      # layer_obj._call_fn_args is a property that uses cached argspec for call.
+      # We use this to determine whether the layer expects `inputs` as first
+      # argument.
+      # TODO: Remove call_fn args check once
+      # tf.keras.layers.MultiHeadAttention is available in TF 2.4.
+      if 'inputs' == attention_layer._call_fn_args[0]:  # pylint: disable=protected-access
+        attention_inputs = [input_tensor, k_tensor]
+        output = attention_layer(
+            inputs=attention_inputs,
+            attention_mask=attention_mask,
+            training=training)
+      else:
+        output = attention_layer(
+            query=input_tensor,
+            value=k_tensor,
+            attention_mask=attention_mask,
+            training=training)
+      output = dropout_layer(output, training=training)
+      # Applying residual network here, similar to logic in Transformer.
+      input_tensor = norm_layer(output + input_tensor, training=training)
+
+    return input_tensor
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+        'num_heads': self._num_heads,
+        'head_size': self._head_size,
+        'num_layers': self._num_layers,
+        'topk': self._topk,
+        'dropout_rate': self._dropout_rate,
     })
     return config
