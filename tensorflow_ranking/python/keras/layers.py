@@ -385,7 +385,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     for _ in range(self._num_layers):
       # Shape: [batch_size, list_size, head_size] ->
       # [batch_size, list_size, head_size].
-      attention_layer = nlp_modeling_layers.MultiHeadAttention(
+      attention_layer = tf.keras.layers.MultiHeadAttention(
           self._num_heads,
           self._head_size,
           dropout=self._dropout_rate,
@@ -432,24 +432,11 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
       # determined by query_tensor.
       k_tensor = (
           input_tensor[:, :self._topk, :] if self._topk else input_tensor)
-      # Since argspec inspection is expensive, for keras layer,
-      # layer_obj._call_fn_args is a property that uses cached argspec for call.
-      # We use this to determine whether the layer expects `inputs` as first
-      # argument.
-      # TODO: Remove call_fn args check once
-      # tf.keras.layers.MultiHeadAttention is available in TF 2.4.
-      if 'inputs' == attention_layer._call_fn_args[0]:  # pylint: disable=protected-access
-        attention_inputs = [input_tensor, k_tensor]
-        output = attention_layer(
-            inputs=attention_inputs,
-            attention_mask=attention_mask,
-            training=training)
-      else:
-        output = attention_layer(
-            query=input_tensor,
-            value=k_tensor,
-            attention_mask=attention_mask,
-            training=training)
+      output = attention_layer(
+          query=input_tensor,
+          value=k_tensor,
+          attention_mask=attention_mask,
+          training=training)
       output = dropout_layer(output, training=training)
       # Applying residual network here, similar to logic in Transformer.
       input_tensor = norm_layer(output + input_tensor, training=training)
