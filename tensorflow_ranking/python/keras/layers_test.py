@@ -251,7 +251,7 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase,
     din_layer = self._get_din_layer(topk)
     output_1 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
     output_2 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
-    self.assertEqual(output_1.shape.as_list(), output_2.shape.as_list())
+    self.assertAllClose(output_1, output_2)
 
   def test_call_topk_none(self):
     tf.random.set_seed(1)
@@ -279,13 +279,12 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase,
   def test_no_effect_circular_padding(self, topk):
     din_layer = self._get_din_layer(topk)
     output_1 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
-
     circular_padded_inputs = tf.constant(
-        [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]],
+        [[[2., 1.], [2., 0.], [2., 1.]], [[1., 0.], [1., 0.], [1., 0.]]],
         dtype=tf.float32)
     output_2 = din_layer(
         inputs=circular_padded_inputs, training=False, mask=self._mask)
-    self.assertEqual(output_1.shape.as_list(), output_2.shape.as_list())
+    self.assertAllClose(output_1, output_2)
 
 
 if __name__ == '__main__':

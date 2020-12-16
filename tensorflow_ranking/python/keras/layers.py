@@ -386,11 +386,10 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
       # Shape: [batch_size, list_size, head_size] ->
       # [batch_size, list_size, head_size].
       attention_layer = tf.keras.layers.MultiHeadAttention(
-          self._num_heads,
-          self._head_size,
+          num_heads=self._num_heads,
+          key_dim=self._head_size,
           dropout=self._dropout_rate,
-          output_shape=self._head_size,
-          **kwargs)
+          output_shape=self._head_size)
 
       # Dropout and layer normalization are applied element-wise, and do not
       # change the shape.
