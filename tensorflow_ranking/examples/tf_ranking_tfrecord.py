@@ -73,14 +73,24 @@ flags.DEFINE_bool("listwise_inference", False,
                   "If true, exports accept `data_format` while serving.")
 flags.DEFINE_bool(
     "use_document_interactions", False,
-    "If true, uses cross-document interactions to generate scores.")
+    "If True, use Document Interaction Network to capture cross-document "
+    "interactions as additional features for scoring.")
+flags.DEFINE_integer(
+    "num_attention_layers", 1, "number of attention layers. See "
+    "`tfr.keras.layers.DocumentInteractionAttention`.")
+flags.DEFINE_integer(
+    "num_attention_heads", 1, "number of self attention heads. See "
+    "`tfr.keras.layers.DocumentInteractionAttention`.")
+flags.DEFINE_integer(
+    "head_size", 128, "Size of attention head. See "
+    "`tfr.keras.layers.DocumentInteractionAttention`.")
 
 FLAGS = flags.FLAGS
 
 _LABEL_FEATURE = "relevance"
 _PADDING_LABEL = -1
 _EMBEDDING_DIMENSION = 20
-_DOCUMENT_MASK = "__document_mask__"
+_MASK = "mask"
 
 
 def context_feature_columns():
@@ -150,15 +160,11 @@ def make_input_fn(file_pattern,
         example_feature_spec=example_feature_spec,
         reader=tf.data.TFRecordDataset,
         shuffle=randomize_input,
-        num_epochs=num_epochs)
+        num_epochs=num_epochs,
+        mask_feature_name=_MASK)
     features = tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
     label = tf.squeeze(features.pop(_LABEL_FEATURE), axis=2)
     label = tf.cast(label, tf.float32)
-
-    # Add document_mask to features, which is True for valid documents and False
-    # for invalid documents.
-    if FLAGS.use_document_interactions:
-      features[_DOCUMENT_MASK] = tf.not_equal(label, _PADDING_LABEL)
 
     return features, label
 
@@ -176,7 +182,8 @@ def make_serving_input_fn():
     return tfr.data.build_ranking_serving_input_receiver_fn(
         data_format=FLAGS.data_format,
         context_feature_spec=context_feature_spec,
-        example_feature_spec=example_feature_spec)
+        example_feature_spec=example_feature_spec,
+        mask_feature_name=_MASK)
   elif FLAGS.group_size == 1:
     # Exports accept tf.Example when group_size = 1.
     feature_spec = {}
@@ -188,53 +195,6 @@ def make_serving_input_fn():
     raise ValueError("FLAGS.group_size should be 1, but is {} when "
                      "FLAGS.export_listwise_inference is False".format(
                          FLAGS.group_size))
-
-
-def _document_interaction_layer(context_features,
-                                example_features,
-                                document_mask=None):
-  """A simplified demo version of Document Interaction Networks.
-
-  Document Interaction Networks can capture cross-document interactions using
-  self-attention mechanism. This simplified implementation (for demo purposes)
-  uses a single-layer of self-attention, with a single head.
-
-  For more details, please refer to the paper, "Self-Attentive Document
-  Interaction Networks for Permutation Equivariant Ranking".
-  https://arxiv.org/pdf/1910.09676.pdf
-
-  Args:
-    context_features: (dict) A mapping from feature name to 2D tensors of shape
-      [batch_size, feature_dims].
-    example_features: (dict) A mapping from feature name to 3D tensors of shape
-      [batch_size, input_length, feature_dims].
-    document_mask: A tensor of shape [batch_size, input_size], indicating the
-      number of valid documents per query.
-
-  Returns:
-     document_interaction_embedding: A 3D tensor of size [batch_size,
-     input_length, hidden_size].
-  """
-  sorted_example_keys = sorted(example_features.keys())
-  example_inputs = tf.concat(
-      [example_features[name] for name in sorted_example_keys], axis=2)
-
-  outputs = [example_inputs]
-  if context_features:
-    sorted_context_keys = sorted(context_features.keys())
-    context_inputs = tf.concat(
-        [context_features[name] for name in sorted_context_keys], axis=1)
-    context_inputs = tf.expand_dims(input=context_inputs, axis=1)
-    length = tf.shape(input=example_inputs)[1]
-    context_inputs = tf.tile(input=context_inputs, multiples=[1, length, 1])
-    outputs.append(context_inputs)
-
-  document_embedding = tf.concat(outputs, axis=2)
-  document_interaction_embedding = tf.keras.layers.Attention()(
-      [document_embedding, document_embedding],
-      [document_mask, document_mask])
-
-  return document_interaction_embedding
 
 
 def make_transform_fn():
@@ -257,6 +217,7 @@ def make_transform_fn():
               mode=mode,
               scope="transform_layer"))
     else:
+      mask = features.pop(_MASK)
       context_features, example_features = tfr.feature.encode_listwise_features(
           features=features,
           context_feature_columns=context_feature_columns(),
@@ -264,22 +225,21 @@ def make_transform_fn():
           mode=mode,
           scope="transform_layer")
 
-    # Document Interactions Layer.
-    if FLAGS.use_document_interactions:
-      if mode == tf.estimator.ModeKeys.PREDICT:
-        if not FLAGS.listwise_inference:
-          raise ValueError("Only listwise inference is compatible for networks "
-                           "with document interactions.")
-        else:
-          # Set document mask to None. This assumes document list for each
-          # query has no padding. It is recommended to pass batches of queries
-          # with the same number of documents during inference.
-          features[_DOCUMENT_MASK] = None
-      document_mask = features.pop(_DOCUMENT_MASK)
-      document_interaction_embedding = _document_interaction_layer(
-          context_features, example_features, document_mask=document_mask)
-      example_features[
-          "document_interaction_embedding"] = document_interaction_embedding
+      # Document interaction attention layer.
+      if FLAGS.use_document_interactions:
+        training = (mode == tf.estimator.ModeKeys.TRAIN)
+        concat_tensor = tfr.keras.layers.ConcatFeatures()(
+            context_features=context_features,
+            example_features=example_features,
+            mask=mask)
+        din_layer = tfr.keras.layers.DocumentInteractionAttention(
+            num_heads=FLAGS.num_attention_heads,
+            head_size=FLAGS.head_size,
+            num_layers=FLAGS.num_attention_layers,
+            dropout_rate=FLAGS.dropout_rate)
+        example_features["document_interaction_embedding"] = din_layer(
+            inputs=concat_tensor, training=training, mask=mask)
+
     return context_features, example_features
 
   return _transform_fn
@@ -407,6 +367,9 @@ def train_and_eval():
 def main(_):
   tf.compat.v1.set_random_seed(1234)
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
+  if FLAGS.use_document_interactions and not FLAGS.listwise_inference:
+    raise ValueError("Only listwise inference is compatible for models "
+                     "using Document Interaction Network.")
   train_and_eval()
 
 
@@ -414,5 +377,4 @@ if __name__ == "__main__":
   flags.mark_flag_as_required("train_path")
   flags.mark_flag_as_required("eval_path")
   flags.mark_flag_as_required("model_dir")
-
   tf.compat.v1.app.run()
