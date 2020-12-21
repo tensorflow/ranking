@@ -423,7 +423,7 @@ class LossesTest(tf.test.TestCase):
             loss_fn_simple(labels, scores, features).eval(),
             -(math.log(_softmax(scores[0])[2]) +
               math.log(_softmax(scores[1][:2])[1]) +
-              math.log(_softmax(scores[1])[2]) * 3.) / 3.,
+              math.log(_softmax(scores[1])[2]) * 3.) / 2.,
             places=5)
 
         loss_fn_weighted = ranking_losses.make_loss_fn(
@@ -433,7 +433,7 @@ class LossesTest(tf.test.TestCase):
             loss_fn_weighted(labels, scores, features).eval(),
             -(math.log(_softmax(scores[0])[2]) * 2. +
               math.log(_softmax(scores[1][:2])[1]) * 1. +
-              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 3.,
+              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 2.,
             places=5)
 
         # Test loss reduction method.

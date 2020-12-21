@@ -261,12 +261,12 @@ class LossesTest(tf.test.TestCase):
     self.assertAlmostEqual(
         loss(labels, scores).numpy(),
         -(ln(_softmax(scores[0])[2]) + ln(_softmax(scores[1][:2])[1]) +
-          ln(_softmax(scores[1])[2]) * 3.) / 9.,
+          ln(_softmax(scores[1])[2]) * 3.) / 3.,
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, weights).numpy(),
         -(ln(_softmax(scores[0])[2]) * 2. + ln(_softmax(scores[1][:2])[1]) * 1.
-          + ln(_softmax(scores[1])[2]) * 3. * 1.) / 9.,
+          + ln(_softmax(scores[1])[2]) * 3. * 1.) / 3.,
         places=5)
 
   def test_click_em_loss(self):
@@ -525,7 +525,7 @@ class LossesTest(tf.test.TestCase):
 
     loss = losses.UniqueSoftmaxLoss()
     self.assertAlmostEqual(
-        loss(labels, scores).numpy(), -(ln(_softmax([1, 2])[1])) / 3., places=5)
+        loss(labels, scores).numpy(), -(ln(_softmax([1, 2])[1])), places=5)
 
   def test_sigmoid_cross_entropy_loss_with_invalid_labels(self):
     scores = [[1., 3., 2.]]
@@ -698,12 +698,12 @@ class GetLossesTest(tf.test.TestCase):
     self.assertAlmostEqual(
         loss(labels, scores).numpy(),
         -(ln(_softmax(scores[0])[2]) + ln(_softmax(scores[1][:2])[1]) +
-          ln(_softmax(scores[1])[2]) * 3.) / 9.,
+          ln(_softmax(scores[1])[2]) * 3.) / 3.,
         places=5)
     self.assertAlmostEqual(
         loss(labels, scores, weights).numpy(),
         -(ln(_softmax(scores[0])[2]) * 2. + ln(_softmax(scores[1][:2])[1]) * 1.
-          + ln(_softmax(scores[1])[2]) * 3. * 1.) / 9.,
+          + ln(_softmax(scores[1])[2]) * 3. * 1.) / 3.,
         places=5)
 
   def test_sigmoid_cross_entropy_loss(self):

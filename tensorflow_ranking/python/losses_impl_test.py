@@ -551,7 +551,7 @@ class LossesImplTest(tf.test.TestCase):
             loss_fn.compute(labels, scores, weights, reduction).eval(),
             -(math.log(_softmax(scores[0])[2]) * 2. +
               math.log(_softmax(scores[1][:2])[1]) * 1. +
-              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 3.,
+              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 2.,
             places=5)
 
   def test_click_em_loss(self):

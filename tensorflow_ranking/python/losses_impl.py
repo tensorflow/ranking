@@ -816,9 +816,10 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
     # Set gains for loss weights.
     gains = tf.pow(2.0, labels) - 1
     # Compute the softmax loss for each doc.
-    losses = -logits + tf.math.log(
+    per_doc_softmax = -logits + tf.math.log(
         tf.reduce_sum(tf.exp(denominator_logits) * denominator_mask, axis=-1))
-    return losses, gains
+    losses = tf.reduce_sum(per_doc_softmax * gains, axis=1, keepdims=True)
+    return losses, tf.ones_like(losses)
 
 
 class _PointwiseLoss(_RankingLoss):
