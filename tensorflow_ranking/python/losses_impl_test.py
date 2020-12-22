@@ -794,6 +794,87 @@ class LossesImplTest(tf.test.TestCase):
             (1. + 1.) / 2,
             places=5)
 
+  def test_pointwise_compute_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+
+      with self.cached_session():
+        # SigmoidCrossEntropyLoss is chosen as an arbitrary pointwise loss to
+        # test the `compute_per_list` behavior.
+        loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
+        losses, weights = loss_fn.compute_per_list(
+            labels, scores, per_item_weights)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [1.3644443, 0.16292572])
+      self.assertAllClose(weights, [2. + 3. + 4., 1. + 1. + 1.])
+
+  def test_pairwise_compute_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+
+      with self.cached_session():
+        # PairwiseHingeLoss is chosen as an arbitrary pairwise loss to test the
+        # `compute_per_list` behavior.
+        loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+        losses, weights = loss_fn.compute_per_list(
+            labels, scores, per_item_weights)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [1., 0.])
+      self.assertAllClose(weights, [4. + 4., 1. + 1.])
+
+  def test_listwise_compute_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+
+      with self.cached_session():
+        # ApproxNDCGLoss is chosen as an arbitrary listwise loss to test the
+        # `compute_per_list` behavior.
+        loss_fn = losses_impl.ApproxNDCGLoss(name=None)
+        losses, weights = loss_fn.compute_per_list(
+            labels, scores, per_item_weights)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [-0.63093, -0.796248])
+      self.assertAllClose(weights, [4., 1.])
+
+  def test_softmax_compute_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+
+      with self.cached_session():
+        loss_fn = losses_impl.SoftmaxLoss(name=None)
+        losses, weights = loss_fn.compute_per_list(
+            labels, scores, per_item_weights)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [1.407606, 0.407606])
+      self.assertAllClose(weights, [4., 2.])
+
+  def test_unique_softmax_compute_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+
+      with self.cached_session():
+        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
+        losses, weights = loss_fn.compute_per_list(
+            labels, scores, per_item_weights)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [1.407606, 1.222818])
+      self.assertAllClose(weights, [4., 1.])
+
 
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()

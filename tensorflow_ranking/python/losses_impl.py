@@ -608,6 +608,25 @@ class _RankingLoss(object):
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
 
+  @abc.abstractmethod
+  def compute_per_list(self, labels, logits, weights):
+    """Computes the per-list loss.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+
+    Returns:
+      A pair of `Tensor` objects of shape [batch_size] containing per-list
+      losses and weights.
+    """
+    raise NotImplementedError('Calling an abstract method.')
+
   def eval_metric_unreduced(self, labels, logits, weights):
     """Computes the unreduced eval metric for the loss.
 
@@ -677,6 +696,31 @@ class _PairwiseLoss(_RankingLoss):
         pairwise_weights, name='weights_stop_gradient')
     return self._pairwise_loss(pairwise_logits), pairwise_weights
 
+  def compute_per_list(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    # Pairwise losses and weights will be of shape
+    # [batch_size, list_size, list_size].
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+
+    # Compute the weighted per-pair loss.
+    weighted_per_pair_loss = tf.math.multiply(losses, weights)
+
+    # Sum the inner dimensions to obtain per-list weights. For pairwise losses
+    # this typically indicates the (weighted) number of pairwise preferences per
+    # list.
+    per_list_weights = tf.reduce_sum(weights, axis=[1, 2])
+
+    # This computes the per-list losses by summing all weighted pairwise losses.
+    per_list_losses = tf.reduce_sum(weighted_per_pair_loss, axis=[1, 2])
+
+    # Normalize the per-list losses so that lists with different numbers of
+    # pairs have comparable losses. The different numbers of pairs is reflected
+    # in the per-list weights.
+    per_list_losses = tf.math.divide_no_nan(per_list_losses, per_list_weights)
+
+    return per_list_losses, per_list_weights
+
   def normalize_weights(self, labels, weights):
     """See _RankingLoss."""
     # The `weights` is item-wise and is applied non-symmetrically to update
@@ -737,6 +781,18 @@ class _ListwiseLoss(_RankingLoss):
           tf.reduce_sum(input_tensor=(weights * labels), axis=1, keepdims=True),
           tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True))
 
+  def compute_per_list(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    # Listwise losses and weights will be of shape [batch_size, 1].
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+
+    # This removes the inner dimension of size 1 to make the output shape
+    # [batch_size].
+    per_list_losses = tf.squeeze(losses, axis=1)
+    per_list_weights = tf.squeeze(weights, axis=1)
+    return per_list_losses, per_list_weights
+
 
 class SoftmaxLoss(_ListwiseLoss):
   """Implements softmax loss."""
@@ -788,6 +844,14 @@ class SoftmaxLoss(_ListwiseLoss):
     labels, logits = self.precompute(labels, logits, weights)
     return self.compute_unreduced_loss(labels, logits)
 
+  def compute_per_list(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    # As opposed to the other listwise losses, SoftmaxLoss returns already
+    # squeezed losses, which can be returned directly.
+    logits = self.get_logits(logits)
+    labels, logits = self.precompute(labels, logits, weights)
+    return self.compute_unreduced_loss(labels, logits)
+
 
 class UniqueSoftmaxLoss(_ListwiseLoss):
   """Implements unique rating softmax loss."""
@@ -832,6 +896,28 @@ class _PointwiseLoss(_RankingLoss):
     return tf.compat.v1.where(
         utils.is_label_valid(labels),
         tf.ones_like(labels) * weights, tf.zeros_like(labels))
+
+  def compute_per_list(self, labels, logits, weights):
+    """See `_RankingLoss`."""
+    # Pointwise losses and weights will be of shape [batch_size, list_size].
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+
+    # Compute the weighted per-item loss.
+    weighted_per_item_loss = tf.math.multiply(losses, weights)
+
+    # Sum the inner dimensions to obtain per-list weights. For pointwise losses
+    # this typically indicates the (weighted) number of items per list.
+    per_list_weights = tf.reduce_sum(weights, axis=1)
+
+    # This computes the per-list losses by summing all weighted per-item losses.
+    per_list_losses = tf.reduce_sum(weighted_per_item_loss, axis=1)
+
+    # Normalize the per-list losses so that lists with different numbers of
+    # items have comparable losses. The different numbers of items is reflected
+    # in the per-list weights.
+    per_list_losses = tf.math.divide_no_nan(per_list_losses, per_list_weights)
+    return per_list_losses, per_list_weights
 
 
 class ClickEMLoss(_PointwiseLoss):
