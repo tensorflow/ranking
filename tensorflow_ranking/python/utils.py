@@ -63,8 +63,7 @@ def gather_per_row(inputs, indices):
       3D.
   """
   indices = tf.cast(indices, dtype=tf.int32)
-  gather_idx = _to_nd_indices(indices)
-  return tf.gather_nd(inputs, gather_idx)
+  return tf.gather(inputs, indices, batch_dims=1, axis=1)
 
 
 def is_label_valid(labels):
@@ -145,16 +144,15 @@ def sort_by_scores(scores,
     # mask) to the end.
     shuffle_ind = None
     if shuffle_ties or mask is not None:
-      shuffle_ind = _to_nd_indices(_get_shuffle_indices(
-          tf.shape(input=scores), mask, shuffle_ties=shuffle_ties, seed=seed))
-      scores = tf.gather_nd(scores, shuffle_ind)
+      shuffle_ind = _get_shuffle_indices(
+          tf.shape(input=scores), mask, shuffle_ties=shuffle_ties, seed=seed)
+      scores = tf.gather(scores, shuffle_ind, batch_dims=1, axis=1)
 
     # Perform sort and return sorted feature_list entries.
     _, indices = tf.math.top_k(scores, topn, sorted=True)
-    nd_indices = _to_nd_indices(indices)
     if shuffle_ind is not None:
-      nd_indices = tf.gather_nd(shuffle_ind, nd_indices)
-    return [tf.gather_nd(f, nd_indices) for f in features_list]
+      indices = tf.gather(shuffle_ind, indices, batch_dims=1, axis=1)
+    return [tf.gather(f, indices, batch_dims=1, axis=1) for f in features_list]
 
 
 def sorted_ranks(scores, shuffle_ties=True, seed=None):
