@@ -18,6 +18,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import math
+
 import tensorflow as tf
 
 from tensorflow_ranking.python import utils
@@ -132,6 +134,43 @@ class UtilsTest(tf.test.TestCase):
         sorted_names = sess.run(
             utils.sort_by_scores(scores, [names], shuffle_ties=True, seed=2))[0]
         self.assertAllEqual(sorted_names, [[b'a', b'c', b'b']])
+
+  def test_sort_by_scores_with_mask(self):
+    with tf.Graph().as_default():
+      scores = [[0., math.inf, 2., -math.inf, 1.]]
+      names = [['a', 'b', 'c', 'd', 'e']]
+      mask_1 = [[True, False, True, True, False]]
+      mask_2 = [[False, True, False, True, True]]
+      with tf.compat.v1.Session() as sess:
+        sorted_names = sess.run(
+            utils.sort_by_scores(scores, [names], mask=mask_1,
+                                 shuffle_ties=False))[0]
+        self.assertAllEqual(sorted_names, [[b'c', b'a', b'd', b'b', b'e']])
+        sorted_names = sess.run(
+            utils.sort_by_scores(scores, [names], mask=mask_2,
+                                 shuffle_ties=False))[0]
+        self.assertAllEqual(sorted_names, [[b'b', b'e', b'd', b'a', b'c']])
+        sorted_names = sess.run(
+            utils.sort_by_scores(scores, [names], shuffle_ties=False))[0]
+        self.assertAllEqual(sorted_names, [[b'b', b'c', b'e', b'a', b'd']])
+
+  def test_sort_by_scores_with_mask_and_shuffle_ties(self):
+    with tf.Graph().as_default():
+      tf.random.set_seed(42)
+      scores = [[0., math.inf, 0., -math.inf, -math.inf]]
+      names = [['a', 'b', 'c', 'd', 'e']]
+      mask = [[True, False, True, True, False]]
+
+      with tf.compat.v1.Session() as sess:
+        result = utils.sort_by_scores(scores, [names], mask=mask,
+                                      shuffle_ties=True, seed=13)
+        sorted_names = sess.run(result)[0]
+        self.assertAllEqual(sorted_names, [[b'a', b'c', b'd', b'b', b'e']])
+
+        result = utils.sort_by_scores(scores, [names], mask=mask,
+                                      shuffle_ties=True, seed=17)
+        sorted_names = sess.run(result)[0]
+        self.assertAllEqual(sorted_names, [[b'c', b'a', b'd', b'e', b'b']])
 
   def test_sorted_ranks(self):
     with tf.Graph().as_default():

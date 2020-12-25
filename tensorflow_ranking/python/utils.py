@@ -73,11 +73,43 @@ def is_label_valid(labels):
   return tf.greater_equal(labels, 0.)
 
 
+def _get_shuffle_indices(shape, mask=None, shuffle_ties=True, seed=None):
+  """Gets indices which would shuffle a tensor.
+
+  Args:
+    shape: The shape of the indices to generate.
+    mask: An optional mask that indicates which entries to place first. Its
+      shape should be equal to given shape.
+    shuffle_ties: Whether to randomly shuffle ties.
+    seed: The ops-level random seed.
+
+  Returns:
+    An int32 `Tensor` with given `shape`. Its entries are indices that would
+    (randomly) shuffle the values of a `Tensor` of given `shape` along the last
+    axis while placing masked items first.
+  """
+  # Generate random values when shuffling ties or all zeros when not.
+  if shuffle_ties:
+    shuffle_values = tf.random.uniform(shape, seed=seed)
+  else:
+    shuffle_values = tf.zeros(shape, dtype=tf.float32)
+
+  # Since shuffle_values is always in [0, 1), we can safely increase entries
+  # where mask=False with 2.0 to make sure those are placed last during the
+  # argsort op.
+  if mask is not None:
+    shuffle_values = tf.where(mask, shuffle_values, shuffle_values + 2.0)
+
+  # Generate indices by sorting the shuffle values.
+  return tf.argsort(shuffle_values, stable=True)
+
+
 def sort_by_scores(scores,
                    features_list,
                    topn=None,
                    shuffle_ties=True,
-                   seed=None):
+                   seed=None,
+                   mask=None):
   """Sorts list of features according to per-example scores.
 
   Args:
@@ -89,6 +121,9 @@ def sort_by_scores(scores,
     topn: An integer as the cutoff of examples in the sorted list.
     shuffle_ties: A boolean. If True, randomly shuffle before the sorting.
     seed: The ops-level random seed used when `shuffle_ties` is True.
+    mask: An optional `Tensor` of shape [batch_size, list_size] representing
+      which entries are valid for sorting. Invalid entries will be pushed to the
+      end.
 
   Returns:
     A list of `Tensor`s as the list of sorted features by `scores`.
@@ -100,13 +135,21 @@ def sort_by_scores(scores,
     if topn is None:
       topn = list_size
     topn = tf.minimum(topn, list_size)
+
+    # Set invalid entries (those whose mask value is False) to the minimal value
+    # of scores so they will be placed last during sort ops.
+    if mask is not None:
+      scores = tf.where(mask, scores, tf.reduce_min(scores))
+
+    # Shuffle scores to break ties and/or push invalid entries (according to
+    # mask) to the end.
     shuffle_ind = None
-    if shuffle_ties:
-      shuffle_ind = _to_nd_indices(
-          tf.argsort(
-              tf.random.uniform(tf.shape(input=scores), seed=seed),
-              stable=True))
+    if shuffle_ties or mask is not None:
+      shuffle_ind = _to_nd_indices(_get_shuffle_indices(
+          tf.shape(input=scores), mask, shuffle_ties=shuffle_ties, seed=seed))
       scores = tf.gather_nd(scores, shuffle_ind)
+
+    # Perform sort and return sorted feature_list entries.
     _, indices = tf.math.top_k(scores, topn, sorted=True)
     nd_indices = _to_nd_indices(indices)
     if shuffle_ind is not None:
