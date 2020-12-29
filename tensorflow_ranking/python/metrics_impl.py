@@ -173,7 +173,7 @@ def _per_list_recall(labels, predictions, topn):
   return per_list_recall
 
 
-def _per_list_precision(labels, predictions, topn):
+def _per_list_precision(labels, predictions, topn, mask):
   """Computes the precision for each query in the batch.
 
   Args:
@@ -182,6 +182,8 @@ def _per_list_precision(labels, predictions, topn):
     predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
       the ranking score of the corresponding example.
     topn: A cutoff for how many examples to consider for this metric.
+    mask: A `Tensor` of the same shape as predictions indicating which entries
+      are valid for computing the metric.
 
   Returns:
     A `Tensor` of size [batch_size, 1] containing the precision of each query
@@ -190,10 +192,13 @@ def _per_list_precision(labels, predictions, topn):
   sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn)[0]
   # Relevance = 1.0 when labels >= 1.0.
   relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
+  if topn is None:
+    topn = tf.shape(relevance)[1]
+  valid_topn = tf.minimum(
+      topn, tf.reduce_sum(tf.cast(mask, dtype=tf.int32), axis=1, keepdims=True))
   per_list_precision = tf.compat.v1.math.divide_no_nan(
       tf.reduce_sum(input_tensor=relevance, axis=1, keepdims=True),
-      tf.reduce_sum(
-          input_tensor=tf.ones_like(relevance), axis=1, keepdims=True))
+      tf.cast(valid_topn, dtype=tf.float32))
   return per_list_precision
 
 
@@ -483,7 +488,7 @@ class PrecisionMetric(_RankingMetric):
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, mask, weights, self._topn)
-    per_list_precision = _per_list_precision(labels, predictions, topn)
+    per_list_precision = _per_list_precision(labels, predictions, topn, mask)
     # per_list_weights are computed from the whole list to avoid the problem of
     # 0 when there is no relevant example in topn.
     per_list_weights = _per_example_weights_to_per_list_weights(

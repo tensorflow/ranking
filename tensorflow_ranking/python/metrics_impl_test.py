@@ -349,6 +349,16 @@ class PrecisionMetricTest(tf.test.TestCase):
       self.assertAllClose(output_top2, [[1. / 2.], [1. / 2.], [0. / 2.]])
       self.assertAllClose(output_top6, [[2. / 3.], [1. / 3.], [1. / 3.]])
 
+  def test_precision_should_ignore_padded_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2., 4.], [4., 1., 3., 2.]]
+      labels = [[0., 0., 1., -1.], [0., -1., 1., -1.]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[1. / 3.], [1. / 2.]])
+
   def test_precision_weights_should_be_avg_of_weights_of_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
