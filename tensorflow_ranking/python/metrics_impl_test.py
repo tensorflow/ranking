@@ -392,6 +392,17 @@ class PrecisionMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[1. / 3.], [1. / 2.]])
 
+  def test_precision_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2., 4.], [4., 1., 3., 2.]]
+      labels = [[0., 0., 1., 0.], [0., 1., 1., 0.]]
+      mask = [[True, True, True, False], [True, False, True, False]]
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      self.assertAllClose(output, [[1. / 3.], [1. / 2.]])
+
   def test_precision_weights_should_be_avg_of_weights_of_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]

@@ -191,7 +191,8 @@ def _per_list_precision(labels, predictions, topn, mask):
     A `Tensor` of size [batch_size, 1] containing the precision of each query
     respectively.
   """
-  sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn)[0]
+  sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn,
+                                       mask=mask)[0]
   # Relevance = 1.0 when labels >= 1.0.
   relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
   if topn is None:
@@ -495,7 +496,8 @@ class PrecisionMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
-    mask = utils.is_label_valid(labels)
+    if mask is None:
+      mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, mask, weights, self._topn)
     per_list_precision = _per_list_precision(labels, predictions, topn, mask)
