@@ -394,11 +394,13 @@ class MRRMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
-    mask = utils.is_label_valid(labels)
+    if mask is None:
+      mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, mask, weights, self._topn)
 
-    sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn)
+    sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn,
+                                          mask=mask)
     sorted_list_size = tf.shape(input=sorted_labels)[1]
     # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
     relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)

@@ -95,6 +95,17 @@ class MRRMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[1.]])
 
+  def test_mrr_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 2., 3.]]
+      labels = [[0., 1., 0.]]
+      mask = [[True, True, False]]
+
+      metric = metrics_impl.MRRMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      self.assertAllClose(output, [[1.]])
+
   def test_mrr_should_give_a_value_for_each_list_in_batch_inputs(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
