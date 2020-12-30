@@ -253,6 +253,17 @@ class RecallMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[0.]])
 
+  def test_recall_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[5., 4., 3., 2., 1.]]
+      labels = [[0., 1., 1., 0., 1.]]
+      mask = [[True, False, True, True, True]]
+
+      metric = metrics_impl.RecallMetric(name=None, topn=3)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      self.assertAllClose(output, [[1. / 2.]])
+
   def test_recall_should_handle_topn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]

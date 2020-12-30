@@ -149,7 +149,7 @@ def _discounted_cumulative_gain(labels,
       input_tensor=weights * gain * discount, axis=1, keepdims=True)
 
 
-def _per_list_recall(labels, predictions, topn):
+def _per_list_recall(labels, predictions, topn, mask):
   """Computes the recall@k for each query in the batch.
 
   Args:
@@ -158,12 +158,14 @@ def _per_list_recall(labels, predictions, topn):
     predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
       the ranking score of the corresponding example.
     topn: A cutoff for how many examples to consider for this metric.
+    mask: A mask indicating which entries are valid for computing the metric.
 
   Returns:
     A `Tensor` of size [batch_size, 1] containing the precision of each query
     respectively.
   """
-  sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn)[0]
+  sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn,
+                                       mask=mask)[0]
   topn_positives = tf.cast(
       tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
   labels = tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32)
@@ -465,10 +467,11 @@ class RecallMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
-    mask = utils.is_label_valid(labels)
+    if mask is None:
+      mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, mask, weights, self._topn)
-    per_list_recall = _per_list_recall(labels, predictions, topn)
+    per_list_recall = _per_list_recall(labels, predictions, topn, mask)
     # per_list_weights are computed from the whole list to avoid the problem of
     # 0 when there is no relevant example in topn.
     per_list_weights = _per_example_weights_to_per_list_weights(
