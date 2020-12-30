@@ -617,11 +617,12 @@ class DCGMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
-    mask = utils.is_label_valid(labels)
+    if mask is None:
+      mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, mask, weights, self._topn)
     sorted_labels, sorted_weights = utils.sort_by_scores(
-        predictions, [labels, weights], topn=topn)
+        predictions, [labels, weights], topn=topn, mask=mask)
     dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights,
                                       self._gain_fn, self._rank_discount_fn)
     per_list_weights = _per_example_weights_to_per_list_weights(
