@@ -430,12 +430,13 @@ class ARPMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
     list_size = tf.shape(input=predictions)[1]
-    mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
         labels, predictions, mask, weights, list_size)
     sorted_labels, sorted_weights = utils.sort_by_scores(
-        predictions, [labels, weights], topn=topn)
+        predictions, [labels, weights], topn=topn, mask=mask)
     weighted_labels = sorted_labels * sorted_weights
     position = (tf.cast(tf.range(1, topn + 1), dtype=tf.float32) *
                 tf.ones_like(weighted_labels))

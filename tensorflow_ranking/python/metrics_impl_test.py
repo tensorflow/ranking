@@ -193,6 +193,17 @@ class ARPMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[2.]])
 
+  def test_arp_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 5., 4., 3., 2.]]
+      labels = [[1., 0., 1., 1., 0.]]
+      mask = [[True, False, True, False, True]]
+
+      metric = metrics_impl.ARPMetric(name=None)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      self.assertAllClose(output, [[2.]])
+
   def test_arp_should_weight_items_with_weights_and_labels(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
