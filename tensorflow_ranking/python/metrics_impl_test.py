@@ -611,6 +611,19 @@ class NDCGMetricTest(tf.test.TestCase):
       max_dcg = (2. ** 2. - 1.) / log2p1(1.) + 1. / log2p1(2.)
       self.assertAllClose(output, [[dcg / max_dcg]])
 
+  def test_ndcg_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 4., 3., 2.]]
+      labels = [[2., 2., 1., 0.]]
+      mask = [[True, False, True, True]]
+
+      metric = metrics_impl.NDCGMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      dcg = (2. ** 2. - 1.) / log2p1(3.) + 1. / log2p1(1.)
+      max_dcg = (2. ** 2. - 1.) / log2p1(1.) + 1. / log2p1(2.)
+      self.assertAllClose(output, [[dcg / max_dcg]])
+
   def test_ndcg_should_be_single_value_per_list(self):
     with tf.Graph().as_default():
       scores = [[3., 2., 1.], [3., 1., 2.]]
