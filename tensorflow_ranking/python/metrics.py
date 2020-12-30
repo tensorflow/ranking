@@ -102,6 +102,7 @@ def compute_mean(metric_key,
   }
   assert metric_key in metric_dict, ('metric_key %s not supported.' %
                                      metric_key)
+  # TODO: Add mask argument for metric.compute() call
   metric, weight = metric_dict[metric_key].compute(labels, predictions, weights)
   return tf.compat.v1.div_no_nan(
       tf.reduce_sum(input_tensor=metric * weight),
@@ -282,6 +283,7 @@ def mean_reciprocal_rank(labels,
   metric = metrics_impl.MRRMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'mean_reciprocal_rank',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     mrr, per_list_weights = metric.compute(labels, predictions, weights)
     return tf.compat.v1.metrics.mean(mrr, per_list_weights)
 
@@ -307,6 +309,7 @@ def average_relevance_position(labels, predictions, weights=None, name=None):
   metric = metrics_impl.ARPMetric(name)
   with tf.compat.v1.name_scope(metric.name, 'average_relevance_position',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     per_list_arp, per_list_weights = metric.compute(labels, predictions,
                                                     weights)
   return tf.compat.v1.metrics.mean(per_list_arp, per_list_weights)
@@ -331,6 +334,7 @@ def precision(labels, predictions, weights=None, topn=None, name=None):
   metric = metrics_impl.PrecisionMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'precision',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     precision_at_k, per_list_weights = metric.compute(labels, predictions,
                                                       weights)
   return tf.compat.v1.metrics.mean(precision_at_k, per_list_weights)
@@ -363,6 +367,7 @@ def mean_average_precision(labels,
   metric = metrics_impl.MeanAveragePrecisionMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'mean_average_precision',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     per_list_map, per_list_weights = metric.compute(labels, predictions,
                                                     weights)
   return tf.compat.v1.metrics.mean(per_list_map, per_list_weights)
@@ -387,6 +392,7 @@ def precision_ia(labels, predictions, weights=None, topn=None, name=None):
   metric = metrics_impl.PrecisionIAMetric(name, topn)
   with tf.compat.v1.name_scope(metric.name, 'precision_ia',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     precision_at_k, per_list_weights = metric.compute(labels, predictions,
                                                       weights)
   return tf.compat.v1.metrics.mean(precision_at_k, per_list_weights)
@@ -425,6 +431,7 @@ def normalized_discounted_cumulative_gain(
   with tf.compat.v1.name_scope(metric.name,
                                'normalized_discounted_cumulative_gain',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     per_list_ndcg, per_list_weights = metric.compute(labels, predictions,
                                                      weights)
   return tf.compat.v1.metrics.mean(per_list_ndcg, per_list_weights)
@@ -456,6 +463,7 @@ def discounted_cumulative_gain(labels,
   metric = metrics_impl.DCGMetric(name, topn, gain_fn, rank_discount_fn)
   with tf.compat.v1.name_scope(name, 'discounted_cumulative_gain',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     dcg, per_list_weights = metric.compute(labels, predictions, weights)
   return tf.compat.v1.metrics.mean(dcg, per_list_weights)
 
@@ -501,6 +509,7 @@ def alpha_discounted_cumulative_gain(
                                        seed=seed)
   with tf.compat.v1.name_scope(name, 'alpha_discounted_cumulative_gain',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     alpha_dcg, per_list_weights = metric.compute(labels, predictions, weights)
   return tf.compat.v1.metrics.mean(alpha_dcg, per_list_weights)
 
@@ -527,6 +536,7 @@ def ordered_pair_accuracy(labels, predictions, weights=None, name=None):
   metric = metrics_impl.OPAMetric(name)
   with tf.compat.v1.name_scope(metric.name, 'ordered_pair_accuracy',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     per_list_opa, per_list_weights = metric.compute(labels, predictions,
                                                     weights)
   return tf.compat.v1.metrics.mean(per_list_opa, per_list_weights)
@@ -565,6 +575,7 @@ def binary_preference(labels,
       name, topn, use_trec_version=use_trec_version)
   with tf.compat.v1.name_scope(metric.name, 'binary_preference',
                                (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
     per_list_bpref, per_list_weights = metric.compute(labels, predictions,
                                                       weights)
   return tf.compat.v1.metrics.mean(per_list_bpref, per_list_weights)

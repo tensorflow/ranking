@@ -170,6 +170,7 @@ class _RankingMetric(tf.keras.metrics.Mean):
     y_true = tf.cast(y_true, self._dtype)
     y_pred = tf.cast(y_pred, self._dtype)
 
+    # TODO: Add mask argument for metric.compute() call
     per_list_metric_val, per_list_metric_weights = self._metric.compute(
         y_true, y_pred, sample_weight)
     return super(_RankingMetric, self).update_state(

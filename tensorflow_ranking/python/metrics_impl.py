@@ -248,7 +248,7 @@ class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
     raise NotImplementedError('Calling an abstract method.')
 
   @abc.abstractmethod
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """Computes the metric with the given inputs.
 
     Args:
@@ -258,6 +258,8 @@ class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
         the ranking score of the corresponding example.
       weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
         The former case is per-example and the latter case is per-list.
+      mask: An optional `Tensor` of the same shape as predictions indicating
+        which entries are valid for computing the metric.
 
     Returns:
       A tf metric.
@@ -352,7 +354,7 @@ class _DivRankingMetric(_RankingMetric):
             tf.reduce_any(tf.greater_equal(labels, 1.0), axis=-1),
             dtype=tf.float32))
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """Computes the metric and per list weight with the given inputs.
 
     Args:
@@ -362,6 +364,8 @@ class _DivRankingMetric(_RankingMetric):
         the ranking score of the corresponding example.
       weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
         The former case is per-example and the latter case is per-list.
+      mask: An optional `Tensor` of the same shape as predictions indicating
+        which entries are valid for computing the metric.
 
     Returns:
       A per-list metric and a per-list weights.
@@ -388,7 +392,7 @@ class MRRMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
@@ -422,7 +426,7 @@ class ARPMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     list_size = tf.shape(input=predictions)[1]
     mask = utils.is_label_valid(labels)
@@ -456,7 +460,7 @@ class RecallMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
@@ -483,7 +487,7 @@ class PrecisionMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
@@ -510,7 +514,7 @@ class MeanAveragePrecisionMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
@@ -560,7 +564,7 @@ class NDCGMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
@@ -602,7 +606,7 @@ class DCGMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     mask = utils.is_label_valid(labels)
     labels, predictions, weights, topn = _prepare_and_validate_params(
@@ -631,7 +635,7 @@ class OPAMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
     mask = utils.is_label_valid(labels)
     clean_labels, predictions, weights, _ = _prepare_and_validate_params(
@@ -777,7 +781,7 @@ class BPrefMetric(_RankingMetric):
     """The metric name."""
     return self._name
 
-  def compute(self, labels, predictions, weights):
+  def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
 
     mask = utils.is_label_valid(labels)
