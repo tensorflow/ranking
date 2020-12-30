@@ -647,7 +647,8 @@ class OPAMetric(_RankingMetric):
 
   def compute(self, labels, predictions, weights, mask=None):
     """See `_RankingMetric`."""
-    mask = utils.is_label_valid(labels)
+    if mask is None:
+      mask = utils.is_label_valid(labels)
     clean_labels, predictions, weights, _ = _prepare_and_validate_params(
         labels, predictions, mask, weights)
     label_valid = tf.equal(clean_labels, labels)

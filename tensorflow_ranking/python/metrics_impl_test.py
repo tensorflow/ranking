@@ -915,6 +915,20 @@ class OPAMetricTest(tf.test.TestCase):
       self.assertAllClose(output, [[2. / 3.]])
       self.assertAllClose(output_weights, [[3.]])
 
+  def test_opa_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[4., 1., 2., 3.]]
+      labels = [[2., 1., 1., 0.]]
+      mask = [[True, False, True, True]]
+
+      metric = metrics_impl.OPAMetric(name=None)
+      output, output_weights = metric.compute(labels, scores, None, mask=mask)
+
+      # The correctly ordered pairs are:
+      # scores[0] > scores[2], scores[0] > scores[3]
+      self.assertAllClose(output, [[2. / 3.]])
+      self.assertAllClose(output_weights, [[3.]])
+
   def test_opa_should_return_correct_pair_matrix_per_list(self):
     with tf.Graph().as_default():
       scores = [[3., 2., 1.], [3., 1., 2.]]
