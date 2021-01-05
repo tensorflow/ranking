@@ -1291,3 +1291,93 @@ def build_sequence_example_serving_input_receiver_fn(input_size,
       list_size=input_size,
       receiver_name="sequence_example",
       default_batch_size=default_batch_size)
+
+
+def parse_from_tf_example(serialized,
+                          context_feature_spec=None,
+                          example_feature_spec=None,
+                          size_feature_name=None,
+                          mask_feature_name=None):
+  """Parse function to convert `tf.train.Example` to feature maps.
+
+  Args:
+    serialized: (`tf.train.Example`) A serialized proto object containing
+      context and example features.
+    context_feature_spec: (dict) A mapping from feature keys to
+      `FixedLenFeature`, `VarLenFeature` or `RaggedFeature` values for context
+      in `tf.train.Example` proto.
+    example_feature_spec: (dict) A mapping from feature keys to
+      `FixedLenFeature`, `VarLenFeature` or `RaggedFeature` values for examples
+      in `tf.train.Example` proto.
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
+      this feature name. If None, which is default, this feature is not
+      generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
+
+  Returns:
+    A mapping from feature keys to `Tensor`, `SparseTensor` or `RaggedTensor`.
+  """
+  batch_size = tf.shape(serialized)[0]
+  features = tf.io.parse_example(
+      serialized, features={
+          **context_feature_spec,
+          **example_feature_spec
+      })
+  for feature_key, feature_type in example_feature_spec.items():
+    if isinstance(feature_type, tf.io.RaggedFeature):
+      features[feature_key] = tf.expand_dims(features[feature_key], axis=1)
+    else:
+      # feature is either a Tensor or SparseTensor.
+      features[feature_key] = utils.reshape_first_ndims(features[feature_key],
+                                                        1, [batch_size, 1])
+  if size_feature_name is not None:
+    # Populate features with a size feature of value 1, corresponding to only
+    # one example per list.
+    features[size_feature_name] = tf.ones(shape=[batch_size])
+  if mask_feature_name:
+    features[mask_feature_name] = tf.sequence_mask(tf.ones(shape=[batch_size]))
+  return features
+
+
+def build_tf_example_serving_input_receiver_fn(context_feature_spec,
+                                               example_feature_spec,
+                                               size_feature_name=None,
+                                               mask_feature_name=None,
+                                               default_batch_size=None):
+  """Builds a serving input fn for `tensorflow.training.Example`.
+
+  Args:
+    context_feature_spec: (dict) Map from feature keys to `FixedLenFeature`,
+      `VarLenFeature` or `RaggedFeature` values.
+    example_feature_spec: (dict) Map from  feature keys to `FixedLenFeature`,
+      `VarLenFeature` or `RaggedFeature` values.
+    size_feature_name: (str) Name of feature for example list sizes. Populates
+      the feature dictionary with a `tf.int32` Tensor of value 1, and of shape
+      [batch_size] for this feature name. If None, which is default, this
+      feature is not generated.
+    mask_feature_name: (str) Name of feature for example list masks. Populates
+      the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+      list_size] for this feature name. If None, which is default, this feature
+      is not generated.
+    default_batch_size: (int) Number of instances expected per batch. Leave
+      unset for variable batch size (recommended).
+
+  Returns:
+    A `tf.estimator.export.ServingInputReceiver` object, which packages the
+    placeholders and the resulting feature Tensors together.
+  """
+  parsing_fn = functools.partial(
+      parse_from_tf_example, **{
+          "context_feature_spec": context_feature_spec,
+          "example_feature_spec": example_feature_spec,
+          "size_feature_name": size_feature_name,
+          "mask_feature_name": mask_feature_name,
+      })
+  return build_ranking_serving_input_receiver_fn_with_parsing_fn(
+      parsing_fn=parsing_fn,
+      receiver_name="input_ranking_data",
+      default_batch_size=default_batch_size)

@@ -29,8 +29,8 @@ from tensorflow_ranking.python import data as data_lib
 from tensorflow_serving.apis import input_pb2
 
 # Feature name for example list sizes and masks.
-_SIZE = "__list_size__"
-_MASK = "__mask__"
+_SIZE = "example_list_size"
+_MASK = "mask"
 
 EXAMPLE_LIST_PROTO_1 = text_format.Parse(
     """
@@ -128,6 +128,7 @@ EXAMPLES_1 = [
     }""", tf.train.Example()),
 ]
 
+
 CONTEXT_2 = text_format.Parse(
     """
     features {
@@ -151,6 +152,42 @@ EXAMPLES_2 = [
       }
     }""", tf.train.Example()),
 ]
+
+TF_EXAMPLE_PROTO_1 = text_format.Parse(
+    """
+    features {
+      feature {
+          key: "query_length"
+          value { int64_list { value: 1 } }
+        }
+      feature {
+        key: "unigrams"
+        value { bytes_list { value: "tensorflow" } }
+      }
+      feature {
+        key: "utility"
+        value { float_list { value: 0.0 } }
+      }
+    }
+    """, tf.train.Example())
+
+TF_EXAMPLE_PROTO_2 = text_format.Parse(
+    """
+    features {
+      feature {
+          key: "query_length"
+          value { int64_list { value: 3 } }
+        }
+      feature {
+        key: "unigrams"
+        value { bytes_list { value: ["learning", "to", "rank"] } }
+      }
+      feature {
+        key: "utility"
+        value { float_list { value: 1.0 } }
+      }
+    }
+    """, tf.train.Example())
 
 SEQ_EXAMPLE_PROTO_1 = text_format.Parse(
     """
@@ -1178,6 +1215,142 @@ class SequenceExampleDatasetTest(tf.test.TestCase, parameterized.TestCase):
                             [[[0.], [1.0]], [[0.], [-1.]]])
 
 
+class TFExampleDatasetTest(tf.test.TestCase):
+
+  def test_parse_from_tf_example(self):
+    with tf.Graph().as_default():
+      serialized_examples = [
+          TF_EXAMPLE_PROTO_1.SerializeToString(),
+          TF_EXAMPLE_PROTO_2.SerializeToString()
+      ]
+      features = data_lib.parse_from_tf_example(
+          serialized=serialized_examples,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_FEATURE_SPEC,
+          size_feature_name=_SIZE,
+          mask_feature_name=_MASK)
+
+      with tf.compat.v1.Session() as sess:
+        features = sess.run(features)
+        self.assertAllEqual(features[_SIZE], [1, 1])
+        self.assertAllEqual(features[_MASK], [[True], [True]])
+        # Test dense_shape, indices and values for a SparseTensor.
+        self.assertAllEqual(features["unigrams"].dense_shape, [2, 1, 3])
+        self.assertAllEqual(features["unigrams"].indices,
+                            [[0, 0, 0], [1, 0, 0], [1, 0, 1], [1, 0, 2]])
+        self.assertAllEqual(features["unigrams"].values,
+                            [b"tensorflow", b"learning", b"to", b"rank"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(features["query_length"], [[1], [3]])
+        self.assertAllEqual(features["utility"], [[[0.]], [[1.]]])
+
+  def test_parse_from_tf_example_ragged(self):
+    with tf.Graph().as_default():
+      serialized_examples = [
+          TF_EXAMPLE_PROTO_1.SerializeToString(),
+          TF_EXAMPLE_PROTO_2.SerializeToString()
+      ]
+      features = data_lib.parse_from_tf_example(
+          serialized=serialized_examples,
+          context_feature_spec=CONTEXT_FEATURE_SPEC,
+          example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC,
+          size_feature_name=_SIZE,
+          mask_feature_name=_MASK)
+
+      with tf.compat.v1.Session() as sess:
+        features = sess.run(features)
+        self.assertAllEqual(features[_SIZE], [1, 1])
+        self.assertAllEqual(features[_MASK], [[True], [True]])
+        self.assertAllEqual(
+            features["unigrams"],
+            [[[b"tensorflow"]], [[b"learning", b"to", b"rank"]]])
+        self.assertAllEqual(features["query_length"], [[1], [3]])
+        self.assertAllEqual(features["utility"], [[[0.]], [[1.]]])
+
+  def test_build_tf_example_serving_input_receiver_fn(self):
+    with tf.Graph().as_default():
+      serving_input_receiver_fn = (
+          data_lib.build_tf_example_serving_input_receiver_fn(
+              context_feature_spec=CONTEXT_FEATURE_SPEC,
+              example_feature_spec=EXAMPLE_FEATURE_SPEC,
+              size_feature_name=_SIZE,
+              mask_feature_name=_MASK))
+      serving_input_receiver = serving_input_receiver_fn()
+      context_features = {
+          name: tensor
+          for name, tensor in serving_input_receiver.features.items()
+          if name in CONTEXT_FEATURE_SPEC
+      }
+      example_features = {
+          name: tensor
+          for name, tensor in serving_input_receiver.features.items()
+          if name in EXAMPLE_FEATURE_SPEC
+      }
+      self.assertAllEqual(sorted(context_features.keys()), ["query_length"])
+      self.assertAllEqual(
+          sorted(example_features.keys()), ["unigrams", "utility"])
+      self.assertCountEqual(["input_ranking_data"],
+                            serving_input_receiver.receiver_tensors.keys())
+      with tf.compat.v1.Session() as sess:
+        context_map, example_map = sess.run(
+            [context_features, example_features],
+            feed_dict={
+                serving_input_receiver.receiver_tensors["input_ranking_data"]
+                .name: [
+                    TF_EXAMPLE_PROTO_1.SerializeToString(),
+                    TF_EXAMPLE_PROTO_2.SerializeToString()
+                ]
+            })
+        # Test dense_shape, indices and values for a SparseTensor.
+        self.assertAllEqual(example_map["unigrams"].dense_shape, [2, 1, 3])
+        self.assertAllEqual(example_map["unigrams"].indices,
+                            [[0, 0, 0], [1, 0, 0], [1, 0, 1], [1, 0, 2]])
+        self.assertAllEqual(example_map["unigrams"].values,
+                            [b"tensorflow", b"learning", b"to", b"rank"])
+        # For Tensors with dense values, values can be directly checked.
+        self.assertAllEqual(context_map["query_length"], [[1], [3]])
+        self.assertAllEqual(example_map["utility"], [[[0.]], [[1.]]])
+
+  def test_build_tf_example_serving_input_receiver_fn_ragged(self):
+    with tf.Graph().as_default():
+      serving_input_receiver_fn = (
+          data_lib.build_tf_example_serving_input_receiver_fn(
+              context_feature_spec=CONTEXT_FEATURE_SPEC,
+              example_feature_spec=EXAMPLE_RAGGED_FEATURE_SPEC,
+              size_feature_name=_SIZE,
+              mask_feature_name=_MASK))
+      serving_input_receiver = serving_input_receiver_fn()
+      context_features = {
+          name: tensor
+          for name, tensor in serving_input_receiver.features.items()
+          if name in CONTEXT_FEATURE_SPEC
+      }
+      example_features = {
+          name: tensor
+          for name, tensor in serving_input_receiver.features.items()
+          if name in EXAMPLE_FEATURE_SPEC
+      }
+      self.assertAllEqual(sorted(context_features.keys()), ["query_length"])
+      self.assertAllEqual(
+          sorted(example_features.keys()), ["unigrams", "utility"])
+      self.assertCountEqual(["input_ranking_data"],
+                            serving_input_receiver.receiver_tensors.keys())
+      with tf.compat.v1.Session() as sess:
+        context_map, example_map = sess.run(
+            [context_features, example_features],
+            feed_dict={
+                serving_input_receiver.receiver_tensors["input_ranking_data"]
+                .name: [
+                    TF_EXAMPLE_PROTO_1.SerializeToString(),
+                    TF_EXAMPLE_PROTO_2.SerializeToString()
+                ]
+            })
+        self.assertAllEqual(
+            example_map["unigrams"],
+            [[[b"tensorflow"]], [[b"learning", b"to", b"rank"]]])
+        self.assertAllEqual(context_map["query_length"], [[1], [3]])
+        self.assertAllEqual(example_map["utility"], [[[0.]], [[1.]]])
+
+
 if __name__ == "__main__":
-  tf.compat.v1.enable_v2_behavior()
   tf.test.main()
