@@ -22,4 +22,5 @@ from tensorflow_ranking.python.keras import losses
 from tensorflow_ranking.python.keras import metrics
 from tensorflow_ranking.python.keras import model
 from tensorflow_ranking.python.keras import network
+from tensorflow_ranking.python.keras import saved_model
 from tensorflow_ranking.python.keras import utils

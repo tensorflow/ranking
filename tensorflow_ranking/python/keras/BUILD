@@ -21,6 +21,7 @@ py_library(
         ":metrics",
         ":model",
         ":network",
+        ":saved_model",
         ":utils",
         "//tensorflow_ranking/python/keras/canned",
     ],
@@ -247,5 +248,34 @@ py_test(
         ":layers",
         # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
+    ],
+)
+
+py_library(
+    name = "saved_model",
+    srcs = ["saved_model.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        # py/tensorflow dep,
+        # py/typing dep,
+        "//tensorflow_ranking/python:data",
+    ],
+)
+
+py_test(
+    name = "saved_model_test",
+    size = "small",
+    srcs = ["saved_model_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":saved_model",
+        # py/numpy dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
