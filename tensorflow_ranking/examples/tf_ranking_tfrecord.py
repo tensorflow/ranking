@@ -72,7 +72,7 @@ flags.DEFINE_string("weights_feature_name", "",
 flags.DEFINE_bool("listwise_inference", False,
                   "If true, exports accept `data_format` while serving.")
 flags.DEFINE_bool(
-    "use_document_interactions", False,
+    "use_document_interaction", False,
     "If True, use Document Interaction Network to capture cross-document "
     "interactions as additional features for scoring.")
 flags.DEFINE_integer(
@@ -226,7 +226,7 @@ def make_transform_fn():
           scope="transform_layer")
 
       # Document interaction attention layer.
-      if FLAGS.use_document_interactions:
+      if FLAGS.use_document_interaction:
         training = (mode == tf.estimator.ModeKeys.TRAIN)
         concat_tensor = tfr.keras.layers.ConcatFeatures()(
             context_features=context_features,
@@ -260,7 +260,7 @@ def make_score_fn():
           tf.compat.v1.layers.flatten(group_features[name])
           for name in sorted(example_feature_columns(use_weight_feature=False))
       ]
-      if FLAGS.use_document_interactions:
+      if FLAGS.use_document_interaction:
         group_input.append(
             tf.compat.v1.layers.flatten(
                 group_features["document_interaction_embedding"]))
@@ -367,7 +367,7 @@ def train_and_eval():
 def main(_):
   tf.compat.v1.set_random_seed(1234)
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
-  if FLAGS.use_document_interactions and not FLAGS.listwise_inference:
+  if FLAGS.use_document_interaction and not FLAGS.listwise_inference:
     raise ValueError("Only listwise inference is compatible for models "
                      "using Document Interaction Network.")
   train_and_eval()

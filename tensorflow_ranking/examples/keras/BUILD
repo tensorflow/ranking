@@ -9,6 +9,36 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
+py_binary(
+    name = "antique_kpl_din",
+    srcs = ["antique_kpl_din.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        # py/absl/flags dep,
+        # py/tensorflow dep,
+        "//tensorflow_ranking",
+    ],
+)
+
+py_test(
+    name = "antique_kpl_din_test",
+    size = "large",
+    srcs = ["antique_kpl_din_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    tags = [
+        "no_pip",
+        "notsan",
+    ],
+    deps = [
+        ":antique_kpl_din",
+        # py/absl/testing:flagsaver dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
+
 py_library(
     name = "keras_m2e_tfrecord_lib",
     srcs = ["keras_m2e_tfrecord.py"],

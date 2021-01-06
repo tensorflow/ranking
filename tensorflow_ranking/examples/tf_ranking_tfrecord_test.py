@@ -77,8 +77,8 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
   @parameterized.named_parameters(("enable_listwise_inference", True),
                                   ("disable_listwise_inference", False))
   def test_train_and_eval(self, listwise_inference):
-    data_dir = tf.compat.v1.test.get_temp_dir()
-    data_file = os.path.join(data_dir, "elwc.tfrecord")
+    tmp_dir = self.create_tempdir()
+    data_file = os.path.join(tmp_dir, "elwc.tfrecord")
     if tf.io.gfile.exists(data_file):
       tf.io.gfile.remove(data_file)
 
@@ -86,7 +86,7 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
       for elwc in [ELWC] * 10:
         writer.write(elwc.SerializeToString())
 
-    model_dir = os.path.join(data_dir, "model")
+    model_dir = os.path.join(tmp_dir, "model")
 
     with flagsaver.flagsaver(
         train_path=data_file,
@@ -99,12 +99,9 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
         weights_feature_name="doc_weight"):
       tf_ranking_tfrecord.train_and_eval()
 
-    if tf.io.gfile.exists(model_dir):
-      tf.io.gfile.rmtree(model_dir)
-
   def test_train_and_eval_with_document_interactions(self):
-    data_dir = tf.compat.v1.test.get_temp_dir()
-    data_file = os.path.join(data_dir, "elwc.tfrecord")
+    tmp_dir = self.create_tempdir()
+    data_file = os.path.join(tmp_dir, "elwc.tfrecord")
     if tf.io.gfile.exists(data_file):
       tf.io.gfile.remove(data_file)
 
@@ -112,7 +109,7 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
       for elwc in [ELWC] * 10:
         writer.write(elwc.SerializeToString())
 
-    model_dir = os.path.join(data_dir, "model")
+    model_dir = os.path.join(tmp_dir, "model")
 
     with flagsaver.flagsaver(
         train_path=data_file,
@@ -121,13 +118,10 @@ class TfRankingTFRecordTest(tf.test.TestCase, parameterized.TestCase):
         model_dir=model_dir,
         num_train_steps=10,
         listwise_inference=True,
-        use_document_interactions=True,
+        use_document_interaction=True,
         group_size=1,
         weights_feature_name="doc_weight"):
       tf_ranking_tfrecord.train_and_eval()
-
-    if tf.io.gfile.exists(model_dir):
-      tf.io.gfile.rmtree(model_dir)
 
 
 if __name__ == "__main__":
