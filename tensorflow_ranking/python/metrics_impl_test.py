@@ -31,7 +31,7 @@ class MetricsImplTest(tf.test.TestCase):
       scores = [[1., 3., 2.]]
       labels = [[0., -1., 1.]]
       mask = [[True, False, True]]
-      labels, predictions, _, _ = metrics_impl._prepare_and_validate_params(
+      labels, predictions, _, _, _ = metrics_impl._prepare_and_validate_params(
           labels, scores, mask)
       self.assertAllClose(labels, [[0., 0., 1.]])
       self.assertAllClose(predictions, [[1., 1. - 1e-6, 2]])
