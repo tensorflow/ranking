@@ -1015,6 +1015,17 @@ class PrecisionIAMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[7. / (4. * 3.)]])
 
+  def test_precisionia_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 4., 2.]]
+      labels = [[[0., 0.], [1., 0.], [1., 1.], [0., 1.]]]
+      mask = [[True, True, False, True]]
+
+      metric = metrics_impl.PrecisionIAMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      self.assertAllClose(output, [[2. / (2. * 3.)]])
+
   def test_precisionia_should_ignore_subtopics_without_rel(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2., 4.]]
@@ -1155,6 +1166,18 @@ class AlphaDCGMetricTest(tf.test.TestCase):
       output, _ = metric.compute(labels, scores, None)
 
       self.assertAllClose(output, [[0.]])
+
+  def test_alphadcg_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 4., 3., 2., 2.]]
+      labels = [[[0., 0.], [1., 1.], [1., 0.], [0., 1.], [1., 0.]]]
+      mask = [[True, False, True, True, False]]
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      self.assertAllClose(output, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(2.)]])
 
   def test_alphadcg_should_be_single_value_per_list(self):
     with tf.Graph().as_default():

@@ -288,7 +288,7 @@ class _DivRankingMetric(_RankingMetric):
     return self._name
 
   @abc.abstractmethod
-  def _compute_per_list_metric(self, labels, predictions, weights, topn):
+  def _compute_per_list_metric(self, labels, predictions, weights, topn, mask):
     """Computes the metric with the given inputs.
 
     Args:
@@ -299,12 +299,15 @@ class _DivRankingMetric(_RankingMetric):
       weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
         The former case is per-example and the latter case is per-list.
       topn: A cutoff for how many examples to consider for this metric.
+      mask: A `Tensor` of the same shape as predictions indicating which entries
+        are valid for computing the metric.
 
     Returns:
       A tf per-list metric.
     """
 
-  def _prepare_and_validate_params(self, labels, predictions, weights=None):
+  def _prepare_and_validate_params(self, labels, predictions, mask,
+                                   weights=None):
     """Prepares and validates the parameters.
 
     Args:
@@ -312,6 +315,8 @@ class _DivRankingMetric(_RankingMetric):
         nonzero value means that the example covers the corresponding subtopic.
       predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
         the ranking score of the corresponding example.
+      mask: A `Tensor` of the same shape as predictions indicating which entries
+        are valid for computing the metric.
       weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
         The former case is per-example and the latter case is per-list.
 
@@ -322,14 +327,12 @@ class _DivRankingMetric(_RankingMetric):
     labels = tf.convert_to_tensor(value=labels)
     predictions = tf.convert_to_tensor(value=predictions)
     labels.get_shape().assert_has_rank(3)
-
-    is_label_valid = utils.is_label_valid(labels)
     predictions = tf.where(
-        tf.reduce_any(is_label_valid,
-                      axis=-1), predictions, -1e-6 * tf.ones_like(predictions) +
+        mask, predictions, -1e-6 * tf.ones_like(predictions) +
         tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
     # All labels should be >= 0. Invalid entries are reset.
-    labels = tf.where(is_label_valid, labels, tf.zeros_like(labels))
+    labels = tf.where(tf.expand_dims(mask, axis=2), labels,
+                      tf.zeros_like(labels))
     weights = (
         tf.constant(1.0, dtype=tf.float32)
         if weights is None else tf.convert_to_tensor(value=weights))
@@ -373,10 +376,12 @@ class _DivRankingMetric(_RankingMetric):
     Returns:
       A per-list metric and a per-list weights.
     """
+    if mask is None:
+      mask = tf.reduce_any(utils.is_label_valid(labels), axis=-1)
     labels, predictions, weights, topn = (
-        self._prepare_and_validate_params(labels, predictions, weights))
+        self._prepare_and_validate_params(labels, predictions, mask, weights))
     per_list_metric = self._compute_per_list_metric(labels, predictions,
-                                                    weights, topn)
+                                                    weights, topn, mask)
     per_list_weights = self._compute_per_list_weights(weights, labels)
     return per_list_metric, per_list_weights
 
@@ -688,9 +693,10 @@ class PrecisionIAMetric(_DivRankingMetric):
   subtopics and SUM_{i=1}^k sums over the top k ranks.
   """
 
-  def _compute_per_list_metric(self, labels, predictions, weights, topn):
+  def _compute_per_list_metric(self, labels, predictions, weights, topn, mask):
     """See `_DivRankingMetric`."""
-    sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn)[0]
+    sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn,
+                                         mask=mask)[0]
     # relevance shape = [batch_size, topn].
     relevance = tf.reduce_sum(
         tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32),
@@ -701,10 +707,15 @@ class PrecisionIAMetric(_DivRankingMetric):
             tf.reduce_any(tf.greater_equal(labels, 1.0), axis=1, keepdims=True),
             dtype=tf.float32),
         axis=-1)
+    if topn is None:
+      topn = tf.shape(relevance)[1]
+    # valid_topn shape = [batch_size, 1].
+    valid_topn = tf.minimum(topn, tf.reduce_sum(tf.cast(mask, dtype=tf.int32),
+                                                axis=1, keepdims=True))
     return tf.compat.v1.math.divide_no_nan(
         tf.reduce_sum(input_tensor=relevance, axis=1, keepdims=True),
         tf.reduce_sum(
-            input_tensor=tf.ones_like(relevance) * num_subtopics,
+            input_tensor=tf.cast(valid_topn, dtype=tf.float32) * num_subtopics,
             axis=1,
             keepdims=True))
 
@@ -737,10 +748,10 @@ class AlphaDCGMetric(_DivRankingMetric):
     self._rank_discount_fn = rank_discount_fn
     self._seed = seed
 
-  def _compute_per_list_metric(self, labels, predictions, weights, topn):
+  def _compute_per_list_metric(self, labels, predictions, weights, topn, mask):
     """See `_DivRankingMetric`."""
     sorted_labels, sorted_weights = utils.sort_by_scores(
-        predictions, [labels, weights], topn=topn, seed=self._seed)
+        predictions, [labels, weights], topn=topn, seed=self._seed, mask=mask)
     alpha_dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights,
                                             self._gain_fn,
                                             self._rank_discount_fn)
