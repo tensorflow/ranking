@@ -149,7 +149,7 @@ def ndcg(labels, ranks=None, perm_mat=None):
   return normalized_dcg
 
 
-class _LambdaWeight(object):
+class _LambdaWeight(object, metaclass=abc.ABCMeta):
   """Interface for ranking metric optimization.
 
   This class wraps weights used in the LambdaLoss framework for ranking metric
@@ -157,8 +157,6 @@ class _LambdaWeight(object):
   to be instantiated by concrete lambda weight models. The instance is used
   together with standard loss such as logistic loss and softmax loss.
   """
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def pair_weights(self, labels, ranks):
@@ -514,10 +512,8 @@ def _sample_gumbel(shape, eps=1e-20, seed=None):
   return -tf.math.log(-tf.math.log(u + eps) + eps)
 
 
-class _RankingLoss(object):
+class _RankingLoss(object, metaclass=abc.ABCMeta):
   """Interface for ranking loss."""
-
-  __metaclass__ = abc.ABCMeta
 
   def __init__(self, name, lambda_weight=None, temperature=1.0):
     """Constructor.
@@ -627,26 +623,6 @@ class _RankingLoss(object):
     """
     raise NotImplementedError('Calling an abstract method.')
 
-  def eval_metric_unreduced(self, labels, logits, weights):
-    """Computes the unreduced eval metric for the loss.
-
-    Args:
-      labels: A `Tensor` of the same shape as `logits` representing graded
-        relevance.
-      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
-        ranking score of the corresponding item.
-      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
-        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
-        weights.
-
-    Returns:
-      A pair of `Tensor` objects containing losses and weights for use in
-      a weighted average.
-    """
-    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
-    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
-    return losses, weights
-
   def eval_metric(self, labels, logits, weights):
     """Computes the eval metric for the loss in tf.estimator (not tf.keras).
 
@@ -664,14 +640,13 @@ class _RankingLoss(object):
     Returns:
       A metric op.
     """
-    losses, weights = self.eval_metric_unreduced(labels, logits, weights)
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
     return tf.compat.v1.metrics.mean(losses, weights)
 
 
-class _PairwiseLoss(_RankingLoss):
+class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
   """Interface for pairwise ranking loss."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def _pairwise_loss(self, pairwise_logits):
@@ -838,11 +813,12 @@ class SoftmaxLoss(_ListwiseLoss):
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
 
-  def eval_metric_unreduced(self, labels, logits, weights):
+  def eval_metric(self, labels, logits, weights):
     """See `_RankingLoss`."""
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights)
-    return self.compute_unreduced_loss(labels, logits)
+    losses, weights = self.compute_unreduced_loss(labels, logits)
+    return tf.compat.v1.metrics.mean(losses, weights)
 
   def compute_per_list(self, labels, logits, weights):
     """See `_RankingLoss`."""
@@ -933,7 +909,7 @@ class ClickEMLoss(_PointwiseLoss):
   """
 
   def __init__(self, name, temperature=1.0):
-    super(ClickEMLoss, self).__init__(name, None, temperature)
+    super().__init__(name, None, temperature)
 
   def _compute_latent_prob(self, clicks, exam_logits, rel_logits):
     """Computes the probability of latent variables in EM.
@@ -1003,7 +979,7 @@ class SigmoidCrossEntropyLoss(_PointwiseLoss):
       name: A string used as the name for this loss.
       temperature: A float number to modify the logits=logits/temperature.
     """
-    super(SigmoidCrossEntropyLoss, self).__init__(name, None, temperature)
+    super().__init__(name, None, temperature)
 
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
@@ -1026,7 +1002,7 @@ class MeanSquaredLoss(_PointwiseLoss):
       name: A string used as the name for this loss.
     """
     # temperature is not used in this loss.
-    super(MeanSquaredLoss, self).__init__(name, None, temperature=1.0)
+    super().__init__(name, None, temperature=1.0)
 
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
@@ -1080,7 +1056,7 @@ class ApproxNDCGLoss(_ListwiseLoss):
   # Use a different default temperature.
   def __init__(self, name, lambda_weight=None, temperature=0.1):
     """See `_ListwiseLoss`."""
-    super(ApproxNDCGLoss, self).__init__(name, lambda_weight, temperature)
+    super().__init__(name, lambda_weight, temperature)
 
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
@@ -1106,7 +1082,7 @@ class ApproxMRRLoss(_ListwiseLoss):
   # Use a different default temperature.
   def __init__(self, name, lambda_weight=None, temperature=0.1):
     """See `_ListwiseLoss`."""
-    super(ApproxMRRLoss, self).__init__(name, lambda_weight, temperature)
+    super().__init__(name, lambda_weight, temperature)
 
   def compute_unreduced_loss(self, labels, logits):
     """See `_RankingLoss`."""
