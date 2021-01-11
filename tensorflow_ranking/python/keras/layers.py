@@ -191,8 +191,9 @@ class RestoreList(tf.keras.layers.Layer):
     try:
       logits = tf.reshape(flattened_logits, shape=tf.shape(mask))
     except:
-      raise ValueError('`flattened_logits` needs to be either 1D of batch_size '
-                       '* list_size or 2D of [batch_size * list_size, 1].')
+      raise ValueError('`flattened_logits` needs to be either '
+                       '1D of [batch_size * list_size] or '
+                       '2D of [batch_size * list_size, 1].')
     if self._by_scatter:
       nd_indices, _ = utils.padded_nd_indices(is_valid=mask)
       counts = tf.scatter_nd(nd_indices, tf.ones_like(logits), tf.shape(mask))
@@ -201,8 +202,6 @@ class RestoreList(tf.keras.layers.Layer):
           tf.math.greater(counts, 0.), logits / counts, tf.math.log(_EPSILON))
     else:
       return tf.where(mask, logits, tf.math.log(_EPSILON))
-
-    return logits
 
   def get_config(self):
     config = super().get_config()
