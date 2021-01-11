@@ -343,7 +343,7 @@ class SoftmaxLoss(_ListwiseLoss):
     # For softmax cross entropy, the weights are merged into labels.
     y_true, y_pred = self._loss.precompute(
         labels=y_true, logits=y_pred, weights=sample_weight)
-    return super(SoftmaxLoss, self).__call__(y_true, y_pred)
+    return super().__call__(y_true, y_pred)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -455,10 +455,26 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
 class ClickEMLoss(_RankingLoss):
   """For click EM loss."""
 
-  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
-    super(ClickEMLoss, self).__init__(reduction, name)
+  def __init__(self,
+               reduction=tf.losses.Reduction.AUTO,
+               name=None,
+               exam_loss_weight=1.0,
+               rel_loss_weight=1.0):
+    super().__init__(reduction, name)
+    self._exam_loss_weight = exam_loss_weight
+    self._rel_loss_weight = rel_loss_weight
     self._loss = losses_impl.ClickEMLoss(
-        name='{}_impl'.format(name) if name else None)
+        name='{}_impl'.format(name) if name else None,
+        exam_loss_weight=self._exam_loss_weight,
+        rel_loss_weight=self._rel_loss_weight)
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+        'exam_loss_weight': self._exam_loss_weight,
+        'rel_loss_weight': self._rel_loss_weight,
+    })
+    return config
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -476,6 +492,6 @@ class MeanSquaredLoss(_RankingLoss):
   """For mean squared error loss."""
 
   def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
-    super(MeanSquaredLoss, self).__init__(reduction, name)
+    super().__init__(reduction, name)
     self._loss = losses_impl.MeanSquaredLoss(
         name='{}_impl'.format(name) if name else None)

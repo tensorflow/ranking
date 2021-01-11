@@ -277,9 +277,18 @@ class LossesTest(tf.test.TestCase):
     loss = losses.ClickEMLoss()
     self.assertAlmostEqual(
         loss(clicks, logits).numpy() * 4.,
-        _sigmoid_cross_entropy([1., 0.70538, 0.936236, 0.], exam_logits[0]) +
-        _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.], rel_logits[0]),
+        _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0]) +
+        _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5], rel_logits[0]),
         places=5)
+
+    loss = losses.ClickEMLoss(exam_loss_weight=2.0, rel_loss_weight=5.0)
+    self.assertAlmostEqual(
+        loss(clicks, logits).numpy() * 4.,
+        _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0]) *
+        2.0 +
+        _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5], rel_logits[0]) *
+        5.0,
+        places=4)
 
   def test_sigmoid_cross_entropy_loss(self):
     scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
@@ -1046,7 +1055,8 @@ class SerializationTest(tf.test.TestCase):
     self.assertIsSerializable(losses.GumbelApproxNDCGLoss(seed=1))
 
   def test_pointwise_losses_are_serializable(self):
-    self.assertIsLossSerializable(losses.ClickEMLoss())
+    self.assertIsLossSerializable(
+        losses.ClickEMLoss(exam_loss_weight=2.0, rel_loss_weight=5.0))
     self.assertIsLossSerializable(losses.SigmoidCrossEntropyLoss())
     self.assertIsLossSerializable(losses.MeanSquaredLoss())
 

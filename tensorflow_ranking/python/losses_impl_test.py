@@ -557,6 +557,8 @@ class LossesImplTest(tf.test.TestCase):
   def test_click_em_loss(self):
     with tf.Graph().as_default():
       loss_fn = losses_impl.ClickEMLoss(name=None)
+      loss_fn_weighted = losses_impl.ClickEMLoss(
+          name='weighted', exam_loss_weight=2.0, rel_loss_weight=5.0)
       clicks = [[1., 0, 0, 0]]
       exam_logits = [[3., 3, 4, 100]]
       rel_logits = [[3., 2, 1, 100]]
@@ -565,15 +567,23 @@ class LossesImplTest(tf.test.TestCase):
       with self.cached_session():
         exam_given_clicks, rel_given_clicks = loss_fn._compute_latent_prob(
             clicks, exam_logits, rel_logits)
-        self.assertAllClose(exam_given_clicks, [[1., 0.70538, 0.936236, 0.]])
-        self.assertAllClose(rel_given_clicks, [[1., 0.259496, 0.046613, 0.]])
+        self.assertAllClose(exam_given_clicks, [[1., 0.705384, 0.93624, 0.5]])
+        self.assertAllClose(rel_given_clicks, [[1., 0.259496, 0.046613, 0.5]])
 
         self.assertAlmostEqual(
             loss_fn.compute(clicks, logits, None, reduction).eval(),
-            _sigmoid_cross_entropy([1., 0.70538, 0.936236, 0.],
-                                   exam_logits[0]) +
-            _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.], rel_logits[0]),
+            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
+            + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
+                                     rel_logits[0]),
             places=5)
+
+        # Test the loss weights.
+        self.assertAlmostEqual(
+            loss_fn_weighted.compute(clicks, logits, None, reduction).eval(),
+            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
+            * 2.0 + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
+                                           rel_logits[0]) * 5.0,
+            places=4)
 
   def test_sigmoid_cross_entropy_loss(self):
     with tf.Graph().as_default():
@@ -804,8 +814,8 @@ class LossesImplTest(tf.test.TestCase):
         # SigmoidCrossEntropyLoss is chosen as an arbitrary pointwise loss to
         # test the `compute_per_list` behavior.
         loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(
-            labels, scores, per_item_weights)
+        losses, weights = loss_fn.compute_per_list(labels, scores,
+                                                   per_item_weights)
         losses, weights = losses.eval(), weights.eval()
 
       self.assertAllClose(losses, [1.3644443, 0.16292572])
@@ -821,8 +831,8 @@ class LossesImplTest(tf.test.TestCase):
         # PairwiseHingeLoss is chosen as an arbitrary pairwise loss to test the
         # `compute_per_list` behavior.
         loss_fn = losses_impl.PairwiseHingeLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(
-            labels, scores, per_item_weights)
+        losses, weights = loss_fn.compute_per_list(labels, scores,
+                                                   per_item_weights)
         losses, weights = losses.eval(), weights.eval()
 
       self.assertAllClose(losses, [1., 0.])
@@ -838,8 +848,8 @@ class LossesImplTest(tf.test.TestCase):
         # ApproxNDCGLoss is chosen as an arbitrary listwise loss to test the
         # `compute_per_list` behavior.
         loss_fn = losses_impl.ApproxNDCGLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(
-            labels, scores, per_item_weights)
+        losses, weights = loss_fn.compute_per_list(labels, scores,
+                                                   per_item_weights)
         losses, weights = losses.eval(), weights.eval()
 
       self.assertAllClose(losses, [-0.63093, -0.796248])
@@ -853,8 +863,8 @@ class LossesImplTest(tf.test.TestCase):
 
       with self.cached_session():
         loss_fn = losses_impl.SoftmaxLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(
-            labels, scores, per_item_weights)
+        losses, weights = loss_fn.compute_per_list(labels, scores,
+                                                   per_item_weights)
         losses, weights = losses.eval(), weights.eval()
 
       self.assertAllClose(losses, [1.407606, 0.407606])
@@ -868,8 +878,8 @@ class LossesImplTest(tf.test.TestCase):
 
       with self.cached_session():
         loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(
-            labels, scores, per_item_weights)
+        losses, weights = loss_fn.compute_per_list(labels, scores,
+                                                   per_item_weights)
         losses, weights = losses.eval(), weights.eval()
 
       self.assertAllClose(losses, [1.407606, 1.222818])

@@ -908,11 +908,36 @@ class ClickEMLoss(_PointwiseLoss):
   P(examination | click) and P(relevance | click).
   """
 
-  def __init__(self, name, temperature=1.0):
+  def __init__(self,
+               name,
+               temperature=1.0,
+               exam_loss_weight=1.0,
+               rel_loss_weight=1.0):
     super().__init__(name, None, temperature)
+    self._exam_loss_weight = exam_loss_weight
+    self._rel_loss_weight = rel_loss_weight
 
   def _compute_latent_prob(self, clicks, exam_logits, rel_logits):
     """Computes the probability of latent variables in EM.
+
+    The original compuation is as follows and can be unstable:
+      exam_prob = sigmoid(exam_logits)
+      rel_prob = sigmoid(rel_logits)
+      exam_prob_posterior = exam_prob * (1 - rel_prob) / (1 - exam_prob *
+        rel_prob)
+      rel_prob_posterior = rel_prob * (1 - exam_prob) / (1 - exam_prob *
+        rel_prob).
+
+    To increase the numeric stability, we compute the posteriror logits first.
+    Using the exam_logits_posterior as an example, we have:
+      exam_logit_posterior = logit(exam_prob_posterior)
+        = log(exam_prob_posterior / (1 - exam_prob_posterior))
+    It can be reduced to exam_logits and rel_logits:
+      exam_logit_posterior = exam_logits - log(1 + exp(rel_logits))
+        = exam_logits - softplus(rel_logits)
+
+    We can do similar reduction for rel_logit_posterior. Then we compute the
+    posterior probablity by apply sigmoid on the logits.
 
     Args:
       clicks: A 2-D `Tensor` for clicks as observed data. A value >= 1.0 is
@@ -927,20 +952,17 @@ class ClickEMLoss(_PointwiseLoss):
       P(examination | click) and P(relevance | click).
     """
     with tf.compat.v1.name_scope(name='compute_latent_prob'):
-      exam_prob = tf.math.sigmoid(tf.cast(exam_logits, tf.float32))
-      rel_prob = tf.math.sigmoid(tf.cast(rel_logits, tf.float32))
       is_clicked = tf.greater_equal(tf.cast(clicks, tf.float32), 1.0)
-
-      prob_non_clicks = 1 - exam_prob * rel_prob + 1e-6
-      exam_prob_given_non_clicks = exam_prob * (1 - rel_prob) / prob_non_clicks
-      rel_prob_given_non_clicks = (1 - exam_prob) * rel_prob / prob_non_clicks
-
-      exam_prob_given_non_clicks, rel_prob_given_non_clicks = [
-          tf.stop_gradient(
-              tf.compat.v1.where(is_clicked, tf.ones_like(prob), prob))
-          for prob in [exam_prob_given_non_clicks, rel_prob_given_non_clicks]
-      ]
-      return exam_prob_given_non_clicks, rel_prob_given_non_clicks
+      exam_logits_posterior = exam_logits - tf.math.softplus(rel_logits)
+      rel_logits_posterior = rel_logits - tf.math.softplus(exam_logits)
+      exam_prob_posterior = tf.compat.v1.where(
+          is_clicked, tf.ones_like(exam_logits_posterior),
+          tf.sigmoid(exam_logits_posterior))
+      rel_prob_posterior = tf.compat.v1.where(
+          is_clicked, tf.ones_like(rel_logits_posterior),
+          tf.sigmoid(rel_logits_posterior))
+      return tf.stop_gradient(exam_prob_posterior), tf.stop_gradient(
+          rel_prob_posterior)
 
   def compute_unreduced_loss(self, labels, logits):
     """Computes the loss for each element.
@@ -957,15 +979,18 @@ class ClickEMLoss(_PointwiseLoss):
     is_label_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
     exam_logits, rel_logits = tf.unstack(logits, axis=2)
-
+    exam_logits = tf.compat.v1.where(is_label_valid, exam_logits,
+                                     tf.zeros_like(exam_logits))
+    rel_logits = tf.compat.v1.where(is_label_valid, rel_logits,
+                                    tf.zeros_like(rel_logits))
     # The distribution in the E step.
     exam_latent_prob, rel_latent_prob = self._compute_latent_prob(
         labels, exam_logits, rel_logits)
     # The loss in the M step.
     losses = tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
-        labels=exam_latent_prob,
-        logits=exam_logits) + tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
-            labels=rel_latent_prob, logits=rel_logits)
+        labels=exam_latent_prob, logits=exam_logits) * self._exam_loss_weight
+    losses += tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
+        labels=rel_latent_prob, logits=rel_logits) * self._rel_loss_weight
     return losses, tf.ones_like(losses)
 
 
