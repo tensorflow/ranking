@@ -23,6 +23,11 @@ from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras import metrics
 
 
+_DEFAULT_SERVING_KEY = tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+_REGRESS_SERVING_KEY = "regression"
+_PREDICT_SERVING_KEY = "predict"
+
+
 def model_to_estimator(model,
                        model_dir=None,
                        config=None,
@@ -109,8 +114,23 @@ def model_to_estimator(model,
 
     logits = ranker(features, training=training)
 
+    if listwise_inference:
+      default_export_output = tf.compat.v1.estimator.export.PredictOutput(
+          logits)
+    else:
+      default_export_output = tf.compat.v1.estimator.export.RegressionOutput(
+          logits)
+    export_outputs = {
+        _DEFAULT_SERVING_KEY: default_export_output,
+        _REGRESS_SERVING_KEY:
+            tf.compat.v1.estimator.export.RegressionOutput(logits),
+        _PREDICT_SERVING_KEY:
+            tf.compat.v1.estimator.export.PredictOutput(logits)
+    }
+
     if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
-      return tf.compat.v1.estimator.EstimatorSpec(mode=mode, predictions=logits)
+      return tf.compat.v1.estimator.EstimatorSpec(mode=mode, predictions=logits,
+                                                  export_outputs=export_outputs)
 
     loss = _clone_fn(model.loss)
     total_loss = loss(labels, logits, sample_weight=weights)
@@ -145,7 +165,8 @@ def model_to_estimator(model,
         predictions=logits,
         loss=total_loss,
         train_op=train_op,
-        eval_metric_ops=eval_metric_ops)
+        eval_metric_ops=eval_metric_ops,
+        export_outputs=export_outputs)
 
   return tf.compat.v1.estimator.Estimator(
       model_fn=_model_fn,
