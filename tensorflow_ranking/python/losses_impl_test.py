@@ -556,27 +556,6 @@ class LossesImplTest(tf.test.TestCase):
              _sigmoid_cross_entropy(labels[2], scores[2])) / 9.,
             places=5)
 
-  def test_mean_squared_loss(self):
-    with tf.Graph().as_default():
-      scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
-      labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.MeanSquaredLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_mean_squared_error(labels[0], scores[0]) +
-             _mean_squared_error(labels[1], scores[1]) +
-             _mean_squared_error(labels[2], scores[2])) / 9.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            (_mean_squared_error(labels[0], scores[0]) * 2.0 +
-             _mean_squared_error(labels[1], scores[1]) +
-             _mean_squared_error(labels[2], scores[2])) / 9.,
-            places=5)
-
   def test_approx_ndcg_loss(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
@@ -676,19 +655,6 @@ class LossesImplTest(tf.test.TestCase):
         self.assertAlmostEqual(
             loss_fn.compute(labels, scores, None, reduction).eval(),
             (math.log(1. + math.exp(-2.)) + math.log(1. + math.exp(1))) / 2,
-            places=5)
-
-  def test_mean_squared_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-
-      with self.cached_session():
-        loss_fn = losses_impl.MeanSquaredLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (1. + 1.) / 2,
             places=5)
 
   def test_pointwise_compute_per_list(self):
@@ -892,6 +858,43 @@ class ListMLELossTest(tf.test.TestCase):
               (3 * ln(3. / (3 + 2 + 1)) + 1 * ln(1. /
                                                  (1 + 2)) + 0 * ln(2. / 2))) /
             2,
+            places=5)
+
+
+class MeanSquaredLossTest(tf.test.TestCase):
+
+  def test_mean_squared_loss(self):
+    with tf.Graph().as_default():
+      scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
+      labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.MeanSquaredLoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            (_mean_squared_error(labels[0], scores[0]) +
+             _mean_squared_error(labels[1], scores[1]) +
+             _mean_squared_error(labels[2], scores[2])) / 9.,
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            (_mean_squared_error(labels[0], scores[0]) * 2.0 +
+             _mean_squared_error(labels[1], scores[1]) +
+             _mean_squared_error(labels[2], scores[2])) / 9.,
+            places=5)
+
+  def test_mean_squared_loss_with_invalid_labels(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., -1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      with self.cached_session():
+        loss_fn = losses_impl.MeanSquaredLoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            (1. + 1.) / 2,
             places=5)
 
 
