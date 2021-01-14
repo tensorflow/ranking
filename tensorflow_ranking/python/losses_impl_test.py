@@ -504,35 +504,6 @@ class LossesImplTest(tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(losses_impl.PairwiseSoftZeroOneLoss)
 
-  def test_softmax_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.SoftmaxLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -(math.log(_softmax(scores[0])[2]) +
-              math.log(_softmax(scores[1])[2]) * 2.) / 2.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(math.log(_softmax(scores[0])[2]) * 2. +
-              math.log(_softmax(scores[1])[2]) * 2. * 1.) / 2.,
-            places=5)
-        # Test LambdaWeight.
-        lambda_weight = losses_impl.DCGLambdaWeight(
-            rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
-        loss_fn = losses_impl.SoftmaxLoss(
-            name=None, lambda_weight=lambda_weight)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -(math.log(_softmax(scores[0])[2]) / math.log(1. + 2.) +
-              math.log(_softmax(scores[1])[2]) * 2. / math.log(1. + 1.)) / 2.,
-            places=5)
-
   def test_unique_softmax_loss(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
@@ -765,19 +736,6 @@ class LossesImplTest(tf.test.TestCase):
             math.log(1 + math.exp(-1.)),
             places=5)
 
-  def test_softmax_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-
-      with self.cached_session():
-        loss_fn = losses_impl.SoftmaxLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -(math.log(_softmax([1, 2])[1])),
-            places=5)
-
   def test_sigmoid_cross_entropy_loss_with_invalid_labels(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
@@ -855,6 +813,53 @@ class LossesImplTest(tf.test.TestCase):
       self.assertAllClose(losses, [-0.63093, -0.796248])
       self.assertAllClose(weights, [4., 1.])
 
+  def test_unique_softmax_compute_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+
+      with self.cached_session():
+        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
+        losses, weights = loss_fn.compute_per_list(labels, scores,
+                                                   per_item_weights)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [1.407606, 1.222818])
+      self.assertAllClose(weights, [4., 1.])
+
+
+class SoftmaxLossTest(tf.test.TestCase):
+
+  def test_softmax_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.SoftmaxLoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -(math.log(_softmax(scores[0])[2]) +
+              math.log(_softmax(scores[1])[2]) * 2.) / 2.,
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            -(math.log(_softmax(scores[0])[2]) * 2. +
+              math.log(_softmax(scores[1])[2]) * 2. * 1.) / 2.,
+            places=5)
+        # Test LambdaWeight.
+        lambda_weight = losses_impl.DCGLambdaWeight(
+            rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
+        loss_fn = losses_impl.SoftmaxLoss(
+            name=None, lambda_weight=lambda_weight)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -(math.log(_softmax(scores[0])[2]) / math.log(1. + 2.) +
+              math.log(_softmax(scores[1])[2]) * 2. / math.log(1. + 1.)) / 2.,
+            places=5)
+
   def test_softmax_compute_per_list(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -870,20 +875,18 @@ class LossesImplTest(tf.test.TestCase):
       self.assertAllClose(losses, [1.407606, 0.407606])
       self.assertAllClose(weights, [4., 2.])
 
-  def test_unique_softmax_compute_per_list(self):
+  def test_softmax_loss_with_invalid_labels(self):
     with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+      scores = [[1., 3., 2.]]
+      labels = [[0., -1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
       with self.cached_session():
-        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
-
-      self.assertAllClose(losses, [1.407606, 1.222818])
-      self.assertAllClose(weights, [4., 1.])
+        loss_fn = losses_impl.SoftmaxLoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -(math.log(_softmax([1, 2])[1])),
+            places=5)
 
 
 if __name__ == '__main__':
