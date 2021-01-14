@@ -504,27 +504,6 @@ class LossesImplTest(tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(losses_impl.PairwiseSoftZeroOneLoss)
 
-  def test_unique_softmax_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -(math.log(_softmax(scores[0])[2]) +
-              math.log(_softmax(scores[1][:2])[1]) +
-              math.log(_softmax(scores[1])[2]) * 3.) / 3.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(math.log(_softmax(scores[0])[2]) * 2. +
-              math.log(_softmax(scores[1][:2])[1]) * 1. +
-              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 2.,
-            places=5)
-
   def test_click_em_loss(self):
     with tf.Graph().as_default():
       loss_fn = losses_impl.ClickEMLoss(name=None)
@@ -813,21 +792,6 @@ class LossesImplTest(tf.test.TestCase):
       self.assertAllClose(losses, [-0.63093, -0.796248])
       self.assertAllClose(weights, [4., 1.])
 
-  def test_unique_softmax_compute_per_list(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
-
-      with self.cached_session():
-        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
-
-      self.assertAllClose(losses, [1.407606, 1.222818])
-      self.assertAllClose(weights, [4., 1.])
-
 
 class SoftmaxLossTest(tf.test.TestCase):
 
@@ -887,6 +851,45 @@ class SoftmaxLossTest(tf.test.TestCase):
             loss_fn.compute(labels, scores, None, reduction).eval(),
             -(math.log(_softmax([1, 2])[1])),
             places=5)
+
+
+class UniqueSoftmaxLossTest(tf.test.TestCase):
+
+  def test_unique_softmax_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -(math.log(_softmax(scores[0])[2]) +
+              math.log(_softmax(scores[1][:2])[1]) +
+              math.log(_softmax(scores[1])[2]) * 3.) / 3.,
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            -(math.log(_softmax(scores[0])[2]) * 2. +
+              math.log(_softmax(scores[1][:2])[1]) * 1. +
+              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 2.,
+            places=5)
+
+  def test_unique_softmax_compute_per_list(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+
+      with self.cached_session():
+        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
+        losses, weights = loss_fn.compute_per_list(labels, scores,
+                                                   per_item_weights)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [1.407606, 1.222818])
+      self.assertAllClose(weights, [4., 1.])
 
 
 if __name__ == '__main__':
