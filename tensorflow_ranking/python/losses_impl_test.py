@@ -504,24 +504,6 @@ class LossesImplTest(tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(losses_impl.PairwiseSoftZeroOneLoss)
 
-  def test_approx_mrr_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      labels = [[0., 0., 1.], [1., 0., 1.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM
-
-      with self.cached_session():
-        loss_fn = losses_impl.ApproxMRRLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((1 / 2.) + 1 / 2. * (1 / 3. + 1 / 1.)),
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)),
-            places=5)
-
   def test_neural_sort_cross_entropy_loss(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
@@ -904,6 +886,27 @@ class ApproxNDCGLossTest(tf.test.TestCase):
             loss_fn.compute(labels, scores, example_weights, reduction).eval(),
             -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
               (3 / ln(4) + 1 / ln(3)) + norm_weights[1] * ln(2) * (1 / ln(3))),
+            places=5)
+
+
+class ApproxMRRLossTest(tf.test.TestCase):
+
+  def test_approx_mrr_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+      labels = [[0., 0., 1.], [1., 0., 1.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM
+
+      with self.cached_session():
+        loss_fn = losses_impl.ApproxMRRLoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -((1 / 2.) + 1 / 2. * (1 / 3. + 1 / 1.)),
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)),
             places=5)
 
 
