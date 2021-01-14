@@ -504,37 +504,6 @@ class LossesImplTest(tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(losses_impl.PairwiseSoftZeroOneLoss)
 
-  def test_click_em_loss(self):
-    with tf.Graph().as_default():
-      loss_fn = losses_impl.ClickEMLoss(name=None)
-      loss_fn_weighted = losses_impl.ClickEMLoss(
-          name='weighted', exam_loss_weight=2.0, rel_loss_weight=5.0)
-      clicks = [[1., 0, 0, 0]]
-      exam_logits = [[3., 3, 4, 100]]
-      rel_logits = [[3., 2, 1, 100]]
-      logits = tf.stack([exam_logits, rel_logits], axis=2)
-      reduction = tf.compat.v1.losses.Reduction.SUM
-      with self.cached_session():
-        exam_given_clicks, rel_given_clicks = loss_fn._compute_latent_prob(
-            clicks, exam_logits, rel_logits)
-        self.assertAllClose(exam_given_clicks, [[1., 0.705384, 0.93624, 0.5]])
-        self.assertAllClose(rel_given_clicks, [[1., 0.259496, 0.046613, 0.5]])
-
-        self.assertAlmostEqual(
-            loss_fn.compute(clicks, logits, None, reduction).eval(),
-            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
-            + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
-                                     rel_logits[0]),
-            places=5)
-
-        # Test the loss weights.
-        self.assertAlmostEqual(
-            loss_fn_weighted.compute(clicks, logits, None, reduction).eval(),
-            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
-            * 2.0 + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
-                                           rel_logits[0]) * 5.0,
-            places=4)
-
   def test_approx_ndcg_loss(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
@@ -899,6 +868,40 @@ class SigmoidCrossEntropyLossTest(tf.test.TestCase):
             loss_fn.compute(labels, scores, None, reduction).eval(),
             (math.log(1. + math.exp(-2.)) + math.log(1. + math.exp(1))) / 2,
             places=5)
+
+
+class ClickEMLossTest(tf.test.TestCase):
+
+  def test_click_em_loss(self):
+    with tf.Graph().as_default():
+      loss_fn = losses_impl.ClickEMLoss(name=None)
+      loss_fn_weighted = losses_impl.ClickEMLoss(
+          name='weighted', exam_loss_weight=2.0, rel_loss_weight=5.0)
+      clicks = [[1., 0, 0, 0]]
+      exam_logits = [[3., 3, 4, 100]]
+      rel_logits = [[3., 2, 1, 100]]
+      logits = tf.stack([exam_logits, rel_logits], axis=2)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+      with self.cached_session():
+        exam_given_clicks, rel_given_clicks = loss_fn._compute_latent_prob(
+            clicks, exam_logits, rel_logits)
+        self.assertAllClose(exam_given_clicks, [[1., 0.705384, 0.93624, 0.5]])
+        self.assertAllClose(rel_given_clicks, [[1., 0.259496, 0.046613, 0.5]])
+
+        self.assertAlmostEqual(
+            loss_fn.compute(clicks, logits, None, reduction).eval(),
+            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
+            + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
+                                     rel_logits[0]),
+            places=5)
+
+        # Test the loss weights.
+        self.assertAlmostEqual(
+            loss_fn_weighted.compute(clicks, logits, None, reduction).eval(),
+            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
+            * 2.0 + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
+                                           rel_logits[0]) * 5.0,
+            places=4)
 
 
 if __name__ == '__main__':
