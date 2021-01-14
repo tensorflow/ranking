@@ -504,30 +504,6 @@ class LossesImplTest(tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(losses_impl.PairwiseSoftZeroOneLoss)
 
-  def test_neural_sort_cross_entropy_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      scores_valid = [[1.4, -2.8, -0.4], [0., 1.8, -1000.], [1., 1.2, -3.2]]
-      labels_valid = [[0., 2., 1.], [1., 0., -1000.], [0., 0., 0.]]
-      p_scores = _neural_sort(scores_valid)
-      p_labels = _neural_sort(labels_valid)
-      reduction = tf.compat.v1.losses.Reduction.SUM
-
-      with self.cached_session():
-        loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_softmax_cross_entropy(p_labels[0], p_scores[0]) +
-             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 3.,
-            places=4)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            (_softmax_cross_entropy(p_labels[0], p_scores[0]) * 2.0 +
-             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 3.,
-            places=4)
-
   def test_pairwise_logistic_loss_with_invalid_labels(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
@@ -908,6 +884,33 @@ class ApproxMRRLossTest(tf.test.TestCase):
             loss_fn.compute(labels, scores, weights, reduction).eval(),
             -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)),
             places=5)
+
+
+class NeuralSortCrossEntropyLoss(tf.test.TestCase):
+
+  def test_neural_sort_cross_entropy_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+      labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      scores_valid = [[1.4, -2.8, -0.4], [0., 1.8, -1000.], [1., 1.2, -3.2]]
+      labels_valid = [[0., 2., 1.], [1., 0., -1000.], [0., 0., 0.]]
+      p_scores = _neural_sort(scores_valid)
+      p_labels = _neural_sort(labels_valid)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+
+      with self.cached_session():
+        loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            (_softmax_cross_entropy(p_labels[0], p_scores[0]) +
+             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 3.,
+            places=4)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            (_softmax_cross_entropy(p_labels[0], p_scores[0]) * 2.0 +
+             _softmax_cross_entropy(p_labels[1], p_scores[1])) / 3.,
+            places=4)
 
 
 if __name__ == '__main__':
