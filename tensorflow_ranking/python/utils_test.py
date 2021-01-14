@@ -341,6 +341,26 @@ class UtilsTest(tf.test.TestCase):
       with self.assertRaises(tf.errors.InvalidArgumentError):
         utils.de_noise([[1, 2, 3]], [[0, 2, 3]])
 
+  def test_ragged_to_dense(self):
+    with tf.Graph().as_default():
+      labels = tf.ragged.constant([[0., 1.], [2., 3., 4.]])
+      predictions = tf.ragged.constant([[5., 6.], [7., 8., 9.]])
+      weights = tf.ragged.constant([[1., 1.], [2., 1., 2.]])
+
+      labels, predictions, weights, mask = utils.ragged_to_dense(
+          labels, predictions, weights)
+
+      self.assertAllClose(labels,
+                          [[0., 1., utils._PADDING_LABEL],
+                           [2., 3., 4.]])
+      self.assertAllClose(predictions,
+                          [[5., 6., utils._PADDING_PREDICTION],
+                           [7., 8., 9.]])
+      self.assertAllClose(weights,
+                          [[1., 1., utils._PADDING_WEIGHT],
+                           [2., 1., 2.]])
+      self.assertAllClose(mask, [[True, True, False],
+                                 [True, True, True]])
 
 if __name__ == '__main__':
   tf.test.main()

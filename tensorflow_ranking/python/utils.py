@@ -20,6 +20,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
+_PADDING_LABEL = -1.
+_PADDING_PREDICTION = -1e6
+_PADDING_WEIGHT = 0.
+
 
 def _to_nd_indices(indices):
   """Returns indices used for tf.gather_nd or tf.scatter_nd.
@@ -407,3 +411,27 @@ def de_noise(counts, noise, ratio=0.9):
       res = (sorted_counts / lagrangian_multiplier -
              sorted_noise / odds) * is_pos
       return tf.scatter_nd(nd_indices, res, shape=tf.shape(counts))
+
+
+def ragged_to_dense(labels, predictions, weights):
+  """Converts given inputs from ragged tensors to dense tensors.
+
+  Args:
+    labels: A `tf.RaggedTensor` of the same shape as `predictions` representing
+      relevance.
+    predictions: A `tf.RaggedTensor` with shape [batch_size, (list_size)]. Each
+      value is the ranking score of the corresponding example.
+    weights: An optional `tf.RaggedTensor` of the same shape of predictions or a
+      `tf.Tensor` of shape [batch_size, 1]. The former case is per-example and
+      the latter case is per-list.
+
+  Returns:
+    A tuple (labels, predictions, weights, mask) of dense `tf.Tensor`s.
+  """
+  # TODO: Add checks to validate (ragged) shapes of input tensors.
+  mask = tf.cast(tf.ones_like(labels).to_tensor(0.), dtype=tf.bool)
+  labels = labels.to_tensor(_PADDING_LABEL)
+  predictions = predictions.to_tensor(_PADDING_PREDICTION)
+  if isinstance(weights, tf.RaggedTensor):
+    weights = weights.to_tensor(_PADDING_WEIGHT)
+  return labels, predictions, weights, mask

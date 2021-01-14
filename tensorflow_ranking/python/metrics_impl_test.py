@@ -93,6 +93,16 @@ class MRRMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[1.]])
 
+  def test_mrr_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 2., 3.], [1., 2.]])
+      labels = tf.ragged.constant([[0., 1., 0.], [0., 1.]])
+
+      metric = metrics_impl.MRRMetric(name=None, topn=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[1. / 2.], [1.]])
+
   def test_mrr_should_give_a_value_for_each_list_in_batch_inputs(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -191,6 +201,17 @@ class ARPMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[2.]])
 
+  def test_arp_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2., 4.], [1., 2., 3.]])
+      labels = tf.ragged.constant([[0., 0., 1., 0.], [0., 1., 2.]])
+
+      metric = metrics_impl.ARPMetric(name=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[3.],
+                                   [((1. * 2.) + (2. * 1.)) / (2. + 1.)]])
+
   def test_arp_should_weight_items_with_weights_and_labels(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -250,6 +271,16 @@ class RecallMetricTest(tf.test.TestCase):
       output, _ = metric.compute(labels, scores, None, mask=mask)
 
       self.assertAllClose(output, [[1. / 2.]])
+
+  def test_recall_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2., 4.], [1., 2., 3.]])
+      labels = tf.ragged.constant([[0., 0., 1., 0.], [1., 0., 2.]])
+
+      metric = metrics_impl.RecallMetric(name=None, topn=2, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[0. / 1.], [1. / 2.]])
 
   def test_recall_should_handle_topn(self):
     with tf.Graph().as_default():
@@ -390,6 +421,16 @@ class PrecisionMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[1. / 3.], [1. / 2.]])
 
+  def test_precision_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2., 4.], [1., 2., 3.]])
+      labels = tf.ragged.constant([[0., 0., 1., 0.], [1., 0., 2.]])
+
+      metric = metrics_impl.PrecisionMetric(name=None, topn=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[1. / 4.], [2. / 3.]])
+
   def test_precision_weights_should_be_avg_of_weights_of_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
@@ -466,6 +507,18 @@ class MeanAveragePrecisionMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output, [[(1. / 2.) / 1.],
                                    [(1. / 1. + 2. / 2.) / 2.]])
+
+  def test_map_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 4., 3., 2.], [1., 3., 2.]])
+      labels = tf.ragged.constant([[0., 0., 1., 0.], [1., 1., 0.]])
+
+      metric = metrics_impl.MeanAveragePrecisionMetric(name=None, topn=None,
+                                                       ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[(1. / 2.) / 1.],
+                                   [(1. / 1. + 2. / 3.) / 2.]])
 
   def test_map_should_handle_topn(self):
     with tf.Graph().as_default():
@@ -610,6 +663,19 @@ class NDCGMetricTest(tf.test.TestCase):
       dcg = (2. ** 2. - 1.) / log2p1(3.) + 1. / log2p1(1.)
       max_dcg = (2. ** 2. - 1.) / log2p1(1.) + 1. / log2p1(2.)
       self.assertAllClose(output, [[dcg / max_dcg]])
+
+  def test_ndcg_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[3., 2., 1.], [4., 1., 2., 3.]])
+      labels = tf.ragged.constant([[0., 1., 0.], [1., 1., 0., 0.]])
+
+      metric = metrics_impl.NDCGMetric(name=None, topn=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      dcg = [1. / log2p1(2.), 1. / log2p1(1.) + 1. / log2p1(4.)]
+      max_dcg = [1. / log2p1(1.), 1. / log2p1(1.) + 1. / log2p1(2.)]
+      self.assertAllClose(output,
+                          [[dcg[0] / max_dcg[0]], [dcg[1] / max_dcg[1]]])
 
   def test_ndcg_should_be_single_value_per_list(self):
     with tf.Graph().as_default():
@@ -778,6 +844,17 @@ class DCGMetricTest(tf.test.TestCase):
       self.assertAllClose(output,
                           [[(2. ** 2. - 1.) / log2p1(3.) + 1. / log2p1(1.)]])
 
+  def test_dcg_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[3., 2., 1.], [4., 1., 2., 3.]])
+      labels = tf.ragged.constant([[0., 1., 0.], [1., 1., 0., 0.]])
+
+      metric = metrics_impl.DCGMetric(name=None, topn=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[1. / log2p1(2.)],
+                                   [1. / log2p1(1.) + 1. / log2p1(4.)]])
+
   def test_dcg_should_be_single_value_per_list(self):
     with tf.Graph().as_default():
       scores = [[3., 2., 1.], [3., 1., 2.]]
@@ -916,6 +993,21 @@ class OPAMetricTest(tf.test.TestCase):
       self.assertAllClose(output, [[2. / 3.]])
       self.assertAllClose(output_weights, [[3.]])
 
+  def test_opa_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[3., 2., 1.], [4., 1., 2., 3.]])
+      labels = tf.ragged.constant([[0., 1., 0.], [1., 0., 1., 0.]])
+
+      metric = metrics_impl.OPAMetric(name=None, ragged=True)
+      output, output_weights = metric.compute(labels, scores)
+
+      # The correctly ordered pairs are:
+      # list 1: scores[1] > scores[2]
+      # list 2: scores[0] > scores[1], scores[0] > scores[3],
+      #         scores[2] > scores[1]
+      self.assertAllClose(output, [[1. / 2.], [3. / 4.]])
+      self.assertAllClose(output_weights, [[2.], [4.]])
+
   def test_opa_should_return_correct_pair_matrix_per_list(self):
     with tf.Graph().as_default():
       scores = [[3., 2., 1.], [3., 1., 2.]]
@@ -1012,6 +1104,20 @@ class PrecisionIAMetricTest(tf.test.TestCase):
       output, _ = metric.compute(labels, scores, None, mask=mask)
 
       self.assertAllClose(output, [[2. / (2. * 3.)]])
+
+  def test_precisionia_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 4., 2.],
+                                   [1., 3., 2.]])
+      labels = tf.ragged.constant([[[0., 0.], [1., 0.], [1., 1.], [0., 1.]],
+                                   [[0., 0.], [1., 0.], [0., 1.]]],
+                                  inner_shape=(2,))
+
+      metric = metrics_impl.PrecisionIAMetric(name=None, topn=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[1. / 2.],
+                                   [2. / (2. * 3.)]])
 
   def test_precisionia_should_ignore_subtopics_without_rel(self):
     with tf.Graph().as_default():
@@ -1164,6 +1270,25 @@ class AlphaDCGMetricTest(tf.test.TestCase):
       output, _ = metric.compute(labels, scores, None, mask=mask)
 
       self.assertAllClose(output, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(2.)]])
+
+  def test_alphadcg_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2., 4.],
+                                   [1., 3., 2.]])
+      labels = tf.ragged.constant([[[1., 0.], [1., 1.], [0., 1.], [1., 0.]],
+                                   [[0., 0.], [1., 0.], [0., 1.]]],
+                                  inner_shape=(2,))
+
+      metric = metrics_impl.AlphaDCGMetric(name=None, topn=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
+                                    (1. * (1. - 0.5) ** 0.) / log2p1(2.) +
+                                    (1. * (1. - 0.5) ** 1.) / log2p1(2.) +
+                                    (1. * (1. - 0.5) ** 1.) / log2p1(3.) +
+                                    (1. * (1. - 0.5) ** 2.) / log2p1(4.)],
+                                   [(1. * (1. - 0.5) ** 0.) / log2p1(1.) +
                                     (1. * (1. - 0.5) ** 0.) / log2p1(2.)]])
 
   def test_alphadcg_should_be_single_value_per_list(self):
@@ -1410,6 +1535,16 @@ class BPrefMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output,
                           [[1. / 2. * ((1. - 1. / 2.) + (1. - 2. / 2.))]])
+
+  def test_bpref_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2., 4.], [1., 2., 3.]])
+      labels = tf.ragged.constant([[0., 0., 1., 0.], [0., 1., 1.]])
+
+      metric = metrics_impl.BPrefMetric(name=None, topn=None, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[0.], [1.]])
 
   def test_bpref_weights_should_be_avg_of_weights_of_rel_items(self):
     with tf.Graph().as_default():

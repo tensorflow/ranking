@@ -208,6 +208,16 @@ def _per_list_precision(labels, predictions, topn, mask):
 class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
   """Interface for ranking metrics."""
 
+  def __init__(self, ragged=False):
+    """Constructor.
+
+    Args:
+      ragged: A bool indicating whether the supplied tensors are ragged. If
+        True labels, predictions and weights (if providing per-example weights)
+        need to be ragged tensors with compatible shapes.
+    """
+    self._ragged = ragged
+
   @abc.abstractproperty
   def name(self):
     """The metric name."""
@@ -223,13 +233,17 @@ class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
         the ranking score of the corresponding example.
       weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
         The former case is per-example and the latter case is per-list.
-      mask: An optional `Tensor` of the same shape as predictions indicating
-        which entries are padded.
+      mask: A `Tensor` of the same shape as predictions indicating which entries
+        are valid for computing the metric.
 
     Returns:
       (labels, predictions, weights, mask) ready to be used for metric
       calculation.
     """
+    if any(isinstance(tensor, tf.RaggedTensor)
+           for tensor in [labels, predictions, weights]):
+      raise ValueError('labels, predictions and/or weights are ragged tensors, '
+                       'use ragged=True to enable ragged support for metrics.')
     labels = tf.convert_to_tensor(value=labels)
     predictions = tf.convert_to_tensor(value=predictions)
     weights = 1.0 if weights is None else tf.convert_to_tensor(value=weights)
@@ -248,7 +262,7 @@ class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
         tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
     return labels, predictions, example_weights, mask
 
-  def compute(self, labels, predictions, weights, mask=None):
+  def compute(self, labels, predictions, weights=None, mask=None):
     """Computes the metric with the given inputs.
 
     Args:
@@ -256,14 +270,19 @@ class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
         relevance.
       predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
         the ranking score of the corresponding example.
-      weights: A `Tensor` of the same shape of predictions or [batch_size, 1].
-        The former case is per-example and the latter case is per-list.
+      weights: An optional `Tensor` of the same shape of predictions or
+        [batch_size, 1]. The former case is per-example and the latter case is
+        per-list.
       mask: An optional `Tensor` of the same shape as predictions indicating
-        which entries are valid for computing the metric.
+        which entries are valid for computing the metric. Will be ignored if
+        the metric was constructed with ragged=True.
 
     Returns:
       A tf metric.
     """
+    if self._ragged:
+      labels, predictions, weights, mask = utils.ragged_to_dense(
+          labels, predictions, weights)
     labels, predictions, weights, mask = self._prepare_and_validate_params(
         labels, predictions, weights, mask)
     return self._compute_impl(labels, predictions, weights, mask)
@@ -295,8 +314,8 @@ class _DivRankingMetric(_RankingMetric):
     name: A string used as the name for this metric.
   """
 
-  def __init__(self, name, topn=None):
-    super(_DivRankingMetric, self).__init__()
+  def __init__(self, name, topn=None, ragged=False):
+    super(_DivRankingMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
 
@@ -345,7 +364,10 @@ class _DivRankingMetric(_RankingMetric):
     predictions = tf.convert_to_tensor(value=predictions)
     labels.get_shape().assert_has_rank(3)
     if mask is None:
-      mask = tf.reduce_any(utils.is_label_valid(labels), axis=-1)
+      mask = utils.is_label_valid(labels)
+    mask = tf.convert_to_tensor(value=mask)
+    if mask.get_shape().rank == 3:
+      mask = tf.reduce_any(mask, axis=2)
     predictions = tf.where(
         mask, predictions, -1e-6 * tf.ones_like(predictions) +
         tf.reduce_min(input_tensor=predictions, axis=1, keepdims=True))
@@ -404,9 +426,9 @@ class _DivRankingMetric(_RankingMetric):
 class MRRMetric(_RankingMetric):
   """Implements mean reciprocal rank (MRR)."""
 
-  def __init__(self, name, topn):
+  def __init__(self, name, topn, ragged=False):
     """Constructor."""
-    super(MRRMetric, self).__init__()
+    super(MRRMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
 
@@ -437,9 +459,9 @@ class MRRMetric(_RankingMetric):
 class ARPMetric(_RankingMetric):
   """Implements average relevance position (ARP)."""
 
-  def __init__(self, name):
+  def __init__(self, name, ragged=False):
     """Constructor."""
-    super(ARPMetric, self).__init__()
+    super(ARPMetric, self).__init__(ragged=ragged)
     self._name = name
 
   @property
@@ -467,9 +489,9 @@ class ARPMetric(_RankingMetric):
 class RecallMetric(_RankingMetric):
   """Implements recall@k (r@k)."""
 
-  def __init__(self, name, topn):
+  def __init__(self, name, topn, ragged=False):
     """Constructor."""
-    super(RecallMetric, self).__init__()
+    super(RecallMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
 
@@ -492,9 +514,9 @@ class RecallMetric(_RankingMetric):
 class PrecisionMetric(_RankingMetric):
   """Implements precision@k (P@k)."""
 
-  def __init__(self, name, topn):
+  def __init__(self, name, topn, ragged=False):
     """Constructor."""
-    super(PrecisionMetric, self).__init__()
+    super(PrecisionMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
 
@@ -517,9 +539,9 @@ class PrecisionMetric(_RankingMetric):
 class MeanAveragePrecisionMetric(_RankingMetric):
   """Implements mean average precision (MAP)."""
 
-  def __init__(self, name, topn):
+  def __init__(self, name, topn, ragged=False):
     """Constructor."""
-    super(MeanAveragePrecisionMetric, self).__init__()
+    super(MeanAveragePrecisionMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
 
@@ -534,7 +556,7 @@ class MeanAveragePrecisionMetric(_RankingMetric):
     # Relevance = 1.0 when labels >= 1.0.
     relevance = tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32)
     sorted_relevance, sorted_weights = utils.sort_by_scores(
-        predictions, [relevance, weights], topn=topn)
+        predictions, [relevance, weights], topn=topn, mask=mask)
     per_list_relevant_counts = tf.cumsum(sorted_relevance, axis=1)
     per_list_cutoffs = tf.cumsum(tf.ones_like(sorted_relevance), axis=1)
     per_list_precisions = tf.math.divide_no_nan(per_list_relevant_counts,
@@ -563,9 +585,10 @@ class NDCGMetric(_RankingMetric):
                name,
                topn,
                gain_fn=_DEFAULT_GAIN_FN,
-               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
+               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
+               ragged=False):
     """Constructor."""
-    super(NDCGMetric, self).__init__()
+    super(NDCGMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
     self._gain_fn = gain_fn
@@ -603,9 +626,10 @@ class DCGMetric(_RankingMetric):
                name,
                topn,
                gain_fn=_DEFAULT_GAIN_FN,
-               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN):
+               rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
+               ragged=False):
     """Constructor."""
-    super(DCGMetric, self).__init__()
+    super(DCGMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
     self._gain_fn = gain_fn
@@ -633,9 +657,9 @@ class DCGMetric(_RankingMetric):
 class OPAMetric(_RankingMetric):
   """Implements ordered pair accuracy (OPA)."""
 
-  def __init__(self, name):
+  def __init__(self, name, ragged=False):
     """Constructor."""
-    super(OPAMetric, self).__init__()
+    super(OPAMetric, self).__init__(ragged=ragged)
     self._name = name
 
   @property
@@ -727,9 +751,10 @@ class AlphaDCGMetric(_DivRankingMetric):
                topn,
                alpha=0.5,
                rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN,
-               seed=None):
+               seed=None,
+               ragged=False):
     """Constructor."""
-    super(AlphaDCGMetric, self).__init__(name, topn)
+    super(AlphaDCGMetric, self).__init__(name, topn, ragged=ragged)
     self._alpha = alpha
     self._gain_fn = functools.partial(_alpha_dcg_gain_fn, alpha=alpha)
     self._rank_discount_fn = rank_discount_fn
@@ -778,9 +803,9 @@ class BPrefMetric(_RankingMetric):
   set use_trec_version to False.
   """
 
-  def __init__(self, name, topn, use_trec_version=True):
+  def __init__(self, name, topn, use_trec_version=True, ragged=False):
     """Constructor."""
-    super(BPrefMetric, self).__init__()
+    super(BPrefMetric, self).__init__(ragged=ragged)
     self._name = name
     self._topn = topn
     self._use_trec_version = use_trec_version
