@@ -577,56 +577,6 @@ class LossesImplTest(tf.test.TestCase):
              _mean_squared_error(labels[2], scores[2])) / 9.,
             places=5)
 
-  def test_list_mle_loss(self):
-    with tf.Graph().as_default():
-      scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
-      labels = [[0., 2., 1.], [1., 0., 2.]]
-      weights = [[2.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.ListMLELoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) +
-              (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(2 * (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) + 1 *
-              (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
-            places=5)
-
-  def test_list_mle_loss_tie(self):
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      scores = [[0., ln(2), ln(3)]]
-      labels = [[0., 0., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.ListMLELoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))),
-            places=5)
-
-  def test_list_mle_loss_lambda_weight(self):
-    with tf.Graph().as_default():
-      scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
-      labels = [[0., 2., 1.], [1., 0., 2.]]
-      lw = losses_impl.ListMLELambdaWeight(
-          rank_discount_fn=lambda rank: tf.pow(2., 3 - rank) - 1.)
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.ListMLELoss(name=None, lambda_weight=lw)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((3 * ln(3. / (3 + 2 + 1)) + 1 * ln(2. /
-                                                 (2 + 1)) + 0 * ln(1. / 1)) +
-              (3 * ln(3. / (3 + 2 + 1)) + 1 * ln(1. /
-                                                 (1 + 2)) + 0 * ln(2. / 2))) /
-            2,
-            places=5)
-
   def test_approx_ndcg_loss(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
@@ -890,6 +840,59 @@ class UniqueSoftmaxLossTest(tf.test.TestCase):
 
       self.assertAllClose(losses, [1.407606, 1.222818])
       self.assertAllClose(weights, [4., 1.])
+
+
+class ListMLELossTest(tf.test.TestCase):
+
+  def test_list_mle_loss(self):
+    with tf.Graph().as_default():
+      scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+      labels = [[0., 2., 1.], [1., 0., 2.]]
+      weights = [[2.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.ListMLELoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) +
+              (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            -(2 * (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) + 1 *
+              (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+            places=5)
+
+  def test_list_mle_loss_tie(self):
+    with tf.Graph().as_default():
+      tf.compat.v1.set_random_seed(1)
+      scores = [[0., ln(2), ln(3)]]
+      labels = [[0., 0., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.ListMLELoss(name=None)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))),
+            places=5)
+
+  def test_list_mle_loss_lambda_weight(self):
+    with tf.Graph().as_default():
+      scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+      labels = [[0., 2., 1.], [1., 0., 2.]]
+      lw = losses_impl.ListMLELambdaWeight(
+          rank_discount_fn=lambda rank: tf.pow(2., 3 - rank) - 1.)
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.ListMLELoss(name=None, lambda_weight=lw)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -((3 * ln(3. / (3 + 2 + 1)) + 1 * ln(2. /
+                                                 (2 + 1)) + 0 * ln(1. / 1)) +
+              (3 * ln(3. / (3 + 2 + 1)) + 1 * ln(1. /
+                                                 (1 + 2)) + 0 * ln(2. / 2))) /
+            2,
+            places=5)
 
 
 if __name__ == '__main__':
