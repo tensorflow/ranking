@@ -504,39 +504,6 @@ class LossesImplTest(tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(losses_impl.PairwiseSoftZeroOneLoss)
 
-  def test_approx_ndcg_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      # ranks= [[1,    3,    2],   [2,  1,   3],    [2,  1,    3]]
-      labels = [[0., 2., 1.], [1., 0., -1.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-      norm_weights = []
-      for weight, label in zip(example_weights, labels):
-        sum_label = sum(max(0, l) for l in label)
-        norm_weights.append(
-            sum(w * max(0, l) for w, l in zip(weight, label)) /
-            sum_label if sum_label else 0)
-      reduction = tf.compat.v1.losses.Reduction.SUM
-
-      with self.cached_session():
-        loss_fn = losses_impl.ApproxNDCGLoss(name=None, temperature=0.1)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + ln(2) *
-              (1 / ln(3))),
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(2 * (1 / (3 / ln(2) + 1 / ln(3))) *
-              (3 / ln(4) + 1 / ln(3)) + 1 * ln(2) * (1 / ln(3))),
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, example_weights, reduction).eval(),
-            -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-              (3 / ln(4) + 1 / ln(3)) + norm_weights[1] * ln(2) * (1 / ln(3))),
-            places=5)
-
   def test_approx_mrr_loss(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
@@ -902,6 +869,42 @@ class ClickEMLossTest(tf.test.TestCase):
             * 2.0 + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
                                            rel_logits[0]) * 5.0,
             places=4)
+
+
+class ApproxNDCGLossTest(tf.test.TestCase):
+
+  def test_approx_ndcg_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+      # ranks= [[1,    3,    2],   [2,  1,   3],    [2,  1,    3]]
+      labels = [[0., 2., 1.], [1., 0., -1.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
+      norm_weights = []
+      for weight, label in zip(example_weights, labels):
+        sum_label = sum(max(0, l) for l in label)
+        norm_weights.append(
+            sum(w * max(0, l) for w, l in zip(weight, label)) /
+            sum_label if sum_label else 0)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+
+      with self.cached_session():
+        loss_fn = losses_impl.ApproxNDCGLoss(name=None, temperature=0.1)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + ln(2) *
+              (1 / ln(3))),
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            -(2 * (1 / (3 / ln(2) + 1 / ln(3))) *
+              (3 / ln(4) + 1 / ln(3)) + 1 * ln(2) * (1 / ln(3))),
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, example_weights, reduction).eval(),
+            -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+              (3 / ln(4) + 1 / ln(3)) + norm_weights[1] * ln(2) * (1 / ln(3))),
+            places=5)
 
 
 if __name__ == '__main__':
