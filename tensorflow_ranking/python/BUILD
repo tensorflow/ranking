@@ -1,9 +1,7 @@
 # Description:
 # TensorFlow Ranking, the project to build ranking models on TensorFlow.
 package(
-    default_visibility = [
-        "//tensorflow_ranking:__subpackages__",
-    ],
+    default_visibility = ["//tensorflow_ranking:__subpackages__"],
 )
 
 licenses(["notice"])  # Apache 2.0
