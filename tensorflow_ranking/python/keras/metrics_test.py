@@ -325,6 +325,21 @@ class MetricsTest(tf.test.TestCase):
                           ]) / sum(mean_relevant_weights)
     self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
+  def test_mean_reciprocal_rank_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [3., 4., 2., 1.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.MRRMetric(ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1. / 2., 1., 1. / 2.]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.MRRMetric(ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([1. / 2. * 2., 1., 1. / 2. * 3.]) / (2. + 1. + 3.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
   def test_average_relevance_position(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
@@ -427,6 +442,21 @@ class MetricsTest(tf.test.TestCase):
     metric_ = metrics_lib.PrecisionMetric(topn=2)
     metric_.update_state(labels, scores, [[0., 0., 0.], [0., 0., 0.]])
     self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
+
+  def test_precision_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [3., 4., 2., 1.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.PrecisionMetric(ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1. / 3., 1. / 2., 2. / 4.]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.PrecisionMetric(ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([2. * 1. / 3., 1. * 1. / 2., 3. * 2. / 4.]) / 6.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
   def test_precision_ia(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -606,6 +636,22 @@ class MetricsTest(tf.test.TestCase):
     metric_.update_state(labels, scores, [0., 0., 0.])
     self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
 
+  def test_mean_average_precision_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [3., 4., 2., 1.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.MeanAveragePrecisionMetric(ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1. / 2., 1., (1. / 2. + 2. / 3.) / 2.]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.MeanAveragePrecisionMetric(ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([2. * 1. / 2., 1.,
+                           3. * (2. * 1. / 2. + 2. * 4. / 3.) / 6.]) / 6.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
   def test_normalized_discounted_cumulative_gain(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     # Note that scores are ranked in descending order.
@@ -744,6 +790,27 @@ class MetricsTest(tf.test.TestCase):
     metric_.update_state([[0., 0., 0.]], [scores[0]], weights[0])
     self.assertAlmostEqual(metric_.result().numpy(), 0., places=5)
 
+  def test_normalized_discounted_cumulative_gain_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [3., 4., 2., 1.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.NDCGMetric(ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([_dcg(1., 2) / _dcg(1., 1),
+                           _dcg(2., 1) / _dcg(2., 1),
+                           (_dcg(2., 2) + _dcg(1., 3)) /
+                           (_dcg(2., 1) + _dcg(1., 2))]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.NDCGMetric(ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([2. * _dcg(1., 2) / _dcg(1., 1),
+                           1. * _dcg(1., 1) / _dcg(1., 1),
+                           2.5 * (2. * _dcg(2., 2) + 4. * _dcg(1., 3)) /
+                           (2. * _dcg(2., 1) + 4. * _dcg(1., 2))]) / 5.5
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
   def test_discounted_cumulative_gain(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     # Note that scores are ranked in descending order.
@@ -770,6 +837,23 @@ class MetricsTest(tf.test.TestCase):
     expected_dcg = (expected_dcg_1 +
                     expected_dcg_2_weighted) / (1. + expected_weight_2)
     self.assertAlmostEqual(metric_.result().numpy(), expected_dcg, places=5)
+
+  def test_discounted_cumulative_gain_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [3., 4., 2., 1.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.DCGMetric(ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([_dcg(1., 2), _dcg(2., 1),
+                           _dcg(2., 2) + _dcg(1., 3)]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.DCGMetric(ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([2. * _dcg(1., 2), 1. * _dcg(2., 1),
+                           2. * _dcg(2., 2) + 4. * _dcg(1., 3)]) / 5.5
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
   def test_restored_discounted_cumulative_gain(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
@@ -991,6 +1075,21 @@ class MetricsTest(tf.test.TestCase):
     expected_result = (0. + 2. + 3. + 3.) / (1. + 2. + 3. + 3.)
     self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
+  def test_ordered_pair_accuracy_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [3., 4., 2., 1.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.OPAMetric(ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = (1. + 1. + 3.) / (2. + 1. + 5.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.OPAMetric(ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = (2. + 1. + 8.) / (4. + 1. + 14.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
   def test_recall(self):
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 1., 2.]]
@@ -1036,6 +1135,21 @@ class MetricsTest(tf.test.TestCase):
     expected_result = (0. * as_list_weights[0] +
                        (0. / 1.) * as_list_weights[1] +
                        (1. / 2.) * as_list_weights[2]) / sum(as_list_weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_recall_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [3., 4., 2., 1.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.RecallMetric(topn=2, ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1., 1., 1. / 2.]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.RecallMetric(topn=2, ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([2. * 1., 1. * 1., 3. * 1. / 2.]) / 6.
     self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
   def test_default_keras_metrics(self):

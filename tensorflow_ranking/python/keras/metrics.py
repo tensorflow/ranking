@@ -181,10 +181,10 @@ class _RankingMetric(tf.keras.metrics.Mean):
 class MRRMetric(_RankingMetric):
   """Implements mean reciprocal rank (MRR)."""
 
-  def __init__(self, name=None, topn=None, dtype=None, **kwargs):
+  def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
     super(MRRMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
-    self._metric = metrics_impl.MRRMetric(name=name, topn=topn)
+    self._metric = metrics_impl.MRRMetric(name=name, topn=topn, ragged=ragged)
 
   def get_config(self):
     config = super(MRRMetric, self).get_config()
@@ -198,19 +198,20 @@ class MRRMetric(_RankingMetric):
 class ARPMetric(_RankingMetric):
   """Implements average relevance position (ARP)."""
 
-  def __init__(self, name=None, dtype=None, **kwargs):
+  def __init__(self, name=None, dtype=None, ragged=False, **kwargs):
     super(ARPMetric, self).__init__(name=name, dtype=dtype, **kwargs)
-    self._metric = metrics_impl.ARPMetric(name=name)
+    self._metric = metrics_impl.ARPMetric(name=name, ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class PrecisionMetric(_RankingMetric):
   """Implements precision@k (P@k)."""
 
-  def __init__(self, name=None, topn=None, dtype=None, **kwargs):
+  def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
     super(PrecisionMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
-    self._metric = metrics_impl.PrecisionMetric(name=name, topn=topn)
+    self._metric = metrics_impl.PrecisionMetric(name=name, topn=topn,
+                                                ragged=ragged)
 
   def get_config(self):
     config = super(PrecisionMetric, self).get_config()
@@ -225,10 +226,11 @@ class PrecisionMetric(_RankingMetric):
 class RecallMetric(_RankingMetric):
   """Implements recall@k."""
 
-  def __init__(self, name=None, topn=None, dtype=None, **kwargs):
+  def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
     super(RecallMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
-    self._metric = metrics_impl.RecallMetric(name=name, topn=topn)
+    self._metric = metrics_impl.RecallMetric(name=name, topn=topn,
+                                             ragged=ragged)
 
   def get_config(self):
     config = super(RecallMetric, self).get_config()
@@ -243,13 +245,15 @@ class PrecisionIAMetric(_RankingMetric):
   """Implements PrecisionIA@k (Pre-IA@k)."""
 
   def __init__(self,
+               name=None,
                topn=None,
                dtype=None,
-               name="precision_ia_metric",
+               ragged=False,
                **kwargs):
     super(PrecisionIAMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
-    self._metric = metrics_impl.PrecisionIAMetric(name=name, topn=topn)
+    self._metric = metrics_impl.PrecisionIAMetric(name=name, topn=topn,
+                                                  ragged=ragged)
 
   def get_config(self):
     config = super(PrecisionIAMetric, self).get_config()
@@ -263,11 +267,12 @@ class PrecisionIAMetric(_RankingMetric):
 class MeanAveragePrecisionMetric(_RankingMetric):
   """Implements mean average precision (MAP)."""
 
-  def __init__(self, name=None, topn=None, dtype=None, **kwargs):
+  def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
     super(MeanAveragePrecisionMetric, self).__init__(
         name=name, dtype=dtype, **kwargs)
     self._topn = topn
-    self._metric = metrics_impl.MeanAveragePrecisionMetric(name=name, topn=topn)
+    self._metric = metrics_impl.MeanAveragePrecisionMetric(name=name, topn=topn,
+                                                           ragged=ragged)
 
   def get_config(self):
     base_config = super(MeanAveragePrecisionMetric, self).get_config()
@@ -293,6 +298,7 @@ class NDCGMetric(_RankingMetric):
                gain_fn=None,
                rank_discount_fn=None,
                dtype=None,
+               ragged=False,
                **kwargs):
     super(NDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
@@ -302,7 +308,8 @@ class NDCGMetric(_RankingMetric):
         name=name,
         topn=topn,
         gain_fn=self._gain_fn,
-        rank_discount_fn=self._rank_discount_fn)
+        rank_discount_fn=self._rank_discount_fn,
+        ragged=ragged)
 
   def get_config(self):
     base_config = super(NDCGMetric, self).get_config()
@@ -330,6 +337,7 @@ class DCGMetric(_RankingMetric):
                gain_fn=None,
                rank_discount_fn=None,
                dtype=None,
+               ragged=False,
                **kwargs):
     super(DCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     self._topn = topn
@@ -339,7 +347,8 @@ class DCGMetric(_RankingMetric):
         name=name,
         topn=topn,
         gain_fn=self._gain_fn,
-        rank_discount_fn=self._rank_discount_fn)
+        rank_discount_fn=self._rank_discount_fn,
+        ragged=ragged)
 
   def get_config(self):
     base_config = super(DCGMetric, self).get_config()
@@ -361,16 +370,18 @@ class AlphaDCGMetric(_RankingMetric):
   """
 
   def __init__(self,
+               name="alpha_dcg_metric",
                topn=None,
                alpha=0.5,
                rank_discount_fn=None,
                seed=None,
                dtype=None,
-               name="alpha_dcg_metric",
+               ragged=False,
                **kwargs):
     """Construct the ranking metric class for alpha-DCG.
 
     Args:
+      name: A string used as the name for this metric.
       topn: A cutoff for how many examples to consider for this metric.
       alpha: A float between 0 and 1, parameter used in definition of alpha-DCG.
         Introduced as an assessor error in judging whether a document is
@@ -381,7 +392,9 @@ class AlphaDCGMetric(_RankingMetric):
         customized functions.
       seed: The ops-level random seed used in shuffle ties in `sort_by_scores`.
       dtype: Data type of the metric output. See `tf.keras.metrics.Metric`.
-      name: A string used as the name for this metric.
+      ragged: A bool indicating whether the supplied tensors are ragged. If
+        True y_true, y_pred and sample_weight (if providing per-example weights)
+        need to be ragged tensors with compatible shapes.
       **kwargs: Other keyward arguments used in `tf.keras.metrics.Metric`.
     """
     super(AlphaDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
@@ -394,7 +407,8 @@ class AlphaDCGMetric(_RankingMetric):
         topn=topn,
         alpha=alpha,
         rank_discount_fn=self._rank_discount_fn,
-        seed=seed)
+        seed=seed,
+        ragged=ragged)
 
   def get_config(self):
     config = super(AlphaDCGMetric, self).get_config()
@@ -411,6 +425,6 @@ class AlphaDCGMetric(_RankingMetric):
 class OPAMetric(_RankingMetric):
   """Implements ordered pair accuracy (OPA)."""
 
-  def __init__(self, name=None, dtype=None, **kwargs):
+  def __init__(self, name=None, dtype=None, ragged=False, **kwargs):
     super(OPAMetric, self).__init__(name=name, dtype=dtype, **kwargs)
-    self._metric = metrics_impl.OPAMetric(name=name)
+    self._metric = metrics_impl.OPAMetric(name=name, ragged=ragged)
