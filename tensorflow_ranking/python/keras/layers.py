@@ -343,7 +343,6 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
                num_heads: int,
                head_size: int,
                num_layers: int = 1,
-               topk: Optional[int] = None,
                dropout_rate: float = 0.5,
                name: Optional[str] = None,
                **kwargs: Dict[Any, Any]):
@@ -353,23 +352,15 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
       num_heads: Number of attention heads (see `MultiHeadAttention` for more
         details on this argument).
       head_size: Size of each attention head.
-      num_layers: Number of self-attention layers.
-      topk: top-k positions to attend over. If None, attends over entire list.
+      num_layers: Number of cross-document attention layers.
       dropout_rate: Dropout probability.
       name: Name of the layer.
       **kwargs: keyword arguments.
-
-    Raises:
-      ValueError: If topk is not None or not a positive integer.
     """
-    if topk is not None:
-      if topk <= 0 or not isinstance(topk, int):
-        raise ValueError('topk should be either None or a positive integer.')
     super().__init__(name=name, **kwargs)
     self._num_heads = num_heads
     self._head_size = head_size
     self._num_layers = num_layers
-    self._topk = topk
     self._dropout_rate = dropout_rate
 
     # This projects input to head_size, so that this layer can be applied
@@ -420,19 +411,13 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
       mask = tf.ones(shape=(batch_size, list_size), dtype=tf.bool)
     input_tensor = self._input_projection(inputs, training=training)
 
-    q_mask = tf.cast(mask, dtype=tf.int32)
-    k_mask = q_mask[:, :self._topk] if self._topk else q_mask
-    attention_mask = nlp_modeling_layers.SelfAttentionMask()([q_mask, k_mask])
+    mask = tf.cast(mask, dtype=tf.int32)
+    attention_mask = nlp_modeling_layers.SelfAttentionMask()([mask, mask])
 
     for attention_layer, dropout_layer, norm_layer in self._attention_layers:
-      # k_tensor, the keys and values attended over, is truncated when topk is
-      # specified. Note that the output shape is unchanged, as that is
-      # determined by query_tensor.
-      k_tensor = (
-          input_tensor[:, :self._topk, :] if self._topk else input_tensor)
       output = attention_layer(
           query=input_tensor,
-          value=k_tensor,
+          value=input_tensor,
           attention_mask=attention_mask,
           training=training)
       output = dropout_layer(output, training=training)
@@ -447,7 +432,6 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
         'num_heads': self._num_heads,
         'head_size': self._head_size,
         'num_layers': self._num_layers,
-        'topk': self._topk,
         'dropout_rate': self._dropout_rate,
     })
     return config

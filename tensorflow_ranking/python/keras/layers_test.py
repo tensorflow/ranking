@@ -14,7 +14,6 @@
 
 # Lint as: python3
 """Tests for Keras layers in TF-Ranking."""
-from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_ranking.python.keras import layers
@@ -214,8 +213,7 @@ class RestoreListTest(tf.test.TestCase):
       layers.RestoreList()(flattened_logits=flattened_logits_2d, mask=mask)
 
 
-class DocumentInteractionAttentionLayerTest(tf.test.TestCase,
-                                            parameterized.TestCase):
+class DocumentInteractionAttentionLayerTest(tf.test.TestCase):
 
   def setUp(self):
     super().setUp()
@@ -230,32 +228,29 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase,
     self._num_layers = 2
     self._dropout_rate = 0.5
 
-  def _get_din_layer(self, topk=None):
+  def _get_din_layer(self):
     return layers.DocumentInteractionAttention(
         num_heads=self._num_heads,
         head_size=self._head_size,
         num_layers=self._num_layers,
-        topk=topk,
         dropout_rate=self._dropout_rate)
 
-  @parameterized.named_parameters(('topk_none', None), ('topk', 1))
-  def test_serialization(self, topk):
+  def test_serialization(self):
     # Check save and restore config.
-    layer = self._get_din_layer(topk)
+    layer = self._get_din_layer()
     serialized = tf.keras.layers.serialize(layer)
     loaded = tf.keras.layers.deserialize(serialized)
     self.assertAllEqual(loaded.get_config(), layer.get_config())
 
-  @parameterized.named_parameters(('topk_none', None), ('topk', 1))
-  def test_deterministic_inference_behavior(self, topk):
-    din_layer = self._get_din_layer(topk)
+  def test_deterministic_inference_behavior(self):
+    din_layer = self._get_din_layer()
     output_1 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
     output_2 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
     self.assertAllClose(output_1, output_2)
 
-  def test_call_topk_none(self):
+  def test_call(self):
     tf.random.set_seed(1)
-    din_layer = self._get_din_layer(topk=None)
+    din_layer = self._get_din_layer()
     output = din_layer(inputs=self._inputs, training=False, mask=self._mask)
     self.assertEqual(output.shape.as_list(), [2, 3, self._head_size])
 
@@ -265,19 +260,8 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase,
                                              [-1., 1.]]])
     self.assertAllClose(expected_output, output)
 
-  def test_call_topk(self):
-    tf.random.set_seed(1)
-    din_layer = self._get_din_layer(topk=1)
-    output = din_layer(inputs=self._inputs, training=False, mask=self._mask)
-    self.assertEqual(output.shape.as_list(), [2, 3, self._head_size])
-    expected_output = tf.convert_to_tensor([[[-1., 1.], [-1., 1.], [-1., 1.]],
-                                            [[-1., 0.99999994], [-1., 1.],
-                                             [-1., 1.]]])
-    self.assertAllClose(expected_output, output)
-
-  @parameterized.named_parameters(('topk_none', None), ('topk', 1))
-  def test_no_effect_circular_padding(self, topk):
-    din_layer = self._get_din_layer(topk)
+  def test_no_effect_circular_padding(self):
+    din_layer = self._get_din_layer()
     output_1 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
     circular_padded_inputs = tf.constant(
         [[[2., 1.], [2., 0.], [2., 1.]], [[1., 0.], [1., 0.], [1., 0.]]],
