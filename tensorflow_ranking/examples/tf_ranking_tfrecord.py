@@ -228,17 +228,16 @@ def make_transform_fn():
       # Document interaction attention layer.
       if FLAGS.use_document_interaction:
         training = (mode == tf.estimator.ModeKeys.TRAIN)
-        concat_tensor = tfr.keras.layers.ConcatFeatures()(
-            context_features=context_features,
-            example_features=example_features,
-            mask=mask)
+        concat_tensor = tfr.keras.layers.ConcatFeatures()(context_features,
+                                                          example_features,
+                                                          mask)
         din_layer = tfr.keras.layers.DocumentInteractionAttention(
             num_heads=FLAGS.num_attention_heads,
             head_size=FLAGS.head_size,
             num_layers=FLAGS.num_attention_layers,
             dropout_rate=FLAGS.dropout_rate)
         example_features["document_interaction_embedding"] = din_layer(
-            inputs=concat_tensor, training=training, mask=mask)
+            inputs=concat_tensor, training=training, list_mask=mask)
 
     return context_features, example_features
 

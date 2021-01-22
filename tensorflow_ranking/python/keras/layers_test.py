@@ -37,9 +37,7 @@ class ConcatFeaturesTest(tf.test.TestCase):
         [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]],
         dtype=tf.float32)
     concat_tensor = layers.ConcatFeatures(circular_padding=True)(
-        context_features=context_features,
-        example_features=example_features,
-        mask=mask)
+        context_features, example_features, mask)
     self.assertAllClose(expected_concat_tensor, concat_tensor)
 
   def test_call_without_circular_padding(self):
@@ -56,9 +54,7 @@ class ConcatFeaturesTest(tf.test.TestCase):
         [[[1., 1.], [1., 0.], [1., -1.]], [[0., 0.], [0., 1.], [0., 0.]]],
         dtype=tf.float32)
     concat_tensor = layers.ConcatFeatures(circular_padding=False)(
-        context_features=context_features,
-        example_features=example_features,
-        mask=mask)
+        context_features, example_features, mask)
     self.assertAllClose(expected_concat_tensor, concat_tensor)
 
   def test_serialization(self):
@@ -89,10 +85,8 @@ class FlattenListTest(tf.test.TestCase):
             tf.constant([[1], [0], [1], [0], [0], [0]], dtype=tf.float32)
     }
     (flattened_context_features,
-     flattened_example_features) = layers.FlattenList()(
-         context_features=context_features,
-         example_features=example_features,
-         mask=mask)
+     flattened_example_features) = layers.FlattenList()(context_features,
+                                                        example_features, mask)
     self.assertAllClose(target_context_features, flattened_context_features)
     self.assertAllClose(target_example_features, flattened_example_features)
 
@@ -116,9 +110,7 @@ class FlattenListTest(tf.test.TestCase):
     }
     (flattened_context_features,
      flattened_example_features) = layers.FlattenList(circular_padding=False)(
-         context_features=context_features,
-         example_features=example_features,
-         mask=mask)
+         context_features, example_features, mask)
     self.assertAllClose(expected_context_features, flattened_context_features)
     self.assertAllClose(expected_example_features, flattened_example_features)
 
@@ -130,10 +122,7 @@ class FlattenListTest(tf.test.TestCase):
     mask = tf.constant([[True, True, False], [True, False, False]],
                        dtype=tf.bool)
     with self.assertRaises(ValueError):
-      layers.FlattenList()(
-          context_features=context_features,
-          example_features=example_features,
-          mask=mask)
+      layers.FlattenList()(context_features, example_features, mask)
 
   def test_serialization(self):
     layer = layers.FlattenList()
@@ -153,29 +142,27 @@ class RestoreListTest(tf.test.TestCase):
                             dtype=tf.bool)
 
   def test_call(self):
-    logits = layers.RestoreList()(
-        flattened_logits=self.flattened_logits, mask=self.mask)
+    logits = layers.RestoreList()(self.flattened_logits, self.mask)
     self.assertAllEqual([2, 3], logits.get_shape().as_list())
     self.assertAllEqual([[1, 0.5, tf.math.log(_EPSILON)],
                          [0, tf.math.log(_EPSILON),
                           tf.math.log(_EPSILON)]], logits.numpy())
-    logits = layers.RestoreList()(
-        flattened_logits=self.flattened_logits_2d, mask=self.mask)
+    logits = layers.RestoreList()(self.flattened_logits_2d, self.mask)
     self.assertAllEqual([2, 3], logits.get_shape().as_list())
     self.assertAllEqual([[1, 0.5, tf.math.log(_EPSILON)],
                          [0, tf.math.log(_EPSILON),
                           tf.math.log(_EPSILON)]], logits.numpy())
 
   def test_call_by_scatter(self):
-    logits = layers.RestoreList(by_scatter=True)(
-        flattened_logits=self.flattened_logits, mask=self.mask)
+    logits = layers.RestoreList(by_scatter=True)(self.flattened_logits,
+                                                 self.mask)
     self.assertAllEqual([2, 3], logits.get_shape().as_list())
     self.assertAllClose(
         [[1.5, 0.5, tf.math.log(_EPSILON)],
          [-1. / 3., tf.math.log(_EPSILON),
           tf.math.log(_EPSILON)]], logits.numpy())
-    logits = layers.RestoreList(by_scatter=True)(
-        flattened_logits=self.flattened_logits_2d, mask=self.mask)
+    logits = layers.RestoreList(by_scatter=True)(self.flattened_logits_2d,
+                                                 self.mask)
     self.assertAllEqual([2, 3], logits.get_shape().as_list())
     self.assertAllClose(
         [[1.5, 0.5, tf.math.log(_EPSILON)],
@@ -188,13 +175,13 @@ class RestoreListTest(tf.test.TestCase):
     loaded = tf.keras.layers.deserialize(serialized)
     self.assertAllEqual(loaded.get_config(), layer.get_config())
 
-    logits = loaded(flattened_logits=self.flattened_logits, mask=self.mask)
+    logits = loaded(self.flattened_logits, self.mask)
     self.assertAllEqual([2, 3], logits.get_shape().as_list())
     self.assertAllClose(
         [[1.5, 0.5, tf.math.log(_EPSILON)],
          [-1. / 3., tf.math.log(_EPSILON),
           tf.math.log(_EPSILON)]], logits.numpy())
-    logits = loaded(flattened_logits=self.flattened_logits_2d, mask=self.mask)
+    logits = loaded(self.flattened_logits_2d, self.mask)
     self.assertAllEqual([2, 3], logits.get_shape().as_list())
     self.assertAllClose(
         [[1.5, 0.5, tf.math.log(_EPSILON)],
@@ -208,9 +195,9 @@ class RestoreListTest(tf.test.TestCase):
     mask = tf.constant([[True, True, False], [True, False, False]],
                        dtype=tf.bool)
     with self.assertRaises(ValueError):
-      layers.RestoreList()(flattened_logits=flattened_logits, mask=mask)
+      layers.RestoreList()(flattened_logits, mask)
     with self.assertRaises(ValueError):
-      layers.RestoreList()(flattened_logits=flattened_logits_2d, mask=mask)
+      layers.RestoreList()(flattened_logits_2d, mask)
 
 
 class DocumentInteractionAttentionLayerTest(tf.test.TestCase):
@@ -244,14 +231,17 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase):
 
   def test_deterministic_inference_behavior(self):
     din_layer = self._get_din_layer()
-    output_1 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
-    output_2 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
+    output_1 = din_layer(
+        inputs=self._inputs, training=False, list_mask=self._mask)
+    output_2 = din_layer(
+        inputs=self._inputs, training=False, list_mask=self._mask)
     self.assertAllClose(output_1, output_2)
 
   def test_call(self):
     tf.random.set_seed(1)
     din_layer = self._get_din_layer()
-    output = din_layer(inputs=self._inputs, training=False, mask=self._mask)
+    output = din_layer(
+        inputs=self._inputs, training=False, list_mask=self._mask)
     self.assertEqual(output.shape.as_list(), [2, 3, self._head_size])
 
     expected_output = tf.convert_to_tensor([[[-1., 1.0000001], [-1., 1.0000001],
@@ -262,12 +252,13 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase):
 
   def test_no_effect_circular_padding(self):
     din_layer = self._get_din_layer()
-    output_1 = din_layer(inputs=self._inputs, training=False, mask=self._mask)
+    output_1 = din_layer(
+        inputs=self._inputs, training=False, list_mask=self._mask)
     circular_padded_inputs = tf.constant(
         [[[2., 1.], [2., 0.], [2., 1.]], [[1., 0.], [1., 0.], [1., 0.]]],
         dtype=tf.float32)
     output_2 = din_layer(
-        inputs=circular_padded_inputs, training=False, mask=self._mask)
+        inputs=circular_padded_inputs, training=False, list_mask=self._mask)
     self.assertAllClose(output_1, output_2)
 
 
