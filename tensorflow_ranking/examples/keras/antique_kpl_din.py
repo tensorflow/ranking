@@ -26,9 +26,9 @@ rm -rf $MODEL_DIR && \
 bazel build -c opt \
 tensorflow_ranking/examples/keras/antique_kpl_din && \
 ./bazel-bin/tensorflow_ranking/examples/keras/antique_kpl_din \
---train_path=$TRAIN \
---eval_path=$EVAL \
---vocab_path=$VOCAB \
+--train_file_pattern=$TRAIN \
+--eval_file_pattern=$EVAL \
+--vocab_file_path=$VOCAB \
 --model_dir=$MODEL_DIR
 
 You can use TensorBoard to display the training results stored in $MODEL_DIR.
