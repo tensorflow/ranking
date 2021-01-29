@@ -1,3 +1,5 @@
+description: Implements normalized discounted cumulative gain (NDCG).
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.metrics.NDCGMetric" />
 <meta itemprop="path" content="Stable" />
@@ -24,10 +26,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L273-L308">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -38,12 +39,16 @@ Implements normalized discounted cumulative gain (NDCG).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.metrics.NDCGMetric(
-    name=None, topn=None, gain_fn=_DEFAULT_GAIN_FN,
-    rank_discount_fn=_DEFAULT_RANK_DISCOUNT_FN, dtype=None, **kwargs
+    name=None, topn=None, gain_fn=None, rank_discount_fn=None, dtype=None,
+    ragged=False, **kwargs
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+The `gain_fn` and `rank_discount_fn` should be keras serializable. Please see
+the `pow_minus_1` and `log2_inverse` above as examples when defining user
+customized functions.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -51,11 +56,31 @@ Implements normalized discounted cumulative gain (NDCG).
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
 <tr> <td> `activity_regularizer` </td> <td> Optional regularizer function for
-the output of this layer. </td> </tr><tr> <td> `dtype` </td> <td> Dtype used by
-the weights of the layer, set in the constructor. </td> </tr><tr> <td> `dynamic`
-</td> <td> Whether the layer is dynamic (eager-only); set in the constructor.
-</td> </tr><tr> <td> `input` </td> <td> Retrieves the input tensor(s) of a
-layer.
+the output of this layer. </td> </tr><tr> <td> `compute_dtype` </td> <td> The
+dtype of the layer's computations.
+
+This is equivalent to `Layer.dtype_policy.compute_dtype`. Unless mixed precision
+is used, this is the same as `Layer.dtype`, the dtype of the weights.
+
+Layers automatically cast their inputs to the compute dtype, which causes
+computations and the output to be in the compute dtype as well. This is done by
+the base Layer class in `Layer.__call__`, so you do not have to insert these
+casts if implementing your own layer.
+
+Layers often perform certain internal computations in higher precision when
+`compute_dtype` is float16 or bfloat16 for numeric stability. The output will
+still typically be float16 or bfloat16 in such cases. </td> </tr><tr> <td>
+`dtype` </td> <td> The dtype of the layer weights.
+
+This is equivalent to `Layer.dtype_policy.variable_dtype`. Unless mixed
+precision is used, this is the same as `Layer.compute_dtype`, the dtype of the
+layer's computations. </td> </tr><tr> <td> `dtype_policy` </td> <td> The dtype
+policy associated with this layer.
+
+This is an instance of a `tf.keras.mixed_precision.Policy`. </td> </tr><tr> <td>
+`dynamic` </td> <td> Whether the layer is dynamic (eager-only); set in the
+constructor. </td> </tr><tr> <td> `input` </td> <td> Retrieves the input
+tensor(s) of a layer.
 
 Only applicable if the layer has exactly one input, i.e. if it is connected to
 one incoming layer. </td> </tr><tr> <td> `input_spec` </td> <td> `InputSpec`
@@ -179,6 +204,13 @@ Trainable weights are updated via gradient descent during training.
 </td>
 </tr><tr>
 <td>
+`variable_dtype`
+</td>
+<td>
+Alias of `Layer.dtype`, the dtype of the weights.
+</td>
+</tr><tr>
+<td>
 `weights`
 </td>
 <td>
@@ -250,9 +282,10 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -291,11 +324,11 @@ model.
 class MyMetricLayer(tf.keras.layers.Layer):
   def __init__(self):
     super(MyMetricLayer, self).__init__(name='my_metric_layer')
-    self.mean = metrics_module.Mean(name='metric_1')
+    self.mean = tf.keras.metrics.Mean(name='metric_1')
 
   def call(self, inputs):
     self.add_metric(self.mean(x))
-    self.add_metric(math_ops.reduce_sum(x), name='metric_2')
+    self.add_metric(tf.reduce_sum(x), name='metric_2')
     return inputs
 ```
 
@@ -374,9 +407,10 @@ layer call.
 This is typically used to create the weights of `Layer` subclasses.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -401,9 +435,10 @@ Instance of `TensorShape`, or list of instances of
 Computes an output mask tensor.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -450,9 +485,10 @@ This assumes that the layer will later be used with inputs that match the input
 shape provided here.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -531,9 +567,10 @@ layer from the config dictionary. It does not handle layer connectivity (handled
 by Network), nor weights (handled by `set_weights`).
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -560,7 +597,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L300-L308">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -682,9 +719,10 @@ the bias value. These can be used to set the weights of another Dense layer:
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -718,7 +756,7 @@ layer's specifications.
 
 <h3 id="update_state"><code>update_state</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L141-L163">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

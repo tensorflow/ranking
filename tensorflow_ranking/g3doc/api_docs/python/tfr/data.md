@@ -1,3 +1,5 @@
+description: Input data parsing for tf-ranking library.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.data" />
 <meta itemprop="path" content="Stable" />
@@ -10,8 +12,7 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
   <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
@@ -42,6 +43,9 @@ Returns a receiver function with the provided `parsing_fn`.
 [`build_sequence_example_serving_input_receiver_fn(...)`](../tfr/data/build_sequence_example_serving_input_receiver_fn.md):
 Creates a serving_input_receiver_fn for `SequenceExample` inputs.
 
+[`build_tf_example_serving_input_receiver_fn(...)`](../tfr/data/build_tf_example_serving_input_receiver_fn.md):
+Builds a serving input fn for `tensorflow.training.Example`.
+
 [`make_parsing_fn(...)`](../tfr/data/make_parsing_fn.md): Returns a parsing fn
 for a standard data format.
 
@@ -54,11 +58,38 @@ an `ExampleListWithContext` batch to a feature map.
 [`parse_from_sequence_example(...)`](../tfr/data/parse_from_sequence_example.md):
 Parses SequenceExample to feature maps.
 
+[`parse_from_tf_example(...)`](../tfr/data/parse_from_tf_example.md): Parse
+function to convert `tf.train.Example` to feature maps.
+
 [`read_batched_sequence_example_dataset(...)`](../tfr/data/read_batched_sequence_example_dataset.md):
 Returns a `Dataset` of features from `SequenceExample`.
 
-## Other Members
+<!-- Tabular view -->
 
-*   `EIE = 'example_in_example'` <a id="EIE"></a>
-*   `ELWC = 'example_list_with_context'` <a id="ELWC"></a>
-*   `SEQ = 'sequence_example'` <a id="SEQ"></a>
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Other Members</h2></th></tr>
+
+<tr>
+<td>
+EIE<a id="EIE"></a>
+</td>
+<td>
+`'example_in_example'`
+</td>
+</tr><tr>
+<td>
+ELWC<a id="ELWC"></a>
+</td>
+<td>
+`'example_list_with_context'`
+</td>
+</tr><tr>
+<td>
+SEQ<a id="SEQ"></a>
+</td>
+<td>
+`'sequence_example'`
+</td>
+</tr>
+</table>

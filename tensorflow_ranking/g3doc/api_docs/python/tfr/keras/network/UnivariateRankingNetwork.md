@@ -1,3 +1,5 @@
+description: Base class for univariate ranking network.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.network.UnivariateRankingNetwork" />
 <meta itemprop="path" content="Stable" />
@@ -24,10 +26,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L219-L289">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -41,7 +42,7 @@ Inherits From: [`RankingNetwork`](../../../tfr/keras/network/RankingNetwork.md)
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.network.UnivariateRankingNetwork(
     context_feature_columns=None, example_feature_columns=None,
-    name='univariate_ranking_network', **kwargs
+    name=&#x27;univariate_ranking_network&#x27;, **kwargs
 )
 </code></pre>
 
@@ -89,13 +90,32 @@ keyword arguments.
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
 <tr> <td> `activity_regularizer` </td> <td> Optional regularizer function for
-the output of this layer. </td> </tr><tr> <td> `context_feature_columns` </td>
-<td>
+the output of this layer. </td> </tr><tr> <td> `compute_dtype` </td> <td> The
+dtype of the layer's computations.
 
-</td> </tr><tr> <td> `dtype` </td> <td> Dtype used by the weights of the layer,
-set in the constructor. </td> </tr><tr> <td> `dynamic` </td> <td> Whether the
-layer is dynamic (eager-only); set in the constructor. </td> </tr><tr> <td>
-`example_feature_columns` </td> <td>
+This is equivalent to `Layer.dtype_policy.compute_dtype`. Unless mixed precision
+is used, this is the same as `Layer.dtype`, the dtype of the weights.
+
+Layers automatically cast their inputs to the compute dtype, which causes
+computations and the output to be in the compute dtype as well. This is done by
+the base Layer class in `Layer.__call__`, so you do not have to insert these
+casts if implementing your own layer.
+
+Layers often perform certain internal computations in higher precision when
+`compute_dtype` is float16 or bfloat16 for numeric stability. The output will
+still typically be float16 or bfloat16 in such cases. </td> </tr><tr> <td>
+`context_feature_columns` </td> <td>
+
+</td> </tr><tr> <td> `dtype` </td> <td> The dtype of the layer weights.
+
+This is equivalent to `Layer.dtype_policy.variable_dtype`. Unless mixed
+precision is used, this is the same as `Layer.compute_dtype`, the dtype of the
+layer's computations. </td> </tr><tr> <td> `dtype_policy` </td> <td> The dtype
+policy associated with this layer.
+
+This is an instance of a `tf.keras.mixed_precision.Policy`. </td> </tr><tr> <td>
+`dynamic` </td> <td> Whether the layer is dynamic (eager-only); set in the
+constructor. </td> </tr><tr> <td> `example_feature_columns` </td> <td>
 
 </td> </tr><tr> <td> `input` </td> <td> Retrieves the input tensor(s) of a
 layer.
@@ -222,6 +242,13 @@ Trainable weights are updated via gradient descent during training.
 </td>
 </tr><tr>
 <td>
+`variable_dtype`
+</td>
+<td>
+Alias of `Layer.dtype`, the dtype of the weights.
+</td>
+</tr><tr>
+<td>
 `weights`
 </td>
 <td>
@@ -293,9 +320,10 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -334,11 +362,11 @@ model.
 class MyMetricLayer(tf.keras.layers.Layer):
   def __init__(self):
     super(MyMetricLayer, self).__init__(name='my_metric_layer')
-    self.mean = metrics_module.Mean(name='metric_1')
+    self.mean = tf.keras.metrics.Mean(name='metric_1')
 
   def call(self, inputs):
     self.add_metric(self.mean(x))
-    self.add_metric(math_ops.reduce_sum(x), name='metric_2')
+    self.add_metric(tf.reduce_sum(x), name='metric_2')
     return inputs
 ```
 
@@ -417,9 +445,10 @@ layer call.
 This is typically used to create the weights of `Layer` subclasses.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -435,7 +464,7 @@ Instance of `TensorShape`, or list of instances of
 
 <h3 id="compute_logits"><code>compute_logits</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L252-L289">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -527,7 +556,7 @@ Computes an output mask tensor.
 
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -574,9 +603,10 @@ This assumes that the layer will later be used with inputs that match the input
 shape provided here.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -641,7 +671,7 @@ if the layer isn't yet built
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L198-L216">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -690,7 +720,7 @@ A RankingNetwork layer.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L188-L196">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -705,6 +735,10 @@ its trained weights) from this configuration.
 
 The config of a layer does not include connectivity information, nor the layer
 class name. These are handled by `Network` (one layer of abstraction above).
+
+Note that `get_config()` does not guarantee to return a fresh copy of dict every
+time it is called. The callers should make a copy of the returned dict if they
+want to modify it.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -770,7 +804,7 @@ Weights values as a list of numpy arrays.
 
 <h3 id="score"><code>score</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L235-L250">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -866,9 +900,10 @@ the bias value. These can be used to set the weights of another Dense layer:
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -902,7 +937,7 @@ layer's specifications.
 
 <h3 id="transform"><code>transform</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L118-L141">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -1041,9 +1076,10 @@ The original method wrapped such that it enters the module's name scope.
 Wraps `call`, applying pre- and post-processing steps.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Arguments</th></tr>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
@@ -1084,6 +1120,7 @@ Output tensor(s).
     do), its default value will be set to the mask generated for `inputs` by the
     previous layer (if `input` did come from a layer that generated a
     corresponding mask, i.e. if it came from a Keras layer with masking support.
+-   If the layer is not built, the method will call `build`.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">

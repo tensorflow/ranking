@@ -1,3 +1,5 @@
+description: Returns a list of ranking metrics.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.metrics.default_keras_metrics" />
 <meta itemprop="path" content="Stable" />
@@ -7,10 +9,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L106-L124">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -20,7 +21,7 @@
 Returns a list of ranking metrics.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.metrics.default_keras_metrics()
+<code>tfr.keras.metrics.default_keras_metrics() -> List[tf.keras.metrics.Metric]
 </code></pre>
 
 <!-- Placeholder for "Used in" -->

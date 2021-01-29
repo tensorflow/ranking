@@ -1,3 +1,5 @@
+description: Defines ranking metrics as TF ops.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.metrics" />
 <meta itemprop="path" content="Stable" />
@@ -7,8 +9,7 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
   <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
@@ -36,6 +37,9 @@ Computes alpha discounted cumulative gain (alpha-DCG).
 
 [`average_relevance_position(...)`](../tfr/metrics/average_relevance_position.md):
 Computes average relevance position (ARP).
+
+[`binary_preference(...)`](../tfr/metrics/binary_preference.md): Computes binary
+preference (BPref).
 
 [`compute_mean(...)`](../tfr/metrics/compute_mean.md): Returns the mean of the
 specified metric given the inputs.

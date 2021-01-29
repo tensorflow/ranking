@@ -1,3 +1,5 @@
+description: Class that defines a set of utility functions for Bert.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.ext.tfrbert.TFRBertUtil" />
 <meta itemprop="path" content="Stable" />
@@ -11,10 +13,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py#L115-L331">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -70,7 +71,7 @@ This should be aligned with the `vocab_file`.
 
 <h3 id="convert_to_elwc"><code>convert_to_elwc</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py#L297-L331">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -132,12 +133,12 @@ A tensorflow.serving.ExampleListWithContext example containing the
 
 <h3 id="create_optimizer"><code>create_optimizer</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py#L145-L170">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>create_optimizer(
-    init_lr, train_steps, warmup_steps, optimizer_type='adamw'
+    init_lr, train_steps, warmup_steps, optimizer_type=&#x27;adamw&#x27;
 )
 </code></pre>
 
@@ -197,7 +198,7 @@ The optimizer training op.
 
 <h3 id="get_warm_start_settings"><code>get_warm_start_settings</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/tfrbert.py#L172-L194">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

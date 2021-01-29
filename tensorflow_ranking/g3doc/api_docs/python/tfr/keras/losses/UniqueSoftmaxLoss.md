@@ -1,3 +1,5 @@
+description: For unique softmax cross entropy loss.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.UniqueSoftmaxLoss" />
 <meta itemprop="path" content="Stable" />
@@ -11,10 +13,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L336-L348">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -25,7 +26,8 @@ For unique softmax cross entropy loss.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.UniqueSoftmaxLoss(
-    reduction=tf.losses.Reduction.AUTO, name=None, lambda_weight=None
+    reduction=tf.losses.Reduction.AUTO, name=None, lambda_weight=None,
+    temperature=1.0
 )
 </code></pre>
 
@@ -47,8 +49,8 @@ option will be determined by the usage context. For almost all cases
 this defaults to `SUM_OVER_BATCH_SIZE`. When used with
 `tf.distribute.Strategy`, outside of built-in training loops such as
 `tf.keras` `compile` and `fit`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
-will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training)
-for more details.
+will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training) for
+more details.
 </td>
 </tr><tr>
 <td>
@@ -64,10 +66,13 @@ Optional name for the op.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L301-L308">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@classmethod</code>
 <code>from_config(
-    config
+    config, custom_objects=None
 )
 </code></pre>
 
@@ -102,6 +107,9 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L291-L299">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>get_config()
 </code></pre>
@@ -110,7 +118,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L168-L173">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

@@ -1,3 +1,5 @@
+description: Keras metrics in TF-Ranking.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.metrics" />
 <meta itemprop="path" content="Stable" />
@@ -7,8 +9,7 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
   <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
@@ -48,7 +49,16 @@ Implements PrecisionIA@k (Pre-IA@k).
 [`class PrecisionMetric`](../../tfr/keras/metrics/PrecisionMetric.md):
 Implements precision@k (P@k).
 
+[`class RankingMetricKey`](../../tfr/keras/metrics/RankingMetricKey.md): Ranking
+metric key strings.
+
+[`class RecallMetric`](../../tfr/keras/metrics/RecallMetric.md): Implements
+recall@k.
+
 ## Functions
 
 [`default_keras_metrics(...)`](../../tfr/keras/metrics/default_keras_metrics.md):
 Returns a list of ranking metrics.
+
+[`get(...)`](../../tfr/keras/metrics/get.md): Factory method to get a list of
+ranking metrics.

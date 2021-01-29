@@ -1,3 +1,5 @@
+description: Builds an Estimator instance with DNN scoring function.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.estimator.make_dnn_ranking_estimator" />
 <meta itemprop="path" content="Stable" />
@@ -7,10 +9,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/estimator.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/estimator.py#L444-L516">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,12 +23,11 @@ Builds an `Estimator` instance with DNN scoring function.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.estimator.make_dnn_ranking_estimator(
     example_feature_columns, hidden_units, context_feature_columns=None,
-    optimizer=None, learning_rate=0.05, listwise_inference=False,
-    loss='approx_ndcg_loss',
+    optimizer=None, learning_rate=0.05, loss=&#x27;approx_ndcg_loss&#x27;,
     loss_reduction=tf.compat.v1.losses.Reduction.SUM_OVER_BATCH_SIZE,
     activation_fn=tf.nn.relu, dropout=None, use_batch_norm=False,
     batch_norm_moment=0.999, model_dir=None, checkpoint_secs=120,
-    num_checkpoints=1000
+    num_checkpoints=1000, listwise_inference=False
 )
 </code></pre>
 
@@ -75,14 +75,6 @@ has 64 nodes and second one has 32.
 <td>
 (float) Only used if `optimizer` is a string. Defaults to
 0.05.
-</td>
-</tr><tr>
-<td>
-`listwise_inference`
-</td>
-<td>
-(bool) Whether the inference will be performed with the
-listwise data format such as `ExampleListWithContext`.
 </td>
 </tr><tr>
 <td>
@@ -154,6 +146,14 @@ continue training a previously saved model.
 </td>
 <td>
 (int) Number of checkpoints to keep.
+</td>
+</tr><tr>
+<td>
+`listwise_inference`
+</td>
+<td>
+(bool) Whether the inference will be performed with the
+listwise data format such as `ExampleListWithContext`.
 </td>
 </tr>
 </table>

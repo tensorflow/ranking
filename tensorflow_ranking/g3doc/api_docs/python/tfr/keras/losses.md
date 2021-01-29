@@ -1,3 +1,5 @@
+description: Keras losses in TF-Ranking.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses" />
 <meta itemprop="path" content="Stable" />
@@ -7,8 +9,7 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
   <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
@@ -27,13 +28,24 @@ approximate MRR loss.
 [`class ApproxNDCGLoss`](../../tfr/keras/losses/ApproxNDCGLoss.md): For
 approximate NDCG loss.
 
+[`class ClickEMLoss`](../../tfr/keras/losses/ClickEMLoss.md): For click EM loss.
+
+[`class DCGLambdaWeight`](../../tfr/keras/losses/DCGLambdaWeight.md): Keras
+serializable class for DCG.
+
 [`class GumbelApproxNDCGLoss`](../../tfr/keras/losses/GumbelApproxNDCGLoss.md):
 For Gumbel approximate NDCG loss.
+
+[`class ListMLELambdaWeight`](../../tfr/keras/losses/ListMLELambdaWeight.md):
+LambdaWeight for ListMLE cost function.
 
 [`class ListMLELoss`](../../tfr/keras/losses/ListMLELoss.md): For List MLE loss.
 
 [`class MeanSquaredLoss`](../../tfr/keras/losses/MeanSquaredLoss.md): For mean
 squared error loss.
+
+[`class NDCGLambdaWeight`](../../tfr/keras/losses/NDCGLambdaWeight.md): Keras
+serializable class for NDCG.
 
 [`class PairwiseHingeLoss`](../../tfr/keras/losses/PairwiseHingeLoss.md): For
 pairwise hinge loss.
@@ -43,6 +55,9 @@ For pairwise logistic loss.
 
 [`class PairwiseSoftZeroOneLoss`](../../tfr/keras/losses/PairwiseSoftZeroOneLoss.md):
 For pairwise soft zero-one loss.
+
+[`class PrecisionLambdaWeight`](../../tfr/keras/losses/PrecisionLambdaWeight.md):
+Keras serializable class for Precision.
 
 [`class RankingLossKey`](../../tfr/keras/losses/RankingLossKey.md): Ranking loss
 key strings.

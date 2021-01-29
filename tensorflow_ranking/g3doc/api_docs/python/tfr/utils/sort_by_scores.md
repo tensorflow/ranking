@@ -1,3 +1,5 @@
+description: Sorts list of features according to per-example scores.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.utils.sort_by_scores" />
 <meta itemprop="path" content="Stable" />
@@ -7,10 +9,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L96-L145">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -21,7 +22,7 @@ Sorts list of features according to per-example scores.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.utils.sort_by_scores(
-    scores, features_list, topn=None, shuffle_ties=True, seed=None
+    scores, features_list, topn=None, shuffle_ties=True, seed=None, mask=None
 )
 </code></pre>
 
@@ -69,6 +70,15 @@ A boolean. If True, randomly shuffle before the sorting.
 </td>
 <td>
 The ops-level random seed used when `shuffle_ties` is True.
+</td>
+</tr><tr>
+<td>
+`mask`
+</td>
+<td>
+An optional `Tensor` of shape [batch_size, list_size] representing
+which entries are valid for sorting. Invalid entries will be pushed to the
+end.
 </td>
 </tr>
 </table>

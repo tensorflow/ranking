@@ -1,3 +1,6 @@
+description: Class to set up the input, train and eval processes for a TF
+Ranking model.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.ext.pipeline.RankingPipeline" />
 <meta itemprop="path" content="Stable" />
@@ -9,10 +12,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py#L20-L408">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -24,7 +26,7 @@ Class to set up the input, train and eval processes for a TF Ranking model.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.ext.pipeline.RankingPipeline(
     context_feature_columns, example_feature_columns, hparams, estimator,
-    label_feature_name='relevance', label_feature_type=tf.int64,
+    label_feature_name=&#x27;relevance&#x27;, label_feature_type=tf.int64,
     dataset_reader=tf.data.TFRecordDataset, best_exporter_metric=None,
     best_exporter_metric_higher_better=True, size_feature_name=None
 )
@@ -218,7 +220,7 @@ generated.
 
 <h3 id="train_and_eval"><code>train_and_eval</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py#L401-L408">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

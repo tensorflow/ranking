@@ -1,3 +1,5 @@
+description: Returns a parsing fn for a standard data format.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.data.make_parsing_fn" />
 <meta itemprop="path" content="Stable" />
@@ -7,10 +9,9 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L800-L854">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,8 +23,8 @@ Returns a parsing fn for a standard data format.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.make_parsing_fn(
     data_format, list_size=None, context_feature_spec=None,
-    example_feature_spec=None, size_feature_name=None, shuffle_examples=False,
-    seed=None
+    example_feature_spec=None, size_feature_name=None, mask_feature_name=None,
+    shuffle_examples=False, seed=None
 )
 </code></pre>
 
@@ -75,6 +76,16 @@ have a dynamic list size.
 the feature dictionary with a `tf.int32` Tensor of shape [batch_size] for
 this feature name. If None, which is default, this feature is not
 generated.
+</td>
+</tr><tr>
+<td>
+`mask_feature_name`
+</td>
+<td>
+(str) Name of feature for example list masks. Populates
+the feature dictionary with a `tf.bool` Tensor of shape [batch_size,
+list_size] for this feature name. If None, which is default, this feature
+is not generated.
 </td>
 </tr><tr>
 <td>

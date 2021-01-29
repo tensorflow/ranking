@@ -1,3 +1,5 @@
+description: TensorFlow Ranking Keras Module.
+
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras" />
 <meta itemprop="path" content="Stable" />
@@ -7,8 +9,7 @@
 
 <!-- Insert buttons and diff -->
 
-<table class="tfo-notebook-buttons tfo-api" align="left">
-
+<table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
   <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/__init__.py">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
@@ -30,6 +31,8 @@ and estimator.
 [`feature`](../tfr/keras/feature.md) module: Feature transformations for ranking
 in Keras.
 
+[`layers`](../tfr/keras/layers.md) module: Defines Keras Layers for TF-Ranking.
+
 [`losses`](../tfr/keras/losses.md) module: Keras losses in TF-Ranking.
 
 [`metrics`](../tfr/keras/metrics.md) module: Keras metrics in TF-Ranking.
@@ -38,3 +41,8 @@ in Keras.
 Keras.
 
 [`network`](../tfr/keras/network.md) module: Ranking Networks in Keras.
+
+[`saved_model`](../tfr/keras/saved_model.md) module: SavedModel utilities for
+TF-Ranking.
+
+[`utils`](../tfr/keras/utils.md) module: Utils for tfr.keras.
