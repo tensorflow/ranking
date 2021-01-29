@@ -533,7 +533,7 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     return self._name
 
   @abc.abstractmethod
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """Computes the unreduced loss.
 
     Args:
@@ -541,6 +541,8 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
         relevance.
       logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
         ranking score of the corresponding item.
+      mask: An optional `Tensor` of the same shape as logits indicating which
+        entries are valid for computing the metric.
 
     Returns:
       A tuple(losses, loss_weights) that have the same shape.
@@ -579,7 +581,7 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     """
     return tf.convert_to_tensor(value=logits) / self._temperature
 
-  def compute(self, labels, logits, weights, reduction):
+  def compute(self, labels, logits, weights, reduction, mask=None):
     """Computes the reduced loss for tf.estimator (not tf.keras).
 
     Note that this function is not compatible with keras.
@@ -594,18 +596,20 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
         weights.
       reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
         reduce training loss over batch.
+      mask: A `Tensor` of the same shape as logits indicating which entries are
+        valid for computing the metric.
 
     Returns:
       Reduced loss for training and eval.
     """
     logits = self.get_logits(logits)
-    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
 
   @abc.abstractmethod
-  def compute_per_list(self, labels, logits, weights):
+  def compute_per_list(self, labels, logits, weights, mask=None):
     """Computes the per-list loss.
 
     Args:
@@ -616,6 +620,8 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
       weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
         weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
         weights.
+      mask: A `Tensor` of the same shape as logits indicating which entries are
+        valid for computing the metric.
 
     Returns:
       A pair of `Tensor` objects of shape [batch_size] containing per-list
@@ -623,7 +629,7 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     """
     raise NotImplementedError('Calling an abstract method.')
 
-  def eval_metric(self, labels, logits, weights):
+  def eval_metric(self, labels, logits, weights, mask=None):
     """Computes the eval metric for the loss in tf.estimator (not tf.keras).
 
     Note that this function is not compatible with keras.
@@ -636,11 +642,13 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
       weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
         weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
         weights.
+      mask: A `Tensor` of the same shape as logits indicating which entries are
+        valid for computing the metric.
 
     Returns:
       A metric op.
     """
-    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
     return tf.compat.v1.metrics.mean(losses, weights)
 
@@ -653,7 +661,7 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
     """The loss of pairwise logits with l_i > l_j."""
     raise NotImplementedError('Calling an abstract method.')
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     ranks = _compute_ranks(logits, is_valid)
@@ -671,7 +679,7 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
         pairwise_weights, name='weights_stop_gradient')
     return self._pairwise_loss(pairwise_logits), pairwise_weights
 
-  def compute_per_list(self, labels, logits, weights):
+  def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
     # Pairwise losses and weights will be of shape
     # [batch_size, list_size, list_size].
@@ -756,10 +764,10 @@ class _ListwiseLoss(_RankingLoss):
           tf.reduce_sum(input_tensor=(weights * labels), axis=1, keepdims=True),
           tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True))
 
-  def compute_per_list(self, labels, logits, weights):
+  def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
     # Listwise losses and weights will be of shape [batch_size, 1].
-    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
 
     # This removes the inner dimension of size 1 to make the output shape
@@ -788,7 +796,7 @@ class SoftmaxLoss(_ListwiseLoss):
       labels *= weights
     return labels, logits
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
     # Padding for rows with label_sum = 0.
@@ -805,34 +813,34 @@ class SoftmaxLoss(_ListwiseLoss):
         labels_for_softmax, logits_for_softmax)
     return losses, weights_for_softmax
 
-  def compute(self, labels, logits, weights, reduction):
+  def compute(self, labels, logits, weights, reduction, mask=None):
     """See `_RankingLoss`."""
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights)
-    losses, weights = self.compute_unreduced_loss(labels, logits)
+    losses, weights = self.compute_unreduced_loss(labels, logits, mask)
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
 
-  def eval_metric(self, labels, logits, weights):
+  def eval_metric(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights)
-    losses, weights = self.compute_unreduced_loss(labels, logits)
+    losses, weights = self.compute_unreduced_loss(labels, logits, mask)
     return tf.compat.v1.metrics.mean(losses, weights)
 
-  def compute_per_list(self, labels, logits, weights):
+  def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
     # As opposed to the other listwise losses, SoftmaxLoss returns already
     # squeezed losses, which can be returned directly.
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights)
-    return self.compute_unreduced_loss(labels, logits)
+    return self.compute_unreduced_loss(labels, logits, mask)
 
 
 class UniqueSoftmaxLoss(_ListwiseLoss):
   """Implements unique rating softmax loss."""
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
@@ -873,10 +881,10 @@ class _PointwiseLoss(_RankingLoss):
         utils.is_label_valid(labels),
         tf.ones_like(labels) * weights, tf.zeros_like(labels))
 
-  def compute_per_list(self, labels, logits, weights):
+  def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
     # Pointwise losses and weights will be of shape [batch_size, list_size].
-    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
 
     # Compute the weighted per-item loss.
@@ -964,7 +972,7 @@ class ClickEMLoss(_PointwiseLoss):
       return tf.stop_gradient(exam_prob_posterior), tf.stop_gradient(
           rel_prob_posterior)
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """Computes the loss for each element.
 
     Args:
@@ -972,6 +980,8 @@ class ClickEMLoss(_PointwiseLoss):
       logits: A `Tensor` with shape [batch_size, list_size, 2], where the first
         value in the 3rd-dim is the logits for examination and the second value
         is the logits for relevance.
+      mask: A `Tensor` of the same shape as labels indicating which entries are
+        valid for computing the metric.
 
     Returns:
       A tuple(losses, loss_weights).
@@ -1006,7 +1016,7 @@ class SigmoidCrossEntropyLoss(_PointwiseLoss):
     """
     super().__init__(name, None, temperature)
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     labels = tf.compat.v1.where(
         utils.is_label_valid(labels), labels, tf.zeros_like(labels))
@@ -1029,7 +1039,7 @@ class MeanSquaredLoss(_PointwiseLoss):
     # temperature is not used in this loss.
     super().__init__(name, None, temperature=1.0)
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
@@ -1041,7 +1051,7 @@ class MeanSquaredLoss(_PointwiseLoss):
 class ListMLELoss(_ListwiseLoss):
   """Implements ListMLE loss."""
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     # Reset the invalid labels to 0 and reset the invalid logits to a logit with
@@ -1083,7 +1093,7 @@ class ApproxNDCGLoss(_ListwiseLoss):
     """See `_ListwiseLoss`."""
     super().__init__(name, lambda_weight, temperature)
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
@@ -1109,7 +1119,7 @@ class ApproxMRRLoss(_ListwiseLoss):
     """See `_ListwiseLoss`."""
     super().__init__(name, lambda_weight, temperature)
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
@@ -1132,7 +1142,7 @@ class ApproxMRRLoss(_ListwiseLoss):
 class NeuralSortCrossEntropyLoss(_ListwiseLoss):
   """Implements Cross-entropy loss of neural sort permutation matrix."""
 
-  def compute_unreduced_loss(self, labels, logits):
+  def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     is_valid = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
