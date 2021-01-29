@@ -461,7 +461,6 @@ def make_dnn_ranking_estimator(
     context_feature_columns=None,
     optimizer=None,
     learning_rate=0.05,
-    listwise_inference=False,
     loss="approx_ndcg_loss",
     loss_reduction=tf.compat.v1.losses.Reduction.SUM_OVER_BATCH_SIZE,
     activation_fn=tf.nn.relu,
@@ -470,7 +469,8 @@ def make_dnn_ranking_estimator(
     batch_norm_moment=0.999,
     model_dir=None,
     checkpoint_secs=120,
-    num_checkpoints=1000):
+    num_checkpoints=1000,
+    listwise_inference=False):
   """Builds an `Estimator` instance with DNN scoring function.
 
   Args:
@@ -482,8 +482,6 @@ def make_dnn_ranking_estimator(
     optimizer: (`tf.Optimizer`) An `Optimizer` object for model optimzation.
     learning_rate: (float) Only used if `optimizer` is a string. Defaults to
       0.05.
-    listwise_inference: (bool) Whether the inference will be performed with the
-      listwise data format such as `ExampleListWithContext`.
     loss: (str) A string to decide the loss function used in training. See
       `RankingLossKey` class for possible values.
     loss_reduction: (str) An enum of strings indicating the loss reduction type.
@@ -501,6 +499,8 @@ def make_dnn_ranking_estimator(
       continue training a previously saved model.
     checkpoint_secs: (int) Time interval (in seconds) to save checkpoints.
     num_checkpoints: (int) Number of checkpoints to keep.
+    listwise_inference: (bool) Whether the inference will be performed with the
+      listwise data format such as `ExampleListWithContext`.
 
   Returns:
     An `Estimator` with DNN scoring function.
@@ -768,7 +768,8 @@ def make_gam_ranking_estimator(
     batch_norm_moment=0.999,
     model_dir=None,
     checkpoint_secs=120,
-    num_checkpoints=1000):
+    num_checkpoints=1000,
+    listwise_inference=False):
   """Builds an `Estimator` instance with GAM scoring function.
 
   See the comment of `GAMEstimatorBuilder` class for more details.
@@ -805,6 +806,8 @@ def make_gam_ranking_estimator(
       continue training a previously saved model.
     checkpoint_secs: (int) Time interval (in seconds) to save checkpoints.
     num_checkpoints: (int) Number of checkpoints to keep.
+    listwise_inference: (bool) Whether the inference will be performed with the
+      listwise data format such as `ExampleListWithContext`.
 
   Returns:
     An `Estimator` with GAM scoring function.
@@ -821,7 +824,7 @@ def make_gam_ranking_estimator(
   hparams = dict(
       model_dir=model_dir,
       learning_rate=learning_rate,
-      listwise_inference=False,
+      listwise_inference=listwise_inference,
       loss=loss,
       checkpoint_secs=checkpoint_secs,
       num_checkpoints=num_checkpoints)

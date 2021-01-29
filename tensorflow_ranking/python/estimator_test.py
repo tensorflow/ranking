@@ -19,6 +19,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+
+from absl.testing import parameterized
 import six
 import tensorflow as tf
 
@@ -363,18 +365,18 @@ class EstimatorBuilderTest(tf.test.TestCase):
                           tf.compat.v1.train.AdamOptimizer)
 
 
-class DNNEstimatorTest(tf.test.TestCase):
+class DNNEstimatorTest(tf.test.TestCase, parameterized.TestCase):
 
-  def test_experiment(self):
-    serialized_elwc_list = [
-        ELWC_PROTO.SerializeToString(),
-    ] * 10
-
-    if tf.io.gfile.exists(DATA_FILE):
-      tf.io.gfile.remove(DATA_FILE)
-    with tf.io.TFRecordWriter(DATA_FILE) as writer:
-      for serialized_elwc in serialized_elwc_list:
-        writer.write(serialized_elwc)
+  @parameterized.named_parameters(
+      dict(testcase_name="pointwise_inference", listwise_inference=False),
+      dict(testcase_name="listwise_inference", listwise_inference=True),
+  )
+  def test_experiment(self, listwise_inference):
+    tmp_dir = self.create_tempdir().full_path
+    data_file = os.path.join(tmp_dir, "elwc.tfrecord")
+    with tf.io.TFRecordWriter(data_file) as writer:
+      for _ in range(10):
+        writer.write(ELWC_PROTO.SerializeToString())
 
     estimator = tfr_estimator.make_dnn_ranking_estimator(
         example_feature_columns=example_feature_columns(),
@@ -383,25 +385,26 @@ class DNNEstimatorTest(tf.test.TestCase):
         learning_rate=0.05,
         loss="softmax_loss",
         use_batch_norm=False,
-        model_dir=None)
+        model_dir=None,
+        listwise_inference=listwise_inference)
     train_spec = tf.estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
     eval_spec = tf.estimator.EvalSpec(
         name="eval", input_fn=_inner_input_fn, steps=10)
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
-class GAMEstimatorTest(tf.test.TestCase):
+class GAMEstimatorTest(tf.test.TestCase, parameterized.TestCase):
 
-  def test_experiment(self):
-    serialized_elwc_list = [
-        ELWC_PROTO.SerializeToString(),
-    ] * 10
-
-    if tf.io.gfile.exists(DATA_FILE):
-      tf.io.gfile.remove(DATA_FILE)
-    with tf.io.TFRecordWriter(DATA_FILE) as writer:
-      for serialized_elwc in serialized_elwc_list:
-        writer.write(serialized_elwc)
+  @parameterized.named_parameters(
+      dict(testcase_name="pointwise_inference", listwise_inference=False),
+      dict(testcase_name="listwise_inference", listwise_inference=True),
+  )
+  def test_experiment(self, listwise_inference):
+    tmp_dir = self.create_tempdir().full_path
+    data_file = os.path.join(tmp_dir, "elwc.tfrecord")
+    with tf.io.TFRecordWriter(data_file) as writer:
+      for _ in range(10):
+        writer.write(ELWC_PROTO.SerializeToString())
 
     estimator = tfr_estimator.make_gam_ranking_estimator(
         example_feature_columns=example_feature_columns(),
