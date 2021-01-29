@@ -495,9 +495,6 @@ class LossesImplTest(tf.test.TestCase):
             reduction=tf.compat.v1.losses.Reduction.MEAN).eval()
         self.assertNotAlmostEqual(reduced_1, reduced_2)
 
-  def test_pairwise_hinge_loss(self):
-    self._check_pairwise_loss(losses_impl.PairwiseHingeLoss)
-
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss(losses_impl.PairwiseSoftZeroOneLoss)
 
@@ -638,6 +635,94 @@ class PairwiseLogisticLossTest(tf.test.TestCase):
 
       logloss = lambda x: math.log(1. + math.exp(-x))
       expected = logloss(2. - 1.)
+      self.assertAlmostEqual(result, expected, places=5)
+
+
+class PairwiseHingeLossTest(tf.test.TestCase):
+
+  def test_pairwise_hinge_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, weights=None,
+                                 reduction=reduction).eval()
+
+      hingeloss = lambda x: max(0, 1. - x)
+      expected = (hingeloss(3. - 2.) + hingeloss(1. - 2.) +
+                  hingeloss(3. - 1.) + hingeloss(3. - 2.)) / 4.
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_hinge_loss_should_handle_per_list_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      weights = [[1.], [2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, weights=weights,
+                                 reduction=reduction).eval()
+
+      hingeloss = lambda x: max(0, 1. - x)
+      expected = (1. * (hingeloss(3. - 2.) + hingeloss(1. - 2.)) +
+                  2. * (hingeloss(3. - 2.) + hingeloss(3. - 1.))) / 6.
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_hinge_loss_should_handle_per_example_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      weights = [[1., 1., 2.], [1., 1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, weights=weights,
+                                 reduction=reduction).eval()
+
+      hingeloss = lambda x: max(0, 1. - x)
+      expected = ((2. * hingeloss(3. - 2.) + 2. * hingeloss(1. - 2.)) +
+                  (hingeloss(3. - 1.) + hingeloss(3. - 2.))) / 6.
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_hinge_loss_should_handle_lambda_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+      lambda_weight = losses_impl.DCGLambdaWeight()
+
+      loss_fn = losses_impl.PairwiseHingeLoss(name=None,
+                                              lambda_weight=lambda_weight)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, weights=None,
+                                 reduction=reduction).eval()
+
+      hingeloss = lambda x: max(0, 1. - x)
+      expected = (((3. / 2.) * hingeloss(3. - 2.) +
+                   (3. / 2.) * hingeloss(1. - 2.)) +
+                  ((1. / 1.) * hingeloss(3. - 1.) +
+                   (3. / 1.) * hingeloss(3. - 2.))) / ((3. / 2.) + (3. / 2.) +
+                                                       (1. / 1.) + (3. / 1.))
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_hinge_loss_with_invalid_labels(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., -1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction).eval()
+
+      hingeloss = lambda x: max(0, 1. - x)
+      expected = hingeloss(2. - 1.)
       self.assertAlmostEqual(result, expected, places=5)
 
 
