@@ -991,12 +991,13 @@ class ClickEMLoss(_PointwiseLoss):
     Returns:
       A tuple(losses, loss_weights).
     """
-    is_label_valid = utils.is_label_valid(labels)
-    labels = tf.compat.v1.where(is_label_valid, labels, tf.zeros_like(labels))
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
     exam_logits, rel_logits = tf.unstack(logits, axis=2)
-    exam_logits = tf.compat.v1.where(is_label_valid, exam_logits,
+    exam_logits = tf.compat.v1.where(mask, exam_logits,
                                      tf.zeros_like(exam_logits))
-    rel_logits = tf.compat.v1.where(is_label_valid, rel_logits,
+    rel_logits = tf.compat.v1.where(mask, rel_logits,
                                     tf.zeros_like(rel_logits))
     # The distribution in the E step.
     exam_latent_prob, rel_latent_prob = self._compute_latent_prob(
@@ -1006,7 +1007,7 @@ class ClickEMLoss(_PointwiseLoss):
         labels=exam_latent_prob, logits=exam_logits) * self._exam_loss_weight
     losses += tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
         labels=rel_latent_prob, logits=rel_logits) * self._rel_loss_weight
-    return losses, tf.ones_like(losses)
+    return losses, tf.cast(mask, dtype=tf.float32)
 
 
 class SigmoidCrossEntropyLoss(_PointwiseLoss):

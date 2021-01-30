@@ -1088,6 +1088,43 @@ class ClickEMLossTest(tf.test.TestCase):
                                            rel_logits[0]) * 5.0,
             places=4)
 
+  def test_click_em_loss_should_ignore_invalid_labels(self):
+    with tf.Graph().as_default():
+      clicks = [[1., -1., 0., 0.]]
+      exam_logits = [[3., 3, 4, 100]]
+      rel_logits = [[3., 2, 1, 100]]
+      logits = tf.stack([exam_logits, rel_logits], axis=2)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+
+      with self.cached_session():
+        loss_fn = losses_impl.ClickEMLoss(name=None)
+        result = loss_fn.compute(clicks, logits, None, reduction).eval()
+
+      self.assertAlmostEqual(
+          result,
+          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.])
+          + _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
+          places=5)
+
+  def test_click_em_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      clicks = [[1., 1., 0., 0.]]
+      exam_logits = [[3., 3., 4., 100.]]
+      rel_logits = [[3., 2., 1., 100.]]
+      mask = [[True, False, True, True]]
+      logits = tf.stack([exam_logits, rel_logits], axis=2)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+
+      with self.cached_session():
+        loss_fn = losses_impl.ClickEMLoss(name=None)
+        result = loss_fn.compute(clicks, logits, None, reduction, mask).eval()
+
+      self.assertAlmostEqual(
+          result,
+          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.])
+          + _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
+          places=5)
+
 
 class ApproxNDCGLossTest(tf.test.TestCase):
 
