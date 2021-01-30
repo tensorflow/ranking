@@ -1024,13 +1024,13 @@ class SigmoidCrossEntropyLoss(_PointwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
-    labels = tf.compat.v1.where(
-        utils.is_label_valid(labels), labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(
-        utils.is_label_valid(labels), logits, tf.zeros_like(logits))
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(mask, logits, tf.zeros_like(logits))
     losses = tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
         labels=labels, logits=logits)
-    return losses, tf.ones_like(losses)
+    return losses, tf.cast(mask, dtype=tf.float32)
 
 
 class MeanSquaredLoss(_PointwiseLoss):
