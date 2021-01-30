@@ -395,7 +395,7 @@ def _compute_ranks(logits, is_valid):
   return utils.sorted_ranks(scores)
 
 
-def _pairwise_comparison(labels, logits):
+def _pairwise_comparison(labels, logits, mask):
   r"""Returns pairwise comparison `Tensor`s.
 
   Given a list of n items, the labels of graded relevance l_i and the logits
@@ -411,6 +411,8 @@ def _pairwise_comparison(labels, logits):
   Args:
     labels: A `Tensor` with shape [batch_size, list_size].
     logits: A `Tensor` with shape [batch_size, list_size].
+    mask: A `Tensor` with shape [batch_size, list_size] indicating which entries
+      are valid for computing the pairwise comparisons.
 
   Returns:
     A tuple of (pairwise_labels, pairwise_logits) with each having the shape
@@ -424,8 +426,7 @@ def _pairwise_comparison(labels, logits):
   # Only keep the case when l_i > l_j.
   pairwise_labels = tf.cast(
       tf.greater(pairwise_label_diff, 0), dtype=tf.float32)
-  is_valid = utils.is_label_valid(labels)
-  valid_pair = _apply_pairwise_op(tf.logical_and, is_valid)
+  valid_pair = _apply_pairwise_op(tf.logical_and, mask)
   pairwise_labels *= tf.cast(valid_pair, dtype=tf.float32)
   return pairwise_labels, pairwise_logits
 
@@ -663,9 +664,11 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
-    is_valid = utils.is_label_valid(labels)
-    ranks = _compute_ranks(logits, is_valid)
-    pairwise_labels, pairwise_logits = _pairwise_comparison(labels, logits)
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    ranks = _compute_ranks(logits, mask)
+    pairwise_labels, pairwise_logits = _pairwise_comparison(labels, logits,
+                                                            mask)
     pairwise_weights = pairwise_labels
     if self._lambda_weight is not None:
       pairwise_weights *= self._lambda_weight.pair_weights(labels, ranks)
@@ -683,7 +686,7 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
     """See `_RankingLoss`."""
     # Pairwise losses and weights will be of shape
     # [batch_size, list_size, list_size].
-    losses, loss_weights = self.compute_unreduced_loss(labels, logits)
+    losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
 
     # Compute the weighted per-pair loss.
@@ -846,7 +849,7 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(is_valid, logits,
                                 tf.math.log(_EPSILON) * tf.ones_like(logits))
-    pairwise_labels, _ = _pairwise_comparison(labels, logits)
+    pairwise_labels, _ = _pairwise_comparison(labels, logits, is_valid)
     # Used in denominator to compute unique softmax probability for each doc.
     denominator_logits = tf.expand_dims(logits, axis=1) * pairwise_labels
     denominator_logits = tf.concat(

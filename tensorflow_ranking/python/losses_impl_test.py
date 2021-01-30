@@ -538,6 +538,21 @@ class PairwiseLogisticLossTest(tf.test.TestCase):
       expected = logloss(2. - 1.)
       self.assertAlmostEqual(result, expected, places=5)
 
+  def test_pairwise_logistic_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[1., 0., 0.], [0., 0., 2.]]
+      mask = [[True, False, True], [True, True, True]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      logloss = lambda x: math.log(1. + math.exp(-x))
+      expected = (logloss(1. - 2.) + logloss(3. - 1.) + logloss(3. - 2.)) / 3.
+      self.assertAllClose(result, expected)
+
 
 class PairwiseHingeLossTest(tf.test.TestCase):
 
@@ -626,6 +641,22 @@ class PairwiseHingeLossTest(tf.test.TestCase):
       expected = hingeloss(2. - 1.)
       self.assertAlmostEqual(result, expected, places=5)
 
+  def test_pairwise_hinge_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[1., 0., 0.], [0., 0., 2.]]
+      mask = [[True, False, True], [True, True, True]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      hingeloss = lambda x: max(0, 1. - x)
+      expected = (hingeloss(1. - 2.) + hingeloss(3. - 1.) +
+                  hingeloss(3. - 2.)) / 3.
+      self.assertAllClose(result, expected)
+
 
 class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
 
@@ -713,6 +744,22 @@ class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
       softloss = lambda x: 1 / (1 + math.exp(x))
       expected = softloss(2. - 1.)
       self.assertAlmostEqual(result, expected, places=5)
+
+  def test_pairwise_soft_zero_one_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[1., 0., 0.], [0., 0., 2.]]
+      mask = [[True, False, True], [True, True, True]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      softloss = lambda x: 1 / (1 + math.exp(x))
+      expected = (softloss(1. - 2.) + softloss(3. - 1.) +
+                  softloss(3. - 2.)) / 3.
+      self.assertAllClose(result, expected)
 
 
 class SoftmaxLossTest(tf.test.TestCase):
