@@ -980,6 +980,22 @@ class ListMLELossTest(tf.test.TestCase):
             2,
             places=5)
 
+  def test_list_mle_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      tf.compat.v1.set_random_seed(1)
+      scores = [[0., ln(2), ln(3)]]
+      labels = [[0., 0., 1.]]
+      mask = [[True, False, True]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.ListMLELoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      self.assertAlmostEqual(result, -(ln(3. / (3 + 1)) +
+                                       ln(1. / 1)),
+                             places=5)
+
 
 class MeanSquaredLossTest(tf.test.TestCase):
 

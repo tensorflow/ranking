@@ -1060,14 +1060,15 @@ class ListMLELoss(_ListwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
-    is_valid = utils.is_label_valid(labels)
-    # Reset the invalid labels to 0 and reset the invalid logits to a logit with
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    # Reset the masked labels to 0 and reset the masked logits to a logit with
     # ~= 0 contribution.
-    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(is_valid, logits,
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(mask, logits,
                                 tf.math.log(_EPSILON) * tf.ones_like(logits))
     scores = tf.compat.v1.where(
-        is_valid, labels,
+        mask, labels,
         tf.reduce_min(input_tensor=labels, axis=1, keepdims=True) -
         1e-6 * tf.ones_like(labels))
     # Use a fixed ops-level seed and the randomness is controlled by the
