@@ -861,6 +861,19 @@ class SoftmaxLossTest(tf.test.TestCase):
             -(math.log(_softmax([1, 2])[1])),
             places=5)
 
+  def test_softmax_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 2., 3.]]
+      labels = [[0., 1., 1.]]
+      mask = [[True, False, True]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.SoftmaxLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      self.assertAlmostEqual(result, -(math.log(_softmax([1, 3])[1])), places=5)
+
 
 class UniqueSoftmaxLossTest(tf.test.TestCase):
 

@@ -783,14 +783,15 @@ class _ListwiseLoss(_RankingLoss):
 class SoftmaxLoss(_ListwiseLoss):
   """Implements softmax loss."""
 
-  def precompute(self, labels, logits, weights):
+  def precompute(self, labels, logits, weights, mask=None):
     """Precomputes Tensors for softmax cross entropy inputs."""
-    is_valid = utils.is_label_valid(labels)
-    ranks = _compute_ranks(logits, is_valid)
-    # Reset the invalid labels to 0 and reset the invalid logits to a logit with
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    ranks = _compute_ranks(logits, mask)
+    # Reset the masked labels to 0 and reset the masked logits to a logit with
     # ~= 0 contribution in softmax.
-    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(is_valid, logits,
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(mask, logits,
                                 tf.math.log(_EPSILON) * tf.ones_like(logits))
     if self._lambda_weight is not None and isinstance(self._lambda_weight,
                                                       DCGLambdaWeight):
@@ -819,7 +820,7 @@ class SoftmaxLoss(_ListwiseLoss):
   def compute(self, labels, logits, weights, reduction, mask=None):
     """See `_RankingLoss`."""
     logits = self.get_logits(logits)
-    labels, logits = self.precompute(labels, logits, weights)
+    labels, logits = self.precompute(labels, logits, weights, mask)
     losses, weights = self.compute_unreduced_loss(labels, logits, mask)
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
@@ -827,7 +828,7 @@ class SoftmaxLoss(_ListwiseLoss):
   def eval_metric(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
     logits = self.get_logits(logits)
-    labels, logits = self.precompute(labels, logits, weights)
+    labels, logits = self.precompute(labels, logits, weights, mask)
     losses, weights = self.compute_unreduced_loss(labels, logits, mask)
     return tf.compat.v1.metrics.mean(losses, weights)
 
@@ -836,7 +837,7 @@ class SoftmaxLoss(_ListwiseLoss):
     # As opposed to the other listwise losses, SoftmaxLoss returns already
     # squeezed losses, which can be returned directly.
     logits = self.get_logits(logits)
-    labels, logits = self.precompute(labels, logits, weights)
+    labels, logits = self.precompute(labels, logits, weights, mask)
     return self.compute_unreduced_loss(labels, logits, mask)
 
 
