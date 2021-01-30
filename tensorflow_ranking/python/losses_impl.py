@@ -846,11 +846,12 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
-    is_valid = utils.is_label_valid(labels)
-    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(is_valid, logits,
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(mask, logits,
                                 tf.math.log(_EPSILON) * tf.ones_like(logits))
-    pairwise_labels, _ = _pairwise_comparison(labels, logits, is_valid)
+    pairwise_labels, _ = _pairwise_comparison(labels, logits, mask)
     # Used in denominator to compute unique softmax probability for each doc.
     denominator_logits = tf.expand_dims(logits, axis=1) * pairwise_labels
     denominator_logits = tf.concat(
