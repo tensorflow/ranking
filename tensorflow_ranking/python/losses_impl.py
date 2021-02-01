@@ -1168,7 +1168,10 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
     losses = tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(
         labels=true_perm, logits=tf.math.log(1e-20 + smooth_perm), axis=2)
     # shape = [batch_size, list_size].
-    losses = tf.reduce_mean(input_tensor=losses, axis=-1, keepdims=True)
+    losses = tf.math.divide_no_nan(
+        tf.reduce_sum(input_tensor=losses, axis=-1, keepdims=True),
+        tf.reduce_sum(input_tensor=tf.cast(is_valid, dtype=tf.float32),
+                      axis=-1, keepdims=True))
 
     return losses, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
