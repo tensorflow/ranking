@@ -1205,6 +1205,23 @@ class ApproxNDCGLossTest(tf.test.TestCase):
               (3 / ln(4) + 1 / ln(3)) + norm_weights[1] * ln(2) * (1 / ln(3))),
             places=5)
 
+  def test_approx_ndcg_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 1.]]
+      mask = [[True, False, True]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.ApproxNDCGLoss(name=None, temperature=1.)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      approxrank = 1. + 1. / (1. + math.exp(-(1. - 2.)))
+      dcg = 1. / math.log(1. + approxrank)
+      inv_max_dcg = math.log(1. + 1.)
+      ndcg = dcg * inv_max_dcg
+      self.assertAlmostEqual(result, -ndcg, places=5)
+
 
 class ApproxMRRLossTest(tf.test.TestCase):
 

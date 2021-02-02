@@ -1103,10 +1103,11 @@ class ApproxNDCGLoss(_ListwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
-    is_valid = utils.is_label_valid(labels)
-    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(
-        is_valid, logits, -1e3 * tf.ones_like(logits) +
+        mask, logits, -1e3 * tf.ones_like(logits) +
         tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
 
     label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
