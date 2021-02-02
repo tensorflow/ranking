@@ -543,7 +543,7 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
       logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
         ranking score of the corresponding item.
       mask: An optional `Tensor` of the same shape as logits indicating which
-        entries are valid for computing the metric.
+        entries are valid for computing the loss.
 
     Returns:
       A tuple(losses, loss_weights) that have the same shape.
@@ -598,7 +598,7 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
       reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
         reduce training loss over batch.
       mask: A `Tensor` of the same shape as logits indicating which entries are
-        valid for computing the metric.
+        valid for computing the loss.
 
     Returns:
       Reduced loss for training and eval.
@@ -622,7 +622,7 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
         weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
         weights.
       mask: A `Tensor` of the same shape as logits indicating which entries are
-        valid for computing the metric.
+        valid for computing the loss.
 
     Returns:
       A pair of `Tensor` objects of shape [batch_size] containing per-list
@@ -986,7 +986,7 @@ class ClickEMLoss(_PointwiseLoss):
         value in the 3rd-dim is the logits for examination and the second value
         is the logits for relevance.
       mask: A `Tensor` of the same shape as labels indicating which entries are
-        valid for computing the metric.
+        valid for computing the loss.
 
     Returns:
       A tuple(losses, loss_weights).
@@ -1152,15 +1152,16 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
-    is_valid = utils.is_label_valid(labels)
-    labels = tf.compat.v1.where(is_valid, labels, tf.zeros_like(labels))
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
     logits = tf.compat.v1.where(
-        is_valid, logits, -1e3 * tf.ones_like(logits) +
+        mask, logits, -1e3 * tf.ones_like(logits) +
         tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
 
     label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
-    labels = tf.compat.v1.where(is_valid, labels, -1e3 * tf.ones_like(labels))
+    labels = tf.compat.v1.where(mask, labels, -1e3 * tf.ones_like(labels))
 
     # shape = [batch_size, list_size, list_size].
     true_perm = neural_sort(labels)
@@ -1170,7 +1171,7 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
     # shape = [batch_size, list_size].
     losses = tf.math.divide_no_nan(
         tf.reduce_sum(input_tensor=losses, axis=-1, keepdims=True),
-        tf.reduce_sum(input_tensor=tf.cast(is_valid, dtype=tf.float32),
+        tf.reduce_sum(input_tensor=tf.cast(mask, dtype=tf.float32),
                       axis=-1, keepdims=True))
 
     return losses, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])

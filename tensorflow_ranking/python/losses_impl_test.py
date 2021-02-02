@@ -1268,6 +1268,22 @@ class NeuralSortCrossEntropyLoss(tf.test.TestCase):
       expected = _softmax_cross_entropy(p_labels[0], p_scores[0]) / 2.
       self.assertAlmostEqual(result, expected, places=5)
 
+  def test_neural_sort_cross_entropy_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[2., 4., 3.]]
+      labels = [[0., 0., 1.]]
+      mask = [[True, False, True]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      p_scores = _neural_sort([[2., 3.]])
+      p_labels = _neural_sort([[0., 1.]])
+      expected = _softmax_cross_entropy(p_labels[0], p_scores[0]) / 2.
+      self.assertAlmostEqual(result, expected, places=5)
+
 
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()
