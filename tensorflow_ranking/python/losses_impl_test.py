@@ -1243,6 +1243,20 @@ class ApproxMRRLossTest(tf.test.TestCase):
             -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)),
             places=5)
 
+  def test_approx_mrr_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 1.]]
+      mask = [[True, False, True]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.ApproxMRRLoss(name=None, temperature=1.)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      approxrank = 1. + 1. / (1. + math.exp(-(1. - 2.)))
+      self.assertAlmostEqual(result, -1. / approxrank, places=5)
+
 
 class NeuralSortCrossEntropyLoss(tf.test.TestCase):
 
