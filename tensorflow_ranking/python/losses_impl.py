@@ -516,22 +516,59 @@ def _sample_gumbel(shape, eps=1e-20, seed=None):
 class _RankingLoss(object, metaclass=abc.ABCMeta):
   """Interface for ranking loss."""
 
-  def __init__(self, name, lambda_weight=None, temperature=1.0):
+  def __init__(self, name, lambda_weight=None, temperature=1.0, ragged=False):
     """Constructor.
 
     Args:
       name: A string used as the name for this loss.
       lambda_weight: A `_LambdaWeight` object.
       temperature: A float number to modify the logits=logits/temperature.
+      ragged: A boolean indicating whether the input tensors are ragged.
     """
     self._name = name
     self._lambda_weight = lambda_weight
     self._temperature = temperature
+    self._ragged = ragged
 
   @property
   def name(self):
     """The loss name."""
     return self._name
+
+  def _prepare_and_validate_params(self, labels, logits, weights, mask):
+    """Prepares and validate input parameters.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+        ranking score of the corresponding item.
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+      mask: A `Tensor` of the same shape as logits indicating which entries are
+        valid for computing the loss.
+
+    Returns:
+      A tuple (labels, logits, weights, mask) of `tf.Tensor` objects that are
+      ready to be used in the loss.
+    """
+    if self._ragged:
+      labels, logits, weights, mask = utils.ragged_to_dense(
+          labels, logits, weights)
+
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+
+    if weights is None:
+      weights = 1.0
+
+    labels = tf.convert_to_tensor(labels)
+    logits = tf.convert_to_tensor(logits)
+    weights = tf.convert_to_tensor(weights)
+    mask = tf.convert_to_tensor(mask)
+
+    return labels, logits, weights, mask
 
   @abc.abstractmethod
   def compute_unreduced_loss(self, labels, logits, mask=None):
@@ -684,6 +721,10 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
 
   def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
+    # Prepare input params.
+    labels, logits, weights, mask = self._prepare_and_validate_params(
+        labels, logits, weights, mask)
+
     # Pairwise losses and weights will be of shape
     # [batch_size, list_size, list_size].
     losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
@@ -769,6 +810,10 @@ class _ListwiseLoss(_RankingLoss):
 
   def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
+    # Prepare input params.
+    labels, logits, weights, mask = self._prepare_and_validate_params(
+        labels, logits, weights, mask)
+
     # Listwise losses and weights will be of shape [batch_size, 1].
     losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
@@ -834,6 +879,10 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
+    # Prepare input params.
+    labels, logits, weights, mask = self._prepare_and_validate_params(
+        labels, logits, weights, mask)
+
     # As opposed to the other listwise losses, SoftmaxLoss returns already
     # squeezed losses, which can be returned directly.
     logits = self.get_logits(logits)
@@ -888,6 +937,10 @@ class _PointwiseLoss(_RankingLoss):
 
   def compute_per_list(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
+    # Prepare input params.
+    labels, logits, weights, mask = self._prepare_and_validate_params(
+        labels, logits, weights, mask)
+
     # Pointwise losses and weights will be of shape [batch_size, list_size].
     losses, loss_weights = self.compute_unreduced_loss(labels, logits, mask)
     weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
@@ -925,8 +978,9 @@ class ClickEMLoss(_PointwiseLoss):
                name,
                temperature=1.0,
                exam_loss_weight=1.0,
-               rel_loss_weight=1.0):
-    super().__init__(name, None, temperature)
+               rel_loss_weight=1.0,
+               ragged=False):
+    super().__init__(name, None, temperature, ragged)
     self._exam_loss_weight = exam_loss_weight
     self._rel_loss_weight = rel_loss_weight
 
@@ -1013,14 +1067,15 @@ class ClickEMLoss(_PointwiseLoss):
 class SigmoidCrossEntropyLoss(_PointwiseLoss):
   """Implements sigmoid cross entropy loss."""
 
-  def __init__(self, name, temperature=1.0):
+  def __init__(self, name, temperature=1.0, ragged=False):
     """Overwrite the constructor.
 
     Args:
       name: A string used as the name for this loss.
       temperature: A float number to modify the logits=logits/temperature.
+      ragged: A boolean indicating whether the input tensors are ragged.
     """
-    super().__init__(name, None, temperature)
+    super().__init__(name, None, temperature, ragged)
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
@@ -1036,14 +1091,15 @@ class SigmoidCrossEntropyLoss(_PointwiseLoss):
 class MeanSquaredLoss(_PointwiseLoss):
   """Implements the means squared error loss."""
 
-  def __init__(self, name):
+  def __init__(self, name, ragged=False):
     """Overwrite the constructor.
 
     Args:
       name: A string used as the name for this loss.
+      ragged: A boolean indicating whether the input tensors are ragged.
     """
     # temperature is not used in this loss.
-    super().__init__(name, None, temperature=1.0)
+    super().__init__(name, None, temperature=1.0, ragged=ragged)
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
@@ -1097,9 +1153,9 @@ class ApproxNDCGLoss(_ListwiseLoss):
   """Implements ApproxNDCG loss."""
 
   # Use a different default temperature.
-  def __init__(self, name, lambda_weight=None, temperature=0.1):
+  def __init__(self, name, lambda_weight=None, temperature=0.1, ragged=False):
     """See `_ListwiseLoss`."""
-    super().__init__(name, lambda_weight, temperature)
+    super().__init__(name, lambda_weight, temperature, ragged)
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
@@ -1124,9 +1180,9 @@ class ApproxMRRLoss(_ListwiseLoss):
   """Implements ApproxMRR loss."""
 
   # Use a different default temperature.
-  def __init__(self, name, lambda_weight=None, temperature=0.1):
+  def __init__(self, name, lambda_weight=None, temperature=0.1, ragged=False):
     """See `_ListwiseLoss`."""
-    super().__init__(name, lambda_weight, temperature)
+    super().__init__(name, lambda_weight, temperature, ragged)
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
