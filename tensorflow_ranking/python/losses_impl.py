@@ -1235,6 +1235,48 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
     return losses, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
 
+class NeuralSortNDCGLoss(_ListwiseLoss):
+  """Implements PiRank-NDCG loss.
+
+  The PiRank-NDCG loss is a differentiable approximation of the NDCG metric
+  using the NeuralSort trick, which generates a permutation matrix based on
+  ranking scores. Please refer to https://arxiv.org/abs/2012.06731 for the
+  PiRank method. For PiRank-NDCG in specific,
+    NDCG_metric = - sum_i (2^y_i - 1) / log(1 + r_i) / maxDCG,
+  where y_i and r_i are the label and the score rank of the ith document
+  respectively. This metric can be also written as the sum over rank r with an
+  indicator function I,
+    NDCG_metric = - sum_{i,r} (2^y_i - 1) / log(1 + r) * I(r, r_i) / maxDCG,
+  where the indicator function I(r, r_i) = 1 if r = r_i and 0 otherwise, which
+  is the permutation matrix.
+
+  Approximated with a differentiable permutation matrix using neural sort,
+    PiRank-NDCG = - sum_{i,r} (2^y_i - 1) / log(1 + r) * P(r, i) / maxDCG,
+  where P(r, i) is the approximation of the permutation matrix.
+  """
+
+  def compute_unreduced_loss(self, labels, logits, mask=None):
+    """See `_RankingLoss`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(
+        mask, logits, -1e3 * tf.ones_like(logits) +
+        tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
+
+    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
+    # shape = [batch_size, list_size].
+    labels = tf.compat.v1.where(nonzero_mask, labels,
+                                _EPSILON * tf.ones_like(labels))
+    # shape = [batch_size, list_size, list_size].
+    smooth_perm = neural_sort(logits)
+
+    return -ndcg(
+        labels, perm_mat=smooth_perm), tf.reshape(
+            tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
+
+
 def neural_sort(logits, name=None):
   r"""Generate the permutation matrix from logits by deterministic neuralsort.
 

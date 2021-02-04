@@ -1370,6 +1370,52 @@ class NeuralSortCrossEntropyLoss(tf.test.TestCase):
       self.assertAlmostEqual(result, expected, places=5)
 
 
+class NeuralSortNDCGLoss(tf.test.TestCase):
+
+  def test_neural_sort_ndcg_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+      labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM
+
+      with self.cached_session():
+        loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) +
+              (1 / (1 / ln(2))) * (1 / ln(3))),
+            places=4)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            -(2 * (1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + 1 *
+              (1 / (1 / ln(2))) * (1 / ln(3))),
+            places=4)
+
+  def test_neural_sort_ndcg_loss_should_ignore_invalid_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., -1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction).eval()
+      self.assertAlmostEqual(result, -1., places=4)
+
+  def test_neural_sort_ndcg_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[2., 4., 3.]]
+      labels = [[0., 0., 1.]]
+      mask = [[True, False, True]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+      self.assertAlmostEqual(result, -1., places=4)
+
+
 if __name__ == '__main__':
   tf.compat.v1.enable_v2_behavior()
   tf.test.main()
