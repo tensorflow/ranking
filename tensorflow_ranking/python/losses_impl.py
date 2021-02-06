@@ -22,6 +22,8 @@ from __future__ import division
 from __future__ import print_function
 
 import abc
+import math
+
 import tensorflow as tf
 
 from tensorflow_ranking.python import utils
@@ -1213,19 +1215,28 @@ class NeuralSortCrossEntropyLoss(_ListwiseLoss):
     if mask is None:
       mask = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(
-        mask, logits, -1e3 * tf.ones_like(logits) +
-        tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
+    logits = tf.compat.v1.where(mask, logits, tf.zeros_like(logits))
 
     label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
-    labels = tf.compat.v1.where(mask, labels, -1e3 * tf.ones_like(labels))
 
     # shape = [batch_size, list_size, list_size].
-    true_perm = neural_sort(labels)
-    smooth_perm = neural_sort(logits)
+    true_perm = neural_sort(labels, mask=mask)
+    smooth_perm = neural_sort(logits, mask=mask)
+
     losses = tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(
         labels=true_perm, logits=tf.math.log(1e-20 + smooth_perm), axis=2)
+
+    # Neural sort will place masked entries last. Losses are still computed on
+    # those entries so we need to cancel those out. This means we need to mask
+    # out the last n entries, where n is the number of masked items per list. We
+    # do so by sorting the mask and setting (masked) invalid losses to 0.
+    sorted_mask = tf.cast(
+        tf.sort(tf.cast(mask, dtype=tf.float32), axis=1,
+                direction='DESCENDING'),
+        dtype=tf.bool)
+    losses = tf.where(sorted_mask, losses, tf.zeros_like(losses))
+
     # shape = [batch_size, list_size].
     losses = tf.math.divide_no_nan(
         tf.reduce_sum(input_tensor=losses, axis=-1, keepdims=True),
@@ -1277,7 +1288,7 @@ class NeuralSortNDCGLoss(_ListwiseLoss):
             tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
 
-def neural_sort(logits, name=None):
+def neural_sort(logits, name=None, mask=None):
   r"""Generate the permutation matrix from logits by deterministic neuralsort.
 
   The sort on a list of logits can be approximated by a differentiable
@@ -1304,6 +1315,9 @@ def neural_sort(logits, name=None):
       noticing the original paper is using probability weights, i.e., the
       exponentials of the logits).
     name: A string used as the name for this loss.
+    mask: A `Tensor` with the same shape as logits indicating which entries are
+      valid for computing the neural_sort. Invalid entries are pushed to the
+      end.
 
   Returns:
     A tensor of permutation matrices whose dimension is [batch_size, list_size,
@@ -1311,6 +1325,8 @@ def neural_sort(logits, name=None):
   """
   with tf.compat.v1.name_scope(name, 'neural_sort', [logits]):
     list_size = tf.shape(input=logits)[1]
+    if mask is None:
+      mask = tf.ones_like(logits, dtype=tf.bool)
 
     logit_diff = tf.abs(tf.expand_dims(logits, 2) - tf.expand_dims(logits, 1))
     # shape = [batch_size, 1, list_size].
@@ -1325,6 +1341,7 @@ def neural_sort(logits, name=None):
     scaled_logits = scaling * tf.expand_dims(logits, 1)
 
     p_logits = scaled_logits - logit_diff_sum
+    p_logits = tf.where(tf.expand_dims(mask, axis=1), p_logits, -math.inf)
     smooth_perm = tf.nn.softmax(p_logits, -1)
 
     return smooth_perm

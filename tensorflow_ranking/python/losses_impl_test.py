@@ -1355,9 +1355,9 @@ class NeuralSortCrossEntropyLoss(tf.test.TestCase):
 
   def test_neural_sort_cross_entropy_loss_should_handle_mask(self):
     with tf.Graph().as_default():
-      scores = [[2., 4., 3.]]
-      labels = [[0., 0., 1.]]
-      mask = [[True, False, True]]
+      scores = [[2., 4., 3., 3., -1e10]]
+      labels = [[0., 0., 1., 0., 1.]]
+      mask = [[True, False, True, False, False]]
       reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
       loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
