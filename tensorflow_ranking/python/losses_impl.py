@@ -1324,24 +1324,49 @@ def neural_sort(logits, name=None, mask=None):
     list_size].
   """
   with tf.compat.v1.name_scope(name, 'neural_sort', [logits]):
-    list_size = tf.shape(input=logits)[1]
     if mask is None:
       mask = tf.ones_like(logits, dtype=tf.bool)
 
+    # Reset logits to 0 and compute number of valid entries for each list in the
+    # batch.
+    logits = tf.where(mask, logits, tf.zeros_like(logits))
+    num_valid_entries = tf.reduce_sum(tf.cast(mask, dtype=tf.int32), axis=1,
+                                      keepdims=True)
+
+    # Compute logit differences and mask out invalid entries.
     logit_diff = tf.abs(tf.expand_dims(logits, 2) - tf.expand_dims(logits, 1))
+    valid_pair_mask = _apply_pairwise_op(tf.logical_and, mask)
+    logit_diff = tf.where(valid_pair_mask, logit_diff,
+                          tf.zeros_like(logit_diff))
     # shape = [batch_size, 1, list_size].
     logit_diff_sum = tf.reduce_sum(
         input_tensor=logit_diff, axis=1, keepdims=True)
-    scaling = tf.cast(
-        list_size + 1 - 2 * (tf.range(list_size) + 1), dtype=tf.float32)
-    # shape = [1, list_size, 1].
-    scaling = tf.expand_dims(tf.expand_dims(scaling, 1), 0)
+
+    # Compute masked range so that masked items do not influence scaling.
+    masked_range = tf.cumsum(tf.cast(mask, dtype=tf.int32), axis=1)
+    scaling = tf.cast(num_valid_entries + 1 - 2 * masked_range,
+                      dtype=tf.float32)
+    # shape = [batch_size, list_size].
+    scaling = tf.expand_dims(scaling, 2)
     # shape = [batch_size, list_size, list_size].
     # Use broadcast to align the dims.
     scaled_logits = scaling * tf.expand_dims(logits, 1)
 
     p_logits = scaled_logits - logit_diff_sum
-    p_logits = tf.where(tf.expand_dims(mask, axis=1), p_logits, -math.inf)
+
+    # Masked entries will be forcefully kept in-place by setting their values to
+    # -inf everywhere, except for masked rows where they share equal probability
+    # with other masked items.
+    p_logits = tf.where(valid_pair_mask, p_logits, -math.inf)
+    p_logits = tf.where(_apply_pairwise_op(tf.logical_or, mask), p_logits,
+                        tf.zeros_like(p_logits))
+
+    # By swapping the rows of masked items to the end of the permutation matrix,
+    # we force masked items to be placed last.
+    sorted_mask_indices = tf.argsort(tf.cast(mask, dtype=tf.int32), axis=1,
+                                     direction='DESCENDING', stable=True)
+    p_logits = tf.gather(p_logits, sorted_mask_indices, batch_dims=1, axis=1)
+
     smooth_perm = tf.nn.softmax(p_logits, -1)
 
     return smooth_perm

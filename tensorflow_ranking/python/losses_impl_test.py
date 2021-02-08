@@ -252,6 +252,22 @@ class UtilsTest(tf.test.TestCase):
         smooth_perm = losses_impl.neural_sort(scores)
         self.assertAllClose(smooth_perm.eval(), permuation_mat, rtol=1e-3)
 
+  def test_neural_sort_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[3.0, 1.0, -1.0, 1000.0, 5.0, 2.0]]
+      mask = [[True, True, True, False, False, True]]
+      # Permutation matrix with two masked items sharing the last position.
+      permutation_mat = [[[0.72140, 0.01321, 0.00000, 0., 0., 0.26539],
+                          [0.21183, 0.21183, 0.00053, 0., 0., 0.57581],
+                          [0.01204, 0.65723, 0.08895, 0., 0., 0.24178],
+                          [0.00004, 0.11849, 0.87557, 0., 0., 0.0059],
+                          [0., 0., 0., 0.5, 0.5, 0.],
+                          [0., 0., 0., 0.5, 0.5, 0.]]]
+
+      with self.cached_session():
+        smooth_perm = losses_impl.neural_sort(scores, mask=mask)
+        self.assertAllClose(smooth_perm.eval(), permutation_mat, atol=1e-4)
+
   def test_gumbel_neural_sort(self):
     with tf.Graph().as_default():
       scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
