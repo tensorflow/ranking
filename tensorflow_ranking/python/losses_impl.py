@@ -1271,9 +1271,7 @@ class NeuralSortNDCGLoss(_ListwiseLoss):
     if mask is None:
       mask = utils.is_label_valid(labels)
     labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(
-        mask, logits, -1e3 * tf.ones_like(logits) +
-        tf.reduce_min(input_tensor=logits, axis=-1, keepdims=True))
+    logits = tf.compat.v1.where(mask, logits, tf.zeros_like(logits))
 
     label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
@@ -1281,7 +1279,7 @@ class NeuralSortNDCGLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
     # shape = [batch_size, list_size, list_size].
-    smooth_perm = neural_sort(logits)
+    smooth_perm = neural_sort(logits, mask=mask)
 
     return -ndcg(
         labels, perm_mat=smooth_perm), tf.reshape(

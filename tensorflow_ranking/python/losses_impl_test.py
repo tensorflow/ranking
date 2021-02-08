@@ -1328,7 +1328,7 @@ class ApproxMRRLossTest(tf.test.TestCase):
       self.assertAlmostEqual(result, -1. / approxrank, places=5)
 
 
-class NeuralSortCrossEntropyLoss(tf.test.TestCase):
+class NeuralSortCrossEntropyLossTest(tf.test.TestCase):
 
   def test_neural_sort_cross_entropy_loss(self):
     with tf.Graph().as_default():
@@ -1386,7 +1386,7 @@ class NeuralSortCrossEntropyLoss(tf.test.TestCase):
       self.assertAlmostEqual(result, expected, places=5)
 
 
-class NeuralSortNDCGLoss(tf.test.TestCase):
+class NeuralSortNDCGLossTest(tf.test.TestCase):
 
   def test_neural_sort_ndcg_loss(self):
     with tf.Graph().as_default():
@@ -1421,9 +1421,9 @@ class NeuralSortNDCGLoss(tf.test.TestCase):
 
   def test_neural_sort_ndcg_loss_should_handle_mask(self):
     with tf.Graph().as_default():
-      scores = [[2., 4., 3.]]
-      labels = [[0., 0., 1.]]
-      mask = [[True, False, True]]
+      scores = [[2., 4., 3., -5., 1000.0]]
+      labels = [[0., 0., 1., 0., 1.]]
+      mask = [[True, False, True, False, False]]
       reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
       loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
