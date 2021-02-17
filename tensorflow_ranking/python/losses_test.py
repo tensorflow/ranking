@@ -91,6 +91,64 @@ def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
   return loss, weight, count
 
 
+def _circle_loss(labels,
+                 scores,
+                 rank_discount_form=None,
+                 gamma=64.,
+                 margin=0.25):
+  """Returns the circle loss given the loss form.
+
+  Args:
+    labels: A list of graded relevance.
+    scores: A list of item ranking scores.
+    rank_discount_form: A string representing the form of rank discount.
+    gamma: A float parameter used in circle loss.
+    margin: A float parameter defining the margin in circle loss.
+
+  Returns:
+    A tuple of (sum of loss, sum of lambda weights, count of nonzero weights).
+  """
+  scores, labels = zip(*sorted(zip(scores, labels), reverse=True))
+
+  def _rank_discount(rank_discount_form, rank):
+    discount = {
+        'LINEAR': 1. / rank,
+        'LOG': 1. / math.log(1. + rank),
+    }
+    return discount[rank_discount_form]
+
+  def _lambda_weight(label_diff, i, j):
+    delta = math.fabs(label_diff)
+    if rank_discount_form is not None:
+      delta *= math.fabs(
+          _rank_discount(rank_discount_form, i + 1) -
+          _rank_discount(rank_discount_form, j + 1))
+    else:
+      delta = 1. if delta > 0 else 0
+    return delta
+
+  def _loss(si, sj, label_diff, delta):
+    if label_diff <= 0:
+      return 0.
+    return math.exp(gamma * max(0., (1 + margin) - si) *
+                    ((1 - margin) - si) + gamma * max(0., sj + margin) *
+                    (sj - margin)) * delta
+
+  loss = 0.
+  weight = 0.
+  count = 0.
+  for i in range(len(labels)):
+    for j in range(len(labels)):
+      if labels[i] > labels[j]:
+        delta = _lambda_weight(labels[i] - labels[j], i, j)
+        part_loss = _loss(scores[i], scores[j], labels[i] - labels[j], delta)
+        loss += part_loss
+        weight += delta
+        if weight > 0:
+          count += 1.
+  return loss, weight, count
+
+
 def _batch_aggregation(batch_loss_list, reduction=None):
   """Returns the aggregated loss."""
   loss_sum = 0.
@@ -371,6 +429,45 @@ class LossesTest(tf.test.TestCase):
   def test_make_pairwise_soft_zero_one_loss(self):
     self._check_make_pairwise_loss(
         ranking_losses.RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS)
+
+  def test_make_circle_loss(self):
+    with tf.Graph().as_default():
+      scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      weights = [[2.], [1.]]
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      with self.cached_session():
+        loss_fn_simple = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.CIRCLE_LOSS)
+        loss_0, _, _ = _circle_loss(labels[0], scores[0])
+        loss_1, _, _ = _circle_loss(labels[1], scores[1])
+        expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2.
+        self.assertAlmostEqual(
+            loss_fn_simple(labels, scores, features).eval(),
+            expected, places=5)
+
+        loss_fn_weighted = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.CIRCLE_LOSS,
+            weights_feature_name=weights_feature_name)
+        loss_0, _, _ = _circle_loss(labels[0], scores[0])
+        loss_1, _, _ = _circle_loss(labels[1], scores[1])
+        expected = (math.log1p(loss_0) * 2. + math.log1p(loss_1) * 1.) / 2.
+        self.assertAlmostEqual(
+            loss_fn_weighted(labels, scores, features).eval(),
+            expected, places=5)
+
+        # Test loss reduction method.
+        # Two reduction methods should return different loss values.
+        loss_fn_1 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.CIRCLE_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.SUM)
+        loss_fn_2 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.CIRCLE_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.MEAN)
+        self.assertNotAlmostEqual(
+            loss_fn_1(labels, scores, features).eval(),
+            loss_fn_2(labels, scores, features).eval())
 
   def test_make_softmax_loss_fn(self):
     with tf.Graph().as_default():

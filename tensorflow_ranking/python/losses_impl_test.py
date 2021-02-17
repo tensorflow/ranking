@@ -28,21 +28,24 @@ def ln(x):
   return math.log(x)
 
 
-def _pairwise_loss(labels, scores, weights, loss_fn, rank_discount_form=None):
-  """Returns the pairwise loss given the loss form.
+def _circle_loss(labels,
+                 scores,
+                 rank_discount_form=None,
+                 gamma=64.,
+                 margin=0.25):
+  """Returns the circle loss given the loss form.
 
   Args:
     labels: A list of graded relevance.
     scores: A list of item ranking scores.
-    weights: A list of item weights.
-    loss_fn: The pairwise loss function.
     rank_discount_form: A string representing the form of rank discount.
+    gamma: A float parameter used in circle loss.
+    margin: A float parameter defining the margin in circle loss.
 
   Returns:
-    A tuple of (sum of loss, sum of weights, count of nonzero weights).
+    A tuple of (sum of loss, sum of lambda weights, count of nonzero weights).
   """
-  scores, labels, weights = zip(
-      *sorted(zip(scores, labels, weights), reverse=True))
+  scores, labels = zip(*sorted(zip(scores, labels), reverse=True))
 
   def _rank_discount(rank_discount_form, rank):
     discount = {
@@ -61,18 +64,12 @@ def _pairwise_loss(labels, scores, weights, loss_fn, rank_discount_form=None):
       delta = 1. if delta > 0 else 0
     return delta
 
-  def _loss(score_diff, label_diff, delta):
+  def _loss(si, sj, label_diff, delta):
     if label_diff <= 0:
       return 0.
-    loss_table = {
-        losses_impl.PairwiseHingeLoss:
-            max(0, 1 - score_diff) * delta,
-        losses_impl.PairwiseLogisticLoss:
-            math.log(1. + math.exp(-score_diff)) * delta,
-        losses_impl.PairwiseSoftZeroOneLoss:
-            1. / (1. + math.exp(score_diff)) * delta,
-    }
-    return loss_table[loss_fn]
+    return math.exp(gamma * max(0., (1 + margin) - si) *
+                    ((1 - margin) - si) + gamma * max(0., sj + margin) *
+                    (sj - margin)) * delta
 
   loss = 0.
   weight = 0.
@@ -81,12 +78,11 @@ def _pairwise_loss(labels, scores, weights, loss_fn, rank_discount_form=None):
     for j in range(len(labels)):
       if labels[i] > labels[j]:
         delta = _lambda_weight(labels[i] - labels[j], i, j)
-        part_loss = _loss(scores[i] - scores[j], labels[i] - labels[j], delta)
-        if weights[i] > 0:
-          loss += part_loss * weights[i]
-          weight += delta * weights[i]
-          if weight > 0:
-            count += 1.
+        part_loss = _loss(scores[i], scores[j], labels[i] - labels[j], delta)
+        loss += part_loss
+        weight += delta
+        if weight > 0:
+          count += 1.
   return loss, weight, count
 
 
@@ -829,6 +825,105 @@ class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
       softloss = lambda x: 1 / (1 + math.exp(x))
       expected = (softloss(1. - 2.) + softloss(3. - 1.) +
                   softloss(3. - 2.)) / 3.
+      self.assertAllClose(result, expected)
+
+
+class CircleLossTest(tf.test.TestCase):
+
+  def test_circle_loss(self):
+    with tf.Graph().as_default():
+      scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.CircleLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
+
+      loss_0, _, _ = _circle_loss(labels[0], scores[0])
+      loss_1, _, _ = _circle_loss(labels[1], scores[1])
+      expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
+      self.assertAllClose(result, expected)
+
+  def test_circle_loss_should_handle_per_list_weights(self):
+    with tf.Graph().as_default():
+      scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      weights = [[1.], [2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.CircleLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
+
+      loss_0, _, _ = _circle_loss(labels[0], scores[0])
+      loss_1, _, _ = _circle_loss(labels[1], scores[1])
+      expected = (math.log1p(loss_0) * 1. + math.log1p(loss_1) * 2.) / 3.
+      self.assertAllClose(result, expected)
+
+  def test_circle_loss_should_handle_per_example_weights(self):
+    with tf.Graph().as_default():
+      scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
+      labels = [[0., 0., 1.], [0., 1., 2.]]
+      weights = [[1., 1., 2.], [1., 1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.CircleLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
+
+      loss_0, _, _ = _circle_loss(labels[0], scores[0])
+      loss_1, _, _ = _circle_loss(labels[1], scores[1])
+      expected = (math.log1p(loss_0) * 2. + math.log1p(loss_1) * 1.) / 3.
+      self.assertAllClose(result, expected)
+
+  def test_circle_loss_should_handle_parameters(self):
+    with tf.Graph().as_default():
+      scores = [[.1, .3, .2], [.1, .2, .3]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.CircleLoss(name=None, gamma=4., margin=0.1)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
+
+      loss_0, _, _ = _circle_loss(labels[0], scores[0], gamma=4., margin=0.1)
+      loss_1, _, _ = _circle_loss(labels[1], scores[1], gamma=4., margin=0.1)
+      expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
+      self.assertAllClose(result, expected)
+
+  def test_circle_loss_with_invalid_labels(self):
+    with tf.Graph().as_default():
+      scores = [[.1, .3, .2]]
+      labels = [[0., -1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.CircleLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction).eval()
+
+      loss_0, _, _ = _circle_loss([0., 1.], [.1, .2])
+      expected = math.log1p(loss_0)
+      self.assertAllClose(result, expected)
+
+  def test_circle_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[.1, .3, .2], [.1, .2, .3]]
+      labels = [[1., 0., 0.], [0., 0., 2.]]
+      mask = [[True, False, True], [True, True, True]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.CircleLoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      loss_0, _, _ = _circle_loss([1., 0.], [.1, .2])
+      loss_1, _, _ = _circle_loss(labels[1], scores[1])
+      expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
       self.assertAllClose(result, expected)
 
 

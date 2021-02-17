@@ -397,7 +397,7 @@ def _compute_ranks(logits, is_valid):
   return utils.sorted_ranks(scores)
 
 
-def _pairwise_comparison(labels, logits, mask):
+def _pairwise_comparison(labels, logits, mask, pairwise_logits_op=tf.subtract):
   r"""Returns pairwise comparison `Tensor`s.
 
   Given a list of n items, the labels of graded relevance l_i and the logits
@@ -408,13 +408,14 @@ def _pairwise_comparison(labels, logits, mask):
   * `pairwise_labels` = |
                         | 0   otherwise
                         \
-  * `pairwise_logits` = s_i - s_j
+  * `pairwise_logits` = pairwise_logits_op(s_i, s_j)
 
   Args:
     labels: A `Tensor` with shape [batch_size, list_size].
     logits: A `Tensor` with shape [batch_size, list_size].
     mask: A `Tensor` with shape [batch_size, list_size] indicating which entries
       are valid for computing the pairwise comparisons.
+    pairwise_logits_op: A pairwise function which operates on 2 tensors.
 
   Returns:
     A tuple of (pairwise_labels, pairwise_logits) with each having the shape
@@ -424,7 +425,7 @@ def _pairwise_comparison(labels, logits, mask):
   # shape [batch_size, list_size, list_size] where the entry [-1, i, j] stores
   # the information for pair (i, j).
   pairwise_label_diff = _apply_pairwise_op(tf.subtract, labels)
-  pairwise_logits = _apply_pairwise_op(tf.subtract, logits)
+  pairwise_logits = _apply_pairwise_op(pairwise_logits_op, logits)
   # Only keep the case when l_i > l_j.
   pairwise_labels = tf.cast(
       tf.greater(pairwise_label_diff, 0), dtype=tf.float32)
@@ -825,6 +826,92 @@ class _ListwiseLoss(_RankingLoss):
     per_list_losses = tf.squeeze(losses, axis=1)
     per_list_weights = tf.squeeze(weights, axis=1)
     return per_list_losses, per_list_weights
+
+
+class CircleLoss(_ListwiseLoss):
+  """Implements circle loss.
+
+  This is the Circle loss originally proposed by Sun et al.
+  ["Circle Loss: A Unified Perspective of Pair Similarity Optimization"]. See
+  https://arxiv.org/abs/2002.10857.
+
+  For a model that outputs similarity scores `s` on data point with
+  corresponding label y, the circle loss from Eq.(6) in the paper is
+    L_circle = log(1 + sum_{i is p,j is n}
+                   exp(gamma * (a_j * (s_j - d_n) - a_i * (s_i - d_p)))),
+  defined for the binary label, p for data points with positive labels and n for
+  data points with negative labels.
+    a_i = relu(1 + margin - s_i)
+    a_j = relu(s_j + margin)
+    d_p = 1 - margin
+    d_n = margin
+  We can extend to non-binary labels with an indiactor function,
+    L_circle = log(1 + sum_{i, j} I_{y_i > y_j}
+                   exp(gamma * (a_j * (s_j - d_n) - a_i * (s_i - d_p)))),
+  Note the loss takes only the similarity scores. We will clip any score value
+  beyond 0 and 1 to confine the scores in [0, 1], please be aware of that.
+  """
+
+  def __init__(self,
+               name,
+               lambda_weight=None,
+               gamma=64,
+               margin=0.25,
+               ragged=False):
+    """Initializer.
+
+    Args:
+      name: A string used as the name for this loss.
+      lambda_weight: A `_LambdaWeight` object.
+      gamma: A float parameter used in circle loss.
+      margin: A float parameter defining the margin in circle loss.
+      ragged: A boolean indicating whether the input tensors are ragged.
+    """
+    super().__init__(
+        name,
+        lambda_weight=lambda_weight,
+        temperature=1.0,
+        ragged=ragged)
+    self._margin = margin
+    self._gamma = gamma
+
+  def get_logits(self, logits):
+    """See `_RankingLoss`."""
+    # Add a clip to confine scores in [0, 1].
+    return tf.clip_by_value(tf.convert_to_tensor(value=logits), 0., 1.)
+
+  def compute_unreduced_loss(self, labels, logits, mask=None):
+    """See `_RankingLoss`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+
+    def circle_loss_pairwise_op(score_i, score_j):
+      alpha_i = tf.stop_gradient(
+          tf.nn.relu(1 - score_i + self._margin), name='circle_loss_alpha_pos')
+      alpha_j = tf.stop_gradient(
+          tf.nn.relu(score_j + self._margin), name='circle_loss_alpha_neg')
+      return alpha_i * (1 - score_i - self._margin) + alpha_j * (
+          score_j - self._margin)
+
+    pairwise_labels, pairwise_logits = _pairwise_comparison(
+        labels, logits, mask, pairwise_logits_op=circle_loss_pairwise_op)
+    pairwise_weights = tf.stop_gradient(
+        pairwise_labels, name='weights_stop_gradient')
+    # TODO: try lambda_weights for circle loss.
+    # Pairwise losses and weights will be of shape
+    # [batch_size, list_size, list_size].
+    losses = tf.exp(self._gamma * pairwise_logits)
+
+    # This computes the per-list losses and weights for circle loss.
+    per_list_losses = tf.math.log1p(
+        tf.reduce_sum(tf.math.multiply(losses, pairwise_weights), axis=[1, 2]))
+    per_list_weights = tf.reduce_sum(
+        pairwise_weights, axis=[1, 2]) / tf.reduce_sum(
+            tf.cast(pairwise_weights > 0, tf.float32), axis=[1, 2])
+
+    # Return per-list losses and weights with shape [batch_size, 1].
+    return tf.expand_dims(per_list_losses,
+                          1), tf.expand_dims(per_list_weights, 1)
 
 
 class SoftmaxLoss(_ListwiseLoss):

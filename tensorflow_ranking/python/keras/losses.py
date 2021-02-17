@@ -35,6 +35,7 @@ class RankingLossKey(object):
   APPROX_NDCG_LOSS = 'approx_ndcg_loss'
   APPROX_MRR_LOSS = 'approx_mrr_loss'
   GUMBEL_APPROX_NDCG_LOSS = 'gumbel_approx_ndcg_loss'
+  # TODO: Add support for circle loss and neural sort losses.
 
 
 def get(loss,
