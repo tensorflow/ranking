@@ -516,6 +516,56 @@ class LossesImplTest(tf.test.TestCase):
       self.assertAllClose(losses, [-0.63093, -0.922917])
       self.assertAllClose(weights, [4., 1.])
 
+  def test_pointwise_compute_unreduced_loss_with_ragged_tensors(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
+      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
+
+      with self.cached_session():
+        # SigmoidCrossEntropyLoss is chosen as an arbitrary pointwise loss to
+        # test the `compute_unreduced_loss` behavior with ragged inputs.
+        # TODO: Use parameterized tests to test all losses.
+        loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None, ragged=True)
+        losses, weights = loss_fn.compute_unreduced_loss(labels, scores)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [[1.313262, 3.048587, 0.126928],
+                                   [1.313262, -2.951413, 0.693147]])
+      self.assertAllClose(weights, [[1., 1., 1.], [1., 1., 0.]])
+
+  def test_pairwise_compute_unreduced_loss_with_ragged_tensors(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
+      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
+
+      with self.cached_session():
+        # PairwiseHingeLoss is chosen as an arbitrary pairwise loss to test the
+        # `compute_unreduced_loss` behavior with ragged inputs.
+        # TODO: Use parameterized tests to test all losses.
+        loss_fn = losses_impl.PairwiseHingeLoss(name=None, ragged=True)
+        losses, weights = loss_fn.compute_unreduced_loss(labels, scores)
+        weighted_losses = tf.multiply(losses, weights).eval()
+
+      self.assertAllClose(weighted_losses,
+                          [[[0., 0., 0.], [0., 0., 0.], [0., 2., 0.]],
+                           [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]])
+
+  def test_listwise_compute_unreduced_loss_with_ragged_tensors(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
+      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
+
+      with self.cached_session():
+        # ApproxNDCGLoss is chosen as an arbitrary listwise loss to test the
+        # `compute_unreduced_loss` behavior.
+        # TODO: Use parameterized tests to test all losses.
+        loss_fn = losses_impl.ApproxNDCGLoss(name=None, ragged=True)
+        losses, weights = loss_fn.compute_unreduced_loss(labels, scores)
+        losses, weights = losses.eval(), weights.eval()
+
+      self.assertAllClose(losses, [[-0.63093], [-0.922917]])
+      self.assertAllClose(weights, [[1.], [1.]])
+
 
 class PairwiseLogisticLossTest(tf.test.TestCase):
 
