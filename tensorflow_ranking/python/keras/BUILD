@@ -198,6 +198,7 @@ py_test(
     deps = [
         ":losses",
         ":utils",
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
     ],
 )

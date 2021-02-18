@@ -248,12 +248,14 @@ class PairwiseHingeLoss(_PairwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0,
+               ragged=False,
                **kwargs):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.PairwiseHingeLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -265,12 +267,14 @@ class PairwiseLogisticLoss(_PairwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0,
+               ragged=False,
                **kwargs):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.PairwiseLogisticLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -282,12 +286,14 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0,
+               ragged=False,
                **kwargs):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.PairwiseSoftZeroOneLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
 
 class _ListwiseLoss(_RankingLoss):
@@ -355,12 +361,14 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=1.0):
+               temperature=1.0,
+               ragged=False):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.UniqueSoftmaxLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -371,12 +379,14 @@ class ListMLELoss(_ListwiseLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=1.0):
+               temperature=1.0,
+               ragged=False):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.ListMLELoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -387,12 +397,14 @@ class ApproxMRRLoss(_ListwiseLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=0.1):
+               temperature=0.1,
+               ragged=False):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.ApproxMRRLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -403,12 +415,14 @@ class ApproxNDCGLoss(_ListwiseLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
-               temperature=0.1):
+               temperature=0.1,
+               ragged=False):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.ApproxNDCGLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -447,6 +461,7 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
     """See _RankingLoss."""
     # For Gumbel approx NDCG, the logits are sampled from Gumbel distribution
     # to sort the documents.
+    # TODO: Add ragged support for sampler.
     gbl_labels, gbl_logits, gbl_weights = self._gumbel_sampler.sample(
         y_true, y_pred, weights=sample_weight)
     return super().__call__(gbl_labels, gbl_logits, gbl_weights)
@@ -460,14 +475,16 @@ class ClickEMLoss(_RankingLoss):
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                exam_loss_weight=1.0,
-               rel_loss_weight=1.0):
+               rel_loss_weight=1.0,
+               ragged=False):
     super().__init__(reduction, name)
     self._exam_loss_weight = exam_loss_weight
     self._rel_loss_weight = rel_loss_weight
     self._loss = losses_impl.ClickEMLoss(
         name='{}_impl'.format(name) if name else None,
         exam_loss_weight=self._exam_loss_weight,
-        rel_loss_weight=self._rel_loss_weight)
+        rel_loss_weight=self._rel_loss_weight,
+        ragged=ragged)
 
   def get_config(self):
     config = super().get_config()
@@ -482,17 +499,20 @@ class ClickEMLoss(_RankingLoss):
 class SigmoidCrossEntropyLoss(_RankingLoss):
   """For sigmoid cross-entropy loss."""
 
-  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
+  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
+               ragged=False):
     super().__init__(reduction, name)
     self._loss = losses_impl.SigmoidCrossEntropyLoss(
-        name='{}_impl'.format(name) if name else None)
+        name='{}_impl'.format(name) if name else None,
+        ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class MeanSquaredLoss(_RankingLoss):
   """For mean squared error loss."""
 
-  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
+  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
+               ragged=False):
     super().__init__(reduction, name)
     self._loss = losses_impl.MeanSquaredLoss(
-        name='{}_impl'.format(name) if name else None)
+        name='{}_impl'.format(name) if name else None, ragged=ragged)

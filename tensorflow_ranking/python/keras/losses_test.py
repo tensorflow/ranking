@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import math
 
+from absl.testing import parameterized
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python.keras import losses
@@ -125,7 +126,7 @@ def _mean_squared_error(logits, labels):
   return sum((logit - label)**2 for label, logit in zip(labels, logits))
 
 
-class LossesTest(tf.test.TestCase):
+class LossesTest(parameterized.TestCase, tf.test.TestCase):
 
   def _check_pairwise_loss(self, loss_form):
     """Helper function to test `loss_fn`."""
@@ -553,6 +554,26 @@ class LossesTest(tf.test.TestCase):
     loss = losses.MeanSquaredLoss()
     self.assertAlmostEqual(
         loss(labels, scores).numpy(), (1. + 1.) / 3., places=5)
+
+  @parameterized.parameters(
+      (losses.PairwiseHingeLoss, 4.),
+      (losses.PairwiseLogisticLoss, 2.9397852),
+      (losses.PairwiseSoftZeroOneLoss, 1.7310586),
+      (losses.UniqueSoftmaxLoss, 5.347391),
+      (losses.SigmoidCrossEntropyLoss, 5.6642923),
+      (losses.MeanSquaredLoss, 20.),
+      (losses.ListMLELoss, 2.8477957),
+      (losses.ApproxNDCGLoss, -1.2618682),
+      (losses.ApproxMRRLoss, -1.0000114))
+  def test_loss_with_ragged_tensors(self, loss_constructor, expected):
+    scores = tf.ragged.constant([[1., 3., 2.], [3., 2.]])
+    labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
+    loss = loss_constructor(ragged=True,
+                            reduction=tf.keras.losses.Reduction.SUM)
+
+    result = loss(labels, scores)
+
+    self.assertAlmostEqual(result.numpy(), expected, places=5)
 
 
 class GetLossesTest(tf.test.TestCase):
