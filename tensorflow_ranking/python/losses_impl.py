@@ -610,11 +610,13 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     raise NotImplementedError('Calling an abstract method.')
 
   def normalize_weights(self, labels, weights):
-    """Normalizes weights needed for tf.estimator (not tf.keras).
+    """Normalizes weights.
 
     This is needed for `tf.estimator` given that the reduction may be
-    `SUM_OVER_NONZERO_WEIGHTS`. This function is not needed after we migrate
-    from the deprecated reduction to `SUM` or `SUM_OVER_BATCH_SIZE`.
+    `SUM_OVER_NONZERO_WEIGHTS`.
+
+    This method is also needed to compute normalized weights when calling
+    `compute_unreduced_loss`, which is done in the tf.keras losses.
 
     Args:
       labels: A `Tensor` of shape [batch_size, list_size] representing graded
@@ -626,6 +628,12 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     Returns:
       The normalized weights.
     """
+    if self._ragged:
+      labels, _, weights, _ = utils.ragged_to_dense(labels, None, weights)
+    return self._normalize_weights_impl(labels, weights)
+
+  def _normalize_weights_impl(self, labels, weights):
+    """See `normalize_weights`."""
     del labels
     return 1.0 if weights is None else weights
 
@@ -639,7 +647,9 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     Returns:
       Tensor of rescaled logits.
     """
-    return tf.convert_to_tensor(value=logits) / self._temperature
+    if not tf.is_tensor(logits):
+      logits = tf.convert_to_tensor(value=logits)
+    return logits / self._temperature
 
   def compute(self, labels, logits, weights, reduction, mask=None):
     """Computes the reduced loss for tf.estimator (not tf.keras).
@@ -665,7 +675,8 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     logits = self.get_logits(logits)
     losses, loss_weights = self._compute_unreduced_loss_impl(labels, logits,
                                                              mask)
-    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+    weights = tf.multiply(self._normalize_weights_impl(labels, weights),
+                          loss_weights)
     return tf.compat.v1.losses.compute_weighted_loss(
         losses, weights, reduction=reduction)
 
@@ -711,7 +722,8 @@ class _RankingLoss(object, metaclass=abc.ABCMeta):
     """
     losses, loss_weights = self._compute_unreduced_loss_impl(labels, logits,
                                                              mask)
-    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+    weights = tf.multiply(self._normalize_weights_impl(labels, weights),
+                          loss_weights)
     return tf.compat.v1.metrics.mean(losses, weights)
 
 
@@ -753,7 +765,8 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
     # [batch_size, list_size, list_size].
     losses, loss_weights = self._compute_unreduced_loss_impl(labels, logits,
                                                              mask)
-    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+    weights = tf.multiply(self._normalize_weights_impl(labels, weights),
+                          loss_weights)
 
     # Compute the weighted per-pair loss.
     weighted_per_pair_loss = tf.math.multiply(losses, weights)
@@ -773,7 +786,7 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
 
     return per_list_losses, per_list_weights
 
-  def normalize_weights(self, labels, weights):
+  def _normalize_weights_impl(self, labels, weights):
     """See _RankingLoss."""
     # The `weights` is item-wise and is applied non-symmetrically to update
     # pairwise_weights as
@@ -820,7 +833,7 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
 class _ListwiseLoss(_RankingLoss):
   """Interface for listwise loss."""
 
-  def normalize_weights(self, labels, weights):
+  def _normalize_weights_impl(self, labels, weights):
     """See `_RankingLoss`."""
     if weights is None:
       return 1.0
@@ -842,7 +855,8 @@ class _ListwiseLoss(_RankingLoss):
     # Listwise losses and weights will be of shape [batch_size, 1].
     losses, loss_weights = self._compute_unreduced_loss_impl(labels, logits,
                                                              mask)
-    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+    weights = tf.multiply(self._normalize_weights_impl(labels, weights),
+                          loss_weights)
 
     # This removes the inner dimension of size 1 to make the output shape
     # [batch_size].
@@ -1039,7 +1053,7 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
 class _PointwiseLoss(_RankingLoss):
   """Interface for pointwise loss."""
 
-  def normalize_weights(self, labels, weights):
+  def _normalize_weights_impl(self, labels, weights):
     """See _RankingLoss."""
     if weights is None:
       weights = 1.
@@ -1056,7 +1070,8 @@ class _PointwiseLoss(_RankingLoss):
     # Pointwise losses and weights will be of shape [batch_size, list_size].
     losses, loss_weights = self._compute_unreduced_loss_impl(labels, logits,
                                                              mask)
-    weights = tf.multiply(self.normalize_weights(labels, weights), loss_weights)
+    weights = tf.multiply(self._normalize_weights_impl(labels, weights),
+                          loss_weights)
 
     # Compute the weighted per-item loss.
     weighted_per_item_loss = tf.math.multiply(losses, weights)

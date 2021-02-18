@@ -431,7 +431,8 @@ def ragged_to_dense(labels, predictions, weights):
   # TODO: Add checks to validate (ragged) shapes of input tensors.
   mask = tf.cast(tf.ones_like(labels).to_tensor(0.), dtype=tf.bool)
   labels = labels.to_tensor(_PADDING_LABEL)
-  predictions = predictions.to_tensor(_PADDING_PREDICTION)
+  if predictions is not None:
+    predictions = predictions.to_tensor(_PADDING_PREDICTION)
   if isinstance(weights, tf.RaggedTensor):
     weights = weights.to_tensor(_PADDING_WEIGHT)
   return labels, predictions, weights, mask
