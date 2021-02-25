@@ -559,6 +559,7 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
       (losses.PairwiseHingeLoss, 4.),
       (losses.PairwiseLogisticLoss, 2.9397852),
       (losses.PairwiseSoftZeroOneLoss, 1.7310586),
+      (losses.SoftmaxLoss, 4.034129),
       (losses.UniqueSoftmaxLoss, 5.347391),
       (losses.SigmoidCrossEntropyLoss, 5.6642923),
       (losses.MeanSquaredLoss, 20.),

@@ -17,6 +17,7 @@
 
 import tensorflow.compat.v2 as tf
 
+from tensorflow.python.keras.utils import losses_utils
 from tensorflow_ranking.python import losses_impl
 from tensorflow_ranking.python.keras import utils
 
@@ -338,19 +339,21 @@ class SoftmaxLoss(_ListwiseLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0,
+               ragged=False,
                **kwargs):
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.SoftmaxLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
-        temperature=temperature)
+        temperature=temperature,
+        ragged=ragged)
 
   def __call__(self, y_true, y_pred, sample_weight=None):
     """See _RankingLoss."""
-    # For softmax cross entropy, the weights are merged into labels.
-    y_true, y_pred = self._loss.precompute(
-        labels=y_true, logits=y_pred, weights=sample_weight)
-    return super().__call__(y_true, y_pred)
+    losses, sample_weight = self._loss.compute_per_list(
+        y_true, y_pred, sample_weight)
+    return losses_utils.compute_weighted_loss(
+        losses, sample_weight, reduction=self._get_reduction())
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
