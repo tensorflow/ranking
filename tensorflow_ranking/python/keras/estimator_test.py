@@ -261,10 +261,10 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
       tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
   @parameterized.named_parameters(
-      ('without_weights', None, True),
-      ('with_example_weights', _EXAMPLE_WEIGHT_FEATURE, True),
-      ('pointwise_inference', None, False))
-  def test_model_to_estimator(self, weights_feature_name, listwise_inference):
+      ('without_weights', None, 'predict'),
+      ('with_example_weights', _EXAMPLE_WEIGHT_FEATURE, 'predict'),
+      ('pointwise_inference', None, 'regress'))
+  def test_model_to_estimator(self, weights_feature_name, serving_default):
     keras_model = model.create_keras_model(
         network=self._network,
         loss=self._loss,
@@ -276,7 +276,7 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         config=self._config,
         weights_feature_name=weights_feature_name,
         custom_objects=self._custom_objects,
-        listwise_inference=listwise_inference)
+        serving_default=serving_default)
     self.assertIsInstance(estimator, tf.compat.v1.estimator.Estimator)
 
     # Train and export model.
@@ -293,28 +293,28 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
     example_feature_spec = tf.feature_column.make_parse_example_spec(
         self._example_feature_columns.values())
 
-    def _make_serving_input_fn(listwise_inference):
-      if listwise_inference:
+    def _make_serving_input_fn(serving_default):
+      if serving_default == 'predict':
         return data.build_ranking_serving_input_receiver_fn(
             data.ELWC,
             context_feature_spec=context_feature_spec,
             example_feature_spec=example_feature_spec,
             size_feature_name=_SIZE)
       else:
-        feature_spec = {}
-        feature_spec.update(context_feature_spec)
-        feature_spec.update(example_feature_spec)
         def pointwise_serving_fn():
           serialized = tf.compat.v1.placeholder(
               dtype=tf.string, shape=[None], name='input_ranking_tensor')
           receiver_tensors = {'input_ranking_data': serialized}
-          features = tf.compat.v1.io.parse_example(serialized, feature_spec)
-          features[_SIZE] = tf.ones((1,), dtype=tf.int32)
+          features = data.parse_from_tf_example(
+              serialized,
+              context_feature_spec=context_feature_spec,
+              example_feature_spec=example_feature_spec,
+              size_feature_name=_SIZE)
           return tf.estimator.export.ServingInputReceiver(features,
                                                           receiver_tensors)
         return pointwise_serving_fn
 
-    serving_input_receiver_fn = _make_serving_input_fn(listwise_inference)
+    serving_input_receiver_fn = _make_serving_input_fn(serving_default)
     export_dir = os.path.join(tf.compat.v1.test.get_temp_dir(), 'export')
     estimator.export_saved_model(export_dir, serving_input_receiver_fn)
 

@@ -15,7 +15,6 @@
 # Lint as: python3
 """Adaptor between keras models and estimator."""
 
-import six
 import tensorflow as tf
 
 from tensorflow.python.util import function_utils
@@ -34,7 +33,7 @@ def model_to_estimator(model,
                        custom_objects=None,
                        weights_feature_name=None,
                        warm_start_from=None,
-                       listwise_inference=True):
+                       serving_default="regress"):
   """Keras ranking model to Estimator.
 
   This function is based on the custom model_fn in TF2.0 migration guide.
@@ -54,8 +53,8 @@ def model_to_estimator(model,
       weights feature in `features` dict.
     warm_start_from: (`tf.estimator.WarmStartSettings`) settings to warm-start
       the `tf.estimator.Estimator`.
-    listwise_inference: (bool) whether to use listwise inference in the predict
-      mode.
+    serving_default: (str) Specifies "regress" or "predict" as the
+      serving_default signature.
 
   Returns:
     (tf.estimator.Estimator) A ranking estimator.
@@ -74,22 +73,6 @@ def model_to_estimator(model,
 
     return obj.__class__.from_config(obj.get_config())
 
-  def _expand_dims_for_example_features(features):
-    """Converts example features for listwise inference."""
-    # NOTE: our current design of `model` has three layers: (a) input layer,
-    # (b) GenerateMask, and (c) RankingNetwork. So we can access RankingNetwork
-    # with model.layers[-1], but we may need to revisit this when the design is
-    # changed in the future.
-    example_feature_columns = model.layers[-1].example_feature_columns
-    example_specs = tf.feature_column.make_parse_example_spec(
-        list(six.itervalues(example_feature_columns)))
-    # Expand dimension of example features for listwise inference.
-    for name in example_specs:
-      if name not in features:
-        continue
-      features[name] = utils.reshape_first_ndims(features[name], 1, [-1, 1])
-    return features
-
   def _model_fn(features, labels, mode, params, config):
     """Defines an `Estimator` `model_fn`."""
     del [config, params]
@@ -99,9 +82,6 @@ def model_to_estimator(model,
     # function.
     ranker = tf.keras.models.clone_model(model, clone_function=_clone_fn)
     training = (mode == tf.compat.v1.estimator.ModeKeys.TRAIN)
-    if mode == tf.compat.v1.estimator.ModeKeys.PREDICT and (
-        not listwise_inference):
-      features = _expand_dims_for_example_features(features)
 
     weights = None
     if weights_feature_name and mode != tf.compat.v1.estimator.ModeKeys.PREDICT:
@@ -114,11 +94,15 @@ def model_to_estimator(model,
 
     logits = ranker(features, training=training)
 
-    if listwise_inference:
-      default_export_output = tf.compat.v1.estimator.export.PredictOutput(
+    if serving_default not in ["regress", "predict"]:
+      raise ValueError("serving_default should be 'regress' or 'predict', "
+                       "but got {}".format(serving_default))
+
+    if serving_default == "regress":
+      default_export_output = tf.compat.v1.estimator.export.RegressionOutput(
           logits)
     else:
-      default_export_output = tf.compat.v1.estimator.export.RegressionOutput(
+      default_export_output = tf.compat.v1.estimator.export.PredictOutput(
           logits)
     export_outputs = {
         _DEFAULT_SERVING_KEY: default_export_output,

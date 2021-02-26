@@ -23,7 +23,7 @@ Keras ranking model to Estimator.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.estimator.model_to_estimator(
     model, model_dir=None, config=None, custom_objects=None,
-    weights_feature_name=None, warm_start_from=None, listwise_inference=True
+    weights_feature_name=None, warm_start_from=None, serving_default="regress"
 )
 </code></pre>
 
@@ -88,11 +88,10 @@ the `tf.estimator.Estimator`.
 </td>
 </tr><tr>
 <td>
-`listwise_inference`
+`serving_default`
 </td>
 <td>
-(bool) whether to use listwise inference in the predict
-mode.
+(str) Specifies "regress" or "predict" as the serving_default signature.
 </td>
 </tr>
 </table>
