@@ -247,17 +247,17 @@ class DCGLambdaWeight(_LambdaWeight):
       def _discount_for_relative_rank_diff():
         """Rank-based discount in the LambdaLoss paper."""
         # The LambdaLoss is not well defined when topn is active and topn <
-        # list_size. We cap the rank of examples to topn + 1 so that the rank
-        # difference is capped to topn. This is just a convenient upper bound
-        # when topn is active. We need to revisit this.
-        capped_rank = tf.compat.v1.where(
-            tf.greater(ranks, topn),
-            tf.ones_like(ranks) * (topn + 1), ranks)
+        # list_size.
+        # The following implementation is based on Equation 18 proposed in
+        # https://research.google/pubs/pub47258/. We may need to revisit this
+        # later.
+        pair_valid_rank = _apply_pairwise_op(
+            tf.logical_or, tf.less_equal(ranks, topn))
         rank_diff = tf.cast(
-            tf.abs(_apply_pairwise_op(tf.subtract, capped_rank)),
+            tf.abs(_apply_pairwise_op(tf.subtract, ranks)),
             dtype=tf.float32)
-        pair_discount = tf.compat.v1.where(
-            tf.greater(rank_diff, 0),
+        pair_discount = tf.where(
+            tf.logical_and(tf.greater(rank_diff, 0), pair_valid_rank),
             tf.abs(
                 self._rank_discount_fn(rank_diff) -
                 self._rank_discount_fn(rank_diff + 1)),

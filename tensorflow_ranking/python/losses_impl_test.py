@@ -332,8 +332,8 @@ class DCGLambdaWeightTest(tf.test.TestCase):
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1. / 2., 2. * 1. / 2.], [1. / 2., 0., 0.],
-              [2. * 1. / 2., 0., 0.]]])
+            [[[0., 1. / 2., 1. / 3.], [1. / 2., 0., 0.],
+              [1. / 3., 0., 0.]]])
 
   def test_invalid_labels(self):
     with tf.Graph().as_default():
