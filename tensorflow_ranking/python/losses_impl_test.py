@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_ranking.python import losses_impl
@@ -405,7 +406,7 @@ class PrecisionLambdaWeightTest(tf.test.TestCase):
             [[[0., 0., 1.], [0., 0., 0.], [1., 0., 0.]]])
 
 
-class LossesImplTest(tf.test.TestCase):
+class LossesImplTest(tf.test.TestCase, parameterized.TestCase):
 
   def setUp(self):
     super(LossesImplTest, self).setUp()
@@ -462,59 +463,36 @@ class LossesImplTest(tf.test.TestCase):
       self.assertAllClose(losses, [-0.63093, -0.796248])
       self.assertAllClose(weights, [4., 1.])
 
-  def test_pointwise_compute_per_list_with_ragged_tensors(self):
+  @parameterized.parameters(
+      (losses_impl.SigmoidCrossEntropyLoss, [1.3644443, -0.8190755], [9., 2.]),
+      (losses_impl.MeanSquaredLoss, [3.6666667, 1.], [9., 2.]),
+      (losses_impl.PairwiseHingeLoss, [1., 0.], [8., 1.]),
+      (losses_impl.PairwiseLogisticLoss, [0.813262, 0.126928], [8., 1.]),
+      (losses_impl.PairwiseSoftZeroOneLoss, [0.5, 0.119203], [8., 1.]),
+      (losses_impl.ListMLELoss, [3.534534, 0.126928], [4., 1.]),
+      (losses_impl.SoftmaxLoss, [1.407606, 0.126928], [4., 2.]),
+      (losses_impl.UniqueSoftmaxLoss, [1.407606, 0.380784], [4., 1.]),
+      (losses_impl.NeuralSortCrossEntropyLoss, [1.816267, 0.365334], [4., 1.]),
+      (losses_impl.NeuralSortNDCGLoss, [-0.761571, -0.956006], [4., 1.]),
+      (losses_impl.ApproxNDCGLoss, [-0.63093, -0.922917], [4., 1.]),
+      (losses_impl.ApproxMRRLoss, [-0.5, -0.893493], [4., 1.]))
+  def test_compute_per_list_with_ragged_tensors(self, loss_constructor,
+                                                expected_losses,
+                                                expected_weights):
     with tf.Graph().as_default():
       scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
       labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
       per_item_weights = tf.ragged.constant([[2., 3., 4.], [1., 1.]])
 
       with self.cached_session():
-        # SigmoidCrossEntropyLoss is chosen as an arbitrary pointwise loss to
-        # test the `compute_per_list` behavior with ragged inputs.
-        # TODO: Use parameterized tests to test all losses.
-        loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None, ragged=True)
+        tf.random.set_seed(42)
+        loss_fn = loss_constructor(name=None, ragged=True)
         losses, weights = loss_fn.compute_per_list(labels, scores,
                                                    per_item_weights)
         losses, weights = losses.eval(), weights.eval()
 
-      self.assertAllClose(losses, [1.3644443, -0.8190755])
-      self.assertAllClose(weights, [9., 2.])
-
-  def test_pairwise_compute_per_list_with_ragged_tensors(self):
-    with tf.Graph().as_default():
-      scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
-      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
-      per_item_weights = tf.ragged.constant([[2., 3., 4.], [1., 1.]])
-
-      with self.cached_session():
-        # PairwiseHingeLoss is chosen as an arbitrary pairwise loss to test the
-        # `compute_per_list` behavior with ragged inputs.
-        # TODO: Use parameterized tests to test all losses.
-        loss_fn = losses_impl.PairwiseHingeLoss(name=None, ragged=True)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
-
-      self.assertAllClose(losses, [1., 0.])
-      self.assertAllClose(weights, [8., 1.])
-
-  def test_listwise_compute_per_list_with_ragged_tensors(self):
-    with tf.Graph().as_default():
-      scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
-      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
-      per_item_weights = tf.ragged.constant([[2., 3., 4.], [1., 1.]])
-
-      with self.cached_session():
-        # ApproxNDCGLoss is chosen as an arbitrary listwise loss to test the
-        # `compute_per_list` behavior.
-        # TODO: Use parameterized tests to test all losses.
-        loss_fn = losses_impl.ApproxNDCGLoss(name=None, ragged=True)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
-
-      self.assertAllClose(losses, [-0.63093, -0.922917])
-      self.assertAllClose(weights, [4., 1.])
+      self.assertAllClose(losses, expected_losses)
+      self.assertAllClose(weights, expected_weights)
 
   def test_pointwise_compute_unreduced_loss_with_ragged_tensors(self):
     with tf.Graph().as_default():
