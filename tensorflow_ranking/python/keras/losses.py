@@ -242,15 +242,34 @@ class _PairwiseLoss(_RankingLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseHingeLoss(_PairwiseLoss):
-  """For pairwise hinge loss."""
+  r"""Pairwise hinge loss.
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) =
+  \sum_{i, j} I_{y_i > y_j} \max(0, 1 - (s_i - s_j))
+  $$
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
                temperature=1.0,
-               ragged=False,
-               **kwargs):
+               ragged=False):
+    """Pairwise hinge loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      lambda_weight: (Optional) A lambdaweight to apply to the loss. Can be one
+        of `tfr.keras.losses.DCGLambdaWeight`,
+        `tfr.keras.losses.NDCGLambdaWeight`, or,
+        `tfr.keras.losses.PrecisionLambdaWeight`.
+      temperature: (Optional) The temperature to use for scaling the logits.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+    """
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.PairwiseHingeLoss(
         name='{}_impl'.format(name) if name else None,
@@ -261,15 +280,34 @@ class PairwiseHingeLoss(_PairwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseLogisticLoss(_PairwiseLoss):
-  """For pairwise logistic loss."""
+  r"""Pairwise logistic loss.
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) =
+  \sum_{i, j} I_{y_i > y_j} \log(1 + \exp(-(s_i - s_j)))
+  $$
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
                temperature=1.0,
-               ragged=False,
-               **kwargs):
+               ragged=False):
+    """Pairwise logistic loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      lambda_weight: (Optional) A lambdaweight to apply to the loss. Can be one
+        of `tfr.keras.losses.DCGLambdaWeight`,
+        `tfr.keras.losses.NDCGLambdaWeight`, or,
+        `tfr.keras.losses.PrecisionLambdaWeight`.
+      temperature: (Optional) The temperature to use for scaling the logits.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+    """
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.PairwiseLogisticLoss(
         name='{}_impl'.format(name) if name else None,
@@ -280,15 +318,34 @@ class PairwiseLogisticLoss(_PairwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseSoftZeroOneLoss(_PairwiseLoss):
-  """For pairwise soft zero-one loss."""
+  r"""Pairwise soft zero one loss.
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) =
+  \sum_{i, j} I_{y_i > y_j} (1 - \text{sigmoid}(s_i - s_j))
+  $$
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
                temperature=1.0,
-               ragged=False,
-               **kwargs):
+               ragged=False):
+    """Pairwise soft zero one loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      lambda_weight: (Optional) A lambdaweight to apply to the loss. Can be one
+        of `tfr.keras.losses.DCGLambdaWeight`,
+        `tfr.keras.losses.NDCGLambdaWeight`, or,
+        `tfr.keras.losses.PrecisionLambdaWeight`.
+      temperature: (Optional) The temperature to use for scaling the logits.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+    """
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.PairwiseSoftZeroOneLoss(
         name='{}_impl'.format(name) if name else None,
