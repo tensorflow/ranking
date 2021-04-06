@@ -22,6 +22,7 @@ py_library(
         ":model",
         ":network",
         ":saved_model",
+        ":strategy_utils",
         ":utils",
         "//tensorflow_ranking/python/keras/canned",
     ],
@@ -278,5 +279,25 @@ py_test(
         # py/numpy dep,
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
+
+py_library(
+    name = "strategy_utils",
+    srcs = ["strategy_utils.py"],
+    srcs_version = "PY3",
+    deps = [
+        # py/tensorflow dep,
+    ],
+)
+
+py_test(
+    name = "strategy_utils_test",
+    srcs = ["strategy_utils_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":strategy_utils",
+        # py/tensorflow dep,
     ],
 )
