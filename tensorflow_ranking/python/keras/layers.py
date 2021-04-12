@@ -38,7 +38,7 @@ class FlattenList(tf.keras.layers.Layer):
                         [[[1], [0], [-1]], [[0], [1], [0]]]}
     mask = [[True, True, False], [True, False, False]]
     flattened_context_features, flattened_example_features = FlattenList()(
-        context_features, example_features, mask)
+        inputs=(context_features, example_features, mask))
   ```
   That is, there are two valid examples in the first query and one
   valid example in the second query. Then
@@ -69,17 +69,18 @@ class FlattenList(tf.keras.layers.Layer):
     self._circular_padding = circular_padding
 
   def call(
-      self, context_features: Dict[str, tf.Tensor],
-      example_features: Dict[str, tf.Tensor], list_mask: tf.Tensor
+      self, inputs: Tuple[Dict[str, tf.Tensor], Dict[str, tf.Tensor], tf.Tensor]
   ) -> Tuple[Dict[str, tf.Tensor], Dict[str, tf.Tensor]]:
     """Call FlattenList layer to flatten context_features and example_features.
 
     Args:
-      context_features: A map of context features to 2D tensors of shape
+      inputs: A tuple of (context_features, example_features, list_mask), which
+        are described below:
+      * `context_features`: A map of context features to 2D tensors of shape
         [batch_size, feature_dim].
-      example_features: A map of example features to 3D tensors of shape
+      * `example_features`: A map of example features to 3D tensors of shape
         [batch_size, list_size, feature_dim].
-      list_mask: A Tensor of shape [batch_size, list_size] to mask out the
+      * `list_mask`: A Tensor of shape [batch_size, list_size] to mask out the
         invalid examples.
 
     Returns:
@@ -89,8 +90,9 @@ class FlattenList(tf.keras.layers.Layer):
       features to 2D tensors of shape [batch_size * list_size, feature_dim].
 
     Raises:
-      ValueError: An error if example_features is None or empty.
+      ValueError: If `example_features` is empty dict or None.
     """
+    context_features, example_features, list_mask = inputs
     if not example_features:
       raise ValueError('Need a valid example feature.')
     batch_size = tf.shape(list_mask)[0]
@@ -137,7 +139,7 @@ class RestoreList(tf.keras.layers.Layer):
   ```python
     flattened_logits = [1, 0.5, 2, 0, -1, 0]
     mask = [[True, True, False], [True, False, False]]
-    logits = RestoreList()(flattened_logits, mask)
+    logits = RestoreList()(inputs=(flattened_logits, mask))
   ```
   Then
   ```python
@@ -152,7 +154,7 @@ class RestoreList(tf.keras.layers.Layer):
   ```python
     flattened_logits = [1, 0.5, 2, 0, -1, 0]
     mask = [[True, True, False], [True, False, False]]
-    logits = RestoreList(by_scatter=True)(flattened_logits, mask)
+    logits = RestoreList(by_scatter=True)((flattened_logits, mask))
   ```
   Then
   ```python
@@ -171,24 +173,26 @@ class RestoreList(tf.keras.layers.Layer):
     super().__init__(name=name, **kwargs)
     self._by_scatter = by_scatter
 
-  def call(self, flattened_logits: tf.Tensor,
-           list_mask: tf.Tensor) -> tf.Tensor:
+  def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
     """Restores listwise shape of flattened_logits.
 
     Args:
-      flattened_logits: A `Tensor` of predicted logits for each pair of query
-        and documents, 1D tensor of shape [batch_size * list_size] or 2D tensor
-        of shape [batch_size * list_size, 1].
-      list_mask: A boolean `Tensor` of shape [batch_size, list_size] to mask out
-        the invalid examples.
+      inputs:  A tuple of (flattened_logits, list_mask), which are described
+        below.
+      * `flattened_logits`: A `Tensor` of predicted logits for each pair of
+        query and documents, 1D tensor of shape [batch_size * list_size] or 2D
+        tensor of shape [batch_size * list_size, 1].
+      * `list_mask`: A boolean `Tensor` of shape [batch_size, list_size] to mask
+        out the invalid examples.
 
     Returns:
       A `Tensor` of shape [batch_size, list_size].
 
     Raises:
-      ValueError: An error if the shape of `flattened_logits` is neither 1D nor
-        2D with shape [batch_size * list_size, 1].
+      ValueError: If `flattened_logits` is not of shape [batch_size * list_size]
+        or [batch_size * list_size, 1].
     """
+    flattened_logits, list_mask = inputs
     try:
       logits = tf.reshape(flattened_logits, shape=tf.shape(list_mask))
     except:
@@ -234,11 +238,11 @@ class ConcatFeatures(tf.keras.layers.Layer):
             [[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]]
     }
     mask = [[True, False], [True, True]]
-    ConcatFeatures()(context_features, example_features, mask)
+    ConcatFeatures()(inputs=(context_features, example_features, mask))
     # Returns: [[[1., 1., 0.], [1., 1., 0.]], [[2., 0., 1.], [2., 1., 0.]]])
 
     ConcatFeatures(circular_padding=False)(
-        context_features, example_features, mask)
+        inputs=(context_features, example_features, mask))
     # Returns: [[[1., 1., 0.], [1., 0., 1.]], [[2., 0., 1.], [2., 1., 0.]]]
   ```
   """
@@ -260,28 +264,27 @@ class ConcatFeatures(tf.keras.layers.Layer):
     self._flatten_list = FlattenList(circular_padding=self._circular_padding)
 
   def call(
-      self,
-      context_features: Dict[str, tf.Tensor],
-      example_features: Dict[str, tf.Tensor],
-      list_mask: [tf.Tensor],
-  ) -> tf.Tensor:
-    """Call method for ConcatFeatures layer.
+      self, inputs: Tuple[Dict[str, tf.Tensor], Dict[str, tf.Tensor], tf.Tensor]
+  ) -> Tuple[Dict[str, tf.Tensor], Dict[str, tf.Tensor]]:
+    """Call layer to flatten context_features and example_features.
 
     Args:
-      context_features: A dict of `Tensor`s with shape [batch_size, ...].
-      example_features:  A dict of `Tensor`s with shape [batch_size, list_size,
-        ...].
-      list_mask: A boolean tensor of shape [batch_size, list_size], which is
-        True for a valid example and False for invalid one.
+      inputs: A tuple of (context_features, example_features, list_mask), which
+        are described below:
+      * `context_features`: A map of context features to 2D tensors of shape
+        [batch_size, feature_dim].
+      * `example_features`: A map of example features to 3D tensors of shape
+        [batch_size, list_size, feature_dim].
+      * `list_mask`: A Tensor of shape [batch_size, list_size] to mask out the
+        invalid examples.
 
     Returns:
-      A `Tensor` of shape [batch_size, list_size, ...].
+      A tensor of shape [batch_size, list_size, concat_feature_dim].
     """
+    context_features, example_features, list_mask = inputs
     (flattened_context_features,
      flattened_example_features) = self._flatten_list(
-         context_features=context_features,
-         example_features=example_features,
-         list_mask=list_mask)
+         (context_features, example_features, list_mask))
     # Concatenate flattened context and example features along `list_size` dim.
     context_input = [
         tf.keras.layers.Flatten()(flattened_context_features[name])
@@ -345,7 +348,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
                num_heads: int,
                head_size: int,
                num_layers: int = 1,
-               dropout_rate: float = 0.5,
+               dropout: float = 0.5,
                name: Optional[str] = None,
                **kwargs: Dict[Any, Any]):
     """Initializes the layer.
@@ -355,7 +358,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
         details on this argument).
       head_size: Size of each attention head.
       num_layers: Number of cross-document attention layers.
-      dropout_rate: Dropout probability.
+      dropout: Dropout probability.
       name: Name of the layer.
       **kwargs: keyword arguments.
     """
@@ -363,7 +366,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     self._num_heads = num_heads
     self._head_size = head_size
     self._num_layers = num_layers
-    self._dropout_rate = dropout_rate
+    self._dropout = dropout
 
     # This projects input to head_size, so that this layer can be applied
     # recursively for `num_layers` times.
@@ -380,38 +383,38 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
       attention_layer = tf.keras.layers.MultiHeadAttention(
           num_heads=self._num_heads,
           key_dim=self._head_size,
-          dropout=self._dropout_rate,
+          dropout=self._dropout,
           output_shape=self._head_size)
 
       # Dropout and layer normalization are applied element-wise, and do not
       # change the shape.
-      dropout_layer = tf.keras.layers.Dropout(rate=self._dropout_rate)
+      dropout_layer = tf.keras.layers.Dropout(rate=self._dropout)
       norm_layer = tf.keras.layers.LayerNormalization(
           axis=-1, epsilon=1e-12, dtype=tf.float32)
       self._attention_layers.append(
           (attention_layer, dropout_layer, norm_layer))
 
-  def call(self,
-           inputs: tf.Tensor,
-           training: bool = True,
-           list_mask: Optional[tf.Tensor] = None) -> tf.Tensor:
+  def call(self, inputs: tf.Tensor, training: bool = True) -> tf.Tensor:
     """Calls the document interaction layer to apply cross-document attention.
 
     Args:
-      inputs: A tensor of shape [batch_size, list_size, feature_dims].
-      training: Whether in training or inference mode.
-      list_mask: A boolean tensor of shape [batch_size, list_size], which is
+      inputs: A tuple of `example_inputs`, `list_mask`.
+        `example_inputs`: A tensor of shape [batch_size, list_size,
+          feature_dims].
+        `list_mask`: A boolean tensor of shape [batch_size, list_size], which is
         True for a valid example and False for invalid one. If this is `None`,
         then all examples are treated as valid.
+      training: Whether in training or inference mode.
 
     Returns:
       A tensor of shape [batch_size, list_size, head_size].
     """
-    batch_size = tf.shape(inputs)[0]
-    list_size = tf.shape(inputs)[1]
+    example_inputs, list_mask = inputs
+    batch_size = tf.shape(example_inputs)[0]
+    list_size = tf.shape(example_inputs)[1]
     if list_mask is None:
       list_mask = tf.ones(shape=(batch_size, list_size), dtype=tf.bool)
-    input_tensor = self._input_projection(inputs, training=training)
+    x = self._input_projection(example_inputs, training=training)
 
     list_mask = tf.cast(list_mask, dtype=tf.int32)
     attention_mask = nlp_modeling_layers.SelfAttentionMask()(
@@ -419,15 +422,12 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
 
     for attention_layer, dropout_layer, norm_layer in self._attention_layers:
       output = attention_layer(
-          query=input_tensor,
-          value=input_tensor,
-          attention_mask=attention_mask,
-          training=training)
+          query=x, value=x, attention_mask=attention_mask, training=training)
       output = dropout_layer(output, training=training)
       # Applying residual network here, similar to logic in Transformer.
-      input_tensor = norm_layer(output + input_tensor, training=training)
+      x = norm_layer(output + x, training=training)
 
-    return input_tensor
+    return x
 
   def get_config(self):
     config = super().get_config()
@@ -435,6 +435,6 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
         'num_heads': self._num_heads,
         'head_size': self._head_size,
         'num_layers': self._num_layers,
-        'dropout_rate': self._dropout_rate,
+        'dropout': self._dropout,
     })
     return config

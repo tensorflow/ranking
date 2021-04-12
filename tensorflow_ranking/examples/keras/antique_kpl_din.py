@@ -291,14 +291,15 @@ def preprocess_keras_inputs(
   # Document interaction attention layer.
   if FLAGS.use_document_interaction:
     concat_tensor = tfr.keras.layers.ConcatFeatures()(
-        preprocessed_context_features, preprocessed_example_features, mask)
+        inputs=(preprocessed_context_features, preprocessed_example_features,
+                mask))
     din_layer = tfr.keras.layers.DocumentInteractionAttention(
         num_heads=FLAGS.num_attention_heads,
         head_size=FLAGS.head_size,
         num_layers=FLAGS.num_attention_layers,
-        dropout_rate=FLAGS.dropout_rate)
+        dropout=FLAGS.dropout_rate)
     preprocessed_example_features["document_interaction_embedding"] = din_layer(
-        inputs=concat_tensor, list_mask=mask)
+        inputs=(concat_tensor, mask))
 
   return preprocessed_context_features, preprocessed_example_features
 
@@ -311,7 +312,7 @@ def create_ranking_model() -> tf.keras.Model:
 
   (flattened_context_features,
    flattened_example_features) = tfr.keras.layers.FlattenList()(
-       context_features, example_features, mask)
+       inputs=(context_features, example_features, mask))
 
   # Concatenate flattened context and example features along `list_size` dim.
   context_input = [
@@ -341,7 +342,7 @@ def create_ranking_model() -> tf.keras.Model:
     dnn.add(tf.keras.layers.Dropout(rate=FLAGS.dropout_rate))
   dnn.add(tf.keras.layers.Dense(units=1))
 
-  logits = tfr.keras.layers.RestoreList()(dnn(input_layer), mask)
+  logits = tfr.keras.layers.RestoreList()(inputs=(dnn(input_layer), mask))
 
   return tf.keras.Model(
       inputs=dict(

@@ -18,7 +18,6 @@ import os
 
 from absl.testing import flagsaver
 from absl.testing import parameterized
-
 import tensorflow as tf
 
 from google.protobuf import text_format

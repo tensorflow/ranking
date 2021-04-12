@@ -35,6 +35,7 @@ py_test(
         ":antique_kpl_din",
         # py/absl/testing:flagsaver dep,
         # py/tensorflow dep,
+        "//tensorflow_ranking",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
