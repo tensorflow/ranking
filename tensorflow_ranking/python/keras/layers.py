@@ -336,7 +336,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     inputs =  [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]]
     list_mask = [[True, True, False], [True, False, False]]
     dia_layer = DocumentInteractionAttention(
-        num_heads=1, head_size=64, num_layers=1, topk=1)
+        num_heads=1, head_size=64, num_layers=1)
     dia_output = dia_layer(
         inputs=inputs,
         training=False,
