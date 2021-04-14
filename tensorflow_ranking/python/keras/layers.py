@@ -15,13 +15,57 @@
 # Lint as: python3
 """Defines Keras Layers for TF-Ranking."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import tensorflow as tf
 
 from official.nlp.modeling import layers as nlp_modeling_layers
 from tensorflow_ranking.python import utils
 
 _EPSILON = 1e-10
+
+
+def create_tower(hidden_layer_dims: List[int],
+                 output_units: int,
+                 activation: Optional[Callable[..., tf.Tensor]] = None,
+                 input_batch_norm: bool = False,
+                 use_batch_norm: bool = True,
+                 batch_norm_moment: float = 0.999,
+                 dropout: float = 0.5,
+                 name: Optional[str] = None,
+                 **kwargs: Dict[Any, Any]):
+  """Creates a feed-forward network as `tf.keras.Sequential`.
+
+  Args:
+    hidden_layer_dims: Iterable of number hidden units per layer. All layers are
+      fully connected. Ex. `[64, 32]` means first layer has 64 nodes and second
+      one has 32.
+    output_units: Size of output logits from this tower.
+    activation: Activation function applied to each layer. If `None`, will use
+      an identity activation.
+    input_batch_norm: Whether to use batch normalization for input layer.
+    use_batch_norm: Whether to use batch normalization after each hidden layer.
+    batch_norm_moment: Momentum for the moving average in batch normalization.
+    dropout: When not `None`, the probability we will drop out a given
+      coordinate.
+    name: Name of the keras layer.
+    **kwargs: Keyword arguments for every `tf.keras.Dense` layers.
+
+  Returns:
+    A `tf.keras.Sequential` object.
+  """
+  model = tf.keras.Sequential(name=name)
+  # Input batch normalization.
+  if input_batch_norm:
+    model.add(tf.keras.layers.BatchNormalization(momentum=batch_norm_moment))
+  for layer_width in hidden_layer_dims:
+    model.add(tf.keras.layers.Dense(units=layer_width), **kwargs)
+    if use_batch_norm:
+      model.add(tf.keras.layers.BatchNormalization(momentum=batch_norm_moment))
+    model.add(tf.keras.layers.Activation(activation=activation))
+    if dropout:
+      model.add(tf.keras.layers.Dropout(rate=dropout))
+  model.add(tf.keras.layers.Dense(units=output_units), **kwargs)
+  return model
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -436,5 +480,203 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
         'head_size': self._head_size,
         'num_layers': self._num_layers,
         'dropout': self._dropout,
+    })
+    return config
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class GAMLayer(tf.keras.layers.Layer):
+  """Defines a generalized additive model (GAM) layer.
+
+  Neural Generalized Additive Ranking Model is an additive ranking model.
+  See the paper (https://arxiv.org/abs/2005.02553) for more details.
+  For each example x with n features (x_1, x_2, ..., x_n), the ranking score is:
+
+    F(x) = f1(x_1) + f2(x_2) + ... + fn(x_n)
+
+  where each feature is scored by a corresponding submodel, and the overall
+  ranking score is the sum of all the submodels' outputs. Each submodel is a
+  standalone feed-forward network.
+
+  When there are m context features (c_1, c_2, ..., c_m), the ranking score
+  will be determined by:
+
+    F(c, x) = w1(c) * f1(x_1) + w2(c) * f2(x_2) + ... + wn(c) * fn(x_n)
+
+  where (w1(c), w2(c), ..., wn(c)) is a weighting vector determined solely by
+  context features. For each context feature c_j, a feed-forward submodel is
+  constructed to derive a weighting vector (wj1(c_j), wj2(c_j), ..., wjn(c_j)).
+  The final weighting vector is the sum of the output of all the context
+  features' submodels.
+
+  The model is implicitly interpretable as the contribution of each feature to
+  the final ranking score can be easily visualized. However, the model does not
+  have higher-order inter-feature interactions and hence may not have
+  performance as good as a fully-connected DNN.
+
+  The output of each example feature's submodel can be retrieved by tensor
+  named `{feature_name}_subscore`. The output of each context feature's submodel
+  is a n-dimensional vector and can be retrieved by tensor named
+  `{feature_name}_subweight`.
+  """
+
+  def __init__(self,
+               example_feature_num: int,
+               example_hidden_layer_dims: List[int],
+               context_feature_num: Optional[int] = None,
+               context_hidden_layer_dims: Optional[List[int]] = None,
+               activation: Optional[Callable[..., tf.Tensor]] = None,
+               use_batch_norm: bool = True,
+               batch_norm_moment: float = 0.999,
+               dropout: float = 0.5,
+               name: Optional[str] = None,
+               **kwargs: Dict[Any, Any]):
+    """Initializes the layer.
+
+    Args:
+      example_feature_num: Number of example features.
+      example_hidden_layer_dims: Iterable of number hidden units for an tower.
+        Each example feature will have an identical tower.
+      context_feature_num: Number of context features. If `None` or 0 then no
+        context weighting will be applied, otherwise `context_hidden_layer_dims`
+        is required.
+      context_hidden_layer_dims: Iterable of number hidden units for an tower.
+        Each context feature (if any) will have an identical tower. Required if
+        `context_feature_num` is specified.
+      activation: Activation function applied to each layer. If `None`, will use
+        an identity activation.
+      use_batch_norm: Whether to use batch normalization after each hidden
+        layer.
+      batch_norm_moment: Momentum for the moving average in batch normalization.
+      dropout: When not `None`, the probability of dropout for the dropoout
+        layer in each tower.
+      name: Name of the keras layer.
+      **kwargs: Keyword arguments.
+    """
+
+    super().__init__(name=name, **kwargs)
+    self._example_feature_num = example_feature_num
+    self._context_feature_num = context_feature_num
+    self._example_hidden_layer_dims = example_hidden_layer_dims
+    self._context_hidden_layer_dims = context_hidden_layer_dims
+    self._activation = tf.keras.activations.get(activation)
+    self._use_batch_norm = use_batch_norm
+    self._batch_norm_moment = batch_norm_moment
+    self._dropout = dropout
+
+    self._example_towers = []
+    for i in range(self._example_feature_num):
+      self._example_towers.append(
+          create_tower(
+              hidden_layer_dims=self._example_hidden_layer_dims,
+              output_units=1,
+              activation=self._activation,
+              use_batch_norm=self._use_batch_norm,
+              batch_norm_moment=self._batch_norm_moment,
+              dropout=self._dropout,
+              name='{}_example_tower_{}'.format(name, i)))
+
+    self._context_towers = None
+    if context_feature_num and context_feature_num > 0:
+      if not context_hidden_layer_dims:
+        raise ValueError(
+            'When `context_feature_num` > 0, `context_hidden_layer_dims` is '
+            'required! Currently `context_feature_num` is {}, but '
+            '`context_hidden_layer_dims` is {}'.format(
+                context_feature_num, context_hidden_layer_dims))
+      self._context_towers = []
+      for i in range(self._context_feature_num):
+        self._context_towers.append(
+            create_tower(
+                hidden_layer_dims=self._context_hidden_layer_dims,
+                output_units=self._example_feature_num,
+                activation=self._activation,
+                use_batch_norm=self._use_batch_norm,
+                batch_norm_moment=self._batch_norm_moment,
+                dropout=self._dropout,
+                name='{}_context_tower_{}'.format(name, i)))
+
+  def call(
+      self,
+      inputs: Tuple[List[tf.Tensor], Optional[List[tf.Tensor]]],
+      training: bool = True
+  ) -> Tuple[tf.Tensor, List[tf.Tensor], List[tf.Tensor]]:
+    """Obtains the outputs of the GAM model.
+
+    Args:
+      inputs: A tuple of (`example_inputs`, `context_inputs`):
+      * `example_inputs`: An iterable of Tensors where each tensor is 2-D with
+        the shape [batch_size, ...]. The number of tensors should align with
+        `example_feature_num`.
+      * `context_inputs`: An iterable of Tensors where each tensor is 2-D with
+        the shape [batch_size, ...]. If given, the number of tensors should
+        align with `context_feature_num`. Notice that even if
+        `context_feature_num` is larger than zero, one can still call without
+        `context_inputs`. In this case the sub_logits from examples features
+        will be directly added and context feature towers will be ignored.
+      training: Whether training or not.
+
+    Returns:
+      The final scores from the GAM model, lists of tensors representing the
+      sublogits of each example feature, and lists of tensors representing the
+      subweights derived from each context feature. If no `context_inputs` are
+      given, the third element will be an empty list.
+
+    Raises:
+      ValueError: An error occurred when the number of tensors in
+        `example_inputs` is different from `example_feature_num`.
+      ValueError: An error occurred when `context_inputs` is given but the
+        number of tensors in `context_inputs` is different from
+        `context_feature_num`.
+    """
+    example_inputs, context_inputs = inputs
+    if len(example_inputs) != self._example_feature_num:
+      raise ValueError('Mismatched number of features in `example_inputs` ({}) '
+                       'with `example_feature_num` ({})'.format(
+                           len(example_inputs), self._example_feature_num))
+    if context_inputs:
+      if (not self._context_towers or
+          len(context_inputs) != len(self._context_towers)):
+        raise ValueError('Mismatched number of features in `context_inputs` '
+                         '({}) with `_context_feature_num` ({})'.format(
+                             len(context_inputs), self._context_feature_num))
+
+    sub_logits_list = []
+    for inputs, tower in zip(example_inputs, self._example_towers):
+      sub_logits = tower(inputs, training=training)
+      sub_logits_list.append(sub_logits)
+
+    sub_weights_list = []
+    if context_inputs and self._context_towers:
+      for inputs, tower in zip(context_inputs, self._context_towers):
+        cur = tower(inputs, training=training)
+        sub_weights = tf.keras.layers.Softmax()(cur)
+        sub_weights_list.append(sub_weights)
+
+    # Construct an additive model from the outputs of all example feature towers
+    # weighted by outputs of all context feature towers.
+    if sub_weights_list:
+      sub_logits = tf.keras.layers.Concatenate(axis=-1)(sub_logits_list)
+      sub_weights = (
+          tf.keras.layers.Add()(sub_weights_list)
+          if len(sub_weights_list) > 1 else sub_weights_list[0])
+      logits = tf.reduce_sum(sub_logits * sub_weights, axis=-1, keepdims=True)
+    else:
+      logits = tf.keras.layers.Add()(
+          sub_logits_list) if len(sub_logits_list) > 1 else sub_logits_list[0]
+
+    return logits, sub_logits_list, sub_weights_list
+
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+        'example_feature_num': self._example_feature_num,
+        'context_feature_num': self._context_feature_num,
+        'example_hidden_layer_dims': self._example_hidden_layer_dims,
+        'context_hidden_layer_dims': self._context_hidden_layer_dims,
+        'activation': tf.keras.activations.serialize(self._activation),
+        'use_batch_norm': self._use_batch_norm,
+        'batch_norm_moment': self._batch_norm_moment,
+        'dropout': self._dropout
     })
     return config

@@ -21,6 +21,15 @@ from tensorflow_ranking.python.keras import layers
 _EPSILON = 1e-10
 
 
+class TowerTest(tf.test.TestCase):
+
+  def test_create_tower(self):
+    inputs = tf.constant([[[1], [0], [-1]], [[0], [1], [0]]], dtype=tf.float32)
+    tower = layers.create_tower([3, 2, 1], 1)
+    outputs = tower(inputs)
+    self.assertAllEqual([2, 3, 1], outputs.get_shape().as_list())
+
+
 class FlattenListTest(tf.test.TestCase):
 
   def test_call_with_circular_padding(self):
@@ -256,6 +265,77 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase):
     output_2 = din_layer(
         inputs=(circular_padded_inputs, self._mask), training=False)
     self.assertAllClose(output_1, output_2)
+
+
+class GAMLayerTest(tf.test.TestCase):
+
+  def test_serialization(self):
+    tf.random.set_seed(1)
+    example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
+    context_inputs = tf.constant([[1, 2], [0, 1], [-1, 1]], dtype=tf.float32)
+    layer = layers.GAMLayer(3, [3, 2, 1], 2, [3, 2, 1], activation=tf.nn.relu)
+    serialized = tf.keras.layers.serialize(layer)
+    loaded = tf.keras.layers.deserialize(serialized)
+    self.assertAllEqual(loaded.get_config(), layer.get_config())
+
+    outputs, _, _ = layer(([example_inputs, example_inputs, example_inputs
+                           ], [context_inputs, context_inputs]),
+                          training=False)
+    self.assertAllClose([[-0.338468], [0.], [-0.340799]], outputs.numpy())
+
+    outputs, _, _ = loaded(([example_inputs, example_inputs, example_inputs
+                            ], [context_inputs, context_inputs]),
+                           training=False)
+    self.assertAllClose([[-0.016473], [0.], [-0.002832]], outputs.numpy())
+
+  def test_gam_layer_call(self):
+    example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
+    context_inputs = tf.constant([[1, 2], [0, 1], [-1, 1]], dtype=tf.float32)
+    gam = layers.GAMLayer(2, [3, 2, 1], 2, [3, 2, 1])
+    outputs, sublogits_list, subweights_list = gam(
+        ([example_inputs, example_inputs], [context_inputs, context_inputs]))
+    self.assertAllEqual([3, 1], outputs.get_shape().as_list())
+    self.assertAllEqual(2, len(sublogits_list))
+    for sublogits in sublogits_list:
+      self.assertAllEqual([3, 1], sublogits.get_shape().as_list())
+    self.assertAllEqual(2, len(subweights_list))
+    for subweights in subweights_list:
+      self.assertAllEqual([3, 2], subweights.get_shape().as_list())
+
+  def test_gam_layer_call_without_context(self):
+    example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
+
+    gam = layers.GAMLayer(2, [3, 2, 1], 2, [3, 2, 1])
+    outputs, sublogits_list, subweights_list = gam(
+        ([example_inputs, example_inputs], None))
+    self.assertAllEqual([3, 1], outputs.get_shape().as_list())
+    self.assertAllEqual(2, len(sublogits_list))
+    for sublogits in sublogits_list:
+      self.assertAllEqual([3, 1], sublogits.get_shape().as_list())
+    self.assertAllEqual(0, len(subweights_list))
+
+    gam_without_context = layers.GAMLayer(2, [3, 2, 1])
+    outputs, sublogits_list, subweights_list = gam_without_context(
+        ([example_inputs, example_inputs], None))
+    self.assertAllEqual([3, 1], outputs.get_shape().as_list())
+    self.assertAllEqual(2, len(sublogits_list))
+    for sublogits in sublogits_list:
+      self.assertAllEqual([3, 1], sublogits.get_shape().as_list())
+    self.assertAllEqual(0, len(subweights_list))
+
+  def test_gam_layer_call_raise_example_feature_num_error(self):
+    example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
+    context_inputs = tf.constant([[1, 2], [0, 1], [-1, 1]], dtype=tf.float32)
+    gam = layers.GAMLayer(3, [3, 2, 1], 2, [3, 2, 1])
+    with self.assertRaises(ValueError):
+      _ = gam(([example_inputs], [context_inputs, context_inputs]))
+
+  def test_gam_layer_call_raise_context_feature_num_error(self):
+    example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
+    context_inputs = tf.constant([[1, 2], [0, 1], [-1, 1]], dtype=tf.float32)
+    gam = layers.GAMLayer(1, [3, 2, 1], 2, [3, 2, 1])
+    with self.assertRaises(ValueError):
+      _ = gam(([example_inputs], [context_inputs]))
 
 
 if __name__ == '__main__':
