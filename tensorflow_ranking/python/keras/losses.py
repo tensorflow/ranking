@@ -389,15 +389,34 @@ class _ListwiseLoss(_RankingLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class SoftmaxLoss(_ListwiseLoss):
-  """For softmax cross entropy loss."""
+  r"""Softmax cross-entropy loss.
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) =
+  - \sum_i \frac{y_i}{\sum_j y_j} \cdot \log(\text{softmax}(s_i))
+  $$
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
                name=None,
                lambda_weight=None,
                temperature=1.0,
-               ragged=False,
-               **kwargs):
+               ragged=False):
+    """Softmax cross-entropy loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      lambda_weight: (Optional) A lambdaweight to apply to the loss. Can be one
+        of `tfr.keras.losses.DCGLambdaWeight`,
+        `tfr.keras.losses.NDCGLambdaWeight`, or,
+        `tfr.keras.losses.PrecisionLambdaWeight`.
+      temperature: (Optional) The temperature to use for scaling the logits.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+    """
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.SoftmaxLoss(
         name='{}_impl'.format(name) if name else None,
@@ -433,7 +452,20 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class ListMLELoss(_ListwiseLoss):
-  """For List MLE loss."""
+  r"""ListMLE loss.
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) = - \log(P(\pi_y | s))
+  $$
+
+  where $$P(\pi_y | s)$$ is the plackett-luce probability of a permutation
+  $$\pi_y$$ conditioned on scores $$s$$. Here $$\pi_y$$ represents a permutation
+  of items ordered by the relevance labels $$y$$ where ties are broken randomly.
+
+  NOTE: Since tie breaks happen randomly, this loss is stochastic and may return
+  different values for identical inputs.
+
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
@@ -441,6 +473,21 @@ class ListMLELoss(_ListwiseLoss):
                lambda_weight=None,
                temperature=1.0,
                ragged=False):
+    """ListMLE loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      lambda_weight: (Optional) A lambdaweight to apply to the loss. Can be one
+        of `tfr.keras.losses.DCGLambdaWeight`,
+        `tfr.keras.losses.NDCGLambdaWeight`,
+        `tfr.keras.losses.PrecisionLambdaWeight`, or,
+        `tfr.keras.losses.ListMLELambdaWeight`.
+      temperature: (Optional) The temperature to use for scaling the logits.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+    """
     super().__init__(reduction, name, lambda_weight, temperature)
     self._loss = losses_impl.ListMLELoss(
         name='{}_impl'.format(name) if name else None,
@@ -569,10 +616,24 @@ class SigmoidCrossEntropyLoss(_RankingLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class MeanSquaredLoss(_RankingLoss):
-  """For mean squared error loss."""
+  r"""Mean squared loss.
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) = \sum_i (y_i - s_i)^{2}
+  $$
+  """
 
   def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
                ragged=False):
+    """Mean squared loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+    """
     super().__init__(reduction, name)
     self._loss = losses_impl.MeanSquaredLoss(
         name='{}_impl'.format(name) if name else None, ragged=ragged)
