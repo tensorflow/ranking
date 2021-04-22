@@ -15,12 +15,8 @@
 # Lint as: python3
 """Tests for Keras model."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from absl.testing import parameterized
-import tensorflow.compat.v2 as tf
+import tensorflow as tf
 
 from google.protobuf import text_format
 
@@ -129,6 +125,54 @@ EXAMPLE_LIST_PROTO_2 = text_format.Parse(
         feature {
           key: "utility"
           value { float_list { value: 1.0 } }
+        }
+      }
+    }
+    """, input_pb2.ExampleListWithContext())
+
+ELWC_PROTO = text_format.Parse(
+    """
+    context {
+      features {
+        feature {
+          key: "context_1"
+          value { int64_list { value: [3, 1, 4, 1] } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "feature_1"
+          value { float_list { value: 0.0 } }
+        }
+        feature {
+          key: "feature_2"
+          value { float_list { value: 0.0 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "feature_1"
+          value { float_list { value: 1.0 } }
+        }
+        feature {
+          key: "feature_2"
+          value { float_list { value: 1.0 } }
+        }
+      }
+    }
+    examples {
+      features {
+        feature {
+          key: "feature_1"
+          value { float_list { value: 2.0 } }
+        }
+        feature {
+          key: "feature_2"
+          value { float_list { value: 2.0 } }
         }
       }
     }
@@ -261,6 +305,211 @@ class FunctionalRankingModelTest(tf.test.TestCase, parameterized.TestCase):
         ranker(features, training=False).numpy(), output.numpy())
 
 
+class InputCreatorTest(tf.test.TestCase):
+
+  def test_feature_spec_input_creator(self):
+    context_feature_spec = {"c_ragged": tf.io.RaggedFeature(dtype=tf.int64)}
+    example_feature_spec = {
+        "fixed_len":
+            tf.io.FixedLenFeature(
+                shape=(1,), dtype=tf.float32, default_value=0.0),
+        "var_len":
+            tf.io.VarLenFeature(dtype=tf.string),
+        "ragged":
+            tf.io.RaggedFeature(dtype=tf.string)
+    }
+    input_creator = model_lib.FeatureSpecInputCreator(context_feature_spec,
+                                                      example_feature_spec)
+    context_inputs, example_inputs = input_creator()
+    self.assertAllEqual(context_inputs["c_ragged"].shape, [None, None])
+    self.assertAllEqual(example_inputs["fixed_len"].shape, [None, None, 1])
+    self.assertAllEqual(example_inputs["var_len"].shape, [None, None, 1])
+    self.assertAllEqual(example_inputs["ragged"].shape, [None, None, None])
+
+  def test_type_spec_input_creator(self):
+    type_spec = {
+        "c_ragged":
+            tf.RaggedTensorSpec(shape=[None, None], dtype=tf.float32),
+        "ragged":
+            tf.RaggedTensorSpec(shape=[None, None, None], dtype=tf.float32),
+        "tensor":
+            tf.TensorSpec(shape=[None, None, 256], dtype=tf.float32)
+    }
+    context_feature_names = ["c_ragged"]
+    example_feature_names = ["ragged", "tensor"]
+    input_creator = model_lib.TypeSpecInputCreator(type_spec,
+                                                   context_feature_names,
+                                                   example_feature_names)
+    context_inputs, example_inputs = input_creator()
+    self.assertAllEqual(context_inputs["c_ragged"].shape, [None, None])
+    self.assertAllEqual(example_inputs["ragged"].shape, [None, None, None])
+    self.assertAllEqual(example_inputs["tensor"].shape, [None, None, 256])
+
+
+class PreprocessorTest(tf.test.TestCase):
+
+  def test_preprocessor_with_spec(self):
+
+    def context_embedding(x):
+      return tf.reduce_mean(
+          tf.keras.layers.Embedding(input_dim=10, output_dim=4)(x), axis=-2)
+
+    preprocess_spec = {
+        "context_1": context_embedding,
+    }
+    default_value_spec = {
+        "feature_1": -1.,
+    }
+    preprocessor = model_lib.PreprocessorWithSpec(preprocess_spec,
+                                                  default_value_spec)
+    context_features, example_features = preprocessor(
+        {
+            "context_1": tf.ragged.constant([[3, 1, 4, 1]]),
+        },
+        example_inputs={
+            "feature_1": tf.ragged.constant([[1., 2.]]),
+        },
+        mask=[[True, True, True]],
+    )
+    self.assertAllClose(example_features["feature_1"].numpy(), [[1., 2., -1.]])
+    self.assertAllClose(context_features["context_1"].numpy(),
+                        [[0.01018536, -0.01101774, 0.01906492, 0.02206106]])
+
+
+class DummyMultiTaskScorer(model_lib.UnivariateScorer):
+
+  def _score_flattened(self, context_features, example_features):
+    return {
+        "task1": tf.convert_to_tensor([[1.], [2.], [3.]]),
+        "task2": tf.convert_to_tensor([[2.], [4.], [6.]]),
+    }
+
+
+class ModelBuilderTest(tf.test.TestCase):
+
+  def setUp(self):
+    super().setUp()
+
+    self._context_feature_spec = {
+        "context_1": tf.io.RaggedFeature(dtype=tf.int64)
+    }
+    self._example_feature_spec = {
+        name:
+        tf.io.FixedLenFeature(shape=(1,), dtype=tf.float32, default_value=0.0)
+        for name in ["feature_1", "feature_2"]
+    }
+
+    def context_embedding(x):
+      return tf.reduce_mean(
+          tf.keras.layers.Embedding(input_dim=10, output_dim=4)(x), axis=-2)
+
+    preprocess_spec = {
+        "context_1":
+            context_embedding,
+        "feature_1":
+            tf.keras.layers.experimental.preprocessing.Normalization(axis=-1),
+        "feature_2":
+            lambda t: tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
+    }
+
+    self._input_creator = model_lib.FeatureSpecInputCreator(
+        self._context_feature_spec, self._example_feature_spec)
+    self._preprocessor = model_lib.PreprocessorWithSpec(preprocess_spec)
+
+  def test_dnn_model_builder_with_spec(self):
+    dnn_scorer = model_lib.DNNScorer(hidden_layer_dims=[10, 10], output_units=1)
+    dnn_model = model_lib.ModelBuilder(
+        input_creator=self._input_creator,
+        preprocessor=self._preprocessor,
+        scorer=dnn_scorer,
+        mask_feature_name="mask",
+        name="test_model",
+    ).build()
+    output = dnn_model({
+        "context_1": tf.ragged.constant([[3, 1, 4, 1]]),
+        "feature_1": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "feature_2": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "mask": tf.convert_to_tensor([[True, True, True]]),
+    })
+    self.assertAllEqual(output.shape.as_list(), [1, 3])
+
+  def test_gam_model_builder_with_spec(self):
+    gam_scorer = model_lib.GAMScorer(
+        example_hidden_layer_dims=[10, 10], context_hidden_layer_dims=[10, 10])
+    gam_model = model_lib.ModelBuilder(
+        input_creator=self._input_creator,
+        preprocessor=self._preprocessor,
+        mask_feature_name="mask",
+        scorer=gam_scorer,
+        name="test_model").build()
+    output = gam_model({
+        "context_1": tf.convert_to_tensor([[1]]),
+        "feature_1": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "feature_2": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "mask": tf.convert_to_tensor([[True, True, True]]),
+    })
+    self.assertAllEqual(output.shape.as_list(), [1, 3])
+
+  def test_multi_task_scorer(self):
+    mt_model = model_lib.ModelBuilder(
+        input_creator=self._input_creator,
+        preprocessor=self._preprocessor,
+        scorer=DummyMultiTaskScorer(),
+        mask_feature_name="mask",
+        name="test_model",
+    ).build()
+    output = mt_model({
+        "context_1": tf.ragged.constant([[3, 1, 4, 1]]),
+        "feature_1": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "feature_2": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "mask": tf.convert_to_tensor([[True, True, True]]),
+    })
+    self.assertEqual(len(output), 2)
+    self.assertAllEqual(output["task1"].numpy(), [[1., 2., 3.]])
+    self.assertAllEqual(output["task2"].numpy(), [[2., 4., 6.]])
+
+  def test_model_to_saved_model_dense_inputs(self):
+    dnn_scorer = model_lib.DNNScorer(hidden_layer_dims=[10, 10], output_units=1)
+    dnn_model = model_lib.ModelBuilder(
+        input_creator=self._input_creator,
+        preprocessor=self._preprocessor,
+        scorer=dnn_scorer,
+        mask_feature_name="mask",
+        name="test_model",
+    ).build()
+
+    @tf.function(input_signature=[tf.TensorSpec(shape=(1,), dtype=tf.string)])
+    def _predict(serialized):
+      features = data.parse_from_example_list(
+          serialized,
+          context_feature_spec=self._context_feature_spec,
+          example_feature_spec=self._example_feature_spec,
+          mask_feature_name="mask")
+      scores = dnn_model(inputs=features, training=False)
+      return {"predictions": scores}
+
+    dnn_model.infer_from_proto = _predict
+
+    # Export the model to a SavedModel.
+    tf.saved_model.save(
+        dnn_model,
+        export_dir="/tmp/keras_model",
+        signatures={"predict": dnn_model.infer_from_proto})
+
+    # Import ranker from SavedModel.
+    imported = tf.saved_model.load("/tmp/keras_model")
+    imported_model = imported.signatures["predict"]
+    imported_output = imported_model(
+        tf.convert_to_tensor([ELWC_PROTO.SerializeToString()]))["predictions"]
+
+    output = dnn_model({
+        "context_1": tf.ragged.constant([[3, 1, 4, 1]]),
+        "feature_1": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "feature_2": tf.convert_to_tensor([[[0.], [1], [2]]]),
+        "mask": tf.convert_to_tensor([[True, True, True]]),
+    })
+    self.assertAllClose(output.numpy(), imported_output.numpy())
+
+
 if __name__ == "__main__":
-  tf.enable_v2_behavior()
   tf.test.main()
