@@ -21,6 +21,7 @@ py_library(
         ":metrics",
         ":model",
         ":network",
+        ":pipeline",
         ":saved_model",
         ":strategy_utils",
         ":utils",
@@ -301,5 +302,36 @@ py_test(
     deps = [
         ":strategy_utils",
         # py/tensorflow dep,
+    ],
+)
+
+py_library(
+    name = "pipeline",
+    srcs = ["pipeline.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":losses",
+        ":metrics",
+        ":model",
+        ":saved_model",
+        ":strategy_utils",
+        # py/dataclasses dep,
+        # py/tensorflow dep,
+        "//tensorflow_ranking/python:data",
+    ],
+)
+
+py_test(
+    name = "pipeline_test",
+    size = "large",
+    srcs = ["pipeline_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":model",
+        ":pipeline",
+        # py/absl/testing:parameterized dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )

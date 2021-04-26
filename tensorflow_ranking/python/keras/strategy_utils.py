@@ -17,10 +17,10 @@
 In TF2, the distributed training can be easily handled with Strategy offered in
 tf.distribute. Depending on device and MapReduce technique, there are four
 strategies are currently supported. They are:
-MirroredStrategy: the synchronized strategy on a single CPU/GPU worker.
-MultiWorkerMirroredStrategy: the synced strategy on multiple CPU/GPU workers.
-ParameterServerStrategy: the asynchronized distributed strategy on CPU/GPU.
-TPUStrategy: the distributed strategy working on TPU.
+MirroredStrategy: synchronous strategy on a single CPU/GPU worker.
+MultiWorkerMirroredStrategy: synchronous strategy on multiple CPU/GPU workers.
+ParameterServerStrategy: asynchronous distributed strategy on CPU/GPU workers.
+TPUStrategy: distributed strategy working on TPU.
 
 Please check https://www.tensorflow.org/guide/distributed_training for more
 information.
