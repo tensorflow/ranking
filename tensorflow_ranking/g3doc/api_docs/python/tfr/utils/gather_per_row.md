@@ -35,11 +35,9 @@ scores = [[1., 3., 2.], [1., 2., 3.]]
 indices = [[1, 2], [2, 1]]
 tfr.utils.gather_per_row(scores, indices)
 ```
-
 Returns [[3., 2.], [3., 2.]]
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -64,7 +62,6 @@ gather inputs from. Each index corresponds to a row entry in input_tensor.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>

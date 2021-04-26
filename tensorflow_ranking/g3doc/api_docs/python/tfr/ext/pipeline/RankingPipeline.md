@@ -27,8 +27,9 @@ Class to set up the input, train and eval processes for a TF Ranking model.
 <code>tfr.ext.pipeline.RankingPipeline(
     context_feature_columns, example_feature_columns, hparams, estimator,
     label_feature_name=&#x27;relevance&#x27;, label_feature_type=tf.int64,
-    dataset_reader=tf.data.TFRecordDataset, best_exporter_metric=None,
-    best_exporter_metric_higher_better=True, size_feature_name=None
+    dataset_reader=tfr.keras.pipeline.DatasetHparams.dataset_reader,
+    best_exporter_metric=None, best_exporter_metric_higher_better=True,
+    size_feature_name=None
 )
 </code></pre>
 

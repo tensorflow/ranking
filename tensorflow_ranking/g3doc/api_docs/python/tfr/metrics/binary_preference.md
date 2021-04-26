@@ -33,7 +33,6 @@ https://trec.nist.gov/pubs/trec15/appendices/CE.MEASURES06.pdf BPref = 1 / R
 SUM_r(1 - |n ranked higher than r| / min(R, N))
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -89,7 +88,6 @@ BPref = 1 / R SUM_r(1 - |n ranked higher than r| / R)
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>

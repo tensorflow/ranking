@@ -131,8 +131,12 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/layers/DocumentInteractionAttention
     - title: FlattenList
       path: /ranking/api_docs/python/tfr/keras/layers/FlattenList
+    - title: GAMLayer
+      path: /ranking/api_docs/python/tfr/keras/layers/GAMLayer
     - title: RestoreList
       path: /ranking/api_docs/python/tfr/keras/layers/RestoreList
+    - title: create_tower
+      path: /ranking/api_docs/python/tfr/keras/layers/create_tower
   - title: losses
     section:
     - title: Overview
@@ -207,6 +211,30 @@ toc:
     section:
     - title: Overview
       path: /ranking/api_docs/python/tfr/keras/model
+    - title: AbstractModelBuilder
+      path: /ranking/api_docs/python/tfr/keras/model/AbstractModelBuilder
+    - title: DNNScorer
+      path: /ranking/api_docs/python/tfr/keras/model/DNNScorer
+    - title: FeatureSpecInputCreator
+      path: /ranking/api_docs/python/tfr/keras/model/FeatureSpecInputCreator
+    - title: GAMScorer
+      path: /ranking/api_docs/python/tfr/keras/model/GAMScorer
+    - title: InputCreator
+      path: /ranking/api_docs/python/tfr/keras/model/InputCreator
+    - title: ModelBuilder
+      path: /ranking/api_docs/python/tfr/keras/model/ModelBuilder
+    - title: Preprocessor
+      path: /ranking/api_docs/python/tfr/keras/model/Preprocessor
+    - title: PreprocessorWithSpec
+      path: /ranking/api_docs/python/tfr/keras/model/PreprocessorWithSpec
+    - title: Scorer
+      path: /ranking/api_docs/python/tfr/keras/model/Scorer
+    - title: TensorLike
+      path: /ranking/api_docs/python/tfr/keras/model/TensorLike
+    - title: TypeSpecInputCreator
+      path: /ranking/api_docs/python/tfr/keras/model/TypeSpecInputCreator
+    - title: UnivariateScorer
+      path: /ranking/api_docs/python/tfr/keras/model/UnivariateScorer
     - title: create_keras_model
       path: /ranking/api_docs/python/tfr/keras/model/create_keras_model
   - title: network
@@ -219,12 +247,52 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/network/UnivariateRankingNetwork
     - title: listwise_scoring
       path: /ranking/api_docs/python/tfr/keras/network/listwise_scoring
+  - title: pipeline
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/pipeline
+    - title: AbstractDatasetBuilder
+      path: /ranking/api_docs/python/tfr/keras/pipeline/AbstractDatasetBuilder
+    - title: AbstractPipeline
+      path: /ranking/api_docs/python/tfr/keras/pipeline/AbstractPipeline
+    - title: BaseDatasetBuilder
+      path: /ranking/api_docs/python/tfr/keras/pipeline/BaseDatasetBuilder
+    - title: DatasetHparams
+      path: /ranking/api_docs/python/tfr/keras/pipeline/DatasetHparams
+    - title: DatasetHparams.dataset_reader
+      path: /ranking/api_docs/python/tfr/keras/pipeline/DatasetHparams/dataset_reader
+    - title: ModelFitPipeline
+      path: /ranking/api_docs/python/tfr/keras/pipeline/ModelFitPipeline
+    - title: MultiLabelDatasetBuilder
+      path: /ranking/api_docs/python/tfr/keras/pipeline/MultiLabelDatasetBuilder
+    - title: MultiTaskPipeline
+      path: /ranking/api_docs/python/tfr/keras/pipeline/MultiTaskPipeline
+    - title: NullDatasetBuilder
+      path: /ranking/api_docs/python/tfr/keras/pipeline/NullDatasetBuilder
+    - title: PipelineHparams
+      path: /ranking/api_docs/python/tfr/keras/pipeline/PipelineHparams
+    - title: SimpleDatasetBuilder
+      path: /ranking/api_docs/python/tfr/keras/pipeline/SimpleDatasetBuilder
+    - title: SimplePipeline
+      path: /ranking/api_docs/python/tfr/keras/pipeline/SimplePipeline
   - title: saved_model
     section:
     - title: Overview
       path: /ranking/api_docs/python/tfr/keras/saved_model
     - title: Signatures
       path: /ranking/api_docs/python/tfr/keras/saved_model/Signatures
+  - title: strategy_utils
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/strategy_utils
+    - title: NullContextManager
+      path: /ranking/api_docs/python/tfr/keras/strategy_utils/NullContextManager
+    - title: get_output_filepath
+      path: /ranking/api_docs/python/tfr/keras/strategy_utils/get_output_filepath
+    - title: get_strategy
+      path: /ranking/api_docs/python/tfr/keras/strategy_utils/get_strategy
+    - title: strategy_scope
+      path: /ranking/api_docs/python/tfr/keras/strategy_utils/strategy_scope
   - title: utils
     section:
     - title: Overview

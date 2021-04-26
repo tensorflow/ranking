@@ -11,7 +11,7 @@ description: Keras ranking model to Estimator.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/estimator.py#L17-L161">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/estimator.py#L16-L145">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -23,7 +23,8 @@ Keras ranking model to Estimator.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.estimator.model_to_estimator(
     model, model_dir=None, config=None, custom_objects=None,
-    weights_feature_name=None, warm_start_from=None, serving_default="regress"
+    weights_feature_name=None, warm_start_from=None,
+    serving_default=&#x27;regress&#x27;
 )
 </code></pre>
 
@@ -91,7 +92,8 @@ the `tf.estimator.Estimator`.
 `serving_default`
 </td>
 <td>
-(str) Specifies "regress" or "predict" as the serving_default signature.
+(str) Specifies "regress" or "predict" as the
+serving_default signature.
 </td>
 </tr>
 </table>

@@ -5,6 +5,7 @@ description: Defines signatures to support regress and predict serving.
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
+<meta itemprop="property" content="normalize_outputs"/>
 <meta itemprop="property" content="predict_tf_function"/>
 <meta itemprop="property" content="regress_tf_function"/>
 <meta itemprop="property" content="with_name_scope"/>
@@ -16,7 +17,7 @@ description: Defines signatures to support regress and predict serving.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L35-L130">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L11-L129">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,8 +36,8 @@ Defines signatures to support regress and predict serving.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-<!-- Tabular view -->
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -77,7 +78,6 @@ A keras ranking model.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -131,9 +131,72 @@ of calling this method if you don't expect the return value to change.
 
 ## Methods
 
+<h3 id="normalize_outputs"><code>normalize_outputs</code></h3>
+
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L38-L59">View
+source</a>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>normalize_outputs(
+    default_key: str,
+    outputs: Union[tf.Tensor, Dict[str, tf.Tensor]]
+) -> Dict[str, tf.Tensor]
+</code></pre>
+
+Returns a dict of Tensors for outputs.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`default_key`
+</td>
+<td>
+If outputs is a Tensor, use the default_key to make a dict.
+</td>
+</tr><tr>
+<td>
+`outputs`
+</td>
+<td>
+outputs to be normalized.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A dict maps from str-like key(s) to Tensor(s).
+</td>
+</tr>
+
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+<tr class="alt">
+<td colspan="2">
+TypeError if outputs is not a Tensor nor a dict.
+</td>
+</tr>
+
+</table>
+
 <h3 id="predict_tf_function"><code>predict_tf_function</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L62-L79">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L61-L78">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -144,7 +207,7 @@ Makes a tensorflow function for `predict`.
 
 <h3 id="regress_tf_function"><code>regress_tf_function</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L81-L100">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L80-L99">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -186,7 +249,6 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -202,7 +264,6 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -216,7 +277,7 @@ The original method wrapped such that it enters the module's name scope.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L102-L130">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L101-L129">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -228,7 +289,6 @@ source</a>
 Returns a dict of signatures.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -245,7 +305,6 @@ signature.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

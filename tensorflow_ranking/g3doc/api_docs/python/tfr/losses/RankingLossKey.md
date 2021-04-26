@@ -5,11 +5,14 @@ description: Ranking loss key strings.
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="APPROX_MRR_LOSS"/>
 <meta itemprop="property" content="APPROX_NDCG_LOSS"/>
+<meta itemprop="property" content="CIRCLE_LOSS"/>
 <meta itemprop="property" content="GUMBEL_APPROX_NDCG_LOSS"/>
 <meta itemprop="property" content="GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS"/>
+<meta itemprop="property" content="GUMBEL_NEURAL_SORT_NDCG_LOSS"/>
 <meta itemprop="property" content="LIST_MLE_LOSS"/>
 <meta itemprop="property" content="MEAN_SQUARED_LOSS"/>
 <meta itemprop="property" content="NEURAL_SORT_CROSS_ENTROPY_LOSS"/>
+<meta itemprop="property" content="NEURAL_SORT_NDCG_LOSS"/>
 <meta itemprop="property" content="PAIRWISE_HINGE_LOSS"/>
 <meta itemprop="property" content="PAIRWISE_LOGISTIC_LOSS"/>
 <meta itemprop="property" content="PAIRWISE_SOFT_ZERO_ONE_LOSS"/>
@@ -24,7 +27,7 @@ description: Ranking loss key strings.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py#L17-L32">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses.py#L17-L35">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -36,7 +39,6 @@ Ranking loss key strings.
 <!-- Placeholder for "Used in" -->
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>
@@ -57,6 +59,13 @@ APPROX_NDCG_LOSS<a id="APPROX_NDCG_LOSS"></a>
 </td>
 </tr><tr>
 <td>
+CIRCLE_LOSS<a id="CIRCLE_LOSS"></a>
+</td>
+<td>
+`'circle_loss'`
+</td>
+</tr><tr>
+<td>
 GUMBEL_APPROX_NDCG_LOSS<a id="GUMBEL_APPROX_NDCG_LOSS"></a>
 </td>
 <td>
@@ -68,6 +77,13 @@ GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS<a id="GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOS
 </td>
 <td>
 `'gumbel_neural_sort_cross_entropy_loss'`
+</td>
+</tr><tr>
+<td>
+GUMBEL_NEURAL_SORT_NDCG_LOSS<a id="GUMBEL_NEURAL_SORT_NDCG_LOSS"></a>
+</td>
+<td>
+`'gumbel_neural_sort_ndcg_loss'`
 </td>
 </tr><tr>
 <td>
@@ -89,6 +105,13 @@ NEURAL_SORT_CROSS_ENTROPY_LOSS<a id="NEURAL_SORT_CROSS_ENTROPY_LOSS"></a>
 </td>
 <td>
 `'neural_sort_cross_entropy_loss'`
+</td>
+</tr><tr>
+<td>
+NEURAL_SORT_NDCG_LOSS<a id="NEURAL_SORT_NDCG_LOSS"></a>
+</td>
+<td>
+`'neural_sort_ndcg_loss'`
 </td>
 </tr><tr>
 <td>

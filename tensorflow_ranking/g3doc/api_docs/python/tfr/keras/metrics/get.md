@@ -43,7 +43,6 @@ tfr.keras.metics.get(tfr.keras.metrics.RankingMetricKey.MRR, topn=2)` to get
 MRR@2.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -88,7 +87,6 @@ Keyword arguments for the metric object.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
@@ -101,7 +99,6 @@ A tf.keras.metrics.Metric. See `_RankingMetric` signature for more details.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>

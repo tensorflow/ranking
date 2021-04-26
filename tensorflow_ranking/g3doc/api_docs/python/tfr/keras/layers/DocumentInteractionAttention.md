@@ -25,7 +25,7 @@ description: Cross Document Interaction Attention layer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L297-L426">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L344-L470">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -39,7 +39,7 @@ Cross Document Interaction Attention layer.
     num_heads: int,
     head_size: int,
     num_layers: int = 1,
-    dropout_rate: float = 0.5,
+    dropout: float = 0.5,
     name: Optional[str] = None,
     **kwargs
 )
@@ -68,7 +68,7 @@ h_i := LayerNorm_i(h_{i-1} + MHA_i(h_{i-1}), TopK(h_{i-1}; k))
   inputs =  [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]]
   list_mask = [[True, True, False], [True, False, False]]
   dia_layer = DocumentInteractionAttention(
-      num_heads=1, head_size=64, num_layers=1, topk=1)
+      num_heads=1, head_size=64, num_layers=1)
   dia_output = dia_layer(
       inputs=inputs,
       training=False,
@@ -76,7 +76,6 @@ h_i := LayerNorm_i(h_{i-1} + MHA_i(h_{i-1}), TopK(h_{i-1}; k))
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -105,7 +104,7 @@ Number of cross-document attention layers.
 </td>
 </tr><tr>
 <td>
-`dropout_rate`
+`dropout`
 </td>
 <td>
 Dropout probability.
@@ -128,7 +127,6 @@ keyword arguments.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -360,7 +358,6 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -405,8 +402,8 @@ class MyMetricLayer(tf.keras.layers.Layer):
     self.mean = tf.keras.metrics.Mean(name='metric_1')
 
   def call(self, inputs):
-    self.add_metric(self.mean(x))
-    self.add_metric(tf.reduce_sum(x), name='metric_2')
+    self.add_metric(self.mean(inputs))
+    self.add_metric(tf.reduce_sum(inputs), name='metric_2')
     return inputs
 ```
 
@@ -436,7 +433,6 @@ model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -486,7 +482,6 @@ layer call.
 This is typically used to create the weights of `Layer` subclasses.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -514,7 +509,6 @@ Instance of `TensorShape`, or list of instances of
 Computes an output mask tensor.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -537,7 +531,6 @@ Tensor or list of tensors.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -565,7 +558,6 @@ This assumes that the layer will later be used with inputs that match the input
 shape provided here.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -584,7 +576,6 @@ instead of an integer.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -605,7 +596,6 @@ An input shape tuple.
 Count the total number of scalars composing the weights.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -618,7 +608,6 @@ An integer count.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -650,7 +639,6 @@ layer from the config dictionary. It does not handle layer connectivity (handled
 by Network), nor weights (handled by `set_weights`).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -667,7 +655,6 @@ output of get_config.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -681,7 +668,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L418-L426">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L462-L470">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -702,7 +689,6 @@ time it is called. The callers should make a copy of the returned dict if they
 want to modify it.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -720,33 +706,33 @@ Python dictionary.
 <code>get_weights()
 </code></pre>
 
-Returns the current weights of the layer.
+Returns the current weights of the layer, as NumPy arrays.
 
 The weights of a layer represent the state of the layer. This function returns
 both trainable and non-trainable weight values associated with this layer as a
-list of Numpy arrays, which can in turn be used to load state into similarly
+list of NumPy arrays, which can in turn be used to load state into similarly
 parameterized layers.
 
-For example, a Dense layer returns a list of two values-- per-output weights and
-the bias value. These can be used to set the weights of another Dense layer:
+For example, a `Dense` layer returns a list of two values: the kernel matrix and
+the bias vector. These can be used to set the weights of another `Dense` layer:
 
 ```
->>> a = tf.keras.layers.Dense(1,
+>>> layer_a = tf.keras.layers.Dense(1,
 ...   kernel_initializer=tf.constant_initializer(1.))
->>> a_out = a(tf.convert_to_tensor([[1., 2., 3.]]))
->>> a.get_weights()
+>>> a_out = layer_a(tf.convert_to_tensor([[1., 2., 3.]]))
+>>> layer_a.get_weights()
 [array([[1.],
        [1.],
        [1.]], dtype=float32), array([0.], dtype=float32)]
->>> b = tf.keras.layers.Dense(1,
+>>> layer_b = tf.keras.layers.Dense(1,
 ...   kernel_initializer=tf.constant_initializer(2.))
->>> b_out = b(tf.convert_to_tensor([[10., 20., 30.]]))
->>> b.get_weights()
+>>> b_out = layer_b(tf.convert_to_tensor([[10., 20., 30.]]))
+>>> layer_b.get_weights()
 [array([[2.],
        [2.],
        [2.]], dtype=float32), array([0.], dtype=float32)]
->>> b.set_weights(a.get_weights())
->>> b.get_weights()
+>>> layer_b.set_weights(layer_a.get_weights())
+>>> layer_b.get_weights()
 [array([[1.],
        [1.],
        [1.]], dtype=float32), array([0.], dtype=float32)]
@@ -759,7 +745,7 @@ the bias value. These can be used to set the weights of another Dense layer:
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-Weights values as a list of numpy arrays.
+Weights values as a list of NumPy arrays.
 </td>
 </tr>
 
@@ -773,40 +759,39 @@ Weights values as a list of numpy arrays.
 )
 </code></pre>
 
-Sets the weights of the layer, from Numpy arrays.
+Sets the weights of the layer, from NumPy arrays.
 
 The weights of a layer represent the state of the layer. This function sets the
 weight values from numpy arrays. The weight values should be passed in the order
 they are created by the layer. Note that the layer's weights must be
-instantiated before calling this function by calling the layer.
+instantiated before calling this function, by calling the layer.
 
-For example, a Dense layer returns a list of two values-- per-output weights and
-the bias value. These can be used to set the weights of another Dense layer:
+For example, a `Dense` layer returns a list of two values: the kernel matrix and
+the bias vector. These can be used to set the weights of another `Dense` layer:
 
 ```
->>> a = tf.keras.layers.Dense(1,
+>>> layer_a = tf.keras.layers.Dense(1,
 ...   kernel_initializer=tf.constant_initializer(1.))
->>> a_out = a(tf.convert_to_tensor([[1., 2., 3.]]))
->>> a.get_weights()
+>>> a_out = layer_a(tf.convert_to_tensor([[1., 2., 3.]]))
+>>> layer_a.get_weights()
 [array([[1.],
        [1.],
        [1.]], dtype=float32), array([0.], dtype=float32)]
->>> b = tf.keras.layers.Dense(1,
+>>> layer_b = tf.keras.layers.Dense(1,
 ...   kernel_initializer=tf.constant_initializer(2.))
->>> b_out = b(tf.convert_to_tensor([[10., 20., 30.]]))
->>> b.get_weights()
+>>> b_out = layer_b(tf.convert_to_tensor([[10., 20., 30.]]))
+>>> layer_b.get_weights()
 [array([[2.],
        [2.],
        [2.]], dtype=float32), array([0.], dtype=float32)]
->>> b.set_weights(a.get_weights())
->>> b.get_weights()
+>>> layer_b.set_weights(layer_a.get_weights())
+>>> layer_b.get_weights()
 [array([[1.],
        [1.],
        [1.]], dtype=float32), array([0.], dtype=float32)]
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -816,7 +801,7 @@ the bias value. These can be used to set the weights of another Dense layer:
 `weights`
 </td>
 <td>
-a list of Numpy arrays. The number
+a list of NumPy arrays. The number
 of arrays and their shape must match
 number of the dimensions of the weights
 of the layer (i.e. it should match the
@@ -826,7 +811,6 @@ output of `get_weights`).
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -875,7 +859,6 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -891,7 +874,6 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -914,7 +896,6 @@ The original method wrapped such that it enters the module's name scope.
 Wraps `call`, applying pre- and post-processing steps.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -937,7 +918,6 @@ Keyword arguments to be passed to `self.call`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -962,7 +942,6 @@ Output tensor(s).
 -   If the layer is not built, the method will call `build`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>

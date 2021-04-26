@@ -47,7 +47,6 @@ library.
 [`utils`](./tfr/utils.md) module: Utility functions for ranking library.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Other Members</h2></th></tr>

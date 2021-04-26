@@ -22,9 +22,10 @@ Builds a ranking tf.dataset using the provided `parsing_fn`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.build_ranking_dataset_with_parsing_fn(
-    file_pattern, parsing_fn, batch_size, reader=tf.data.TFRecordDataset,
-    reader_args=None, num_epochs=None, shuffle=True, shuffle_buffer_size=10000,
-    shuffle_seed=None, prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
+    file_pattern, parsing_fn, batch_size,
+    reader=tfr.keras.pipeline.DatasetHparams.dataset_reader, reader_args=None,
+    num_epochs=None, shuffle=True, shuffle_buffer_size=10000, shuffle_seed=None,
+    prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
     reader_num_threads=tf.data.experimental.AUTOTUNE, sloppy_ordering=False,
     drop_final_batch=False, num_parser_threads=tf.data.experimental.AUTOTUNE
 )

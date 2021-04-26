@@ -1,4 +1,4 @@
-description: For pairwise soft zero-one loss.
+description: Pairwise soft zero one loss.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.PairwiseSoftZeroOneLoss" />
@@ -15,23 +15,28 @@ description: For pairwise soft zero-one loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L262-L275">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L306-L340">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-For pairwise soft zero-one loss.
+Pairwise soft zero one loss.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.PairwiseSoftZeroOneLoss(
     reduction=tf.losses.Reduction.AUTO, name=None, lambda_weight=None,
-    temperature=1.0, **kwargs
+    temperature=1.0, ragged=False
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+$$
+\mathcal{L}(\{y\}, \{s\}) =
+\sum_{i, j} I_{y_i > y_j} (1 - \text{sigmoid}(s_i - s_j))
+$$
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -43,21 +48,40 @@ For pairwise soft zero-one loss.
 `reduction`
 </td>
 <td>
-(Optional) Type of `tf.keras.losses.Reduction` to apply to
-loss. Default value is `AUTO`. `AUTO` indicates that the reduction
-option will be determined by the usage context. For almost all cases
-this defaults to `SUM_OVER_BATCH_SIZE`. When used with
-`tf.distribute.Strategy`, outside of built-in training loops such as
-`tf.keras` `compile` and `fit`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
-will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training) for
-more details.
+(Optional) The `tf.keras.losses.Reduction` to use (see
+`tf.keras.losses.Loss`).
 </td>
 </tr><tr>
 <td>
 `name`
 </td>
 <td>
-Optional name for the op.
+(Optional) The name for the op.
+</td>
+</tr><tr>
+<td>
+`lambda_weight`
+</td>
+<td>
+(Optional) A lambdaweight to apply to the loss. Can be one
+of <a href="../../../tfr/keras/losses/DCGLambdaWeight.md"><code>tfr.keras.losses.DCGLambdaWeight</code></a>,
+<a href="../../../tfr/keras/losses/NDCGLambdaWeight.md"><code>tfr.keras.losses.NDCGLambdaWeight</code></a>, or,
+<a href="../../../tfr/keras/losses/PrecisionLambdaWeight.md"><code>tfr.keras.losses.PrecisionLambdaWeight</code></a>.
+</td>
+</tr><tr>
+<td>
+`temperature`
+</td>
+<td>
+(Optional) The temperature to use for scaling the logits.
+</td>
+</tr><tr>
+<td>
+`ragged`
+</td>
+<td>
+(Optional) If True, this loss will accept ragged tensors. If
+False, this loss will accept dense tensors.
 </td>
 </tr>
 </table>
@@ -66,7 +90,7 @@ Optional name for the op.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L206-L213">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L208-L215">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -107,7 +131,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L196-L204">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L198-L206">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -118,7 +142,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L168-L173">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L170-L175">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

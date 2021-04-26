@@ -31,5 +31,13 @@ Cross Document Interaction Attention layer.
 [`class FlattenList`](../../tfr/keras/layers/FlattenList.md): Layer to flatten
 the example list.
 
+[`class GAMLayer`](../../tfr/keras/layers/GAMLayer.md): Defines a generalized
+additive model (GAM) layer.
+
 [`class RestoreList`](../../tfr/keras/layers/RestoreList.md): Output layer to
 restore listwise output shape.
+
+## Functions
+
+[`create_tower(...)`](../../tfr/keras/layers/create_tower.md): Creates a
+feed-forward network as `tf.keras.Sequential`.

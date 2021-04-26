@@ -65,7 +65,6 @@ function to convert `tf.train.Example` to feature maps.
 Returns a `Dataset` of features from `SequenceExample`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Other Members</h2></th></tr>

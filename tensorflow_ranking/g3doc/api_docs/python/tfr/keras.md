@@ -42,7 +42,13 @@ Keras.
 
 [`network`](../tfr/keras/network.md) module: Ranking Networks in Keras.
 
+[`pipeline`](../tfr/keras/pipeline.md) module: Ranking pipeline to train
+tf.keras.Model in TF-Ranking.
+
 [`saved_model`](../tfr/keras/saved_model.md) module: SavedModel utilities for
 TF-Ranking.
+
+[`strategy_utils`](../tfr/keras/strategy_utils.md) module: tf.distribute
+strategy utils for Ranking pipeline in TF-Ranking.
 
 [`utils`](../tfr/keras/utils.md) module: Utils for tfr.keras.
