@@ -529,8 +529,7 @@ class GumbelSampler(object):
         # Convert labels and sampled logits to ragged tensors.
         expanded_labels = tf.ragged.boolean_mask(expanded_labels, expanded_mask)
         sampled_logits = tf.ragged.boolean_mask(sampled_logits, expanded_mask)
-        # If listwise ragged weights were provided, convert them back to ragged
-        # tensors.
+        # If ragged weights were provided, convert dense weights back to ragged.
         if is_weights_ragged:
           expanded_weights = tf.ragged.boolean_mask(
               expanded_weights, expanded_mask)

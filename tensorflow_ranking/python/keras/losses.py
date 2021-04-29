@@ -543,8 +543,10 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
                temperature=0.1,
                sample_size=8,
                gumbel_temperature=1.0,
-               seed=None):
-    super().__init__(reduction, name, lambda_weight, temperature=temperature)
+               seed=None,
+               ragged=False):
+    super().__init__(reduction, name, lambda_weight, temperature=temperature,
+                     ragged=ragged)
     self._sample_size = sample_size
     self._gumbel_temperature = gumbel_temperature
     self._seed = seed
@@ -553,7 +555,8 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
         name=name,
         sample_size=sample_size,
         temperature=gumbel_temperature,
-        seed=seed)
+        seed=seed,
+        ragged=ragged)
 
   def get_config(self):
     config = super().get_config()
@@ -568,7 +571,6 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
     """See _RankingLoss."""
     # For Gumbel approx NDCG, the logits are sampled from Gumbel distribution
     # to sort the documents.
-    # TODO: Add ragged support for sampler.
     gbl_labels, gbl_logits, gbl_weights = self._gumbel_sampler.sample(
         y_true, y_pred, weights=sample_weight)
     return super().__call__(gbl_labels, gbl_logits, gbl_weights)

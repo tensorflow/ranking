@@ -565,7 +565,8 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
       (losses.MeanSquaredLoss, 20.),
       (losses.ListMLELoss, 2.8477957),
       (losses.ApproxNDCGLoss, -1.2618682),
-      (losses.ApproxMRRLoss, -1.0000114))
+      (losses.ApproxMRRLoss, -1.0000114),
+      (losses.GumbelApproxNDCGLoss, -12.72839))
   def test_loss_with_ragged_tensors(self, loss_constructor, expected):
     scores = tf.ragged.constant([[1., 3., 2.], [3., 2.]])
     labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
