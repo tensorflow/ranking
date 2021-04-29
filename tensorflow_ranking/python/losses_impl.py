@@ -437,30 +437,35 @@ def _pairwise_comparison(labels, logits, mask, pairwise_logits_op=tf.subtract):
 class GumbelSampler(object):
   """Random sampler for sampling gumbel distributed logits."""
 
-  def __init__(self, name=None, sample_size=8, temperature=1.0, seed=None):
+  def __init__(self, name=None, sample_size=8, temperature=1.0, seed=None,
+               ragged=False):
     """Constructor."""
     self._name = name
     self._sample_size = sample_size
     self._temperature = temperature
     self._seed = seed
+    self._ragged = ragged
 
   def sample(self, labels, logits, weights=None):
     """Samples scores from Concrete(logits).
 
+    If the sampler was constructed with `ragged=True` this method expects
+    `labels`, `logits` and item-wise `weights` to be a `RaggedTensor`.
+
     Args:
-      labels: A `Tensor` with shape [batch_size, list_size] same as `logits`,
-        representing graded relevance. Or in the diversity tasks, a `Tensor`
-        with shape [batch_size, list_size, subtopic_size]. Each value represents
-        relevance to a subtopic, 1 for relevent subtopic, 0 for irrelevant, and
-        -1 for paddings. When the actual subtopic number of a query is smaller
-        than the `subtopic_size`, `labels` will be padded to `subtopic_size`
-        with -1.
-      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
-        ranking score of the corresponding item.
+      labels: A `Tensor` or `RaggedTensor` with shape [batch_size, list_size]
+        same as `logits`, representing graded relevance. Or in the diversity
+        tasks, a `Tensor` (or `RaggedTensor`) with shape [batch_size, list_size,
+        subtopic_size]. Each value represents relevance to a subtopic, 1 for
+        relevent subtopic, 0 for irrelevant, and -1 for paddings. When the
+        actual subtopic number of a query is smaller than the `subtopic_size`,
+        `labels` will be padded to `subtopic_size` with -1.
+      logits: A `Tensor` or `RaggedTensor` with shape [batch_size, list_size].
+        Each value is the ranking score of the corresponding item.
       weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
-        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
-        weights. If None, the weight of a list in the mini-batch is set to the
-        sum of the labels of the items in that list.
+        weights, or a `Tensor` or `RaggedTensor` with shape [batch_size,
+        list_size] for item-wise weights. If None, the weight of a list in the
+        mini-batch is set to the sum of the labels of the items in that list.
 
     Returns:
       A tuple of expanded labels, logits, and weights where the first dimension
@@ -471,6 +476,12 @@ class GumbelSampler(object):
     """
     with tf.compat.v1.name_scope(self._name, 'gumbel_softmax_sample',
                                  (labels, logits, weights)):
+      # Convert ragged tensors to dense and construct a mask.
+      if self._ragged:
+        is_weights_ragged = isinstance(weights, tf.RaggedTensor)
+        labels, logits, weights, mask = utils.ragged_to_dense(
+            labels, logits, weights)
+
       batch_size = tf.shape(input=labels)[0]
       list_size = tf.shape(input=labels)[1]
 
@@ -507,6 +518,22 @@ class GumbelSampler(object):
         expanded_weights = tf.tile(expanded_weights, [1, self._sample_size, 1])
         expanded_weights = tf.reshape(expanded_weights,
                                       [batch_size * self._sample_size, -1])
+
+      # Convert dense tensors back to ragged.
+      if self._ragged:
+        # Construct expanded mask for the number of samples.
+        expanded_mask = tf.expand_dims(mask, 1)
+        expanded_mask = tf.repeat(expanded_mask, [self._sample_size], axis=1)
+        expanded_mask = tf.reshape(
+            expanded_mask, [batch_size * self._sample_size, list_size])
+        # Convert labels and sampled logits to ragged tensors.
+        expanded_labels = tf.ragged.boolean_mask(expanded_labels, expanded_mask)
+        sampled_logits = tf.ragged.boolean_mask(sampled_logits, expanded_mask)
+        # If listwise ragged weights were provided, convert them back to ragged
+        # tensors.
+        if is_weights_ragged:
+          expanded_weights = tf.ragged.boolean_mask(
+              expanded_weights, expanded_mask)
 
       return expanded_labels, sampled_logits, expanded_weights
 

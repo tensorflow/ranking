@@ -237,6 +237,45 @@ class UtilsTest(tf.test.TestCase):
         self.assertAllEqual(gbl_labels_3d.eval(), expanded_labels_3d)
         self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
 
+  def test_gumbel_softmax_ragged_sample(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant(
+          [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2]])
+      labels = tf.ragged.constant([[0., 0., 1.], [1., 0., 1.], [0., 0.]])
+      weights = [[2.], [1.], [1.]]
+      listwise_weights = tf.ragged.constant(
+          [[3., 1., 2.], [1., 1., 1.], [1., 2.]])
+
+      sampled_scores = tf.ragged.constant(
+          [[-.291, -1.643, -2.826], [-.0866, -2.924, -3.530],
+           [-12.42, -9.492, -7.939e-5], [-8.859, -6.830, -1.223e-3],
+           [-.8930, -.5266], [-.6650, -.7220]])
+
+      expanded_labels = tf.ragged.constant(
+          [[0., 0., 1.], [0., 0., 1.], [1., 0., 1.], [1., 0., 1.], [0., 0.],
+           [0., 0.]])
+
+      expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
+
+      expanded_listwise_weights = tf.ragged.constant(
+          [[3., 1., 2.], [3., 1., 2.], [1., 1., 1.], [1., 1., 1.], [1., 2.],
+           [1., 2.]])
+
+      gumbel_sampler = losses_impl.GumbelSampler(sample_size=2, ragged=True,
+                                                 seed=1)
+      with self.cached_session():
+        gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
+            labels, scores, weights)
+        self.assertAllEqual(gbl_labels, expanded_labels)
+        self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
+        self.assertAllEqual(gbl_weights, expanded_weights)
+
+        gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
+            labels, scores, listwise_weights)
+        self.assertAllEqual(gbl_labels, expanded_labels)
+        self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
+        self.assertAllEqual(gbl_weights, expanded_listwise_weights)
+
   def test_neural_sort(self):
     with tf.Graph().as_default():
       scores = [[140., -280., -40.], [0., 180., 1020.], [100., 120., -320.]]
