@@ -51,6 +51,9 @@ class RankingMetricKey(object):
   # Precision. For binary relevance.
   PRECISION = 'precision'
 
+  # Recall. For binary relevance.
+  RECALL = 'recall'
+
   # Mean Average Precision. For binary relevance.
   MAP = 'map'
 
@@ -96,6 +99,7 @@ def compute_mean(metric_key,
       RankingMetricKey.NDCG: metrics_impl.NDCGMetric(name, topn),
       RankingMetricKey.DCG: metrics_impl.DCGMetric(name, topn),
       RankingMetricKey.PRECISION: metrics_impl.PrecisionMetric(name, topn),
+      RankingMetricKey.RECALL: metrics_impl.RecallMetric(name, topn),
       RankingMetricKey.MAP: metrics_impl.MeanAveragePrecisionMetric(name, topn),
       RankingMetricKey.ORDERED_PAIR_ACCURACY: metrics_impl.OPAMetric(name),
       RankingMetricKey.BPREF: metrics_impl.BPrefMetric(name, topn),
@@ -198,6 +202,15 @@ def make_ranking_metric_fn(metric_key,
         topn=topn,
         name=name)
 
+  def _recall_fn(labels, predictions, features):
+    """Returns recall as the metric."""
+    return recall(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name)
+
   def _mean_average_precision_fn(labels, predictions, features):
     """Returns mean average precision as the metric."""
     return mean_average_precision(
@@ -247,6 +260,7 @@ def make_ranking_metric_fn(metric_key,
       RankingMetricKey.MRR: _mean_reciprocal_rank_fn,
       RankingMetricKey.NDCG: _normalized_discounted_cumulative_gain_fn,
       RankingMetricKey.DCG: _discounted_cumulative_gain_fn,
+      RankingMetricKey.RECALL: _recall_fn,
       RankingMetricKey.PRECISION: _precision_fn,
       RankingMetricKey.MAP: _mean_average_precision_fn,
       RankingMetricKey.PRECISION_IA: _precision_ia_fn,
@@ -338,6 +352,30 @@ def precision(labels, predictions, weights=None, topn=None, name=None):
     precision_at_k, per_list_weights = metric.compute(labels, predictions,
                                                       weights)
   return tf.compat.v1.metrics.mean(precision_at_k, per_list_weights)
+
+
+def recall(labels, predictions, weights=None, topn=None, name=None):
+  """Computes recall as weighted average of relevant examples.
+
+  Args:
+    labels: A `Tensor` as the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` as the same shape as predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: A cutoff for how many examples to consider for this metric.
+    name: A string used as the name for this metric.
+
+  Returns:
+    A metric for the weighted recall of the batch.
+  """
+  metric = metrics_impl.RecallMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name, 'recall',
+                               (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call.
+    recall_at_k, per_list_weights = metric.compute(labels, predictions, weights)
+  return tf.compat.v1.metrics.mean(recall_at_k, per_list_weights)
 
 
 def mean_average_precision(labels,

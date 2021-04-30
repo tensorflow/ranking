@@ -236,6 +236,24 @@ class MetricsTest(tf.test.TestCase):
           (m(labels, scores, features), (1. / 3. + 2. / 3.) / 2.),
       ])
 
+  def test_make_recall_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[1., 0., 1.], [0., 1., 2.]]
+      features = {}
+      m = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.RECALL)
+      m_top_1 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.RECALL, topn=1)
+      m_top_2 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.RECALL, topn=2)
+      self._check_metrics([
+          (m([labels[0]], [scores[0]], features), 2. / 2.),
+          (m_top_1([labels[0]], [scores[0]], features), 0. / 2.),
+          (m_top_2([labels[0]], [scores[0]], features), 1. / 2.),
+          (m_top_2(labels, scores, features), (1. / 2. + 2. / 2.) / 2.),
+      ])
+
   def test_make_mean_average_precision_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]
