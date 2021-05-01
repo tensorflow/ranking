@@ -121,3 +121,30 @@ py_test(
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
+
+py_binary(
+    name = "keras_dnn_tfrecord",
+    srcs = ["keras_dnn_tfrecord.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        # py/absl:app dep,
+        # py/absl/flags dep,
+        # py/tensorflow dep,
+        "//tensorflow_ranking",
+    ],
+)
+
+py_test(
+    name = "keras_dnn_tfrecord_test",
+    srcs = ["keras_dnn_tfrecord_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":keras_dnn_tfrecord",
+        # py/absl/testing:flagsaver dep,
+        # py/absl/testing:parameterized dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
