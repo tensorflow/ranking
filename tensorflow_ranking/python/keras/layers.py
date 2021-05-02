@@ -412,12 +412,31 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     self._num_layers = num_layers
     self._dropout = dropout
 
+  def build(self, input_shape: tf.TensorShape):
+    """Build method to create weights and sub-layers.
+
+    This method can be used to create weights that depend on the shape of the
+    input(s), using add_weight().
+    `__call__()` will automatically build the layer by calling `build()`.
+
+    Args:
+      input_shape: A tuple of shapes for `example_inputs`, `list_mask`. These
+      correspond to `inputs` argument of call.
+
+    """
+    example_inputs_shape, list_mask_shape = input_shape
+    example_inputs_shape = tf.TensorShape(example_inputs_shape)
+    list_mask_shape = tf.TensorShape(list_mask_shape)
+    din_embedding_shape = tf.TensorShape(
+        [example_inputs_shape[0], example_inputs_shape[1], self._head_size])
+
     # This projects input to head_size, so that this layer can be applied
     # recursively for `num_layers` times.
     # Shape: [batch_size, list_size, feature_dims] ->
     # [batch_size, list_size, head_size].
     self._input_projection = tf.keras.layers.Dense(
         units=self._head_size, activation='relu')
+    self._input_projection.build(example_inputs_shape)
 
     # Self-attention layers.
     self._attention_layers = []
@@ -430,6 +449,11 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
           dropout=self._dropout,
           output_shape=self._head_size)
 
+      # pylint: disable=protected-access
+      attention_layer._build_from_signature(
+          query=din_embedding_shape, value=din_embedding_shape)
+      # pylint: enable=protected-access
+
       # Dropout and layer normalization are applied element-wise, and do not
       # change the shape.
       dropout_layer = tf.keras.layers.Dropout(rate=self._dropout)
@@ -437,6 +461,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
           axis=-1, epsilon=1e-12, dtype=tf.float32)
       self._attention_layers.append(
           (attention_layer, dropout_layer, norm_layer))
+    super().build(input_shape)
 
   def call(self, inputs: tf.Tensor, training: bool = True) -> tf.Tensor:
     """Calls the document interaction layer to apply cross-document attention.

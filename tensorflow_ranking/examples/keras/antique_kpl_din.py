@@ -408,6 +408,7 @@ def train_and_eval():
           example_feature_spec=example_feature_spec,
           mask_feature_name=_MASK)())
   logging.info("SavedModel exported successfully to: %s", saved_model_path)
+  return model
 
 
 def main(_):
