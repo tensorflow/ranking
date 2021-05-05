@@ -20,9 +20,9 @@ The supported proto formats are listed at ../python/data.py.
 Sample command lines:
 
 MODEL_DIR=/tmp/output && \
-TRAIN=tensorflow_ranking/examples/data/train_elwc.tfrecord && \
-EVAL=tensorflow_ranking/examples/data/eval_elwc.tfrecord && \
-VOCAB=tensorflow_ranking/examples/data/vocab.txt && \
+TRAIN=tensorflow_ranking/examples/data/train_numerical_elwc.tfrecord && \
+VALIDATION=tensorflow_ranking/examples/data/vali_numerical_elwc.tfrecord && \
+TEST=tensorflow_ranking/examples/data/test_numerical_elwc.tfrecord && \
 rm -rf "${MODEL_DIR}" && \
 bazel build -c opt \
 tensorflow_ranking/examples/keras/keras_dnn_tfrecord.par && \
