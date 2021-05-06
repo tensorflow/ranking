@@ -115,6 +115,36 @@ def inverse_max_dcg(labels,
       tf.greater(discounted_gain, 0.), 1. / discounted_gain,
       tf.zeros_like(discounted_gain))
 
+def dcg(labels, ranks=None, perm_mat=None):
+  """Computes DCG from labels and ranks.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size], representing graded
+      relevance.
+    ranks: A `Tensor` of the same shape as labels, or [1, list_size], or None.
+      If ranks=None, we assume the labels are sorted in their rank.
+    perm_mat: A `Tensor` with shape [batch_size, list_size, list_size] or None.
+      Permutation matrices with rows correpond to the ranks and columns
+      correspond to the indices. An argmax over each row gives the index of the
+      element at the corresponding rank.
+
+  Returns:
+    A `tensor` of DCG, ApproxDCG, or ExpectedDCG of shape [batch_size, 1].
+  """
+  if ranks is not None and perm_mat is not None:
+    raise ValueError('Cannot use both ranks and perm_mat simultaneously.')
+
+  if ranks is None:
+    list_size = tf.shape(labels)[1]
+    ranks = tf.range(list_size) + 1
+  discounts = 1. / tf.math.log1p(tf.cast(ranks, dtype=tf.float32))
+  gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
+  if perm_mat is not None:
+    gains = tf.reduce_sum(
+        input_tensor=perm_mat * tf.expand_dims(gains, 1), axis=-1)
+  dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
+
+  return dcg
 
 def ndcg(labels, ranks=None, perm_mat=None):
   """Computes NDCG from labels and ranks.
@@ -132,19 +162,8 @@ def ndcg(labels, ranks=None, perm_mat=None):
   Returns:
     A `tensor` of NDCG, ApproxNDCG, or ExpectedNDCG of shape [batch_size, 1].
   """
-  if ranks is not None and perm_mat is not None:
-    raise ValueError('Cannot use both ranks and perm_mat simultaneously.')
-
-  if ranks is None:
-    list_size = tf.shape(labels)[1]
-    ranks = tf.range(list_size) + 1
-  discounts = 1. / tf.math.log1p(tf.cast(ranks, dtype=tf.float32))
-  gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
-  if perm_mat is not None:
-    gains = tf.reduce_sum(
-        input_tensor=perm_mat * tf.expand_dims(gains, 1), axis=-1)
-  dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
-  normalized_dcg = dcg * inverse_max_dcg(labels)
+  dcg_val = dcg(labels, ranks, perm_mat)
+  normalized_dcg = dcg_val * inverse_max_dcg(labels)
 
   return normalized_dcg
 
@@ -1097,9 +1116,11 @@ class ApproxNDCGLoss(_ListwiseLoss):
   """Implements ApproxNDCG loss."""
 
   # Use a different default temperature.
-  def __init__(self, name, lambda_weight=None, temperature=0.1):
+  def __init__(self, name, lambda_weight=None, temperature=0.1,
+               normalized=True):
     """See `_ListwiseLoss`."""
     super().__init__(name, lambda_weight, temperature)
+    self._normalized = normalized
 
   def compute_unreduced_loss(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
@@ -1115,10 +1136,22 @@ class ApproxNDCGLoss(_ListwiseLoss):
     labels = tf.compat.v1.where(nonzero_mask, labels,
                                 _EPSILON * tf.ones_like(labels))
     ranks = approx_ranks(logits)
+    
+    if self._normalized:
+      unreduced_loss = -ndcg(labels, ranks)
+    else:
+      unreduced_loss = -dcg(labels, ranks)
 
-    return -ndcg(labels, ranks), tf.reshape(
+    return unreduced_loss, tf.reshape(
         tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
 
+class ApproxDCGLoss(ApproxNDCGLoss):
+  """Implements ApproxDCG loss."""
+
+  # Use a different default temperature.
+  def __init__(self, name, lambda_weight=None, temperature=0.1):
+    """See `ApproxNDCGLoss`."""
+    super().__init__(name, lambda_weight, temperature, False)
 
 class ApproxMRRLoss(_ListwiseLoss):
   """Implements ApproxMRR loss."""

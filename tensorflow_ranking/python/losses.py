@@ -40,8 +40,10 @@ class RankingLossKey(object):
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
   LIST_MLE_LOSS = 'list_mle_loss'
   APPROX_NDCG_LOSS = 'approx_ndcg_loss'
+  APPROX_DCG_LOSS = 'approx_dcg_loss'
   APPROX_MRR_LOSS = 'approx_mrr_loss'
   GUMBEL_APPROX_NDCG_LOSS = 'gumbel_approx_ndcg_loss'
+  GUMBEL_APPROX_DCG_LOSS = 'gumbel_approx_dcg_loss'
   NEURAL_SORT_CROSS_ENTROPY_LOSS = 'neural_sort_cross_entropy_loss'
   GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS = 'gumbel_neural_sort_cross_entropy_loss'
 
@@ -165,9 +167,12 @@ def make_loss_fn(loss_keys,
         RankingLossKey.LIST_MLE_LOSS:
             (_list_mle_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.APPROX_NDCG_LOSS: (_approx_ndcg_loss, loss_kwargs),
+        RankingLossKey.APPROX_DCG_LOSS: (_approx_dcg_loss, loss_kwargs),
         RankingLossKey.APPROX_MRR_LOSS: (_approx_mrr_loss, loss_kwargs),
         RankingLossKey.GUMBEL_APPROX_NDCG_LOSS:
             (_approx_ndcg_loss, gbl_loss_kwargs),
+        RankingLossKey.GUMBEL_APPROX_DCG_LOSS:
+            (_approx_dcg_loss, gbl_loss_kwargs),
         RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS:
             (_neural_sort_cross_entropy_loss, loss_kwargs),
         RankingLossKey.GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS:
@@ -237,10 +242,14 @@ def make_loss_metric_fn(loss_key,
           losses_impl.ListMLELoss(name, lambda_weight=lambda_weight),
       RankingLossKey.APPROX_NDCG_LOSS:
           losses_impl.ApproxNDCGLoss(name),
+      RankingLossKey.APPROX_DCG_LOSS:
+          losses_impl.ApproxDCGLoss(name),
       RankingLossKey.APPROX_MRR_LOSS:
           losses_impl.ApproxMRRLoss(name),
       RankingLossKey.GUMBEL_APPROX_NDCG_LOSS:
           losses_impl.ApproxNDCGLoss(name),
+      RankingLossKey.GUMBEL_APPROX_DCG_LOSS:
+          losses_impl.ApproxDCGLoss(name),
       RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS:
           losses_impl.NeuralSortCrossEntropyLoss(name),
       RankingLossKey.GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS:
@@ -639,6 +648,39 @@ def _approx_ndcg_loss(labels,
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights, reduction)
 
+def _approx_dcg_loss(labels,
+                     logits,
+                     weights=None,
+                     reduction=tf.compat.v1.losses.Reduction.SUM,
+                     name=None,
+                     temperature=0.1):
+  """Computes ApproxDCG loss.
+
+  ApproxDCG is a smooth approximation to DCG. It is a minor modification
+  from ["A general approximation framework for direct optimization of
+  information retrieval measures" by Qin et al.] 
+  It suits the scenarios, where different queries have differing importance.
+  Args:
+    labels: A `Tensor` of the same shape as `logits` representing graded
+      relevance.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+      weights. If None, the weight of a list in the mini-batch is set to the sum
+      of the labels of the items in that list.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
+    name: A string used as the name for this loss.
+    temperature: The temperature used to scale logits=logits/temperature.
+
+  Returns:
+    An op for the ApproxNDCG loss.
+  """
+  loss = losses_impl.ApproxDCGLoss(name, temperature=temperature)
+  with tf.compat.v1.name_scope(loss.name, 'approx_ndcg_loss',
+                               (labels, logits, weights)):
+    return loss.compute(labels, logits, weights, reduction)
 
 def _approx_mrr_loss(labels,
                      logits,
