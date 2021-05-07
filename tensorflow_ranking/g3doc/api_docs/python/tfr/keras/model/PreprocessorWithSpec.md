@@ -41,7 +41,6 @@ tf.keras.layers.Embedding(input_dim=10, output_dim=4)(x), axis=-2) for name in
 context_feature_spec.keys()} }
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>

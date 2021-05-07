@@ -11,6 +11,7 @@ description: A Dataset comprising records from one or more TFRecord files.
 <meta itemprop="property" content="apply"/>
 <meta itemprop="property" content="as_numpy_iterator"/>
 <meta itemprop="property" content="batch"/>
+<meta itemprop="property" content="bucket_by_sequence_length"/>
 <meta itemprop="property" content="cache"/>
 <meta itemprop="property" content="cardinality"/>
 <meta itemprop="property" content="concatenate"/>
@@ -28,6 +29,7 @@ description: A Dataset comprising records from one or more TFRecord files.
 <meta itemprop="property" content="options"/>
 <meta itemprop="property" content="padded_batch"/>
 <meta itemprop="property" content="prefetch"/>
+<meta itemprop="property" content="random"/>
 <meta itemprop="property" content="range"/>
 <meta itemprop="property" content="reduce"/>
 <meta itemprop="property" content="repeat"/>
@@ -108,7 +110,6 @@ x = 0.4376,  y = 0.8918
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -155,7 +156,6 @@ read sequentially.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Raises</h2></th></tr>
@@ -178,7 +178,6 @@ If any argument does not have the expected shape.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -224,7 +223,6 @@ transformed `Dataset`.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -241,7 +239,6 @@ returns a `Dataset`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -307,7 +304,6 @@ True
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -321,7 +317,6 @@ to numpy arrays.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -374,8 +369,12 @@ which will be `batch_size` (or `N % batch_size` for the last element if
 same outer dimension, you should set the `drop_remainder` argument to `True` to
 prevent the smaller batch from being produced.
 
-<!-- Tabular view -->
+Note: If your program requires data to have a statically known shape (e.g., when
+using XLA), you should use `drop_remainder=True`. Without `drop_remainder=True`
+the shape of the output dataset will have an unknown leading dimension due to
+the possibility of a smaller final batch.
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -427,7 +426,6 @@ determinism for performance. If not specified, the
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -438,6 +436,158 @@ determinism for performance. If not specified, the
 </td>
 <td>
 A `Dataset`.
+</td>
+</tr>
+</table>
+
+<h3 id="bucket_by_sequence_length"><code>bucket_by_sequence_length</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>bucket_by_sequence_length(
+    element_length_func, bucket_boundaries, bucket_batch_sizes, padded_shapes=None,
+    padding_values=None, pad_to_bucket_boundary=False, no_padding=False,
+    drop_remainder=False
+)
+</code></pre>
+
+A transformation that buckets elements in a `Dataset` by length.
+
+Elements of the `Dataset` are grouped together by length and then are padded and
+batched.
+
+This is useful for sequence tasks in which the elements have variable length.
+Grouping together elements that have similar lengths reduces the total fraction
+of padding in a batch which increases training step efficiency.
+
+Below is an example to bucketize the input data to the 3 buckets "[0, 3), [3,
+5), [5, inf)" based on sequence length, with batch size 2.
+
+```
+>>> elements = [
+...   [0], [1, 2, 3, 4], [5, 6, 7],
+...   [7, 8, 9, 10, 11], [13, 14, 15, 16, 19, 20], [21, 22]]
+>>> dataset = tf.data.Dataset.from_generator(
+...     lambda: elements, tf.int64, output_shapes=[None])
+>>> dataset = dataset.bucket_by_sequence_length(
+...         element_length_func=lambda elem: tf.shape(elem)[0],
+...         bucket_boundaries=[3, 5],
+...         bucket_batch_sizes=[2, 2, 2])
+>>> for elem in dataset.as_numpy_iterator():
+...   print(elem)
+[[1 2 3 4]
+[5 6 7 0]]
+[[ 7  8  9 10 11  0]
+[13 14 15 16 19 20]]
+[[ 0  0]
+[21 22]]
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`element_length_func`
+</td>
+<td>
+function from element in `Dataset` to `tf.int32`,
+determines the length of the element, which will determine the bucket it
+goes into.
+</td>
+</tr><tr>
+<td>
+`bucket_boundaries`
+</td>
+<td>
+`list<int>`, upper length boundaries of the buckets.
+</td>
+</tr><tr>
+<td>
+`bucket_batch_sizes`
+</td>
+<td>
+`list<int>`, batch size per bucket. Length should be
+`len(bucket_boundaries) + 1`.
+</td>
+</tr><tr>
+<td>
+`padded_shapes`
+</td>
+<td>
+Nested structure of `tf.TensorShape` to pass to
+`tf.data.Dataset.padded_batch`. If not provided, will use
+`dataset.output_shapes`, which will result in variable length dimensions
+being padded out to the maximum length in each batch.
+</td>
+</tr><tr>
+<td>
+`padding_values`
+</td>
+<td>
+Values to pad with, passed to
+`tf.data.Dataset.padded_batch`. Defaults to padding with 0.
+</td>
+</tr><tr>
+<td>
+`pad_to_bucket_boundary`
+</td>
+<td>
+bool, if `False`, will pad dimensions with unknown
+size to maximum length in batch. If `True`, will pad dimensions with
+unknown size to bucket boundary minus 1 (i.e., the maximum length in
+each bucket), and caller must ensure that the source `Dataset` does not
+contain any elements with length longer than `max(bucket_boundaries)`.
+</td>
+</tr><tr>
+<td>
+`no_padding`
+</td>
+<td>
+`bool`, indicates whether to pad the batch features (features
+need to be either of type `tf.sparse.SparseTensor` or of same shape).
+</td>
+</tr><tr>
+<td>
+`drop_remainder`
+</td>
+<td>
+(Optional.) A `tf.bool` scalar `tf.Tensor`, representing
+whether the last batch should be dropped in the case it has fewer than
+`batch_size` elements; the default behavior is not to drop the smaller
+batch.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `Dataset` transformation function, which can be passed to
+`tf.data.Dataset.apply`.
+</td>
+</tr>
+
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+if `len(bucket_batch_sizes) != len(bucket_boundaries) + 1`.
 </td>
 </tr>
 </table>
@@ -493,7 +643,6 @@ through the dataset. If you wish to randomize the iteration order, make sure to
 call `shuffle` *after* calling `cache`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -511,7 +660,6 @@ If a filename is not provided, the dataset will be cached in memory.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -554,7 +702,6 @@ True
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -600,7 +747,6 @@ TypeError: Two datasets to concatenate have different types
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -616,7 +762,6 @@ TypeError: Two datasets to concatenate have different types
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -665,7 +810,6 @@ It is similar to python's `enumerate`.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -682,7 +826,6 @@ enumeration.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -721,7 +864,6 @@ Filters this dataset according to `predicate`.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -737,7 +879,6 @@ A function mapping a dataset element to a boolean.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -780,7 +921,6 @@ elements:
 `tf.data.Dataset.interleave(cycle_length=1)`
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -796,7 +936,6 @@ A function mapping a dataset element to a dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -885,7 +1024,6 @@ operations within the generator function is an anti-pattern and may result in
 incremental memory growth.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -938,7 +1076,6 @@ objects corresponding to each component of an element yielded by
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1039,7 +1176,6 @@ arrays, consider the alternative described in
 [this guide](https://tensorflow.org/guide/data#consuming_numpy_arrays).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1057,7 +1193,6 @@ dimension. Supported values are documented
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1112,7 +1247,6 @@ arrays, consider the alternative described in
 [this guide](https://tensorflow.org/guide/data#consuming_numpy_arrays).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1252,7 +1386,6 @@ estimator.export_saved_model(your_exported_model_dir, serving_input_fn)
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1266,7 +1399,6 @@ element of `dataset`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -1317,7 +1449,6 @@ the key through `window_size_func`.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1363,7 +1494,6 @@ the same key to combine in a single batch, which will be passed to
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1376,7 +1506,6 @@ A `tf.data.Dataset`
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -1469,7 +1598,6 @@ required, it can also improve performance to set `deterministic=False`.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1530,7 +1658,6 @@ determinism for performance. If not specified, the
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1579,7 +1706,6 @@ If we pass "/path/to/dir/*.py" as the directory, the dataset would produce:
 -   /path/to/dir/c.py
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1614,7 +1740,6 @@ seed that will be used to create the distribution. See
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1777,7 +1902,6 @@ undefined, so the values of output elements may not be deterministic regardless
 of the `deterministic` flag value.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1817,7 +1941,6 @@ determinism for performance. If not specified, the
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1841,7 +1964,6 @@ A `Dataset`.
 Returns the options for this dataset and its inputs.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1940,7 +2062,6 @@ See also `tf.data.experimental.dense_to_sparse_batch`, which combines elements
 that may have different shapes into a `tf.sparse.SparseTensor`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1996,7 +2117,6 @@ batch.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2012,7 +2132,6 @@ A `Dataset`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -2056,7 +2175,6 @@ will prefetch 2 elements (2 batches, of 20 examples each).
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2069,6 +2187,59 @@ will prefetch 2 elements (2 batches, of 20 examples each).
 A `tf.int64` scalar `tf.Tensor`, representing the maximum
 number of elements that will be buffered when prefetching. If the value
 `tf.data.AUTOTUNE` is used, then the buffer size is dynamically tuned.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+
+<tr>
+<td>
+`Dataset`
+</td>
+<td>
+A `Dataset`.
+</td>
+</tr>
+</table>
+
+<h3 id="random"><code>random</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>@staticmethod</code>
+<code>random(
+    seed=None
+)
+</code></pre>
+
+Creates a `Dataset` of pseudorandom values.
+
+The dataset generates a sequence of uniformly distributed integer values.
+
+```
+>>> ds1 = tf.data.Dataset.random(seed=4).take(10)
+>>> ds2 = tf.data.Dataset.random(seed=4).take(10)
+>>> print(list(ds2.as_numpy_iterator())==list(ds2.as_numpy_iterator()))
+True
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`seed`
+</td>
+<td>
+(Optional) If specified, the dataset produces a deterministic
+sequence of values.
 </td>
 </tr>
 </table>
@@ -2120,7 +2291,6 @@ Creates a `Dataset` of a step-separated range of values.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2146,7 +2316,6 @@ len(args) == 3 -> start = args[0], stop = args[1], step = args[2].
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2162,7 +2331,6 @@ A `RangeDataset`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -2200,7 +2368,6 @@ the final state is returned as the result.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2227,7 +2394,6 @@ The structure of `new_state` must match the structure of
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2260,7 +2426,6 @@ Note: If this dataset is a function of global state (e.g. a random number
 generator), then different repetitions may produce different elements.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2278,7 +2443,6 @@ number of times the dataset should be repeated. The default behavior (if
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2352,7 +2516,6 @@ d = d.map(parser_fn, num_parallel_calls=num_map_threads)
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2376,7 +2539,6 @@ A `tf.int64` scalar `tf.Tensor`, representing the worker index.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2392,7 +2554,6 @@ A `Dataset`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -2467,7 +2628,6 @@ list(dataset.as_numpy_iterator())
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2502,7 +2662,6 @@ iterated over. (Defaults to `True`.)
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2535,7 +2694,6 @@ Creates a `Dataset` that skips `count` elements from this dataset.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2554,7 +2712,6 @@ will contain no elements.  If `count` is -1, skips the entire dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2587,7 +2744,6 @@ Creates a `Dataset` with at most `count` elements from this dataset.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2606,7 +2762,6 @@ dataset, the new dataset will contain all elements of this dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2647,7 +2802,6 @@ smaller, unbatched tensors. When optimizing performance, try to avoid
 unnecessary usage of `unbatch`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2732,7 +2886,6 @@ elements, it produces a dataset of nested windows.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2776,7 +2929,6 @@ whether the last windows should be dropped if their size is smaller than
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2818,7 +2970,6 @@ not use different non-default values.
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2834,7 +2985,6 @@ A `tf.data.Options` that identifies the options the use.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2850,7 +3000,6 @@ A `Dataset` with the given options.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -2913,7 +3062,6 @@ structure of `Dataset` objects. The supported nesting mechanisms are documented
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2929,7 +3077,6 @@ A (nested) structure of datasets.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2961,7 +3108,6 @@ Creates an iterator for elements of this dataset.
 The returned iterator implements the Python Iterator protocol.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2974,7 +3120,6 @@ An `tf.data.Iterator` for the elements of this dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -3003,7 +3148,6 @@ infinite, or if you are running in graph mode, use `tf.data.Dataset.cardinality`
 instead.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3016,7 +3160,6 @@ An integer representing the length of the dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>

@@ -51,7 +51,6 @@ and initializes the requested tf.distribute strategy.
 the strategy.scope().
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Other Members</h2></th></tr>

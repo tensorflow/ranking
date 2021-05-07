@@ -159,6 +159,7 @@
 *   <a href="../tfr/metrics/ordered_pair_accuracy.md"><code>tfr.metrics.ordered_pair_accuracy</code></a>
 *   <a href="../tfr/metrics/precision.md"><code>tfr.metrics.precision</code></a>
 *   <a href="../tfr/metrics/precision_ia.md"><code>tfr.metrics.precision_ia</code></a>
+*   <a href="../tfr/metrics/recall.md"><code>tfr.metrics.recall</code></a>
 *   <a href="../tfr/model.md"><code>tfr.model</code></a>
 *   <a href="../tfr/model/make_groupwise_ranking_fn.md"><code>tfr.model.make_groupwise_ranking_fn</code></a>
 *   <a href="../tfr/utils.md"><code>tfr.utils</code></a>

@@ -47,7 +47,6 @@ This handles a set of losses and labels. It is intended to mainly work with
 Use subclassing to customize the losses and metrics.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -91,7 +90,6 @@ source</a>
 Sets up Callbacks.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -152,7 +150,6 @@ source</a>
 Exports the trained model with signatures.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -195,7 +192,6 @@ source</a>
 Main function to train the model with TPU strategy.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>

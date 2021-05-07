@@ -25,7 +25,7 @@ description: Cross Document Interaction Attention layer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L344-L470">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L344-L495">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -467,19 +467,20 @@ using a `keras.Metric.Mean`.
 
 <h3 id="build"><code>build</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L401-L450">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>build(
-    input_shape
+    input_shape: tf.TensorShape
 )
 </code></pre>
 
-Creates the variables of the layer (optional, for subclass implementers).
+Build method to create weights and sub-layers.
 
-This is a method that implementers of subclasses of `Layer` or `Model` can
-override if they need a state-creation step in-between layer instantiation and
-layer call.
-
-This is typically used to create the weights of `Layer` subclasses.
+This method can be used to create weights that depend on the shape of the
+input(s), using add_weight(). `__call__()` will automatically build the layer by
+calling `build()`.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -491,9 +492,8 @@ This is typically used to create the weights of `Layer` subclasses.
 `input_shape`
 </td>
 <td>
-Instance of `TensorShape`, or list of instances of
-`TensorShape` if the layer expects a list of inputs
-(one instance per input).
+A tuple of shapes for `example_inputs`, `list_mask`. These
+correspond to `inputs` argument of call.
 </td>
 </tr>
 </table>
@@ -668,7 +668,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L462-L470">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L487-L495">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -739,7 +739,6 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

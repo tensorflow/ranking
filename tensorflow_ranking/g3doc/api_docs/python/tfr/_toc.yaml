@@ -355,6 +355,8 @@ toc:
     path: /ranking/api_docs/python/tfr/metrics/precision
   - title: precision_ia
     path: /ranking/api_docs/python/tfr/metrics/precision_ia
+  - title: recall
+    path: /ranking/api_docs/python/tfr/metrics/recall
 - title: tfr.model
   section:
   - title: Overview

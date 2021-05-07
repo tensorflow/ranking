@@ -1,34 +1,34 @@
-description: Computes precision as weighted average of relevant examples.
+description: Computes recall as weighted average of relevant examples.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.metrics.precision" />
+<meta itemprop="name" content="tfr.metrics.recall" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.metrics.precision
+# tfr.metrics.recall
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py#L318-L340">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py#L343-L364">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Computes precision as weighted average of relevant examples.
+Computes recall as weighted average of relevant examples.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.metrics.precision(
+<code>tfr.metrics.recall(
     labels, predictions, weights=None, topn=None, name=None
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -38,7 +38,7 @@ Computes precision as weighted average of relevant examples.
 `labels`
 </td>
 <td>
-A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+A `Tensor` as the same shape as `predictions`. A value >= 1 means a
 relevant example.
 </td>
 </tr><tr>
@@ -54,7 +54,7 @@ the ranking score of the corresponding example.
 `weights`
 </td>
 <td>
-A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+A `Tensor` as the same shape as predictions or [batch_size, 1]. The
 former case is per-example and the latter case is per-list.
 </td>
 </tr><tr>
@@ -75,12 +75,13 @@ A string used as the name for this metric.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
 <tr class="alt">
 <td colspan="2">
-A metric for the weighted precision of the batch.
+A metric for the weighted recall of the batch.
 </td>
 </tr>
 

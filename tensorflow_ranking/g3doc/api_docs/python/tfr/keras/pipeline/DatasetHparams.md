@@ -39,8 +39,8 @@ Hparams used in dataset_builder.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-<!-- Tabular view -->
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -105,7 +105,6 @@ Dataclass field
 </table>
 
 ## Child Classes
-
 [`class dataset_reader`](../../../tfr/keras/pipeline/DatasetHparams/dataset_reader.md)
 
 ## Methods
@@ -119,7 +118,6 @@ Dataclass field
 </code></pre>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>

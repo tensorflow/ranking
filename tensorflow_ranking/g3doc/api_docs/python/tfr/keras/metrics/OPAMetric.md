@@ -632,7 +632,6 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

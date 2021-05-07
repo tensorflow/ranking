@@ -70,3 +70,6 @@ average of relevant examples.
 
 [`precision_ia(...)`](../tfr/metrics/precision_ia.md): Computes Intent-Aware
 Precision as weighted average of relevant examples.
+
+[`recall(...)`](../tfr/metrics/recall.md): Computes recall as weighted average
+of relevant examples.

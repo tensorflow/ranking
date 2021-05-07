@@ -13,6 +13,7 @@ description: Ranking metric key strings.
 <meta itemprop="property" content="ORDERED_PAIR_ACCURACY"/>
 <meta itemprop="property" content="PRECISION"/>
 <meta itemprop="property" content="PRECISION_IA"/>
+<meta itemprop="property" content="RECALL"/>
 </div>
 
 # tfr.metrics.RankingMetricKey
@@ -21,7 +22,7 @@ description: Ranking metric key strings.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py#L23-L53">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/metrics.py#L23-L56">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -106,6 +107,13 @@ PRECISION_IA<a id="PRECISION_IA"></a>
 </td>
 <td>
 `'precision_ia'`
+</td>
+</tr><tr>
+<td>
+RECALL<a id="RECALL"></a>
+</td>
+<td>
+`'recall'`
 </td>
 </tr>
 </table>

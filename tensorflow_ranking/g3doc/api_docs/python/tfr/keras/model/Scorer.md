@@ -42,7 +42,6 @@ source</a>
 Scores all examples given context and returns logits.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
