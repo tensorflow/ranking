@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""tf.distribute strategy utils for Ranking pipeline in TF-Ranking.
+"""tf.distribute strategy utils for Ranking pipeline in tfr.keras.
 
 In TF2, the distributed training can be easily handled with Strategy offered in
 tf.distribute. Depending on device and MapReduce technique, there are four
 strategies are currently supported. They are:
 MirroredStrategy: synchronous strategy on a single CPU/GPU worker.
 MultiWorkerMirroredStrategy: synchronous strategy on multiple CPU/GPU workers.
-ParameterServerStrategy: asynchronous distributed strategy on CPU/GPU workers.
 TPUStrategy: distributed strategy working on TPU.
+ParameterServerStrategy: asynchronous distributed strategy on CPU/GPU workers.
+
+Note: ParameterServerStrategy is not fully compatible with `model.fit` in
+current version of tensorflow, thus not supported.
 
 Please check https://www.tensorflow.org/guide/distributed_training for more
 information.
@@ -80,6 +83,7 @@ def get_strategy(
 
 
 class NullContextManager(object):
+  """A null context manager for local training."""
 
   def __enter__(self):
     pass
@@ -89,7 +93,7 @@ class NullContextManager(object):
 
 
 def strategy_scope(strategy: Optional[tf.distribute.Strategy]) -> Any:
-  """Gets the strategy.scope().
+  """Gets the strategy.scope() for training with strategy.
 
   Args:
     strategy: Distributed training strategy is used.
@@ -105,7 +109,15 @@ def strategy_scope(strategy: Optional[tf.distribute.Strategy]) -> Any:
 
 def get_output_filepath(filepath: str,
                         strategy: Optional[tf.distribute.Strategy]) -> str:
-  """Gets filepaths for different workers to resolve conflict of MWMS."""
+  """Gets filepaths for different workers to resolve conflict of MWMS.
+
+  Args:
+    filepath: Path to output model files.
+    strategy: Distributed training strategy is used.
+
+  Returns:
+    Output path that is compatible with strategy and the specific worker.
+  """
   if isinstance(strategy, tf.distribute.MultiWorkerMirroredStrategy):
     task_type, task_id = (strategy.cluster_resolver.task_type,
                           strategy.cluster_resolver.task_id)

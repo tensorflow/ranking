@@ -1,4 +1,4 @@
-description: tf.distribute strategy utils for Ranking pipeline in TF-Ranking.
+description: tf.distribute strategy utils for Ranking pipeline in tfr.keras.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.strategy_utils" />
@@ -22,22 +22,26 @@ description: tf.distribute strategy utils for Ranking pipeline in TF-Ranking.
 </td>
 </table>
 
-tf.distribute strategy utils for Ranking pipeline in TF-Ranking.
+tf.distribute strategy utils for Ranking pipeline in tfr.keras.
 
 In TF2, the distributed training can be easily handled with Strategy offered in
 tf.distribute. Depending on device and MapReduce technique, there are four
 strategies are currently supported. They are: MirroredStrategy: synchronous
 strategy on a single CPU/GPU worker. MultiWorkerMirroredStrategy: synchronous
-strategy on multiple CPU/GPU workers. ParameterServerStrategy: asynchronous
-distributed strategy on CPU/GPU workers. TPUStrategy: distributed strategy
-working on TPU.
+strategy on multiple CPU/GPU workers. TPUStrategy: distributed strategy working
+on TPU. ParameterServerStrategy: asynchronous distributed strategy on CPU/GPU
+workers.
+
+Note: ParameterServerStrategy is not fully compatible with `model.fit` in
+current version of tensorflow, thus not supported.
 
 Please check https://www.tensorflow.org/guide/distributed_training for more
 information.
 
 ## Classes
 
-[`class NullContextManager`](../../tfr/keras/strategy_utils/NullContextManager.md)
+[`class NullContextManager`](../../tfr/keras/strategy_utils/NullContextManager.md):
+A null context manager for local training.
 
 ## Functions
 
@@ -48,7 +52,7 @@ Gets filepaths for different workers to resolve conflict of MWMS.
 and initializes the requested tf.distribute strategy.
 
 [`strategy_scope(...)`](../../tfr/keras/strategy_utils/strategy_scope.md): Gets
-the strategy.scope().
+the strategy.scope() for training with strategy.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">

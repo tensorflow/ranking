@@ -49,6 +49,6 @@ tf.keras.Model in TF-Ranking.
 TF-Ranking.
 
 [`strategy_utils`](../tfr/keras/strategy_utils.md) module: tf.distribute
-strategy utils for Ranking pipeline in TF-Ranking.
+strategy utils for Ranking pipeline in tfr.keras.
 
 [`utils`](../tfr/keras/utils.md) module: Utils for tfr.keras.
