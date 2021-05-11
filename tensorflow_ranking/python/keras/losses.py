@@ -572,7 +572,66 @@ class ApproxMRRLoss(_ListwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class ApproxNDCGLoss(_ListwiseLoss):
-  """For approximate NDCG loss."""
+  r"""Computes approximate NDCG loss between `y_true` and `y_pred`.
+
+  Implementation of ApproxNDCG loss ([Qin et al, 2008][qin2008];
+  [Bruch et al, 2019][bruch2019]). This loss is an approximation for
+  `tfr.keras.metrics.NDCGMetric`. It replaces the non-differentiable ranking
+  function in NDCG with a differentiable approximation based on the logistic
+  function.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = sum_i (2^y_i - 1) / log_2(1 + approxrank(s_i))
+  approxrank(s_i) = 1 + sum_j (1 / (1 + exp(-(s_j - s_i) / temperature)))
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.ApproxNDCGLoss()
+  >>> loss(y_true, y_pred).numpy()
+  -0.6536734
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.ApproxNDCGLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  -0.80536866
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.ApproxNDCGLoss())
+  ```
+
+  Definition:
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) = - \frac{1}{\text{DCG}(y, y)} \sum_{i}
+  \frac{2^{y_i} - 1}{\log_2(1 + \text{rank}_i)}
+  $$
+
+  where:
+
+  $$
+  \text{rank}_i = 1 + \sum_{j \neq i}
+  \frac{1}{1 + \exp\left(\frac{-(s_j - s_i)}{\text{temperature}}\right)}
+  $$
+
+  References:
+    - [A General Approximation Framework for Direct Optimization of Information
+       Retrieval Measures, Qin et al, 2008][qin2008]
+    - [Revisiting Approximate Metric Optimization in the Age of Deep Neural
+       Networks, Bruch et al, 2019][bruch2019]
+
+  [qin2008]:
+  https://www.microsoft.com/en-us/research/publication/a-general-approximation-framework-for-direct-optimization-of-information-retrieval-measures/
+  [bruch2019]: https://research.google/pubs/pub48168/
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
