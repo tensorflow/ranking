@@ -445,7 +445,52 @@ class SoftmaxLoss(_ListwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class UniqueSoftmaxLoss(_ListwiseLoss):
-  """For unique softmax cross entropy loss."""
+  r"""Computes unique softmax cross-entropy loss between `y_true` and `y_pred`.
+
+  Implements unique rating softmax loss ([Zhu et al, 2020][zhu2020]).
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = - sum_i (2^{y_i} - 1) *
+                 log(exp(s_i) / sum_j I(y_i > y_j) exp(s_j) + exp(s_i))
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.UniqueSoftmaxLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.7981389
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.UniqueSoftmaxLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.83911896
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.UniqueSoftmaxLoss())
+  ```
+
+  Definition:
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) =
+  - \sum_i (2^{y_i} - 1) \cdot
+  \log\left(\frac{\exp(s_i)}{\sum_j I_{y_i > y_j} \exp(s_j) + \exp(s_i)}\right)
+  $$
+
+  References:
+    - [Listwise Learning to Rank by Exploring Unique Ratings, Zhu et al,
+       2020][zhu2020]
+
+  [zhu2020]: https://arxiv.org/abs/2001.01828
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
