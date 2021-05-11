@@ -702,7 +702,64 @@ class ApproxNDCGLoss(_ListwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class GumbelApproxNDCGLoss(ApproxNDCGLoss):
-  """For Gumbel approximate NDCG loss."""
+  r"""Computes the Gumbel approximate NDCG loss between `y_true` and `y_pred`.
+
+  Implementation of Gumbel ApproxNDCG loss ([Bruch et al, 2020][bruch2020]).
+  This loss is the same as `tfr.keras.losses.ApproxNDCGLoss` but where logits
+  are sampled from the Gumbel distribution:
+
+  `y_new_pred ~ Gumbel(y_pred, 1 / temperature)`
+
+  NOTE: This loss is stochastic and may return different values for identical
+  inputs.
+
+  Standalone usage:
+
+  >>> tf.random.set_seed(42)
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.GumbelApproxNDCGLoss(seed=42)
+  >>> loss(y_true, y_pred).numpy()
+  -0.8160851
+
+  >>> # Using a higher gumbel temperature
+  >>> loss = tfr.keras.losses.GumbelApproxNDCGLoss(gumbel_temperature=2.0,
+  ...     seed=42)
+  >>> loss(y_true, y_pred).numpy()
+  -0.7583889
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.GumbelApproxNDCGLoss(seed=42, ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  -0.69871885
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.GumbelApproxNDCGLoss())
+  ```
+
+  Definition:
+
+  $$\mathcal{L}(\{y\}, \{s\}) = \text{ApproxNDCGLoss}(\{y\}, \{z\})$$
+
+  where
+
+  $$
+  z \sim \text{Gumbel}(s, \beta)\\
+  p(z) = e^{-t-e^{-t}}\\
+  t = \beta(z - s)\\
+  \beta = \frac{1}{\text{temperature}}
+  $$
+
+  References:
+    - [A Stochastic Treatment of Learning to Rank Scoring Functions, Bruch et
+       al, 2020][bruch2020]
+
+  [bruch2020]: https://research.google/pubs/pub48689/
+  """
 
   def __init__(self,
                reduction=tf.losses.Reduction.AUTO,
