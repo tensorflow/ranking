@@ -880,7 +880,45 @@ class ClickEMLoss(_RankingLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class SigmoidCrossEntropyLoss(_RankingLoss):
-  """For sigmoid cross-entropy loss."""
+  r"""Computes the Sigmoid cross-entropy loss between `y_true` and `y_pred`.
+
+  ```
+  loss = -(y_true log(sigmoid(y_pred)) + (1 - y_true) log(1 - sigmoid(y_pred)))
+  ```
+
+  NOTE: This loss does not support graded relevance labels and should only be
+  used with binary relevance labels ($$y \in [0, 1]$$).
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.SigmoidCrossEntropyLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.8042943
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.SigmoidCrossEntropyLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.6444636
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd',
+      loss=tfr.keras.losses.SigmoidCrossEntropyLoss())
+  ```
+
+  Definition:
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) = - \sum_{i}
+  y_i \log(\text{sigmoid}(s_i))
+  + (1 - y_i) \log(1 - \text{sigmoid}(s_i))
+  $$
+  """
 
   def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
                ragged=False):
