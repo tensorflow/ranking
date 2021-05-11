@@ -1053,6 +1053,37 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
     self.assertAllClose(original_output, deserialized_output)
 
   @parameterized.parameters(
+      (losses.PairwiseHingeLoss(ragged=True)),
+      (losses.PairwiseLogisticLoss(ragged=True)),
+      (losses.PairwiseSoftZeroOneLoss(ragged=True)),
+      (losses.SoftmaxLoss(ragged=True)),
+      (losses.ListMLELoss(ragged=True)),
+      (losses.ApproxMRRLoss(ragged=True)),
+      (losses.ApproxNDCGLoss(ragged=True)),
+      (losses.ClickEMLoss(ragged=True)),
+      (losses.SigmoidCrossEntropyLoss(ragged=True)),
+      (losses.MeanSquaredLoss(ragged=True)),
+      (losses.GumbelApproxNDCGLoss(seed=1, ragged=True)))
+  def test_is_ragged_loss_serializable(self, loss):
+    scores = tf.ragged.constant([[1., 2., 4.], [0., 2.]])
+    labels = tf.ragged.constant([[0., 2., 1.], [1., 0.]])
+
+    if isinstance(loss, losses.ClickEMLoss):
+      scores = tf.stack([scores, scores], axis=2)
+
+    serialized = tf.keras.utils.serialize_keras_object(loss)
+    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+
+    # Test whether the deserialized loss behaves the same as the original loss.
+    # Note that we have to reset the random seed in between calls to make sure
+    # results are reproducible for stochastic losses.
+    tf.random.set_seed(0x4321)
+    original_output = loss(labels, scores).numpy()
+    tf.random.set_seed(0x4321)
+    deserialized_output = deserialized(labels, scores).numpy()
+    self.assertAllClose(original_output, deserialized_output)
+
+  @parameterized.parameters(
       (losses.DCGLambdaWeight()),
       (losses.DCGLambdaWeight(
           gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse)),

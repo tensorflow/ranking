@@ -176,10 +176,12 @@ class _RankingLoss(tf.keras.losses.Loss):
   customized training.
   """
 
-  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None):
+  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
+               ragged=False):
     super().__init__(reduction, name)
     # An instance of loss in `losses_impl`. Overwrite this in subclasses.
     self._loss = None
+    self._ragged = ragged
 
   def __call__(self, y_true, y_pred, sample_weight=None):
     """See tf.keras.losses.Loss."""
@@ -195,6 +197,13 @@ class _RankingLoss(tf.keras.losses.Loss):
         labels=y_true, logits=y_pred)
     return tf.multiply(losses, weights)
 
+  def get_config(self):
+    config = super().get_config()
+    config.update({
+        'ragged': self._ragged
+    })
+    return config
+
 
 class _PairwiseLoss(_RankingLoss):
   """Base class for pairwise ranking losses."""
@@ -204,8 +213,9 @@ class _PairwiseLoss(_RankingLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0,
+               ragged=False,
                **kwargs):
-    super().__init__(reduction, name)
+    super().__init__(reduction, name, ragged)
     self._lambda_weight = lambda_weight
     self._temperature = temperature
 
@@ -270,7 +280,7 @@ class PairwiseHingeLoss(_PairwiseLoss):
       ragged: (Optional) If True, this loss will accept ragged tensors. If
         False, this loss will accept dense tensors.
     """
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.PairwiseHingeLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -308,7 +318,7 @@ class PairwiseLogisticLoss(_PairwiseLoss):
       ragged: (Optional) If True, this loss will accept ragged tensors. If
         False, this loss will accept dense tensors.
     """
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.PairwiseLogisticLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -346,7 +356,7 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
       ragged: (Optional) If True, this loss will accept ragged tensors. If
         False, this loss will accept dense tensors.
     """
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.PairwiseSoftZeroOneLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -362,8 +372,9 @@ class _ListwiseLoss(_RankingLoss):
                name=None,
                lambda_weight=None,
                temperature=1.0,
+               ragged=False,
                **kwargs):
-    super().__init__(reduction, name)
+    super().__init__(reduction, name, ragged)
     self._lambda_weight = lambda_weight
     self._temperature = temperature
 
@@ -417,7 +428,7 @@ class SoftmaxLoss(_ListwiseLoss):
       ragged: (Optional) If True, this loss will accept ragged tensors. If
         False, this loss will accept dense tensors.
     """
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.SoftmaxLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -442,7 +453,7 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
                lambda_weight=None,
                temperature=1.0,
                ragged=False):
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.UniqueSoftmaxLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -488,7 +499,7 @@ class ListMLELoss(_ListwiseLoss):
       ragged: (Optional) If True, this loss will accept ragged tensors. If
         False, this loss will accept dense tensors.
     """
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.ListMLELoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -506,7 +517,7 @@ class ApproxMRRLoss(_ListwiseLoss):
                lambda_weight=None,
                temperature=0.1,
                ragged=False):
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.ApproxMRRLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -524,7 +535,7 @@ class ApproxNDCGLoss(_ListwiseLoss):
                lambda_weight=None,
                temperature=0.1,
                ragged=False):
-    super().__init__(reduction, name, lambda_weight, temperature)
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.ApproxNDCGLoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
@@ -586,7 +597,7 @@ class ClickEMLoss(_RankingLoss):
                exam_loss_weight=1.0,
                rel_loss_weight=1.0,
                ragged=False):
-    super().__init__(reduction, name)
+    super().__init__(reduction, name, ragged)
     self._exam_loss_weight = exam_loss_weight
     self._rel_loss_weight = rel_loss_weight
     self._loss = losses_impl.ClickEMLoss(
@@ -610,7 +621,7 @@ class SigmoidCrossEntropyLoss(_RankingLoss):
 
   def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
                ragged=False):
-    super().__init__(reduction, name)
+    super().__init__(reduction, name, ragged)
     self._loss = losses_impl.SigmoidCrossEntropyLoss(
         name='{}_impl'.format(name) if name else None,
         ragged=ragged)
@@ -636,6 +647,6 @@ class MeanSquaredLoss(_RankingLoss):
       ragged: (Optional) If True, this loss will accept ragged tensors. If
         False, this loss will accept dense tensors.
     """
-    super().__init__(reduction, name)
+    super().__init__(reduction, name, ragged)
     self._loss = losses_impl.MeanSquaredLoss(
         name='{}_impl'.format(name) if name else None, ragged=ragged)
