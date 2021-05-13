@@ -117,23 +117,27 @@ def get(key: str,
   return metric_obj
 
 
-def default_keras_metrics() -> List[tf.keras.metrics.Metric]:
+def default_keras_metrics(**kwargs) -> List[tf.keras.metrics.Metric]:
   """Returns a list of ranking metrics.
+
+  Args:
+    **kwargs: Additional kwargs to pass to each keras metric.
 
   Returns:
     A list of metrics of type `tf.keras.metrics.Metric`.
   """
   list_kwargs = [
-      dict(key="ndcg", topn=topn, name="metric/ndcg_{}".format(topn))
+      dict(key="ndcg", topn=topn, name="metric/ndcg_{}".format(topn), **kwargs)
       for topn in [1, 3, 5, 10]
   ] + [
-      dict(key="arp", name="metric/arp"),
-      dict(key="ordered_pair_accuracy", name="metric/ordered_pair_accuracy"),
-      dict(key="mrr", name="metric/mrr"),
-      dict(key="precision", name="metric/precision"),
-      dict(key="map", name="metric/map"),
-      dict(key="dcg", name="metric/dcg"),
-      dict(key="ndcg", name="metric/ndcg")
+      dict(key="arp", name="metric/arp", **kwargs),
+      dict(key="ordered_pair_accuracy", name="metric/ordered_pair_accuracy",
+           **kwargs),
+      dict(key="mrr", name="metric/mrr", **kwargs),
+      dict(key="precision", name="metric/precision", **kwargs),
+      dict(key="map", name="metric/map", **kwargs),
+      dict(key="dcg", name="metric/dcg", **kwargs),
+      dict(key="ndcg", name="metric/ndcg", **kwargs)
   ]
   return [get(**kwargs) for kwargs in list_kwargs]
 
