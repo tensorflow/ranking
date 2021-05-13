@@ -11,7 +11,7 @@ description: Gets the strategy.scope() for training with strategy.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L81-L93">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L95-L114">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -27,6 +27,13 @@ Gets the strategy.scope() for training with strategy.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+#### Example usage:
+
+```python
+with strategy_scope(strategy):
+  model = ...
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">

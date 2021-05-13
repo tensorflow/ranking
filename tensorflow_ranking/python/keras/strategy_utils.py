@@ -48,6 +48,12 @@ def get_strategy(
            tf.distribute.experimental.TPUStrategy,]:
   """Creates and initializes the requested tf.distribute strategy.
 
+  Example usage:
+
+  ```python
+  strategy = get_strategy("MirroredStrategy")
+  ```
+
   Args:
     strategy: Key for a `tf.distribute` strategy to be used to train the model.
       Choose from ["MirroredStrategy", "MultiWorkerMirroredStrategy",
@@ -83,7 +89,15 @@ def get_strategy(
 
 
 class NullContextManager(object):
-  """A null context manager for local training."""
+  """A null context manager for local training.
+
+  Example usage:
+
+  ```python
+  with NullContextManager():
+    model = ...
+  ```
+  """
 
   def __enter__(self):
     pass
@@ -94,6 +108,13 @@ class NullContextManager(object):
 
 def strategy_scope(strategy: Optional[tf.distribute.Strategy]) -> Any:
   """Gets the strategy.scope() for training with strategy.
+
+  Example usage:
+
+  ```python
+  with strategy_scope(strategy):
+    model = ...
+  ```
 
   Args:
     strategy: Distributed training strategy is used.
@@ -110,6 +131,13 @@ def strategy_scope(strategy: Optional[tf.distribute.Strategy]) -> Any:
 def get_output_filepath(filepath: str,
                         strategy: Optional[tf.distribute.Strategy]) -> str:
   """Gets filepaths for different workers to resolve conflict of MWMS.
+
+  Example usage:
+
+  ```python
+  strategy = get_strategy("MultiWorkerMirroredStrategy")
+  worker_filepath = get_output_filepath("model/", strategy)
+  ```
 
   Args:
     filepath: Path to output model files.

@@ -11,7 +11,7 @@ description: Gets filepaths for different workers to resolve conflict of MWMS.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L96-L115">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L117-L143">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -29,8 +29,14 @@ Gets filepaths for different workers to resolve conflict of MWMS.
 
 <!-- Placeholder for "Used in" -->
 
-<!-- Tabular view -->
+#### Example usage:
 
+```python
+strategy = get_strategy("MultiWorkerMirroredStrategy")
+worker_filepath = get_output_filepath("model/", strategy)
+```
+
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -53,7 +59,6 @@ Distributed training strategy is used.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
