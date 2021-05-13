@@ -1,4 +1,4 @@
-description: For sigmoid cross-entropy loss.
+description: Computes the Sigmoid cross-entropy loss between y_true and y_pred.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.SigmoidCrossEntropyLoss" />
@@ -15,14 +15,14 @@ description: For sigmoid cross-entropy loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L594-L602">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L868-L914">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-For sigmoid cross-entropy loss.
+Computes the Sigmoid cross-entropy loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.SigmoidCrossEntropyLoss(
@@ -31,6 +31,47 @@ For sigmoid cross-entropy loss.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+```
+loss = -(y_true log(sigmoid(y_pred)) + (1 - y_true) log(1 - sigmoid(y_pred)))
+```
+
+NOTE: This loss does not support graded relevance labels and should only be used
+with binary relevance labels ($$y \in [0, 1]$$).
+
+#### Standalone usage:
+
+```
+>>> y_true = [[1., 0.]]
+>>> y_pred = [[0.6, 0.8]]
+>>> loss = tfr.keras.losses.SigmoidCrossEntropyLoss()
+>>> loss(y_true, y_pred).numpy()
+0.8042943
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+>>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+>>> loss = tfr.keras.losses.SigmoidCrossEntropyLoss(ragged=True)
+>>> loss(y_true, y_pred).numpy()
+0.6444636
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd',
+    loss=tfr.keras.losses.SigmoidCrossEntropyLoss())
+```
+
+#### Definition:
+
+$$
+\mathcal{L}(\{y\}, \{s\}) = - \sum_{i}
+y_i \log(\text{sigmoid}(s_i))
++ (1 - y_i) \log(1 - \text{sigmoid}(s_i))
+$$
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -103,6 +144,9 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L186-L191">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>get_config()
 </code></pre>
@@ -111,7 +155,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L170-L175">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L177">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

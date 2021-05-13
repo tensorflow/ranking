@@ -11,7 +11,7 @@ description: Returns a list of ranking metrics.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L106-L124">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L106-L128">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -21,10 +21,28 @@ description: Returns a list of ranking metrics.
 Returns a list of ranking metrics.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.metrics.default_keras_metrics() -> List[tf.keras.metrics.Metric]
+<code>tfr.keras.metrics.default_keras_metrics(
+    **kwargs
+) -> List[tf.keras.metrics.Metric]
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`**kwargs`
+</td>
+<td>
+Additional kwargs to pass to each keras metric.
+</td>
+</tr>
+</table>
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">

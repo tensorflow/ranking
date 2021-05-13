@@ -1,4 +1,4 @@
-description: For approximate MRR loss.
+description: Computes approximate MRR loss between y_true and y_pred.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.ApproxMRRLoss" />
@@ -15,14 +15,14 @@ description: For approximate MRR loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L486-L500">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L542-L609">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-For approximate MRR loss.
+Computes approximate MRR loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.ApproxMRRLoss(
@@ -32,6 +32,64 @@ For approximate MRR loss.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+Implementation of ApproxMRR loss ([Qin et al, 2008][qin2008]). This loss is an
+approximation for
+<a href="../../../tfr/keras/metrics/MRRMetric.md"><code>tfr.keras.metrics.MRRMetric</code></a>.
+It replaces the non-differentiable ranking function in MRR with a differentiable
+approximation based on the logistic function.
+
+For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+```
+loss = sum_i (1 / approxrank(s_i)) * y_i
+approxrank(s_i) = 1 + sum_j (1 / (1 + exp(-(s_j - s_i) / temperature)))
+```
+
+#### Standalone usage:
+
+```
+>>> y_true = [[1., 0.]]
+>>> y_pred = [[0.6, 0.8]]
+>>> loss = tfr.keras.losses.ApproxMRRLoss()
+>>> loss(y_true, y_pred).numpy()
+-0.53168947
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+>>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+>>> loss = tfr.keras.losses.ApproxMRRLoss(ragged=True)
+>>> loss(y_true, y_pred).numpy()
+-0.73514676
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', loss=tfr.keras.losses.ApproxMRRLoss())
+```
+
+#### Definition:
+
+$$
+\mathcal{L}(\{y\}, \{s\}) = -\sum_{i} \frac{1}{\text{approxrank}_i} y_i
+$$
+
+where:
+
+$$
+\text{approxrank}_i = 1 + \sum_{j \neq i}
+\frac{1}{1 + \exp\left(\frac{-(s_j - s_i)}{\text{temperature}}\right)}
+$$
+
+#### References:
+
+-   [A General Approximation Framework for Direct Optimization of Information
+    Retrieval Measures, Qin et al, 2008][qin2008]
+
+[qin2008]: https://www.microsoft.com/en-us/research/publication/a-general-approximation-framework-for-direct-optimization-of-information-retrieval-measures/
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -66,7 +124,7 @@ Optional name for the op.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L366-L373">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L377-L384">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -107,7 +165,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L356-L364">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L367-L375">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -118,7 +176,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L170-L175">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L177">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

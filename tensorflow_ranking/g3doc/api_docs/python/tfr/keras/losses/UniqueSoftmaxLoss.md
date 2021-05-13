@@ -1,4 +1,5 @@
-description: For unique softmax cross entropy loss.
+description: Computes unique softmax cross-entropy loss between y_true and
+y_pred.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.UniqueSoftmaxLoss" />
@@ -15,14 +16,14 @@ description: For unique softmax cross entropy loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L422-L436">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L433-L492">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-For unique softmax cross entropy loss.
+Computes unique softmax cross-entropy loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.UniqueSoftmaxLoss(
@@ -32,6 +33,54 @@ For unique softmax cross entropy loss.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+Implements unique rating softmax loss ([Zhu et al, 2020][zhu2020]).
+
+For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+```
+loss = - sum_i (2^{y_i} - 1) *
+               log(exp(s_i) / sum_j I(y_i > y_j) exp(s_j) + exp(s_i))
+```
+
+#### Standalone usage:
+
+```
+>>> y_true = [[1., 0.]]
+>>> y_pred = [[0.6, 0.8]]
+>>> loss = tfr.keras.losses.UniqueSoftmaxLoss()
+>>> loss(y_true, y_pred).numpy()
+0.7981389
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+>>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+>>> loss = tfr.keras.losses.UniqueSoftmaxLoss(ragged=True)
+>>> loss(y_true, y_pred).numpy()
+0.83911896
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', loss=tfr.keras.losses.UniqueSoftmaxLoss())
+```
+
+#### Definition:
+
+$$
+\mathcal{L}(\{y\}, \{s\}) =
+- \sum_i (2^{y_i} - 1) \cdot
+\log\left(\frac{\exp(s_i)}{\sum_j I_{y_i > y_j} \exp(s_j) + \exp(s_i)}\right)
+$$
+
+#### References:
+
+-   [Listwise Learning to Rank by Exploring Unique Ratings, Zhu et al, 2020][zhu2020]
+
+[zhu2020]: https://arxiv.org/abs/2001.01828
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -66,7 +115,7 @@ Optional name for the op.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L366-L373">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L377-L384">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -107,7 +156,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L356-L364">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L367-L375">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -118,7 +167,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L170-L175">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L177">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

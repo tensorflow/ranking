@@ -1,4 +1,5 @@
-description: For Gumbel approximate NDCG loss.
+description: Computes the Gumbel approximate NDCG loss between y_true and
+y_pred.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.GumbelApproxNDCGLoss" />
@@ -15,14 +16,14 @@ description: For Gumbel approximate NDCG loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L522-L562">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L690-L787">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-For Gumbel approximate NDCG loss.
+Computes the Gumbel approximate NDCG loss between `y_true` and `y_pred`.
 
 Inherits From: [`ApproxNDCGLoss`](../../../tfr/keras/losses/ApproxNDCGLoss.md)
 
@@ -34,6 +35,70 @@ Inherits From: [`ApproxNDCGLoss`](../../../tfr/keras/losses/ApproxNDCGLoss.md)
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+Implementation of Gumbel ApproxNDCG loss ([Bruch et al, 2020][bruch2020]). This
+loss is the same as
+<a href="../../../tfr/keras/losses/ApproxNDCGLoss.md"><code>tfr.keras.losses.ApproxNDCGLoss</code></a>
+but where logits are sampled from the Gumbel distribution:
+
+`y_new_pred ~ Gumbel(y_pred, 1 / temperature)`
+
+NOTE: This loss is stochastic and may return different values for identical
+inputs.
+
+#### Standalone usage:
+
+```
+>>> tf.random.set_seed(42)
+>>> y_true = [[1., 0.]]
+>>> y_pred = [[0.6, 0.8]]
+>>> loss = tfr.keras.losses.GumbelApproxNDCGLoss(seed=42)
+>>> loss(y_true, y_pred).numpy()
+-0.8160851
+```
+
+```
+>>> # Using a higher gumbel temperature
+>>> loss = tfr.keras.losses.GumbelApproxNDCGLoss(gumbel_temperature=2.0,
+...     seed=42)
+>>> loss(y_true, y_pred).numpy()
+-0.7583889
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+>>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+>>> loss = tfr.keras.losses.GumbelApproxNDCGLoss(seed=42, ragged=True)
+>>> loss(y_true, y_pred).numpy()
+-0.69871885
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', loss=tfr.keras.losses.GumbelApproxNDCGLoss())
+```
+
+#### Definition:
+
+$$\mathcal{L}(\{y\}, \{s\}) = \text{ApproxNDCGLoss}(\{y\}, \{z\})$$
+
+where
+
+$$
+z \sim \text{Gumbel}(s, \beta)\\
+p(z) = e^{-t-e^{-t}}\\
+t = \beta(z - s)\\
+\beta = \frac{1}{\text{temperature}}
+$$
+
+#### References:
+
+-   [A Stochastic Treatment of Learning to Rank Scoring Functions, Bruch et al,
+    2020][bruch2020]
+
+[bruch2020]: https://research.google/pubs/pub48689/
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -68,7 +133,7 @@ Optional name for the op.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L366-L373">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L377-L384">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -109,7 +174,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L547-L554">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L772-L779">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -120,7 +185,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L556-L562">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L781-L787">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
