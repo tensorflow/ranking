@@ -16,14 +16,14 @@ description: Builds a tf.keras.Model.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L159-L214">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L272-L351">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Builds a tf.keras.Model.
+Builds a `tf.keras.Model`.
 
 Inherits From:
 [`AbstractModelBuilder`](../../../tfr/keras/model/AbstractModelBuilder.md)
@@ -40,8 +40,8 @@ Inherits From:
 
 <!-- Placeholder for "Used in" -->
 
-This class implements the AbstractModelBuilder by delegating the class behaviors
-to the following implementors that can be specified by callers:
+This class implements the `AbstractModelBuilder` by delegating the class
+behaviors to the following implementors that can be specified by callers:
 
 *   input_creator: A callable or a class like `InputCreator` to implement
     `create_inputs`.
@@ -50,13 +50,73 @@ to the following implementors that can be specified by callers:
 *   scorer: A callable or a class like `Scorer` to implement `score`.
 
 Users can subclass those implementor classes and pass the objects into this
-class to build a tf.keras.Model.
+class to build a `tf.keras.Model`.
+
+#### Example usage:
+
+```python
+model_builder = ModelBuilder(
+    input_creator=FeatureSpecInputCreator(
+        {},
+        {"example_feature_1": tf.io.FixedLenFeature(
+            shape=(1,), dtype=tf.float32, default_value=0.0)}),
+    preprocessor=PreprocessorWithSpec(),
+    scorer=DNNScorer(hidden_layer_dims=[16]),
+    mask_feature_name="list_mask",
+    name="model_builder")
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`input_creator`
+</td>
+<td>
+A callable or a class like `InputCreator` to implement
+`create_inputs`.
+</td>
+</tr><tr>
+<td>
+`preprocessor`
+</td>
+<td>
+A callable or a class like `Preprocessor` to implement
+`preprocess`.
+</td>
+</tr><tr>
+<td>
+`scorer`
+</td>
+<td>
+A callable or a class like `Scorer` to implement `score`.
+</td>
+</tr><tr>
+<td>
+`mask_feature_name`
+</td>
+<td>
+name of 2D mask boolean feature.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+(optional) name of the Model.
+</td>
+</tr>
+</table>
 
 ## Methods
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L139-L156">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L241-L269">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -65,13 +125,25 @@ source</a>
 
 Builds a Keras Model for Ranking Pipeline.
 
+#### Example usage:
+
+```python
+model_builder = SimpleModelBuilder(
+    {},
+    {"example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)},
+    "list_mask", "model_builder")
+model = model_builder.build()
+```
+
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A tf.keras.Model.
+A `tf.keras.Model`.
 </td>
 </tr>
 
@@ -79,7 +151,7 @@ A tf.keras.Model.
 
 <h3 id="create_inputs"><code>create_inputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L191-L196">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L328-L333">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -90,7 +162,7 @@ See `AbstractModelBuilder`.
 
 <h3 id="preprocess"><code>preprocess</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L198-L205">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L335-L342">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -105,7 +177,7 @@ See `AbstractModelBuilder`.
 
 <h3 id="score"><code>score</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L207-L214">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L344-L351">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

@@ -12,7 +12,7 @@ description: Interface for feature preprocessing.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L312-L322">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L508-L554">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -23,11 +23,35 @@ Interface for feature preprocessing.
 
 <!-- Placeholder for "Used in" -->
 
+The `Preprocessor` class is an abstract class to implement `preprocess` in
+`ModelBuilder` in tfr.keras.
+
+To be implemented by subclasses:
+
+*   `__call__()`: Contains the logic to preprocess context and example inputs.
+
+Example subclass implementation:
+
+```python
+class SimplePreprocessor(Preprocessor):
+
+  def __call__(self, context_inputs, example_inputs, mask):
+    context_features = {
+        name: tf.math.log1p(
+            tf.abs(tensor)) for name, tensor in context_inputs.items()
+    }
+    example_features = {
+        name: tf.math.log1p(
+            tf.abs(tensor)) for name, tensor in example_inputs.items()
+    }
+    return context_features, example_features
+```
+
 ## Methods
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L315-L322">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L536-L554">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -39,4 +63,48 @@ source</a>
 ) -> Tuple[TensorDict, TensorDict]
 </code></pre>
 
-Call self as a function.
+Invokes the `Preprocessor` instance.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`context_inputs`
+</td>
+<td>
+maps context feature keys to `tf.keras.Input`.
+</td>
+</tr><tr>
+<td>
+`example_inputs`
+</td>
+<td>
+maps example feature keys to `tf.keras.Input`.
+</td>
+</tr><tr>
+<td>
+`mask`
+</td>
+<td>
+[batch_size, list_size]-tensor of mask for valid examples.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A tuple of two dicts which map the context and example feature keys to
+the corresponding `tf.Tensor`s.
+</td>
+</tr>
+
+</table>

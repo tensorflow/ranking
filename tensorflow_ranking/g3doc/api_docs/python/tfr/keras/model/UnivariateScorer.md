@@ -12,7 +12,7 @@ description: Interface for univariate scorer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L414-L448">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L669-L733">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -25,11 +25,29 @@ Inherits From: [`Scorer`](../../../tfr/keras/model/Scorer.md)
 
 <!-- Placeholder for "Used in" -->
 
+The `UnivariateScorer` class is an abstract class to implement `score` in
+`ModelBuilder` in tfr.keras with a univariate scoring function.
+
+To be implemented by subclasses:
+
+*   `_score_flattened()`: Contains the logic to do the univariate scoring on
+    flattened context and example features.
+
+Example subclass implementation:
+
+```python
+class SimpleUnivariateScorer(UnivariateScorer):
+
+  def _score_flattened(self, context_features, example_features):
+    x = tf.concat([tensor for tensor in example_features.values()], -1)
+    return tf.keras.layers.Dense(1)(x)
+```
+
 ## Methods
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L426-L448">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L711-L733">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -40,4 +58,4 @@ source</a>
 ) -> Union[tf.Tensor, TensorDict]
 </code></pre>
 
-Scores all examples and returns logits.
+See `Scorer`.

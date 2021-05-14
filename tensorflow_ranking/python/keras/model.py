@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Ranking Model utilities and classes in Keras."""
+"""Ranking Model utilities and classes in tfr.keras."""
 
 import abc
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -79,14 +79,78 @@ def create_keras_model(network,
 
 
 class AbstractModelBuilder(metaclass=abc.ABCMeta):
-  """Interface to build a ranking tf.keras.Model."""
+  """Interface to build a ranking `tf.keras.Model`.
+
+  The `AbstractModelBuilder` class is an abstract class to build a ranking model
+  in tfr.keras. All the boilerplate codes related to constructing a
+  `tf.keras.Model` are integrated in the ModelBuilder class. This class is
+  mostly designed to be passed to tfr.keras.pipeline and called to build the
+  model under the strategy scope, so as all variables in the model, optimizers,
+  and metrics.
+
+  To be implemented by subclasses:
+
+    * `create_inputs()`: Contains the logic to create `tf.keras.Input` for
+    context and example inputs and mask for valid list items.
+    * `preprocess()`: Contains the logic to preprocess context and example
+    inputs.
+    * `score()`: Contains the logic to score examples in list and return
+    outputs.
+
+  Example subclass implementation:
+
+  ```python
+  class SimpleModelBuilder(AbstractModelBuilder):
+
+    def __init__(self, context_feature_spec, example_feature_spec,
+                 mask_feature_name, name=None):
+      self._context_feature_spec = context_feature_spec
+      self._example_feature_spec = example_feature_spec
+      self._mask_feature_name = mask_feature_name
+      self._name = name
+
+    def create_inputs(self):
+      context_inputs = {
+          name: tf.keras.Input(
+              shape=tuple(spec.shape),
+              name=name,
+              dtype=spec.dtype
+          ) for name, spec in self._context_feature_spec.items()
+      }
+      example_inputs = {
+          name: tf.keras.Input(
+              shape=(None,) + tuple(spec.shape),
+              name=name,
+              dtype=spec.dtype
+          ) for name, spec in self._example_feature_spec.items()
+      }
+      mask = tf.keras.Input(
+          name=self._mask_feature_name, shape=(None,), dtype=tf.bool)
+      return context_inputs, example_inputs, mask
+
+    def preprocess(self, context_inputs, example_inputs, mask):
+      context_features = {
+          name: tf.math.log1p(
+              tf.abs(tensor)) for name, tensor in context_inputs.items()
+      }
+      example_features = {
+          name: tf.math.log1p(
+              tf.abs(tensor)) for name, tensor in example_inputs.items()
+      }
+      return context_features, example_features
+
+    def score(self, context_features, example_features, mask):
+      x = tf.concat([tensor for tensor in example_features.values()], -1)
+      return tf.keras.layers.Dense(1)(x)
+  ```
+  """
 
   def __init__(self, mask_feature_name: str, name: Optional[str] = None):
     """Initializes the instance.
 
     Args:
       mask_feature_name: name of 2D mask boolean feature.
-      name: name of the Model.
+      name: (optional) name of the Model.
     """
     self._mask_feature_name = mask_feature_name
     self._name = name
@@ -96,6 +160,17 @@ class AbstractModelBuilder(metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def create_inputs(self) -> Tuple[TensorDict, TensorDict, tf.Tensor]:
     """Creates context and example inputs.
+
+    Example usage:
+
+    ```python
+    model_builder = SimpleModelBuilder(
+        {},
+        {"example_feature_1": tf.io.FixedLenFeature(
+            shape=(1,), dtype=tf.float32, default_value=0.0)},
+        "list_mask", "model_builder")
+    context_inputs, example_inputs, mask = model_builder.create_inputs()
+    ```
 
     Returns:
       A tuple of
@@ -114,9 +189,22 @@ class AbstractModelBuilder(metaclass=abc.ABCMeta):
   ) -> Tuple[TensorDict, TensorDict]:
     """Preprocesses context and example inputs.
 
+    Example usage:
+
+    ```python
+    model_builder = SimpleModelBuilder(
+        {},
+        {"example_feature_1": tf.io.FixedLenFeature(
+            shape=(1,), dtype=tf.float32, default_value=0.0)},
+        "list_mask", "model_builder")
+    context_inputs, example_inputs, mask = model_builder.create_inputs()
+    context_features, example_features = model_builder.preprocess(
+        context_inputs, example_inputs, mask)
+    ```
+
     Args:
-      context_inputs: maps context feature keys to tf.keras.Input.
-      example_inputs: maps example feature keys to tf.keras.Input.
+      context_inputs: maps context feature keys to `tf.keras.Input`.
+      example_inputs: maps example feature keys to `tf.keras.Input`.
       mask: [batch_size, list_size]-tensor of mask for valid examples.
 
     Returns:
@@ -137,6 +225,20 @@ class AbstractModelBuilder(metaclass=abc.ABCMeta):
   ) -> Union[TensorLike, TensorDict]:
     """Scores all examples and returns outputs.
 
+    Example usage:
+
+    ```python
+    model_builder = SimpleModelBuilder(
+        {},
+        {"example_feature_1": tf.io.FixedLenFeature(
+            shape=(1,), dtype=tf.float32, default_value=0.0)},
+        "list_mask", "model_builder")
+    context_inputs, example_inputs, mask = model_builder.create_inputs()
+    context_features, example_features = model_builder.preprocess(
+        context_inputs, example_inputs, mask)
+    scores = model_builder.score(context_features, example_features)
+    ```
+
     Args:
       context_features: maps from context feature keys to [batch_size,
         feature_dims]-tensors of preprocessed context features.
@@ -153,8 +255,19 @@ class AbstractModelBuilder(metaclass=abc.ABCMeta):
   def build(self) -> tf.keras.Model:
     """Builds a Keras Model for Ranking Pipeline.
 
+    Example usage:
+
+    ```python
+    model_builder = SimpleModelBuilder(
+        {},
+        {"example_feature_1": tf.io.FixedLenFeature(
+            shape=(1,), dtype=tf.float32, default_value=0.0)},
+        "list_mask", "model_builder")
+    model = model_builder.build()
+    ```
+
     Returns:
-      A tf.keras.Model.
+      A `tf.keras.Model`.
     """
     context_inputs, example_inputs, mask = self.create_inputs()
     logging.info("Context features: %s", context_inputs)
@@ -171,9 +284,9 @@ class AbstractModelBuilder(metaclass=abc.ABCMeta):
 
 
 class ModelBuilder(AbstractModelBuilder):
-  """Builds a tf.keras.Model.
+  """Builds a `tf.keras.Model`.
 
-  This class implements the AbstractModelBuilder by delegating the class
+  This class implements the `AbstractModelBuilder` by delegating the class
   behaviors to the following implementors that can be specified by callers:
 
      * input_creator: A callable or a class like `InputCreator` to implement
@@ -183,7 +296,21 @@ class ModelBuilder(AbstractModelBuilder):
      * scorer: A callable or a class like `Scorer` to implement `score`.
 
   Users can subclass those implementor classes and pass the objects into this
-  class to build a tf.keras.Model.
+  class to build a `tf.keras.Model`.
+
+  Example usage:
+
+  ```python
+  model_builder = ModelBuilder(
+      input_creator=FeatureSpecInputCreator(
+          {},
+          {"example_feature_1": tf.io.FixedLenFeature(
+              shape=(1,), dtype=tf.float32, default_value=0.0)}),
+      preprocessor=PreprocessorWithSpec(),
+      scorer=DNNScorer(hidden_layer_dims=[16]),
+      mask_feature_name="list_mask",
+      name="model_builder")
+  ```
   """
 
   def __init__(
@@ -196,7 +323,17 @@ class ModelBuilder(AbstractModelBuilder):
       mask_feature_name: str,
       name: Optional[str] = None,
   ):
-    """Initializes the instance."""
+    """Initializes the instance.
+
+    Args:
+      input_creator: A callable or a class like `InputCreator` to implement
+        `create_inputs`.
+      preprocessor: A callable or a class like `Preprocessor` to implement
+        `preprocess`.
+      scorer: A callable or a class like `Scorer` to implement `score`.
+      mask_feature_name: name of 2D mask boolean feature.
+      name: (optional) name of the Model.
+    """
     super().__init__(mask_feature_name, name)
     self._input_creator = input_creator
     self._preprocessor = preprocessor
@@ -229,15 +366,49 @@ class ModelBuilder(AbstractModelBuilder):
 
 
 class InputCreator(metaclass=abc.ABCMeta):
-  """Interface for input creator."""
+  """Interface for input creator.
+
+  The `InputCreator` class is an abstract class to implement `create_inputs` in
+  `ModelBuilder` in tfr.keras.
+
+  To be implemented by subclasses:
+
+    * `__call__()`: Contains the logic to create `tf.keras.Input` for context
+    and example inputs.
+
+  Example subclass implementation:
+
+  ```python
+  class SimpleInputCreator(InputCreator):
+
+    def __call__(self):
+      return {}, {"example_feature_1": tf.keras.Input((1,), dtype=tf.float32)}
+  ```
+  """
 
   @abc.abstractmethod
   def __call__(self) -> Tuple[TensorDict, TensorDict]:
+    """Invokes the `InputCreator` instance.
+
+    Returns:
+      A tuple of two dicts which map the context and example feature keys to
+        the corresponding `tf.keras.Input`.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
 
 class FeatureSpecInputCreator(InputCreator):
-  """InputCreator with feature specs."""
+  """InputCreator with feature specs.
+
+  Example usage:
+
+  ```python
+  input_creator=FeatureSpecInputCreator(
+      {},
+      {"example_feature_1": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)})
+  ```
+  """
 
   def __init__(
       self,
@@ -248,6 +419,14 @@ class FeatureSpecInputCreator(InputCreator):
                                             tf.io.VarLenFeature,
                                             tf.io.RaggedFeature]],
   ):
+    """Initializes the instance.
+
+    Args:
+      context_feature_spec: A dict maps the context feature keys to the
+        corresponding context feature specs.
+      example_feature_spec: A dict maps the example feature keys to the
+        corresponding example feature specs.
+    """
     self._context_feature_spec = context_feature_spec
     self._example_feature_spec = example_feature_spec
 
@@ -290,14 +469,31 @@ class FeatureSpecInputCreator(InputCreator):
 
 
 class TypeSpecInputCreator(InputCreator):
-  """InputCreator with tensor type specs."""
+  """InputCreator with tensor type specs.
+
+  Example usage:
+
+  ```python
+  input_creator=TypeSpecInputCreator(
+      {"example_feature_1": tf.TensorSpec(shape=[None, 1], dtype=tf.float32)},
+      example_feature_names=["example_feature_1"])
+  ```
+  """
 
   def __init__(
       self,
       type_spec: Dict[str, Union[tf.TensorSpec, tf.RaggedTensorSpec]],
-      context_feature_names: Optional[List[str]],
-      example_feature_names: Optional[List[str]],
+      context_feature_names: Optional[List[str]] = None,
+      example_feature_names: Optional[List[str]] = None,
   ):
+    """Initializes the instance.
+
+    Args:
+      type_spec: A dict maps the context and example feature keys to the
+        corresponding context and example type specs.
+      context_feature_names: A list of context feature keys.
+      example_feature_names: A list of example feature keys.
+    """
     self._type_spec = type_spec
     self._context_feature_names = context_feature_names or []
     self._example_feature_names = example_feature_names or []
@@ -324,7 +520,32 @@ class TypeSpecInputCreator(InputCreator):
 
 
 class Preprocessor(metaclass=abc.ABCMeta):
-  """Interface for feature preprocessing."""
+  """Interface for feature preprocessing.
+
+  The `Preprocessor` class is an abstract class to implement `preprocess` in
+  `ModelBuilder` in tfr.keras.
+
+  To be implemented by subclasses:
+
+    * `__call__()`: Contains the logic to preprocess context and example inputs.
+
+  Example subclass implementation:
+
+  ```python
+  class SimplePreprocessor(Preprocessor):
+
+    def __call__(self, context_inputs, example_inputs, mask):
+      context_features = {
+          name: tf.math.log1p(
+              tf.abs(tensor)) for name, tensor in context_inputs.items()
+      }
+      example_features = {
+          name: tf.math.log1p(
+              tf.abs(tensor)) for name, tensor in example_inputs.items()
+      }
+      return context_features, example_features
+  ```
+  """
 
   @abc.abstractmethod
   def __call__(
@@ -333,6 +554,17 @@ class Preprocessor(metaclass=abc.ABCMeta):
       example_inputs: TensorDict,
       mask: tf.Tensor,
   ) -> Tuple[TensorDict, TensorDict]:
+    """Invokes the `Preprocessor` instance.
+
+    Args:
+      context_inputs: maps context feature keys to `tf.keras.Input`.
+      example_inputs: maps example feature keys to `tf.keras.Input`.
+      mask: [batch_size, list_size]-tensor of mask for valid examples.
+
+    Returns:
+      A tuple of two dicts which map the context and example feature keys to
+        the corresponding `tf.Tensor`s.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
 
@@ -340,14 +572,18 @@ class PreprocessorWithSpec(Preprocessor):
   """Preprocessing inputs with provided spec.
 
   Transformation including KPL or customized transformation like log1p can be
-  defined and passed in `preprocess_spec`:
-      preprocess_spec = {
-          **{name: lambda t: tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
-             for name in example_feature_spec.keys()},
-          **{name: tf.reduce_mean(
-              tf.keras.layers.Embedding(input_dim=10, output_dim=4)(x), axis=-2)
-             for name in context_feature_spec.keys()}
-      }
+  defined and passed in `preprocess_spec` with the following example usage:
+
+  ```python
+  preprocess_spec = {
+      **{name: lambda t: tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
+         for name in example_feature_spec.keys()},
+      **{name: tf.reduce_mean(
+          tf.keras.layers.Embedding(input_dim=10, output_dim=4)(x), axis=-2)
+         for name in context_feature_spec.keys()}
+  }
+  preprocessor = PreprocessorWithSpec(preprocess_spec)
+  ```
   """
 
   def __init__(
@@ -355,12 +591,12 @@ class PreprocessorWithSpec(Preprocessor):
       preprocess_spec: Optional[Dict[str, Callable[[Any], Any]]] = None,
       default_value_spec: Optional[Dict[str, float]] = None,
   ):
-    """Initializer.
+    """Initializes the instance.
 
     Args:
-      preprocess_spec: maps a feature name to a callable to preprocess a
-        feature. Only include those features that need preprocessing.
-      default_value_spec: maps a feature name to a default value to convert a
+      preprocess_spec: maps a feature key to a callable to preprocess a feature.
+        Only include those features that need preprocessing.
+      default_value_spec: maps a feature key to a default value to convert a
         RaggedTensor to Tensor. Default to 0. if not specified.
     """
     self._preprocess_spec = preprocess_spec or {}
@@ -400,7 +636,26 @@ class PreprocessorWithSpec(Preprocessor):
 
 
 class Scorer(metaclass=abc.ABCMeta):
-  """Interface for scorer."""
+  """Interface for scorer.
+
+  The `Scorer` class is an abstract class to implement `score` in `ModelBuilder`
+  in tfr.keras.
+
+  To be implemented by subclasses:
+
+    * `__call__()`: Contains the logic to score based on the context and example
+    features.
+
+  Example subclass implementation:
+
+  ```python
+  class SimpleScorer(Scorer):
+
+    def __call__(self, context_features, example_features, mask):
+      x = tf.concat([tensor for tensor in example_features.values()], -1)
+      return tf.keras.layers.Dense(1)(x)
+  ```
+  """
 
   @abc.abstractmethod
   def __call__(
@@ -426,7 +681,26 @@ class Scorer(metaclass=abc.ABCMeta):
 
 
 class UnivariateScorer(Scorer, metaclass=abc.ABCMeta):
-  """Interface for univariate scorer."""
+  """Interface for univariate scorer.
+
+  The `UnivariateScorer` class is an abstract class to implement `score` in
+  `ModelBuilder` in tfr.keras with a univariate scoring function.
+
+  To be implemented by subclasses:
+
+    * `_score_flattened()`: Contains the logic to do the univariate scoring on
+    flattened context and example features.
+
+  Example subclass implementation:
+
+  ```python
+  class SimpleUnivariateScorer(UnivariateScorer):
+
+    def _score_flattened(self, context_features, example_features):
+      x = tf.concat([tensor for tensor in example_features.values()], -1)
+      return tf.keras.layers.Dense(1)(x)
+  ```
+  """
 
   @abc.abstractmethod
   def _score_flattened(
@@ -434,7 +708,18 @@ class UnivariateScorer(Scorer, metaclass=abc.ABCMeta):
       context_features: TensorDict,
       example_features: TensorDict,
   ) -> Union[tf.Tensor, TensorDict]:
-    """Computes the flattened logits."""
+    """Computes the flattened logits.
+
+    Args:
+      context_features: maps from context feature keys to [batch_size *
+        list_size, feature_dims]-tensors of preprocessed context features.
+      example_features: maps from example feature keys to [batch_size *
+        list_size, feature_dims]-tensors of preprocessed example features.
+
+    Returns:
+      A tf.Tensor of size [batch_size * list_size, 1] or a dict maps output
+        names to tf.Tensors of size [batch_size * list_size, 1].
+    """
     raise NotImplementedError("Calling an abstract method.")
 
   def __call__(
@@ -443,7 +728,7 @@ class UnivariateScorer(Scorer, metaclass=abc.ABCMeta):
       example_features: TensorDict,
       mask: tf.Tensor,
   ) -> Union[tf.Tensor, TensorDict]:
-    """Scores all examples and returns logits."""
+    """See `Scorer`."""
     (flattened_context_features,
      flattened_example_features) = layers.FlattenList()(
          inputs=(context_features, example_features, mask))
@@ -463,9 +748,23 @@ class UnivariateScorer(Scorer, metaclass=abc.ABCMeta):
 
 
 class DNNScorer(UnivariateScorer):
-  """Univariate scorer using DNN."""
+  """Univariate scorer using DNN.
+
+  Example usage:
+
+  ```python
+  scorer=DNNScorer(hidden_layer_dims=[16])
+  ```
+  """
 
   def __init__(self, **dnn_kwargs):
+    """Initializes the instance.
+
+    Args:
+      **dnn_kwargs: A dict of keyward arguments for dense neural network layers.
+        Please see `tfr.keras.layers.create_tower` for specific list of keyword
+        arguments.
+    """
     self._dnn_kwargs = dnn_kwargs
 
   def _score_flattened(
@@ -489,9 +788,26 @@ class DNNScorer(UnivariateScorer):
 
 
 class GAMScorer(UnivariateScorer):
-  """Univariate scorer using GAM."""
+  """Univariate scorer using GAM.
+
+  The scorer implements Neural Generalized Additive Ranking Model, which is an
+  additive ranking model.
+  See the [paper](https://arxiv.org/abs/2005.02553) for more details.
+
+  Example usage:
+
+  ```python
+  scorer=GAMScorer(hidden_layer_dims=[16])
+  ```
+  """
 
   def __init__(self, **gam_kwargs):
+    """Initializes the instance.
+
+    Args:
+      **gam_kwargs: A dict of keyward arguments for GAM layers. Please see
+        `tfr.keras.layers.GAMlayer` for specific list of keyword arguments.
+    """
     self._gam_kwargs = gam_kwargs
 
   def _score_flattened(

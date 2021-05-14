@@ -12,7 +12,7 @@ description: Interface for scorer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L388-L411">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L624-L666">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -23,11 +23,29 @@ Interface for scorer.
 
 <!-- Placeholder for "Used in" -->
 
+The `Scorer` class is an abstract class to implement `score` in `ModelBuilder`
+in tfr.keras.
+
+To be implemented by subclasses:
+
+*   `__call__()`: Contains the logic to score based on the context and example
+    features.
+
+Example subclass implementation:
+
+```python
+class SimpleScorer(Scorer):
+
+  def __call__(self, context_features, example_features, mask):
+    x = tf.concat([tensor for tensor in example_features.values()], -1)
+    return tf.keras.layers.Dense(1)(x)
+```
+
 ## Methods
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L391-L411">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L646-L666">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -73,7 +91,6 @@ list_size, feature_dims]-tensors of preprocessed example features.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

@@ -12,7 +12,7 @@ description: Interface for input creator.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L217-L222">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L354-L383">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -23,11 +23,28 @@ Interface for input creator.
 
 <!-- Placeholder for "Used in" -->
 
+The `InputCreator` class is an abstract class to implement `create_inputs` in
+`ModelBuilder` in tfr.keras.
+
+To be implemented by subclasses:
+
+*   `__call__()`: Contains the logic to create `tf.keras.Input` for context and
+    example inputs.
+
+Example subclass implementation:
+
+```python
+class SimpleInputCreator(InputCreator):
+
+  def __call__(self):
+    return {}, {"example_feature_1": tf.keras.Input((1,), dtype=tf.float32)}
+```
+
 ## Methods
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L220-L222">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L375-L383">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -35,4 +52,18 @@ source</a>
 <code>__call__() -> Tuple[TensorDict, TensorDict]
 </code></pre>
 
-Call self as a function.
+Invokes the `InputCreator` instance.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A tuple of two dicts which map the context and example feature keys to
+the corresponding `tf.keras.Input`.
+</td>
+</tr>
+
+</table>

@@ -13,7 +13,7 @@ description: Preprocessing inputs with provided spec.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L325-L385">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L557-L621">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -34,11 +34,18 @@ Inherits From: [`Preprocessor`](../../../tfr/keras/model/Preprocessor.md)
 <!-- Placeholder for "Used in" -->
 
 Transformation including KPL or customized transformation like log1p can be
-defined and passed in `preprocess_spec`: preprocess_spec = { **{name: lambda t:
-tf.math.log1p(t * tf.sign(t)) * tf.sign(t) for name in
-example_feature_spec.keys()}, **{name: tf.reduce_mean(
-tf.keras.layers.Embedding(input_dim=10, output_dim=4)(x), axis=-2) for name in
-context_feature_spec.keys()} }
+defined and passed in `preprocess_spec` with the following example usage:
+
+```python
+preprocess_spec = {
+    **{name: lambda t: tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
+       for name in example_feature_spec.keys()},
+    **{name: tf.reduce_mean(
+        tf.keras.layers.Embedding(input_dim=10, output_dim=4)(x), axis=-2)
+       for name in context_feature_spec.keys()}
+}
+preprocessor = PreprocessorWithSpec(preprocess_spec)
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -50,15 +57,15 @@ context_feature_spec.keys()} }
 `preprocess_spec`
 </td>
 <td>
-maps a feature name to a callable to preprocess a
-feature. Only include those features that need preprocessing.
+maps a feature key to a callable to preprocess a feature.
+Only include those features that need preprocessing.
 </td>
 </tr><tr>
 <td>
 `default_value_spec`
 </td>
 <td>
-maps a feature name to a default value to convert a
+maps a feature key to a default value to convert a
 RaggedTensor to Tensor. Default to 0. if not specified.
 </td>
 </tr>
@@ -68,7 +75,7 @@ RaggedTensor to Tensor. Default to 0. if not specified.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L355-L385">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L591-L621">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

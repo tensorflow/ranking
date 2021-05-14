@@ -16,14 +16,14 @@ description: Interface to build a ranking tf.keras.Model.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L67-L156">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L67-L269">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Interface to build a ranking tf.keras.Model.
+Interface to build a ranking `tf.keras.Model`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.model.AbstractModelBuilder(
@@ -33,6 +33,66 @@ Interface to build a ranking tf.keras.Model.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+The `AbstractModelBuilder` class is an abstract class to build a ranking model
+in tfr.keras. All the boilerplate codes related to constructing a
+`tf.keras.Model` are integrated in the ModelBuilder class. This class is mostly
+designed to be passed to tfr.keras.pipeline and called to build the model under
+the strategy scope, so as all variables in the model, optimizers, and metrics.
+
+To be implemented by subclasses:
+
+*   `create_inputs()`: Contains the logic to create `tf.keras.Input` for context
+    and example inputs and mask for valid list items.
+*   `preprocess()`: Contains the logic to preprocess context and example inputs.
+*   `score()`: Contains the logic to score examples in list and return outputs.
+
+Example subclass implementation:
+
+```python
+class SimpleModelBuilder(AbstractModelBuilder):
+
+  def __init__(self, context_feature_spec, example_feature_spec,
+               mask_feature_name, name=None):
+    self._context_feature_spec = context_feature_spec
+    self._example_feature_spec = example_feature_spec
+    self._mask_feature_name = mask_feature_name
+    self._name = name
+
+  def create_inputs(self):
+    context_inputs = {
+        name: tf.keras.Input(
+            shape=tuple(spec.shape),
+            name=name,
+            dtype=spec.dtype
+        ) for name, spec in self._context_feature_spec.items()
+    }
+    example_inputs = {
+        name: tf.keras.Input(
+            shape=(None,) + tuple(spec.shape),
+            name=name,
+            dtype=spec.dtype
+        ) for name, spec in self._example_feature_spec.items()
+    }
+    mask = tf.keras.Input(
+        name=self._mask_feature_name, shape=(None,), dtype=tf.bool)
+    return context_inputs, example_inputs, mask
+
+  def preprocess(self, context_inputs, example_inputs, mask):
+    context_features = {
+        name: tf.math.log1p(
+            tf.abs(tensor)) for name, tensor in context_inputs.items()
+    }
+    example_features = {
+        name: tf.math.log1p(
+            tf.abs(tensor)) for name, tensor in example_inputs.items()
+    }
+    return context_features, example_features
+
+  def score(self, context_features, example_features, mask):
+    x = tf.concat([tensor for tensor in example_features.values()], -1)
+    return tf.keras.layers.Dense(1)(x)
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -51,7 +111,7 @@ name of 2D mask boolean feature.
 `name`
 </td>
 <td>
-name of the Model.
+(optional) name of the Model.
 </td>
 </tr>
 </table>
@@ -60,7 +120,7 @@ name of the Model.
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L139-L156">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L241-L269">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -69,13 +129,25 @@ source</a>
 
 Builds a Keras Model for Ranking Pipeline.
 
+#### Example usage:
+
+```python
+model_builder = SimpleModelBuilder(
+    {},
+    {"example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)},
+    "list_mask", "model_builder")
+model = model_builder.build()
+```
+
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A tf.keras.Model.
+A `tf.keras.Model`.
 </td>
 </tr>
 
@@ -83,7 +155,7 @@ A tf.keras.Model.
 
 <h3 id="create_inputs"><code>create_inputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L82-L92">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L146-L167">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -92,6 +164,17 @@ source</a>
 </code></pre>
 
 Creates context and example inputs.
+
+#### Example usage:
+
+```python
+model_builder = SimpleModelBuilder(
+    {},
+    {"example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)},
+    "list_mask", "model_builder")
+context_inputs, example_inputs, mask = model_builder.create_inputs()
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -128,7 +211,7 @@ Keras Input for the mask feature.
 
 <h3 id="preprocess"><code>preprocess</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L94-L115">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L169-L203">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -142,6 +225,19 @@ source</a>
 
 Preprocesses context and example inputs.
 
+#### Example usage:
+
+```python
+model_builder = SimpleModelBuilder(
+    {},
+    {"example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)},
+    "list_mask", "model_builder")
+context_inputs, example_inputs, mask = model_builder.create_inputs()
+context_features, example_features = model_builder.preprocess(
+    context_inputs, example_inputs, mask)
+```
+
 <!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
@@ -152,14 +248,14 @@ Preprocesses context and example inputs.
 `context_inputs`
 </td>
 <td>
-maps context feature keys to tf.keras.Input.
+maps context feature keys to `tf.keras.Input`.
 </td>
 </tr><tr>
 <td>
 `example_inputs`
 </td>
 <td>
-maps example feature keys to tf.keras.Input.
+maps example feature keys to `tf.keras.Input`.
 </td>
 </tr><tr>
 <td>
@@ -201,7 +297,7 @@ list_size, feature_dims]-tensors of preprocessed example features.
 
 <h3 id="score"><code>score</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L117-L137">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L205-L239">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -214,6 +310,20 @@ source</a>
 </code></pre>
 
 Scores all examples and returns outputs.
+
+#### Example usage:
+
+```python
+model_builder = SimpleModelBuilder(
+    {},
+    {"example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)},
+    "list_mask", "model_builder")
+context_inputs, example_inputs, mask = model_builder.create_inputs()
+context_features, example_features = model_builder.preprocess(
+    context_inputs, example_inputs, mask)
+scores = model_builder.score(context_features, example_features)
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
