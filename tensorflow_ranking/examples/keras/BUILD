@@ -40,6 +40,33 @@ py_test(
     ],
 )
 
+py_binary(
+    name = "antique_ragged",
+    srcs = ["antique_ragged.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        # py/absl:app dep,
+        # py/absl/flags dep,
+        # py/absl/logging dep,
+        # py/tensorflow dep,
+        "//tensorflow_ranking",
+    ],
+)
+
+py_test(
+    name = "antique_ragged_test",
+    srcs = ["antique_ragged_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":antique_ragged",
+        # py/absl/testing:flagsaver dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
+
 py_library(
     name = "keras_m2e_tfrecord_lib",
     srcs = ["keras_m2e_tfrecord.py"],
