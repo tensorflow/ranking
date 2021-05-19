@@ -252,11 +252,40 @@ class _PairwiseLoss(_RankingLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseHingeLoss(_PairwiseLoss):
-  r"""Pairwise hinge loss.
+  r"""Computes pairwise hinge loss between `y_true` and `y_pred`.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = sum_i sum_j I[y_i > y_j] * max(0, 1 - (s_i - s_j))
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.PairwiseHingeLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.6
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.PairwiseHingeLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.41666666
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.PairwiseHingeLoss())
+  ```
+
+  Definition:
 
   $$
   \mathcal{L}(\{y\}, \{s\}) =
-  \sum_{i, j} I_{y_i > y_j} \max(0, 1 - (s_i - s_j))
+  \sum_i \sum_j I[y_i > y_j] \max(0, 1 - (s_i - s_j))
   $$
   """
 
@@ -290,11 +319,40 @@ class PairwiseHingeLoss(_PairwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseLogisticLoss(_PairwiseLoss):
-  r"""Pairwise logistic loss.
+  r"""Computes pairwise logistic loss between `y_true` and `y_pred`.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = sum_i sum_j I[y_i > y_j] * log(1 + exp(-(s_i - s_j)))
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.PairwiseLogisticLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.39906943
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.PairwiseLogisticLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.3109182
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.PairwiseLogisticLoss())
+  ```
+
+  Definition:
 
   $$
   \mathcal{L}(\{y\}, \{s\}) =
-  \sum_{i, j} I_{y_i > y_j} \log(1 + \exp(-(s_i - s_j)))
+  \sum_i \sum_j I[y_i > y_j] \log(1 + \exp(-(s_i - s_j)))
   $$
   """
 
@@ -328,11 +386,41 @@ class PairwiseLogisticLoss(_PairwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class PairwiseSoftZeroOneLoss(_PairwiseLoss):
-  r"""Pairwise soft zero one loss.
+  r"""Computes pairwise soft zero-one loss between `y_true` and `y_pred`.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = sum_i sum_j I[y_i > y_j] * (1 - sigmoid(s_i - s_j))
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.PairwiseSoftZeroOneLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.274917
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.PairwiseSoftZeroOneLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.22945064
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd',
+                loss=tfr.keras.losses.PairwiseSoftZeroOneLoss())
+  ```
+
+  Definition:
 
   $$
   \mathcal{L}(\{y\}, \{s\}) =
-  \sum_{i, j} I_{y_i > y_j} (1 - \text{sigmoid}(s_i - s_j))
+  \sum_i \sum_j I[y_i > y_j] (1 - \text{sigmoid}(s_i - s_j))
   $$
   """
 
@@ -400,11 +488,40 @@ class _ListwiseLoss(_RankingLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class SoftmaxLoss(_ListwiseLoss):
-  r"""Softmax cross-entropy loss.
+  r"""Computes Softmax cross-entropy loss between `y_true` and `y_pred`.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = - sum_i y_i * log(softmax(s_i))
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.SoftmaxLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.7981389
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.SoftmaxLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.83911896
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.SoftmaxLoss())
+  ```
+
+  Definition:
 
   $$
   \mathcal{L}(\{y\}, \{s\}) =
-  - \sum_i \frac{y_i}{\sum_j y_j} \cdot \log(\text{softmax}(s_i))
+  - \sum_i y_i \cdot \log\left(\frac{exp(s_i)}{\sum_j exp(s_j)}\right)
   $$
   """
 
@@ -508,19 +625,58 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class ListMLELoss(_ListwiseLoss):
-  r"""ListMLE loss.
+  r"""Computes ListMLE loss between `y_true` and `y_pred`.
+
+  Implements ListMLE loss ([Xia et al, 2008][xia2008]). For each list of scores
+  `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = - log P(permutation_y | s)
+  P(permutation_y | s) = Plackett-Luce probability of permutation_y given s
+  permutation_y = permutation of items sorted by labels y.
+  ```
+
+  NOTE: This loss is stochastic and may return different values for identical
+  inputs.
+
+  Standalone usage:
+
+  >>> tf.random.set_seed(42)
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.ListMLELoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.7981389
+
+  >>> # Using ragged tensors
+  >>> tf.random.set_seed(42)
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.ListMLELoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  1.1613163
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.ListMLELoss())
+  ```
+
+  Definition:
 
   $$
   \mathcal{L}(\{y\}, \{s\}) = - \log(P(\pi_y | s))
   $$
 
-  where $$P(\pi_y | s)$$ is the plackett-luce probability of a permutation
+  where $$P(\pi_y | s)$$ is the Plackett-Luce probability of a permutation
   $$\pi_y$$ conditioned on scores $$s$$. Here $$\pi_y$$ represents a permutation
   of items ordered by the relevance labels $$y$$ where ties are broken randomly.
 
-  NOTE: Since tie breaks happen randomly, this loss is stochastic and may return
-  different values for identical inputs.
+  References:
+    - [Listwise approach to learning to rank: theory and algorithm, Xia et al,
+       2008][xia2008]
 
+  [xia2008]: https://dl.acm.org/doi/10.1145/1390156.1390306
   """
 
   def __init__(self,
@@ -930,7 +1086,34 @@ class SigmoidCrossEntropyLoss(_RankingLoss):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class MeanSquaredLoss(_RankingLoss):
-  r"""Mean squared loss.
+  r"""Computes mean squared loss between `y_true` and `y_pred`.
+
+  ```
+  loss = (y_true - y_pred)^2
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.MeanSquaredLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.4
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.MeanSquaredLoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.20833336
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.MeanSquaredLoss())
+  ```
+
+  Definition:
 
   $$
   \mathcal{L}(\{y\}, \{s\}) = \sum_i (y_i - s_i)^{2}
