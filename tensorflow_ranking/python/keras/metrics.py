@@ -183,7 +183,54 @@ class _RankingMetric(tf.keras.metrics.Mean):
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 class MRRMetric(_RankingMetric):
-  """Implements mean reciprocal rank (MRR)."""
+  r"""Mean reciprocal rank (MRR).
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  MRR(y, s) = max_i y_i / rank(s_i)
+  ```
+
+  NOTE: This metric converts graded relevance to binary relevance by setting
+  `y_i = 1` if `y_i >= 1`.
+
+  Standalone usage:
+
+  >>> y_true = [[0., 1., 1.]]
+  >>> y_pred = [[3., 1., 2.]]
+  >>> mrr = tfr.keras.metrics.MRRMetric()
+  >>> mrr(y_true, y_pred).numpy()
+  0.5
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[0., 1.], [1., 2., 0.]])
+  >>> y_pred = tf.ragged.constant([[2., 1.], [2., 5., 4.]])
+  >>> mrr = tfr.keras.metrics.MRRMetric(ragged=True)
+  >>> mrr(y_true, y_pred).numpy()
+  0.75
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', metrics=[tfr.keras.metrics.MRRMetric()])
+  ```
+
+  Definition:
+
+  $$
+  \text{MRR}(\{y\}, \{s\}) = \max_i \frac{\bar{y}_i}{\text{rank}(s_i)}
+  $$
+
+  where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
+  $$s$$ with ties broken randomly and $$\bar{y_i}$$ are truncated labels:
+
+  $$
+  \bar{y}_i = \begin{cases}
+  1 & \text{if }y_i \geq 1 \\
+  0 & \text{else}
+  \end{cases}
+  $$
+  """
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
     super(MRRMetric, self).__init__(name=name, dtype=dtype, **kwargs)
