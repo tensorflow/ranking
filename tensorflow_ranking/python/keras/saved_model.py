@@ -23,7 +23,40 @@ from tensorflow_ranking.python import data
 
 
 class Signatures(tf.Module):
-  """Defines signatures to support regress and predict serving."""
+  """Defines signatures to support regress and predict serving.
+
+  This wraps the trained Keras model in two serving functions that can be saved
+  with `tf.saved_model.save` or `model.save`, and loaded with corresponding
+  signature names. The regress serving signature takes a batch of serialized
+  `tf.Example`s as input, whereas the predict serving signature takes a batch of
+  serialized `ExampleListWithContext` as input.
+
+  Example usage:
+
+  A ranking model can be saved with signatures as follows:
+
+  ```python
+  tf.saved_model.save(model, path, signatures=Signatures(model, ...)())
+  ```
+
+  For regress serving, scores can be generated using `REGRESS` signature as
+  follows:
+
+  ```python
+  loaded_model = tf.saved_model.load(path)
+  predictor = loaded_model.signatures[tf.saved_model.REGRESS_METHOD_NAME]
+  scores = predictor(serialized_examples)[tf.saved_model.REGRESS_OUTPUTS]
+  ```
+
+  For predict serving, scores can be generated using `PREDICT` signature as
+  follows:
+
+  ```python
+  loaded_model = tf.saved_model.load(path)
+  predictor = loaded_model.signatures[tf.saved_model.PREDICT_METHOD_NAME]
+  scores = predictor(serialized_elwcs)[tf.saved_model.PREDICT_OUTPUTS]
+  ```
+  """
 
   def __init__(self, model: tf.keras.Model,
                context_feature_spec: Dict[str, Union[tf.io.FixedLenFeature,
@@ -34,7 +67,7 @@ class Signatures(tf.Module):
     """Constructor.
 
     Args:
-      model: A keras ranking model.
+      model: A Keras ranking model.
       context_feature_spec: (dict) A mapping from feature keys to
         `FixedLenFeature` or `RaggedFeature` values for context in
         `tensorflow.serving.ExampleListWithContext` proto.

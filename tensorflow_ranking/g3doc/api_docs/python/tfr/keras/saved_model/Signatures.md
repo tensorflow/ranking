@@ -17,7 +17,7 @@ description: Defines signatures to support regress and predict serving.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L11-L129">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L11-L162">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -37,6 +37,38 @@ Defines signatures to support regress and predict serving.
 
 <!-- Placeholder for "Used in" -->
 
+This wraps the trained Keras model in two serving functions that can be saved
+with `tf.saved_model.save` or `model.save`, and loaded with corresponding
+signature names. The regress serving signature takes a batch of serialized
+`tf.Example`s as input, whereas the predict serving signature takes a batch of
+serialized `ExampleListWithContext` as input.
+
+#### Example usage:
+
+A ranking model can be saved with signatures as follows:
+
+```python
+tf.saved_model.save(model, path, signatures=Signatures(model, ...)())
+```
+
+For regress serving, scores can be generated using `REGRESS` signature as
+follows:
+
+```python
+loaded_model = tf.saved_model.load(path)
+predictor = loaded_model.signatures[tf.saved_model.REGRESS_METHOD_NAME]
+scores = predictor(serialized_examples)[tf.saved_model.REGRESS_OUTPUTS]
+```
+
+For predict serving, scores can be generated using `PREDICT` signature as
+follows:
+
+```python
+loaded_model = tf.saved_model.load(path)
+predictor = loaded_model.signatures[tf.saved_model.PREDICT_METHOD_NAME]
+scores = predictor(serialized_elwcs)[tf.saved_model.PREDICT_OUTPUTS]
+```
+
 <!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
@@ -47,7 +79,7 @@ Defines signatures to support regress and predict serving.
 `model`
 </td>
 <td>
-A keras ranking model.
+A Keras ranking model.
 </td>
 </tr><tr>
 <td>
@@ -133,7 +165,7 @@ of calling this method if you don't expect the return value to change.
 
 <h3 id="normalize_outputs"><code>normalize_outputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L38-L59">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L71-L92">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -193,7 +225,7 @@ TypeError if outputs is not a Tensor nor a dict.
 
 <h3 id="predict_tf_function"><code>predict_tf_function</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L61-L78">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L94-L111">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -204,7 +236,7 @@ Makes a tensorflow function for `predict`.
 
 <h3 id="regress_tf_function"><code>regress_tf_function</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L80-L99">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L113-L132">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -274,7 +306,7 @@ The original method wrapped such that it enters the module's name scope.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L101-L129">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L134-L162">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
