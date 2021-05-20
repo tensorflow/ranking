@@ -11,10 +11,10 @@ description: Hparams used in pipeline.
 <meta itemprop="property" content="export_best_model"/>
 <meta itemprop="property" content="loss_reduction"/>
 <meta itemprop="property" content="loss_weights"/>
-<meta itemprop="property" content="master"/>
 <meta itemprop="property" content="optimizer"/>
 <meta itemprop="property" content="steps_per_execution"/>
 <meta itemprop="property" content="strategy"/>
+<meta itemprop="property" content="tpu"/>
 <meta itemprop="property" content="use_weighted_metrics"/>
 </div>
 
@@ -50,7 +50,7 @@ Hparams used in pipeline.
     best_exporter_metric_higher_better: bool = False,
     best_exporter_metric: str = &#x27;loss&#x27;,
     strategy: Optional[str] = None,
-    master: Optional[str] = None
+    tpu: Optional[str] = &#x27;&#x27;
 )
 </code></pre>
 
@@ -175,7 +175,7 @@ Dataclass field
 </td>
 </tr><tr>
 <td>
-`master`
+`tpu`
 </td>
 <td>
 Dataclass field
@@ -242,13 +242,6 @@ loss_weights<a id="loss_weights"></a>
 </td>
 </tr><tr>
 <td>
-master<a id="master"></a>
-</td>
-<td>
-`None`
-</td>
-</tr><tr>
-<td>
 optimizer<a id="optimizer"></a>
 </td>
 <td>
@@ -267,6 +260,13 @@ strategy<a id="strategy"></a>
 </td>
 <td>
 `None`
+</td>
+</tr><tr>
+<td>
+tpu<a id="tpu"></a>
+</td>
+<td>
+`''`
 </td>
 </tr><tr>
 <td>

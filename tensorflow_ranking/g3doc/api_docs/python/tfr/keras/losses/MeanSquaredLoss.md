@@ -1,4 +1,4 @@
-description: Mean squared loss.
+description: Computes mean squared loss between y_true and y_pred.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.MeanSquaredLoss" />
@@ -15,14 +15,14 @@ description: Mean squared loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L918-L939">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1074-L1122">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Mean squared loss.
+Computes mean squared loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.MeanSquaredLoss(
@@ -31,6 +31,37 @@ Mean squared loss.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+```
+loss = (y_true - y_pred)^2
+```
+
+#### Standalone usage:
+
+```
+>>> y_true = [[1., 0.]]
+>>> y_pred = [[0.6, 0.8]]
+>>> loss = tfr.keras.losses.MeanSquaredLoss()
+>>> loss(y_true, y_pred).numpy()
+0.4
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+>>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+>>> loss = tfr.keras.losses.MeanSquaredLoss(ragged=True)
+>>> loss(y_true, y_pred).numpy()
+0.20833336
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', loss=tfr.keras.losses.MeanSquaredLoss())
+```
+
+#### Definition:
 
 $$
 \mathcal{L}(\{y\}, \{s\}) = \sum_i (y_i - s_i)^{2}

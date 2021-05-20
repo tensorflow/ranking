@@ -1,4 +1,4 @@
-description: Implements normalized discounted cumulative gain (NDCG).
+description: Normalized discounted cumulative gain (NDCG).
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.metrics.NDCGMetric" />
@@ -28,14 +28,14 @@ description: Implements normalized discounted cumulative gain (NDCG).
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L277-L312">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L606-L691">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Implements normalized discounted cumulative gain (NDCG).
+Normalized discounted cumulative gain (NDCG).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.metrics.NDCGMetric(
@@ -46,9 +46,66 @@ Implements normalized discounted cumulative gain (NDCG).
 
 <!-- Placeholder for "Used in" -->
 
-The `gain_fn` and `rank_discount_fn` should be keras serializable. Please see
-the `pow_minus_1` and `log2_inverse` above as examples when defining user
-customized functions.
+Normalized discounted cumulative gain ([Järvelin et al, 2002][jarvelin2002]) is
+the normalized version of
+<a href="../../../tfr/keras/metrics/DCGMetric.md"><code>tfr.keras.metrics.DCGMetric</code></a>.
+
+For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+```
+NDCG(y, s) = DCG(y, s) / DCG(y, y)
+DCG(y, s) = sum_i gain(y_i) * rank_discount(rank(s_i))
+```
+
+NOTE: The `gain_fn` and `rank_discount_fn` should be keras serializable. Please
+see
+<a href="../../../tfr/keras/utils/pow_minus_1.md"><code>tfr.keras.utils.pow_minus_1</code></a>
+and
+<a href="../../../tfr/keras/utils/log2_inverse.md"><code>tfr.keras.utils.log2_inverse</code></a>
+as examples when defining user customized functions.
+
+#### Standalone usage:
+
+```
+>>> y_true = [[0., 1., 1.]]
+>>> y_pred = [[3., 1., 2.]]
+>>> ndcg = tfr.keras.metrics.NDCGMetric()
+>>> ndcg(y_true, y_pred).numpy()
+0.6934264
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[0., 1.], [1., 2., 0.]])
+>>> y_pred = tf.ragged.constant([[2., 1.], [2., 5., 4.]])
+>>> ndcg = tfr.keras.metrics.NDCGMetric(ragged=True)
+>>> ndcg(y_true, y_pred).numpy()
+0.7974351
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', metrics=[tfr.keras.metrics.NDCGMetric()])
+```
+
+#### Definition:
+
+$$
+\text{NDCG}(\{y\}, \{s\}) =
+\frac{\text{DCG}(\{y\}, \{s\})}{\text{DCG}(\{y\}, \{y\})} \\
+\text{DCG}(\{y\}, \{s\}) =
+\sum_i \text{gain}(y_i) \cdot \text{rank_discount}(\text{rank}(s_i))
+$$
+
+where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
+$$s$$ with ties broken randomly.
+
+#### References:
+
+-   [Cumulated gain-based evaluation of IR techniques, Järvelin et al, 2002][jarvelin2002]
+
+[jarvelin2002]: https://dl.acm.org/doi/10.1145/582415.582418
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -592,7 +649,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L304-L312">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L683-L691">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

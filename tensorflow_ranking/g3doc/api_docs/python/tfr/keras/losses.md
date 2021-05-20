@@ -40,22 +40,23 @@ Computes the Gumbel approximate NDCG loss between `y_true` and `y_pred`.
 [`class ListMLELambdaWeight`](../../tfr/keras/losses/ListMLELambdaWeight.md):
 LambdaWeight for ListMLE cost function.
 
-[`class ListMLELoss`](../../tfr/keras/losses/ListMLELoss.md): ListMLE loss.
+[`class ListMLELoss`](../../tfr/keras/losses/ListMLELoss.md): Computes ListMLE
+loss between `y_true` and `y_pred`.
 
-[`class MeanSquaredLoss`](../../tfr/keras/losses/MeanSquaredLoss.md): Mean
-squared loss.
+[`class MeanSquaredLoss`](../../tfr/keras/losses/MeanSquaredLoss.md): Computes
+mean squared loss between `y_true` and `y_pred`.
 
 [`class NDCGLambdaWeight`](../../tfr/keras/losses/NDCGLambdaWeight.md): Keras
 serializable class for NDCG.
 
 [`class PairwiseHingeLoss`](../../tfr/keras/losses/PairwiseHingeLoss.md):
-Pairwise hinge loss.
+Computes pairwise hinge loss between `y_true` and `y_pred`.
 
 [`class PairwiseLogisticLoss`](../../tfr/keras/losses/PairwiseLogisticLoss.md):
-Pairwise logistic loss.
+Computes pairwise logistic loss between `y_true` and `y_pred`.
 
 [`class PairwiseSoftZeroOneLoss`](../../tfr/keras/losses/PairwiseSoftZeroOneLoss.md):
-Pairwise soft zero one loss.
+Computes pairwise soft zero-one loss between `y_true` and `y_pred`.
 
 [`class PrecisionLambdaWeight`](../../tfr/keras/losses/PrecisionLambdaWeight.md):
 Keras serializable class for Precision.
@@ -66,8 +67,8 @@ key strings.
 [`class SigmoidCrossEntropyLoss`](../../tfr/keras/losses/SigmoidCrossEntropyLoss.md):
 Computes the Sigmoid cross-entropy loss between `y_true` and `y_pred`.
 
-[`class SoftmaxLoss`](../../tfr/keras/losses/SoftmaxLoss.md): Softmax
-cross-entropy loss.
+[`class SoftmaxLoss`](../../tfr/keras/losses/SoftmaxLoss.md): Computes Softmax
+cross-entropy loss between `y_true` and `y_pred`.
 
 [`class UniqueSoftmaxLoss`](../../tfr/keras/losses/UniqueSoftmaxLoss.md):
 Computes unique softmax cross-entropy loss between `y_true` and `y_pred`.

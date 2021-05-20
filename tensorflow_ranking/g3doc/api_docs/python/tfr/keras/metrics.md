@@ -22,38 +22,37 @@ Keras metrics in TF-Ranking.
 
 ## Classes
 
-[`class ARPMetric`](../../tfr/keras/metrics/ARPMetric.md): Implements average
-relevance position (ARP).
+[`class ARPMetric`](../../tfr/keras/metrics/ARPMetric.md): Average relevance
+position (ARP).
 
-[`class AlphaDCGMetric`](../../tfr/keras/metrics/AlphaDCGMetric.md): Implements
-alpha discounted cumulative gain (alphaDCG).
+[`class AlphaDCGMetric`](../../tfr/keras/metrics/AlphaDCGMetric.md): Alpha
+discounted cumulative gain (alphaDCG).
 
-[`class DCGMetric`](../../tfr/keras/metrics/DCGMetric.md): Implements discounted
-cumulative gain (DCG).
+[`class DCGMetric`](../../tfr/keras/metrics/DCGMetric.md): Discounted cumulative
+gain (DCG).
 
-[`class MRRMetric`](../../tfr/keras/metrics/MRRMetric.md): Implements mean
-reciprocal rank (MRR).
+[`class MRRMetric`](../../tfr/keras/metrics/MRRMetric.md): Mean reciprocal rank
+(MRR).
 
 [`class MeanAveragePrecisionMetric`](../../tfr/keras/metrics/MeanAveragePrecisionMetric.md):
-Implements mean average precision (MAP).
+Mean average precision (MAP).
 
-[`class NDCGMetric`](../../tfr/keras/metrics/NDCGMetric.md): Implements
-normalized discounted cumulative gain (NDCG).
+[`class NDCGMetric`](../../tfr/keras/metrics/NDCGMetric.md): Normalized
+discounted cumulative gain (NDCG).
 
-[`class OPAMetric`](../../tfr/keras/metrics/OPAMetric.md): Implements ordered
-pair accuracy (OPA).
+[`class OPAMetric`](../../tfr/keras/metrics/OPAMetric.md): Ordered pair accuracy
+(OPA).
 
 [`class PrecisionIAMetric`](../../tfr/keras/metrics/PrecisionIAMetric.md):
-Implements PrecisionIA@k (Pre-IA@k).
+Precision-IA@k (Pre-IA@k).
 
 [`class PrecisionMetric`](../../tfr/keras/metrics/PrecisionMetric.md):
-Implements precision@k (P@k).
+Precision@k (P@k).
 
 [`class RankingMetricKey`](../../tfr/keras/metrics/RankingMetricKey.md): Ranking
 metric key strings.
 
-[`class RecallMetric`](../../tfr/keras/metrics/RecallMetric.md): Implements
-recall@k.
+[`class RecallMetric`](../../tfr/keras/metrics/RecallMetric.md): Recall@k (R@k).
 
 ## Functions
 

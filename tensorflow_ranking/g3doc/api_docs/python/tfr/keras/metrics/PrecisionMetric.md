@@ -1,4 +1,4 @@
-description: Implements precision@k (P@k).
+description: Precision@k (P@k).
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.metrics.PrecisionMetric" />
@@ -28,14 +28,14 @@ description: Implements precision@k (P@k).
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L197-L211">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L282-L352">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Implements precision@k (P@k).
+Precision@k (P@k).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.metrics.PrecisionMetric(
@@ -44,6 +44,59 @@ Implements precision@k (P@k).
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+```
+P@K(y, s) = 1/k sum_i I[rank(s_i) < k] y_i
+```
+
+NOTE: This metric converts graded relevance to binary relevance by setting
+`y_i = 1` if `y_i >= 1`.
+
+#### Standalone usage:
+
+```
+>>> y_true = [[0., 1., 1.]]
+>>> y_pred = [[3., 1., 2.]]
+>>> precision_at_2 = tfr.keras.metrics.PrecisionMetric(topn=2)
+>>> precision_at_2(y_true, y_pred).numpy()
+0.5
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[0., 1.], [1., 2., 0.]])
+>>> y_pred = tf.ragged.constant([[2., 1.], [2., 5., 4.]])
+>>> precision_at_2 = tfr.keras.metrics.PrecisionMetric(topn=2, ragged=True)
+>>> precision_at_2(y_true, y_pred).numpy()
+0.5
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', metrics=[tfr.keras.metrics.PrecisionMetric()])
+```
+
+#### Definition:
+
+$$
+\text{P@k}(\{y\}, \{s\}) =
+\frac{1}{k} \sum_i I[\text{rank}(s_i) \leq k] \bar{y}_i
+$$
+
+where:
+
+*   $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores $$s$$
+    with ties broken randomly
+*   $$I[]$$ is the indicator function: \
+    $$I[\text{cond}] = \begin{cases} 1 & \text{if cond is true}\\ 0 &
+    \text{else}\end{cases} $$
+*   $$\bar{y}_i$$ are the truncated labels: \
+    $$ \bar{y}_i = \begin{cases} 1 & \text{if }y_i \geq 1 \\ 0 & \text{else}
+    \end{cases} $$
+*   $$k = |y|$$ if $$k$$ is not provided
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -587,7 +640,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L206-L211">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L347-L352">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

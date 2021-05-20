@@ -11,7 +11,7 @@ description: Creates and initializes the requested tf.distribute strategy.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L29-L74">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L29-L71">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -23,7 +23,7 @@ Creates and initializes the requested tf.distribute strategy.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.strategy_utils.get_strategy(
     strategy: str,
-    master: Optional[str] = None
+    tpu: Optional[str] = &#x27;&#x27;
 ) -> Union[None, tf.distribute.MirroredStrategy, tf.distribute.
     MultiWorkerMirroredStrategy, tf.distribute.experimental.TPUStrategy]
 </code></pre>
@@ -52,11 +52,10 @@ Choose from ["MirroredStrategy", "MultiWorkerMirroredStrategy",
 </td>
 </tr><tr>
 <td>
-`master`
+`tpu`
 </td>
 <td>
-BNS master address for TPUStrategy. Leave this to None for other
-strategy.
+TPU address for TPUStrategy. Not used for other strategy.
 </td>
 </tr>
 </table>

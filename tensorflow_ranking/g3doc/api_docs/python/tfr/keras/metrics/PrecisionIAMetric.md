@@ -1,4 +1,4 @@
-description: Implements PrecisionIA@k (Pre-IA@k).
+description: Precision-IA@k (Pre-IA@k).
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.metrics.PrecisionIAMetric" />
@@ -28,14 +28,14 @@ description: Implements PrecisionIA@k (Pre-IA@k).
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L234-L253">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L431-L521">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Implements PrecisionIA@k (Pre-IA@k).
+Precision-IA@k (Pre-IA@k).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.metrics.PrecisionIAMetric(
@@ -44,6 +44,114 @@ Implements PrecisionIA@k (Pre-IA@k).
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+Intent-aware Precision@k ([Agrawal et al, 2009][agrawal2009];
+[Clarke et al, 2009][clarke2009]) is a precision metric that operates on
+subtopics and is typically used for diversification tasks..
+
+For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+```
+Pre-IA@k(y, s) = sum_t sum_i I[rank(s_i) <= k] y_{i,t} / (# of subtopics * k)
+```
+
+NOTE: The labels `y_true` should be of shape `[batch_size, list_size,
+subtopic_size]`, indicating relevance for each subtopic in the last dimension.
+
+NOTE: This metric converts graded relevance to binary relevance by setting
+`y_{i,t} = 1` if `y_{i,t} >= 1`.
+
+#### Standalone usage:
+
+```
+>>> y_true = [[[0., 1.], [1., 0.], [1., 1.]]]
+>>> y_pred = [[3., 1., 2.]]
+>>> pre_ia = tfr.keras.metrics.PrecisionIAMetric()
+>>> pre_ia(y_true, y_pred).numpy()
+0.6666667
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant(
+...   [[[0., 0.], [1., 0.]], [[1., 1.], [0., 2.], [1., 0.]]])
+>>> y_pred = tf.ragged.constant([[2., 1.], [2., 5., 4.]])
+>>> pre_ia = tfr.keras.metrics.PrecisionIAMetric(ragged=True)
+>>> pre_ia(y_true, y_pred).numpy()
+0.5833334
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd',
+              metrics=[tfr.keras.metrics.PrecisionIAMetric()])
+```
+
+#### Definition:
+
+$$
+\text{Pre-IA@k}(y, s) = \frac{1}{\text{# of subtopics} \cdot k}
+\sum_t \sum_i I[\text{rank}(s_i) \leq k] y_{i,t}
+$$
+
+where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
+$$s$$ with ties broken randomly.
+
+#### References:
+
+-   [Diversifying Search Results, Agrawal et al, 2009][agrawal2009]
+-   [Overview of the TREC 2009 Web Track, Clarke et al, 2009][clarke2009]
+
+[agrawal2009]:
+https://www.microsoft.com/en-us/research/publication/diversifying-search-results/
+[clarke2009]: https://trec.nist.gov/pubs/trec18/papers/ENT09.OVERVIEW.pdf
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`name`
+</td>
+<td>
+A string used as the name for this metric.
+</td>
+</tr><tr>
+<td>
+`topn`
+</td>
+<td>
+A cutoff for how many examples to consider for this metric.
+</td>
+</tr><tr>
+<td>
+`dtype`
+</td>
+<td>
+Data type of the metric output. See `tf.keras.metrics.Metric`.
+</td>
+</tr><tr>
+<td>
+`ragged`
+</td>
+<td>
+A bool indicating whether the supplied tensors are ragged. If
+True y_true, y_pred and sample_weight (if providing per-example weights)
+need to be ragged tensors with compatible shapes.
+</td>
+</tr><tr>
+<td>
+`**kwargs`
+</td>
+<td>
+Other keyward arguments used in `tf.keras.metrics.Metric`.
+</td>
+</tr>
+</table>
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -587,7 +695,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L248-L253">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L516-L521">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

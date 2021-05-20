@@ -1,4 +1,4 @@
-description: Pairwise hinge loss.
+description: Computes pairwise hinge loss between y_true and y_pred.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.PairwiseHingeLoss" />
@@ -15,14 +15,14 @@ description: Pairwise hinge loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L240-L274">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L240-L303">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Pairwise hinge loss.
+Computes pairwise hinge loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.PairwiseHingeLoss(
@@ -33,9 +33,42 @@ Pairwise hinge loss.
 
 <!-- Placeholder for "Used in" -->
 
+For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+```
+loss = sum_i sum_j I[y_i > y_j] * max(0, 1 - (s_i - s_j))
+```
+
+#### Standalone usage:
+
+```
+>>> y_true = [[1., 0.]]
+>>> y_pred = [[0.6, 0.8]]
+>>> loss = tfr.keras.losses.PairwiseHingeLoss()
+>>> loss(y_true, y_pred).numpy()
+0.6
+```
+
+```
+>>> # Using ragged tensors
+>>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+>>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+>>> loss = tfr.keras.losses.PairwiseHingeLoss(ragged=True)
+>>> loss(y_true, y_pred).numpy()
+0.41666666
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', loss=tfr.keras.losses.PairwiseHingeLoss())
+```
+
+#### Definition:
+
 $$
 \mathcal{L}(\{y\}, \{s\}) =
-\sum_{i, j} I_{y_i > y_j} \max(0, 1 - (s_i - s_j))
+\sum_i \sum_j I[y_i > y_j] \max(0, 1 - (s_i - s_j))
 $$
 
 <!-- Tabular view -->

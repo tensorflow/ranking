@@ -483,7 +483,6 @@ Below is an example to bucketize the input data to the 3 buckets "[0, 3), [3,
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -563,7 +562,6 @@ batch.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -577,7 +575,6 @@ A `Dataset` transformation function, which can be passed to
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -910,8 +907,9 @@ elements:
 
 ```
 >>> dataset = tf.data.Dataset.from_tensor_slices(
-...                [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
->>> dataset = dataset.flat_map(lambda x: Dataset.from_tensor_slices(x))
+...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+>>> dataset = dataset.flat_map(
+...     lambda x: tf.data.Dataset.from_tensor_slices(x))
 >>> list(dataset.as_numpy_iterator())
 [1, 2, 3, 4, 5, 6, 7, 8, 9]
 ```
@@ -1263,7 +1261,6 @@ A dataset "element". Supported values are documented
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2192,7 +2189,6 @@ number of elements that will be buffered when prefetching. If the value
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2228,7 +2224,6 @@ True
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2245,7 +2240,6 @@ sequence of values.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

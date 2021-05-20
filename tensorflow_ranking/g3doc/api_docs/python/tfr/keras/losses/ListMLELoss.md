@@ -1,4 +1,4 @@
-description: ListMLE loss.
+description: Computes ListMLE loss between y_true and y_pred.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.losses.ListMLELoss" />
@@ -15,14 +15,14 @@ description: ListMLE loss.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L496-L538">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L613-L694">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-ListMLE loss.
+Computes ListMLE loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.ListMLELoss(
@@ -33,16 +33,61 @@ ListMLE loss.
 
 <!-- Placeholder for "Used in" -->
 
+Implements ListMLE loss ([Xia et al, 2008][xia2008]). For each list of scores
+`s` in `y_pred` and list of labels `y` in `y_true`:
+
+```
+loss = - log P(permutation_y | s)
+P(permutation_y | s) = Plackett-Luce probability of permutation_y given s
+permutation_y = permutation of items sorted by labels y.
+```
+
+NOTE: This loss is stochastic and may return different values for identical
+inputs.
+
+#### Standalone usage:
+
+```
+>>> tf.random.set_seed(42)
+>>> y_true = [[1., 0.]]
+>>> y_pred = [[0.6, 0.8]]
+>>> loss = tfr.keras.losses.ListMLELoss()
+>>> loss(y_true, y_pred).numpy()
+0.7981389
+```
+
+```
+>>> # Using ragged tensors
+>>> tf.random.set_seed(42)
+>>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+>>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+>>> loss = tfr.keras.losses.ListMLELoss(ragged=True)
+>>> loss(y_true, y_pred).numpy()
+1.1613163
+```
+
+Usage with the `compile()` API:
+
+```python
+model.compile(optimizer='sgd', loss=tfr.keras.losses.ListMLELoss())
+```
+
+#### Definition:
+
 $$
 \mathcal{L}(\{y\}, \{s\}) = - \log(P(\pi_y | s))
 $$
 
-where $$P(\pi_y | s)$$ is the plackett-luce probability of a permutation
+where $$P(\pi_y | s)$$ is the Plackett-Luce probability of a permutation
 $$\pi_y$$ conditioned on scores $$s$$. Here $$\pi_y$$ represents a permutation
 of items ordered by the relevance labels $$y$$ where ties are broken randomly.
 
-NOTE: Since tie breaks happen randomly, this loss is stochastic and may return
-different values for identical inputs.
+#### References:
+
+-   [Listwise approach to learning to rank: theory and algorithm, Xia et al,
+    2008][xia2008]
+
+[xia2008]: https://dl.acm.org/doi/10.1145/1390156.1390306
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -97,7 +142,7 @@ False, this loss will accept dense tensors.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L377-L384">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L465-L472">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -138,7 +183,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L367-L375">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L455-L463">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
