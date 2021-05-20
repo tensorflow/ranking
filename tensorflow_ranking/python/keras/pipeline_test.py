@@ -149,7 +149,6 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
         writer.write(ELWC.SerializeToString())
 
     model_dir = os.path.join(data_dir, "model")
-    master = "local" if strategy == "TPUStrategy" else None
 
     dataset_hparams = pipeline.DatasetHparams(
         train_input_pattern=data_file,
@@ -168,8 +167,7 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
         loss="softmax_loss",
         export_best_model=True,
         automatic_reduce_lr=True,
-        strategy=strategy,
-        master=master)
+        strategy=strategy)
 
     context_feature_spec = {
         "cf_1":
@@ -266,8 +264,7 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
             "task2": 2.0
         },
         export_best_model=True,
-        strategy="MirroredStrategy",
-        master=None)
+        strategy="MirroredStrategy")
 
     context_feature_spec = {
         "cf_1":

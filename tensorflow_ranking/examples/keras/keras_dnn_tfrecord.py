@@ -56,8 +56,6 @@ flags.DEFINE_enum(
     ["MirroredStrategy", "MultiWorkerMirroredStrategy"],
     "Choose tf.distribute strategy to use.")
 
-flags.DEFINE_string("master", None, "BNS name of the TensorFlow master to use.")
-
 flags.DEFINE_string(
     "model_dir", None, "The directory where the model weights and "
     "training/validation summaries are stored.")
@@ -176,8 +174,7 @@ def train_and_eval():
       learning_rate=FLAGS.learning_rate,
       steps_per_execution=FLAGS.steps_per_execution,
       export_best_model=FLAGS.export_best_model,
-      strategy=FLAGS.strategy,
-      master=FLAGS.master)
+      strategy=FLAGS.strategy)
 
   context_feature_spec, example_feature_spec, label_spec = _create_feature_spec(
   )

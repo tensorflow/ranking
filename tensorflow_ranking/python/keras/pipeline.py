@@ -92,7 +92,7 @@ class PipelineHparams:
   best_exporter_metric_higher_better: bool = False
   best_exporter_metric: str = "loss"
   strategy: Optional[str] = None
-  master: Optional[str] = None
+  tpu: Optional[str] = ""
 
 
 @dataclasses.dataclass
@@ -139,7 +139,7 @@ class ModelFitPipeline(AbstractPipeline):
     })
 
     self._strategy = strategy_utils.get_strategy(self._hparams.strategy,
-                                                 self._hparams.master)
+                                                 self._hparams.tpu)
 
   def _validate_parameters(self, model_builder: model_lib.AbstractModelBuilder,
                            dataset_builder: AbstractDatasetBuilder):

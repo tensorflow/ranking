@@ -113,11 +113,9 @@ class KerasDNNUnitTest(tf.test.TestCase, parameterized.TestCase):
         writer.write(ELWC.SerializeToString())
 
     model_dir = os.path.join(data_dir, "model")
-    master = "local" if strategy == "TPUStrategy" else None
 
     with flagsaver.flagsaver(
         strategy=strategy,
-        master=master,
         train_input_pattern=data_file,
         valid_input_pattern=data_file,
         model_dir=model_dir,

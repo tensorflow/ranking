@@ -42,7 +42,7 @@ MWMS_STRATEGY = "MultiWorkerMirroredStrategy"
 
 def get_strategy(
     strategy: str,
-    master: Optional[str] = None
+    tpu: Optional[str] = ""
 ) -> Union[None, tf.distribute.MirroredStrategy,
            tf.distribute.MultiWorkerMirroredStrategy,
            tf.distribute.experimental.TPUStrategy,]:
@@ -58,8 +58,7 @@ def get_strategy(
     strategy: Key for a `tf.distribute` strategy to be used to train the model.
       Choose from ["MirroredStrategy", "MultiWorkerMirroredStrategy",
       "TPUStrategy"]. If None, no distributed strategy will be used.
-    master: BNS master address for TPUStrategy. Leave this to None for other
-      strategy.
+    tpu: TPU address for TPUStrategy. Not used for other strategy.
 
   Returns:
     A strategy will be used for distributed training.
@@ -76,9 +75,7 @@ def get_strategy(
     return tf.distribute.MultiWorkerMirroredStrategy(
         cluster_resolver=cluster_resolver)
   elif strategy == TPU_STRATEGY:
-    if master is None:
-      raise ValueError("BNS master needs to be specified for TPUStrategy")
-    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(master)
+    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu=tpu)
     tf.config.experimental_connect_to_cluster(resolver)
     tf.tpu.experimental.initialize_tpu_system(resolver)
     strategy = tf.distribute.experimental.TPUStrategy(resolver)

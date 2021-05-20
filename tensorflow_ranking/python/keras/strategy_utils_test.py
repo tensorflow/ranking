@@ -24,14 +24,14 @@ from tensorflow_ranking.python.keras import strategy_utils
 class StrategyUtilsTest(tf.test.TestCase):
 
   def test_get_strategy(self):
-    self.assertIsNone(strategy_utils.get_strategy(None, None))
+    self.assertIsNone(strategy_utils.get_strategy(None))
 
     self.assertIsInstance(
-        strategy_utils.get_strategy("MirroredStrategy", None),
+        strategy_utils.get_strategy("MirroredStrategy"),
         tf.distribute.MirroredStrategy)
 
     self.assertIsInstance(
-        strategy_utils.get_strategy("MultiWorkerMirroredStrategy", None),
+        strategy_utils.get_strategy("MultiWorkerMirroredStrategy"),
         tf.distribute.MultiWorkerMirroredStrategy)
 
     with self.assertRaises(ValueError):
