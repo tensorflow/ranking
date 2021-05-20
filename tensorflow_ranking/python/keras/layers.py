@@ -35,6 +35,16 @@ def create_tower(hidden_layer_dims: List[int],
                  **kwargs: Dict[Any, Any]):
   """Creates a feed-forward network as `tf.keras.Sequential`.
 
+  It creates a feed-forward network with batch normalization and dropout, and
+  optionally applies batch normalization on inputs.
+
+  Example usage:
+  ```python
+  tower = create_tower(hidden_layer_dims=[64, 32, 16], output_units=1)
+  inputs = tf.ones([2, 3, 1])
+  tower_logits = tower(inputs)
+  ```
+
   Args:
     hidden_layer_dims: Iterable of number hidden units per layer. All layers are
       fully connected. Ex. `[64, 32]` means first layer has 64 nodes and second
@@ -47,7 +57,7 @@ def create_tower(hidden_layer_dims: List[int],
     batch_norm_moment: Momentum for the moving average in batch normalization.
     dropout: When not `None`, the probability we will drop out a given
       coordinate.
-    name: Name of the keras layer.
+    name: Name of the Keras layer.
     **kwargs: Keyword arguments for every `tf.keras.Dense` layers.
 
   Returns:
@@ -75,22 +85,24 @@ class FlattenList(tf.keras.layers.Layer):
   This layer flattens the batch_size dimension and the list_size dimension for
   the `example_features` and expands list_size times for the `context_features`.
 
-  Example use,
+  Example usage:
+
   ```python
-    context_features = {'context_feature_1': [[1], [0]]}
-    example_features = {'example_feature_1':
-                        [[[1], [0], [-1]], [[0], [1], [0]]]}
-    mask = [[True, True, False], [True, False, False]]
-    flattened_context_features, flattened_example_features = FlattenList()(
-        inputs=(context_features, example_features, mask))
+  context_features = {'context_feature_1': [[1], [0]]}
+  example_features = {'example_feature_1':
+                      [[[1], [0], [-1]], [[0], [1], [0]]]}
+  mask = [[True, True, False], [True, False, False]]
+  flattened_context_features, flattened_example_features = FlattenList()(
+      inputs=(context_features, example_features, mask))
   ```
   That is, there are two valid examples in the first query and one
   valid example in the second query. Then
+
   ```python
-    flattened_context_features = {'context_feature_1':
-                                  [[1], [1], [1], [0], [0], [0]]}
-    flattened_example_features = {'example_feature_1':
-                                  [[1], [0], [1], [0], [0], [0]]}
+  flattened_context_features = {'context_feature_1':
+                                [[1], [1], [1], [0], [0], [0]]}
+  flattened_example_features = {'example_feature_1':
+                                [[1], [0], [1], [0], [0], [0]]}
   ```
   `context_feature_1` is repeated by list_size=3 times. `example_feature_1` is
   flattened and padded with the invalid terms replaced by valid terms in each
@@ -179,31 +191,31 @@ class RestoreList(tf.keras.layers.Layer):
   [batch_size * list_size, 1] back to 2D of shape [batch_size, list_size] and
   mask the invalid terms to be a defined large negative value.
 
-  Example use,
+  Example usage:
+
   ```python
-    flattened_logits = [1, 0.5, 2, 0, -1, 0]
-    mask = [[True, True, False], [True, False, False]]
-    logits = RestoreList()(inputs=(flattened_logits, mask))
+  flattened_logits = [1, 0.5, 2, 0, -1, 0]
+  mask = [[True, True, False], [True, False, False]]
+  logits = RestoreList()(inputs=(flattened_logits, mask))
+  logits.numpy()
+  # Returns: [[1, 0.5, log(1e-10)], [0, log(1e-10), log(1e-10)]]
   ```
-  Then
-  ```python
-    logits = [[1, 0.5, log(_EPSILON)], [0, log(_EPSILON), log(_EPSILON)]]
-  ```
-  where _EPSILON=1e-10. This layer works also for 2D `flattened_logits` like
+
+  This layer works also for 2D `flattened_logits` like
   [[1], [0.5], [2], [0], [-1], [0]].
 
   When `by_scatter=True`, an nd_indices will be generated using `mask` in the
   same way as `FlattenList`. All values in the `flattened_logits` will be used
   and repeated entries will be averaged.
+
   ```python
-    flattened_logits = [1, 0.5, 2, 0, -1, 0]
-    mask = [[True, True, False], [True, False, False]]
-    logits = RestoreList(by_scatter=True)((flattened_logits, mask))
+  flattened_logits = [1, 0.5, 2, 0, -1, 0]
+  mask = [[True, True, False], [True, False, False]]
+  logits = RestoreList(by_scatter=True)((flattened_logits, mask))
+  logits.numpy()
+  # Returns: [[1.5, 0.5, log(1e-10)], [-1/3, log(1e-10), log(1e-10)]]
   ```
-  Then
-  ```python
-    logits = [[1.5, 0.5, log(_EPSILON)], [-1/3, log(_EPSILON), log(_EPSILON)]]
-  ```
+
   This is because the flattened_logits are treated as circularly padded entries.
   The [1st, 3rd] values [1, 2] are counted to logits[0, 0]. The [4th, 5th, 6th]
   values [0, -1, 0] are counted to logits[1, 0]. Note that We use different
@@ -271,23 +283,33 @@ class ConcatFeatures(tf.keras.layers.Layer):
   shape [batch_size, list_size, sum(feature_dims)], where sum(feature_dims) is
   the sum of all example feature dimensions and the context feature dimension.
 
-  Example:
+  Example usage:
+
+  ConcatFeatures with circular padding.
+
   ```python
-    # Batch size = 2, list_size = 2.
-    context_features = {
-        'context_feature_1': [[1.], [2.]]
-    }
-    example_features = {
+  # Batch size = 2, list_size = 2.
+  context_features = {
+      'context_feature_1': [[1.], [2.]]
+  }
+  example_features = {
         'example_feature_1':
             [[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]]
-    }
-    mask = [[True, False], [True, True]]
-    ConcatFeatures()(inputs=(context_features, example_features, mask))
-    # Returns: [[[1., 1., 0.], [1., 1., 0.]], [[2., 0., 1.], [2., 1., 0.]]])
+  }
+  mask = [[True, False], [True, True]]
+  concat_tensor = ConcatFeatures()(inputs=(context_features,
+      example_features, mask))
+  concat_tensor.numpy()
+  # Returns: [[[1., 1., 0.], [1., 1., 0.]], [[2., 0., 1.], [2., 1., 0.]]])
+  ```
 
-    ConcatFeatures(circular_padding=False)(
-        inputs=(context_features, example_features, mask))
-    # Returns: [[[1., 1., 0.], [1., 0., 1.]], [[2., 0., 1.], [2., 1., 0.]]]
+  ConcatFeatures without circular padding.
+
+  ```python
+  concat_tensor = ConcatFeatures(circular_padding=False)(
+     inputs=(context_features, example_features, mask))
+  concat_tensor.numpy()
+  # Returns: [[[1., 1., 0.], [1., 0., 1.]], [[2., 0., 1.], [2., 1., 0.]]]
   ```
   """
 
@@ -359,8 +381,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
   """Cross Document Interaction Attention layer.
 
   This layer implements the cross-document attention described in
-  "Permutation Equivariant Document Interaction Network for Neural Learning to
-  Rank". http://research.google/pubs/pub49364/
+  [Pasumarthi et al, 2020][pasumarthi2020].
 
   This layer comprises of several layers of Multi-Headed Attention (MHA)
   applied over the list of documents to attend over itself, using a mask to
@@ -372,20 +393,30 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
   MHA uses scaled dot product attention, with residual connection and layer
   normalization as follows. This transformation is applied for `num_layers`
   times:
-  h_i := LayerNorm_i(h_{i-1} + MHA_i(h_{i-1}), TopK(h_{i-1}; k))
 
-  Example:
-  ```python
-    # Batch size = 2, list_size = 3.
-    inputs =  [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]]
-    list_mask = [[True, True, False], [True, False, False]]
-    dia_layer = DocumentInteractionAttention(
-        num_heads=1, head_size=64, num_layers=1)
-    dia_output = dia_layer(
-        inputs=inputs,
-        training=False,
-        list_mask=list_mask)
   ```
+  h_i := LayerNorm_i(h_{i-1} + MHA_i(h_{i-1}), TopK(h_{i-1}; k))
+  ```
+
+  Example usage:
+
+  ```python
+  # Batch size = 2, list_size = 3.
+  inputs =  [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]]
+  list_mask = [[True, True, False], [True, False, False]]
+  dia_layer = DocumentInteractionAttention(
+      num_heads=1, head_size=64, num_layers=1)
+  dia_output = dia_layer(
+      inputs=inputs,
+      training=False,
+      list_mask=list_mask)
+  ```
+
+  References:
+    - [Permutation Equivariant Document Interaction Network for Neural Learning
+       to Rank, Pasumarthi et al, 2020][pasumarthi2020]
+
+  [pasumarthi2020]: http://research.google/pubs/pub49364/
   """
 
   def __init__(self,
@@ -422,7 +453,6 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     Args:
       input_shape: A tuple of shapes for `example_inputs`, `list_mask`. These
       correspond to `inputs` argument of call.
-
     """
     example_inputs_shape, list_mask_shape = input_shape
     example_inputs_shape = tf.TensorShape(example_inputs_shape)
@@ -511,28 +541,32 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class GAMLayer(tf.keras.layers.Layer):
-  """Defines a generalized additive model (GAM) layer.
+  r"""Defines a generalized additive model (GAM) layer.
+
+  This layer implements the neural generalized additive ranking model described
+  in [Zhuang et al, 2021][zhuang2021].
 
   Neural Generalized Additive Ranking Model is an additive ranking model.
-  See the paper (https://arxiv.org/abs/2005.02553) for more details.
-  For each example x with n features (x_1, x_2, ..., x_n), the ranking score is:
+  For each example `x` with `n` features `(x_1, x_2, ..., x_n)`, the ranking
+  score is:
 
-    F(x) = f1(x_1) + f2(x_2) + ... + fn(x_n)
+    $$F(x) = f_1(x_1) + f_2(x_2) + \ldots + f_n(x_n)$$
 
   where each feature is scored by a corresponding submodel, and the overall
   ranking score is the sum of all the submodels' outputs. Each submodel is a
   standalone feed-forward network.
 
-  When there are m context features (c_1, c_2, ..., c_m), the ranking score
+  When there are `m` context features `(c_1, c_2, ..., c_m)`, the ranking score
   will be determined by:
 
-    F(c, x) = w1(c) * f1(x_1) + w2(c) * f2(x_2) + ... + wn(c) * fn(x_n)
+    $$F(c, x) = w_1(c) * f_1(x_1) + w_2(c) * f_2(x_2) + \ldots + w_n(c) *
+    f_n(x_n)$$
 
-  where (w1(c), w2(c), ..., wn(c)) is a weighting vector determined solely by
-  context features. For each context feature c_j, a feed-forward submodel is
-  constructed to derive a weighting vector (wj1(c_j), wj2(c_j), ..., wjn(c_j)).
-  The final weighting vector is the sum of the output of all the context
-  features' submodels.
+  where `(w1(c), w2(c), ..., wn(c))` is a weighting vector determined solely by
+  context features. For each context feature `c_j`, a feed-forward submodel is
+  constructed to derive a weighting vector
+  `(wj1(c_j), wj2(c_j), ..., wjn(c_j))`. The final weighting vector is the sum
+  of the output of all the context features' submodels.
 
   The model is implicitly interpretable as the contribution of each feature to
   the final ranking score can be easily visualized. However, the model does not
@@ -543,6 +577,20 @@ class GAMLayer(tf.keras.layers.Layer):
   named `{feature_name}_subscore`. The output of each context feature's submodel
   is a n-dimensional vector and can be retrieved by tensor named
   `{feature_name}_subweight`.
+
+  ```python
+  example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
+  context_inputs = tf.constant([[1, 2], [0, 1], [-1, 1]], dtype=tf.float32)
+  gam = layers.GAMLayer(2, [3, 2, 1], 2, [3, 2, 1])
+  outputs, sublogits_list, subweights_list = gam(
+      ([example_inputs, example_inputs], [context_inputs, context_inputs]))
+  ```
+
+  References:
+    - [Interpretable Ranking with Generalized Additive Models, Zhuang et al,
+       2021][zhuang2021]
+
+  [zhuang2021]: https://research.google/pubs/pub50040/
   """
 
   def __init__(self,
@@ -575,7 +623,7 @@ class GAMLayer(tf.keras.layers.Layer):
       batch_norm_moment: Momentum for the moving average in batch normalization.
       dropout: When not `None`, the probability of dropout for the dropoout
         layer in each tower.
-      name: Name of the keras layer.
+      name: Name of the Keras layer.
       **kwargs: Keyword arguments.
     """
 

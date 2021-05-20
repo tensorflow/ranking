@@ -25,7 +25,7 @@ description: Defines a generalized additive model (GAM) layer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L499-L693">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L529-L741">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -51,24 +51,26 @@ Defines a generalized additive model (GAM) layer.
 
 <!-- Placeholder for "Used in" -->
 
-Neural Generalized Additive Ranking Model is an additive ranking model. See the
-paper (https://arxiv.org/abs/2005.02553) for more details. For each example x
-with n features (x_1, x_2, ..., x_n), the ranking score is:
+This layer implements the neural generalized additive ranking model described in
+[Zhuang et al, 2021][zhuang2021].
 
-F(x) = f1(x_1) + f2(x_2) + ... + fn(x_n)
+Neural Generalized Additive Ranking Model is an additive ranking model. For each
+example `x` with `n` features `(x_1, x_2, ..., x_n)`, the ranking score is:
+
+$$F(x) = f_1(x_1) + f_2(x_2) + \ldots + f_n(x_n)$$
 
 where each feature is scored by a corresponding submodel, and the overall
 ranking score is the sum of all the submodels' outputs. Each submodel is a
 standalone feed-forward network.
 
-When there are m context features (c_1, c_2, ..., c_m), the ranking score will
-be determined by:
+When there are `m` context features `(c_1, c_2, ..., c_m)`, the ranking score
+will be determined by:
 
-F(c, x) = w1(c) * f1(x_1) + w2(c) * f2(x_2) + ... + wn(c) * fn(x_n)
+$$F(c, x) = w_1(c) * f_1(x_1) + w_2(c) * f_2(x_2) + \ldots + w_n(c) * f_n(x_n)$$
 
-where (w1(c), w2(c), ..., wn(c)) is a weighting vector determined solely by
-context features. For each context feature c_j, a feed-forward submodel is
-constructed to derive a weighting vector (wj1(c_j), wj2(c_j), ..., wjn(c_j)).
+where `(w1(c), w2(c), ..., wn(c))` is a weighting vector determined solely by
+context features. For each context feature `c_j`, a feed-forward submodel is
+constructed to derive a weighting vector `(wj1(c_j), wj2(c_j), ..., wjn(c_j))`.
 The final weighting vector is the sum of the output of all the context features'
 submodels.
 
@@ -81,6 +83,20 @@ The output of each example feature's submodel can be retrieved by tensor named
 `{feature_name}_subscore`. The output of each context feature's submodel is a
 n-dimensional vector and can be retrieved by tensor named
 `{feature_name}_subweight`.
+
+```python
+example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
+context_inputs = tf.constant([[1, 2], [0, 1], [-1, 1]], dtype=tf.float32)
+gam = layers.GAMLayer(2, [3, 2, 1], 2, [3, 2, 1])
+outputs, sublogits_list, subweights_list = gam(
+    ([example_inputs, example_inputs], [context_inputs, context_inputs]))
+```
+
+#### References:
+
+-   [Interpretable Ranking with Generalized Additive Models, Zhuang et al, 2021][zhuang2021]
+
+[zhuang2021]: https://research.google/pubs/pub50040/
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -156,7 +172,7 @@ layer in each tower.
 `name`
 </td>
 <td>
-Name of the keras layer.
+Name of the Keras layer.
 </td>
 </tr><tr>
 <td>
@@ -710,7 +726,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L681-L693">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L729-L741">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

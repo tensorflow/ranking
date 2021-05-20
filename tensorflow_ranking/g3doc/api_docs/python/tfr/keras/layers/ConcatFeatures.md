@@ -26,7 +26,7 @@ manner.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L251-L340">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L263-L362">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -51,24 +51,33 @@ features along the `list_size` axis. The output is a 3-d tensor with shape
 [batch_size, list_size, sum(feature_dims)], where sum(feature_dims) is the sum
 of all example feature dimensions and the context feature dimension.
 
-#### Example:
+#### Example usage:
+
+ConcatFeatures with circular padding.
 
 ```python
-  # Batch size = 2, list_size = 2.
-  context_features = {
-      'context_feature_1': [[1.], [2.]]
-  }
-  example_features = {
+# Batch size = 2, list_size = 2.
+context_features = {
+    'context_feature_1': [[1.], [2.]]
+}
+example_features = {
       'example_feature_1':
           [[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]]
-  }
-  mask = [[True, False], [True, True]]
-  ConcatFeatures()(inputs=(context_features, example_features, mask))
-  # Returns: [[[1., 1., 0.], [1., 1., 0.]], [[2., 0., 1.], [2., 1., 0.]]])
+}
+mask = [[True, False], [True, True]]
+concat_tensor = ConcatFeatures()(inputs=(context_features,
+    example_features, mask))
+concat_tensor.numpy()
+# Returns: [[[1., 1., 0.], [1., 1., 0.]], [[2., 0., 1.], [2., 1., 0.]]])
+```
 
-  ConcatFeatures(circular_padding=False)(
-      inputs=(context_features, example_features, mask))
-  # Returns: [[[1., 1., 0.], [1., 0., 1.]], [[2., 0., 1.], [2., 1., 0.]]]
+ConcatFeatures without circular padding.
+
+```python
+concat_tensor = ConcatFeatures(circular_padding=False)(
+   inputs=(context_features, example_features, mask))
+concat_tensor.numpy()
+# Returns: [[[1., 1., 0.], [1., 0., 1.]], [[2., 0., 1.], [2., 1., 0.]]]
 ```
 
 <!-- Tabular view -->
@@ -643,7 +652,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L335-L340">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L357-L362">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

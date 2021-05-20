@@ -25,7 +25,7 @@ description: Layer to flatten the example list.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L58-L157">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L68-L169">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -47,17 +47,30 @@ Layer to flatten the example list.
 This layer flattens the batch_size dimension and the list_size dimension for the
 `example_features` and expands list_size times for the `context_features`.
 
-Example use, `python context_features = {'context_feature_1': [[1], [0]]}
-example_features = {'example_feature_1': [[[1], [0], [-1]], [[0], [1], [0]]]}
-mask = [[True, True, False], [True, False, False]] flattened_context_features,
-flattened_example_features = FlattenList()( inputs=(context_features,
-example_features, mask))` That is, there are two valid examples in the first
-query and one valid example in the second query. Then `python
-flattened_context_features = {'context_feature_1': [[1], [1], [1], [0], [0],
-[0]]} flattened_example_features = {'example_feature_1': [[1], [0], [1], [0],
-[0], [0]]}` `context_feature_1` is repeated by list_size=3 times.
-`example_feature_1` is flattened and padded with the invalid terms replaced by
-valid terms in each query in a circular way.
+#### Example usage:
+
+```python
+context_features = {'context_feature_1': [[1], [0]]}
+example_features = {'example_feature_1':
+                    [[[1], [0], [-1]], [[0], [1], [0]]]}
+mask = [[True, True, False], [True, False, False]]
+flattened_context_features, flattened_example_features = FlattenList()(
+    inputs=(context_features, example_features, mask))
+```
+
+That is, there are two valid examples in the first query and one valid example
+in the second query. Then
+
+```python
+flattened_context_features = {'context_feature_1':
+                              [[1], [1], [1], [0], [0], [0]]}
+flattened_example_features = {'example_feature_1':
+                              [[1], [0], [1], [0], [0], [0]]}
+```
+
+`context_feature_1` is repeated by list_size=3 times. `example_feature_1` is
+flattened and padded with the invalid terms replaced by valid terms in each
+query in a circular way.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -631,7 +644,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L152-L157">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L164-L169">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

@@ -11,7 +11,7 @@ description: Creates a feed-forward network as tf.keras.Sequential.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L13-L54">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L13-L64">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,6 +35,17 @@ Creates a feed-forward network as `tf.keras.Sequential`.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+It creates a feed-forward network with batch normalization and dropout, and
+optionally applies batch normalization on inputs.
+
+#### Example usage:
+
+```python
+tower = create_tower(hidden_layer_dims=[64, 32, 16], output_units=1)
+inputs = tf.ones([2, 3, 1])
+tower_logits = tower(inputs)
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -99,7 +110,7 @@ coordinate.
 `name`
 </td>
 <td>
-Name of the keras layer.
+Name of the Keras layer.
 </td>
 </tr><tr>
 <td>

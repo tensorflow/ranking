@@ -25,7 +25,7 @@ description: Output layer to restore listwise output shape.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L161-L247">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L173-L259">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -48,23 +48,35 @@ This layer maps the flattened 1D logits or 2D tensor of shape [batch_size *
 list_size, 1] back to 2D of shape [batch_size, list_size] and mask the invalid
 terms to be a defined large negative value.
 
-Example use, `python flattened_logits = [1, 0.5, 2, 0, -1, 0] mask = [[True,
-True, False], [True, False, False]] logits =
-RestoreList()(inputs=(flattened_logits, mask))` Then `python logits = [[1, 0.5,
-log(_EPSILON)], [0, log(_EPSILON), log(_EPSILON)]]` where _EPSILON=1e-10. This
-layer works also for 2D `flattened_logits` like [[1], [0.5], [2], [0], [-1],
-[0]].
+#### Example usage:
+
+```python
+flattened_logits = [1, 0.5, 2, 0, -1, 0]
+mask = [[True, True, False], [True, False, False]]
+logits = RestoreList()(inputs=(flattened_logits, mask))
+logits.numpy()
+# Returns: [[1, 0.5, log(1e-10)], [0, log(1e-10), log(1e-10)]]
+```
+
+This layer works also for 2D `flattened_logits` like [[1], [0.5], [2], [0],
+[-1], [0]].
 
 When `by_scatter=True`, an nd_indices will be generated using `mask` in the same
 way as `FlattenList`. All values in the `flattened_logits` will be used and
-repeated entries will be averaged. `python flattened_logits = [1, 0.5, 2, 0, -1,
-0] mask = [[True, True, False], [True, False, False]] logits =
-RestoreList(by_scatter=True)((flattened_logits, mask))` Then `python logits =
-[[1.5, 0.5, log(_EPSILON)], [-1/3, log(_EPSILON), log(_EPSILON)]]` This is
-because the flattened_logits are treated as circularly padded entries. The [1st,
-3rd] values [1, 2] are counted to logits[0, 0]. The [4th, 5th, 6th] values [0,
--1, 0] are counted to logits[1, 0]. Note that We use different values for those
-repeated entries, while they are likely the same in practice.
+repeated entries will be averaged.
+
+```python
+flattened_logits = [1, 0.5, 2, 0, -1, 0]
+mask = [[True, True, False], [True, False, False]]
+logits = RestoreList(by_scatter=True)((flattened_logits, mask))
+logits.numpy()
+# Returns: [[1.5, 0.5, log(1e-10)], [-1/3, log(1e-10), log(1e-10)]]
+```
+
+This is because the flattened_logits are treated as circularly padded entries.
+The [1st, 3rd] values [1, 2] are counted to logits[0, 0]. The [4th, 5th, 6th]
+values [0, -1, 0] are counted to logits[1, 0]. Note that We use different values
+for those repeated entries, while they are likely the same in practice.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -608,7 +620,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L242-L247">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L254-L259">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

@@ -25,7 +25,7 @@ description: Cross Document Interaction Attention layer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L344-L495">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L366-L525">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -47,9 +47,8 @@ Cross Document Interaction Attention layer.
 
 <!-- Placeholder for "Used in" -->
 
-This layer implements the cross-document attention described in "Permutation
-Equivariant Document Interaction Network for Neural Learning to Rank".
-http://research.google/pubs/pub49364/
+This layer implements the cross-document attention described in
+[Pasumarthi et al, 2020][pasumarthi2020].
 
 This layer comprises of several layers of Multi-Headed Attention (MHA) applied
 over the list of documents to attend over itself, using a mask to specify valid
@@ -59,21 +58,31 @@ all the documents are used as listwise context to compute the attention.
 
 MHA uses scaled dot product attention, with residual connection and layer
 normalization as follows. This transformation is applied for `num_layers` times:
-h_i := LayerNorm_i(h_{i-1} + MHA_i(h_{i-1}), TopK(h_{i-1}; k))
 
-#### Example:
+```
+h_i := LayerNorm_i(h_{i-1} + MHA_i(h_{i-1}), TopK(h_{i-1}; k))
+```
+
+#### Example usage:
 
 ```python
-  # Batch size = 2, list_size = 3.
-  inputs =  [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]]
-  list_mask = [[True, True, False], [True, False, False]]
-  dia_layer = DocumentInteractionAttention(
-      num_heads=1, head_size=64, num_layers=1)
-  dia_output = dia_layer(
-      inputs=inputs,
-      training=False,
-      list_mask=list_mask)
+# Batch size = 2, list_size = 3.
+inputs =  [[[1., 1.], [1., 0.], [1., 1.]], [[0., 0.], [0., 0.], [0., 0.]]]
+list_mask = [[True, True, False], [True, False, False]]
+dia_layer = DocumentInteractionAttention(
+    num_heads=1, head_size=64, num_layers=1)
+dia_output = dia_layer(
+    inputs=inputs,
+    training=False,
+    list_mask=list_mask)
 ```
+
+#### References:
+
+-   [Permutation Equivariant Document Interaction Network for Neural Learning to
+    Rank, Pasumarthi et al, 2020][pasumarthi2020]
+
+[pasumarthi2020]: http://research.google/pubs/pub49364/
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -467,7 +476,7 @@ using a `keras.Metric.Mean`.
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L401-L450">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L432-L480">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -668,7 +677,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L487-L495">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L517-L525">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
