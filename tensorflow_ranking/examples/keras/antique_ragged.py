@@ -154,6 +154,18 @@ class AntiqueEmbeddingRankingModel(tf.keras.Model):
     return tf.squeeze(scores, axis=2)
 
 
+class MyModelBuilder(tfr.keras.model.AbstractModelBuilder):
+  """Wraps the model into a ModelBuilder to work with `tfr.keras.pipeline`."""
+
+  def build(self) -> tf.keras.Model:
+    """Builds the model."""
+    return AntiqueEmbeddingRankingModel(
+        vocab_size=FLAGS.vocab_size,
+        vocab_file_path=FLAGS.vocab_file_path,
+        embedding_dim=FLAGS.embedding_dimension,
+        hidden_dims=FLAGS.hidden_layer_dims)
+
+
 def _add_ragged_label(inputs):
   mask = inputs[_MASK]
   features_dict = {
@@ -174,11 +186,8 @@ def train_and_eval():
 
   # Create ranking model to train. This model operates on ragged tensors and
   # returns model scores as ragged tensors.
-  model = AntiqueEmbeddingRankingModel(
-      vocab_size=FLAGS.vocab_size,
-      vocab_file_path=FLAGS.vocab_file_path,
-      embedding_dim=FLAGS.embedding_dimension,
-      hidden_dims=FLAGS.hidden_layer_dims)
+  model_builder = MyModelBuilder()
+  model = model_builder.build()
   model.compile(optimizer=optimizer, loss=loss, metrics=eval_metrics)
 
   # Create feature specification.
@@ -186,9 +195,10 @@ def train_and_eval():
       "query_tokens": tf.io.RaggedFeature(dtype=tf.string),
   }
   example_feature_spec = {
-      "document_tokens": tf.io.RaggedFeature(dtype=tf.string),
-      _LABEL_FEATURE: tf.io.FixedLenFeature(shape=[], dtype=tf.int64,
-                                            default_value=0)
+      "document_tokens":
+          tf.io.RaggedFeature(dtype=tf.string),
+      _LABEL_FEATURE:
+          tf.io.FixedLenFeature(shape=[], dtype=tf.int64, default_value=0)
   }
 
   # Load datasets.

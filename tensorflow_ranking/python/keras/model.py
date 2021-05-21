@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Ranking Model utilities and classes in tfr.keras."""
+"""Ranking model utilities and classes in tfr.keras."""
 
 import abc
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -79,14 +79,45 @@ def create_keras_model(network,
 
 
 class AbstractModelBuilder(metaclass=abc.ABCMeta):
-  """Interface to build a ranking `tf.keras.Model`.
+  """Interface to build a `tf.keras.Model` for ranking.
 
-  The `AbstractModelBuilder` class is an abstract class to build a ranking model
-  in tfr.keras. All the boilerplate codes related to constructing a
-  `tf.keras.Model` are integrated in the ModelBuilder class. This class is
-  mostly designed to be passed to tfr.keras.pipeline and called to build the
-  model under the strategy scope, so as all variables in the model, optimizers,
-  and metrics.
+  The `AbstractModelBuilder` serves as the interface between model building and
+  training. The training pipeline just calls the `build()` method to get the
+  model constructed in the strategy scope used in the training pipeline, so for
+  all variables in the model, optimizers, and metrics. See `ModelFitPipeline` in
+  `pipeline.py` for example.
+
+  The `build()` method is to be implemented in a subclass. The simplest example
+  is just to define everything inside the build function when you define a
+  tf.keras.Model.
+
+  ```python
+  class MyModelBuilder(AbstractModelBuilder):
+
+    def build(self) -> tf.keras.Model:
+      inputs = ...
+      outputs = ...
+      return tf.keras.Model(inputs=inputs, outputs=outputs)
+  ```
+
+  The `MyModelBuilder` should work with `ModelFitPipeline`. To make the model
+  building more structured for ranking problems, we also define subclasses like
+  `ModelBuilderWithMask` in the following.
+  """
+
+  @abc.abstractmethod
+  def build(self) -> tf.keras.Model:
+    """The build method to be implemented by a subclass."""
+    raise NotImplementedError("Calling an abstract method.")
+
+
+class ModelBuilderWithMask(AbstractModelBuilder, metaclass=abc.ABCMeta):
+  """Interface to build a `tf.keras.Model` for ranking with a mask Tensor.
+
+  The `ModelBuilderWithMask` class is an abstract class to build a ranking model
+  based on dense Tensors and a mask Tensor to indicate the padded ones.
+  All the boilerplate codes related to constructing a `tf.keras.Model` are
+  integrated in the ModelBuilder class.
 
   To be implemented by subclasses:
 
@@ -100,7 +131,7 @@ class AbstractModelBuilder(metaclass=abc.ABCMeta):
   Example subclass implementation:
 
   ```python
-  class SimpleModelBuilder(AbstractModelBuilder):
+  class SimpleModelBuilder(ModelBuilderWithMask):
 
     def __init__(self, context_feature_spec, example_feature_spec,
                  mask_feature_name, name=None):
@@ -283,10 +314,10 @@ class AbstractModelBuilder(metaclass=abc.ABCMeta):
         name=self._name)
 
 
-class ModelBuilder(AbstractModelBuilder):
+class ModelBuilder(ModelBuilderWithMask):
   """Builds a `tf.keras.Model`.
 
-  This class implements the `AbstractModelBuilder` by delegating the class
+  This class implements the `ModelBuilderWithMask` by delegating the class
   behaviors to the following implementors that can be specified by callers:
 
      * input_creator: A callable or a class like `InputCreator` to implement
@@ -340,7 +371,7 @@ class ModelBuilder(AbstractModelBuilder):
     self._scorer = scorer
 
   def create_inputs(self) -> Tuple[TensorDict, TensorDict, tf.Tensor]:
-    """See `AbstractModelBuilder`."""
+    """See `ModelBuilderWithMask`."""
     context_inputs, example_inputs = self._input_creator()
     mask = tf.keras.Input(
         name=self._mask_feature_name, shape=(None,), dtype=tf.bool)
@@ -352,7 +383,7 @@ class ModelBuilder(AbstractModelBuilder):
       example_inputs: TensorDict,
       mask: tf.Tensor,
   ) -> Tuple[TensorDict, TensorDict]:
-    """See `AbstractModelBuilder`."""
+    """See `ModelBuilderWithMask`."""
     return self._preprocessor(context_inputs, example_inputs, mask)
 
   def score(
@@ -361,7 +392,7 @@ class ModelBuilder(AbstractModelBuilder):
       example_features: TensorDict,
       mask: tf.Tensor,
   ) -> Union[TensorLike, TensorDict]:
-    """See `AbstractModelBuilder`."""
+    """See `ModelBuilderWithMask`."""
     return self._scorer(context_features, example_features, mask)
 
 
