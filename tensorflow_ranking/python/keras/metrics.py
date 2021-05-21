@@ -13,7 +13,15 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Keras metrics in TF-Ranking."""
+"""Keras metrics in TF-Ranking.
+
+NOTE: For metrics that compute a ranking, ties are broken randomly. This means
+that metrics may be stochastic if items with equal scores are provided.
+
+WARNING: Some metrics (e.g. Recall or MRR) are not well-defined when there are
+no relevant items (e.g. if `y_true` has a row of only zeroes). For these cases,
+the TF-Ranking metrics will evaluate to `0`.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
