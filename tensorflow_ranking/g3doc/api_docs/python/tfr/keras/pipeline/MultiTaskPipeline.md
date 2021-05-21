@@ -18,7 +18,7 @@ description: Pipeline for multi-task training.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L317-L358">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L695-L786">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -45,6 +45,56 @@ This handles a set of losses and labels. It is intended to mainly work with
 `MultiLabelDatasetBuilder`.
 
 Use subclassing to customize the losses and metrics.
+
+#### Example usage:
+
+```python
+context_feature_spec = {}
+example_feature_spec = {
+    "example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)
+}
+mask_feature_name = "list_mask"
+label_spec_tuple = ("utility",
+                    tf.io.FixedLenFeature(
+                        shape=(1,),
+                        dtype=tf.float32,
+                        default_value=_PADDING_LABEL))
+label_spec = {"task1": label_spec_tuple, "task2": label_spec_tuple}
+weight_spec = ("weight",
+               tf.io.FixedLenFeature(
+                   shape=(1,), dtype=tf.float32, default_value=1.))
+dataset_hparams = DatasetHparams(
+    train_input_pattern="train.dat",
+    valid_input_pattern="valid.dat",
+    train_batch_size=128,
+    valid_batch_size=128)
+pipeline_hparams = PipelineHparams(
+    model_dir="model/",
+    num_epochs=2,
+    num_train_steps=10,
+    num_valid_steps=2,
+    learning_rate=0.01,
+    loss={
+        "task1": "softmax_loss",
+        "task2": "pairwise_logistic_loss"
+    },
+    loss_weights={
+        "task1": 1.0,
+        "task2": 2.0
+    },
+    export_best_model=True)
+model_builder = MultiTaskModelBuilder(...)
+dataset_builder = MultiLabelDatasetBuilder(
+    context_feature_spec,
+    example_feature_spec,
+    mask_feature_name,
+    label_spec,
+    dataset_hparams,
+    sample_weight_spec=weight_spec)
+pipeline = MultiTaskPipeline(model_builder, dataset_builder, pipeline_hparams)
+pipeline.train_and_validate(verbose=1)
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -80,7 +130,7 @@ A dict containing model hyperparameters.
 
 <h3 id="build_callbacks"><code>build_callbacks</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L162-L198">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L444-L491">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -89,13 +139,25 @@ source</a>
 
 Sets up Callbacks.
 
+#### Example usage:
+
+```python
+model_builder = ModelBuilder(...)
+dataset_builder = DatasetBuilder(...)
+hparams = PipelineHparams(...)
+pipeline = BasicModelFitPipeline(model_builder, dataset_builder, hparams)
+callbacks = pipeline.build_callbacks()
+```
+
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A list of callbacks for tensorboard and checkpoint.
+A list of `tf.keras.callbacks.Callback` or a
+`tf.keras.callbacks.CallbackList` for tensorboard and checkpoint.
 </td>
 </tr>
 
@@ -103,40 +165,40 @@ A list of callbacks for tensorboard and checkpoint.
 
 <h3 id="build_loss"><code>build_loss</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L326-L335">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L754-L763">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>build_loss() -> Dict[str, tf.keras.losses.Loss]
 </code></pre>
 
-Returns a dict of losses.
+See `AbstractPipeline`.
 
 <h3 id="build_metrics"><code>build_metrics</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L337-L346">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L765-L774">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>build_metrics() -> Dict[str, List[tf.keras.metrics.Metric]]
 </code></pre>
 
-Returns a list of ranking metrics for each task.
+See `AbstractPipeline`.
 
 <h3 id="build_weighted_metrics"><code>build_weighted_metrics</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L348-L358">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L776-L786">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>build_weighted_metrics() -> Dict[str, List[tf.keras.metrics.Metric]]
 </code></pre>
 
-Returns a list of ranking metrics for each task.
+See `AbstractPipeline`.
 
 <h3 id="export_saved_model"><code>export_saved_model</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L200-L215">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L493-L518">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -148,6 +210,16 @@ source</a>
 </code></pre>
 
 Exports the trained model with signatures.
+
+#### Example usage:
+
+```python
+model_builder = ModelBuilder(...)
+dataset_builder = DatasetBuilder(...)
+hparams = PipelineHparams(...)
+pipeline = BasicModelFitPipeline(model_builder, dataset_builder, hparams)
+pipeline.export_saved_model(model_builder.build(), 'saved_model/')
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -180,7 +252,7 @@ If given, export the model with weights from this checkpoint.
 
 <h3 id="train_and_validate"><code>train_and_validate</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L217-L271">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L520-L612">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -190,6 +262,44 @@ source</a>
 </code></pre>
 
 Main function to train the model with TPU strategy.
+
+#### Example usage:
+
+```python
+context_feature_spec = {}
+example_feature_spec = {
+    "example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)
+}
+mask_feature_name = "list_mask"
+label_spec = {
+    "utility": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)
+}
+dataset_hparams = DatasetHparams(
+    train_input_pattern="train.dat",
+    valid_input_pattern="valid.dat",
+    train_batch_size=128,
+    valid_batch_size=128)
+pipeline_hparams = pipeline.PipelineHparams(
+    model_dir="model/",
+    num_epochs=2,
+    num_train_steps=10,
+    num_valid_steps=2,
+    learning_rate=0.01,
+    loss="softmax_loss")
+model_builder = SimpleModelBuilder(
+    context_feature_spec, example_feature_spec, mask_feature_name)
+dataset_builder = SimpleDatasetBuilder(
+    context_feature_spec,
+    example_feature_spec,
+    mask_feature_name,
+    label_spec,
+    dataset_hparams)
+pipeline = BasicModelFitPipeline(
+    model_builder, dataset_builder, pipeline_hparams)
+pipeline.train_and_validate(verbose=1)
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">

@@ -15,7 +15,7 @@ description: Builds datasets from feature specs.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L382-L506">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L828-L973">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -43,6 +43,25 @@ Inherits From:
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+The `BaseDatasetBuilder` class is an abstract class inherit from
+`AbstractDatasetBuilder` to serve training and validation datasets and
+signatures for training `ModelFitPipeline`.
+
+To be implemented by subclasses:
+
+*   `_features_and_labels()`: Contains the logic to map a dict of tensors of
+    dataset to feature tensors and label tensors.
+
+Example subclass implementation:
+
+```python
+class SimpleDatasetBuilder(BaseDatasetBuilder):
+
+  def _features_and_labels(self, features):
+    label = features.pop("utility")
+    return features, label
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -102,7 +121,7 @@ weights.
 
 <h3 id="build_signatures"><code>build_signatures</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L500-L506">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L967-L973">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -115,7 +134,7 @@ See `AbstractDatasetBuilder`.
 
 <h3 id="build_train_dataset"><code>build_train_dataset</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L483-L489">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L950-L956">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -126,7 +145,7 @@ See `AbstractDatasetBuilder`.
 
 <h3 id="build_valid_dataset"><code>build_valid_dataset</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L491-L498">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L958-L965">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Ranking pipeline to train tf.keras.Model in TF-Ranking."""
+"""Ranking pipeline to train tf.keras.Model in tfr.keras."""
 
 import abc
 import os
@@ -31,51 +31,277 @@ from tensorflow_ranking.python.keras import strategy_utils
 
 
 class AbstractPipeline(metaclass=abc.ABCMeta):
-  """Defines the interface for a pipeline to train a ranking tf.keras.Model."""
+  """Interface for ranking pipeline to train a `tf.keras.Model`.
+
+  The `AbstractPipeline` class is an abstract class to train and validate a
+  ranking model in tfr.keras.
+
+  To be implemented by subclasses:
+
+    * `build_loss()`: Contains the logic to build a `tf.keras.losses.Loss` or a
+    dict or list of `tf.keras.losses.Loss`s to be optimized in training.
+    * `build_metrics()`: Contains the logic to build a list or dict of
+    `tf.keras.metrics.Metric`s to monitor and evaluate the training.
+    * `build_weighted_metrics()`: Contains the logic to build a list or dict of
+    `tf.keras.metrics.Metric`s which will take the weights.
+    * `train_and_validate()`: Contrains the main training pipeline for training
+    and validation.
+
+  Example subclass implementation:
+
+  ```python
+  class BasicPipeline(AbstractPipeline):
+
+    def __init__(self, model, train_data, valid_data, name=None):
+      self._model = model
+      self._train_data = train_data
+      self._valid_data = valid_data
+      self._name = name
+
+    def build_loss(self):
+      return tfr.keras.losses.get('softmax_loss')
+
+    def build_metrics(self):
+      return [
+          tfr.keras.metrics.get(
+              'ndcg', topn=topn, name='ndcg_{}'.format(topn)
+          ) for topn in [1, 5, 10]
+      ]
+
+    def build_weighted_metrics(self):
+      return [
+          tfr.keras.metrics.get(
+              'ndcg', topn=topn, name='weighted_ndcg_{}'.format(topn)
+          ) for topn in [1, 5, 10]
+      ]
+
+    def train_and_validate(self, *arg, **kwargs):
+      self._model.compile(
+          optimizer=tf.keras.optimizers.SGD(learning_rate=0.001),
+          loss=self.build_loss(),
+          metrics=self.build_metrics(),
+          weighted_metrics=self.build_weighted_metrics())
+      self._model.fit(
+          x=self._train_data,
+          epochs=100,
+          validation_data=self._valid_data)
+  ```
+  """
 
   @abc.abstractmethod
   def build_loss(self) -> Any:
-    """Returns the loss for model.compile."""
+    """Returns the loss for model.compile.
+
+    Example usage:
+
+    ```python
+    pipeline = BasicPipeline(model, train_data, valid_data)
+    loss = pipeline.build_loss()
+    ```
+
+    Returns:
+      A `tf.keras.losses.Loss` or a dict or list of `tf.keras.losses.Loss`.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
   @abc.abstractmethod
   def build_metrics(self) -> Any:
-    """Returns a list of ranking metrics for model.compile."""
+    """Returns a list of ranking metrics for `model.compile()`.
+
+    Example usage:
+
+    ```python
+    pipeline = BasicPipeline(model, train_data, valid_data)
+    metrics = pipeline.build_metrics()
+    ```
+
+    Returns:
+      A list or a dict of `tf.keras.metrics.Metric`s.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
   @abc.abstractmethod
   def build_weighted_metrics(self) -> Any:
-    """Returns a list of weighted ranking metrics for model.compile."""
+    """Returns a list of weighted ranking metrics for model.compile.
+
+    Example usage:
+
+    ```python
+    pipeline = BasicPipeline(model, train_data, valid_data)
+    weighted_metrics = pipeline.build_weighted_metrics()
+    ```
+
+    Returns:
+      A list or a dict of `tf.keras.metrics.Metric`s.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
   @abc.abstractmethod
   def train_and_validate(self, *arg, **kwargs) -> Any:
-    """Constructs and runs the training pipeline."""
+    """Constructs and runs the training pipeline.
+
+    Example usage:
+
+    ```python
+    pipeline = BasicPipeline(model, train_data, valid_data)
+    pipeline.train_and_validate()
+    ```
+
+    Args:
+      *arg: arguments that might be used in the training pipeline.
+      **kwargs: keyword arguments that might be used in the training pipeline.
+
+    Returns:
+      None or a trained `tf.keras.Model` or a path to a saved `tf.keras.Model`.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
 
 class AbstractDatasetBuilder(metaclass=abc.ABCMeta):
-  """Interface for datasets and signatures."""
+  """Interface for datasets and signatures.
+
+  The `AbstractDatasetBuilder` class is an abstract class to serve data in
+  tfr.keras. A `DatasetBuilder` will be passed to an instance of
+  `AbstractPipeline` and called to serve the training and validation datasets
+  and to define the serving signatures for saved models to treat the
+  corresponding format of data.
+
+  To be implemented by subclasses:
+
+    * `build_train_dataset()`: Contains the logic to build a `tf.data.Dataset`
+    for training.
+    * `build_valid_dataset()`: Contains the logic to build a `tf.data.Dataset`
+    for validation.
+    * `build_signatures()`: Contains the logic to build a dict of signatures
+    that formulate the model in functions that render the input data with given
+    format.
+
+  Example subclass implementation:
+
+  ```python
+  class NullDatasetBuilder(AbstractDatasetBuilder):
+
+    def __init__(self, train_dataset, valid_dataset, signatures=None):
+      self._train_dataset = train_dataset
+      self._valid_dataset = valid_dataset
+      self._signatures = signatures
+
+    def build_train_dataset(self, *arg, **kwargs) -> tf.data.Dataset:
+      return self._train_dataset
+
+    def build_valid_dataset(self, *arg, **kwargs) -> tf.data.Dataset:
+      return self._valid_dataset
+
+    def build_signatures(self, *arg, **kwargs) -> Any:
+      return self._signatures
+  ```
+  """
 
   @abc.abstractmethod
   def build_train_dataset(self, *arg, **kwargs) -> tf.data.Dataset:
-    """Returns the training dataset."""
+    """Returns the training dataset.
+
+    Example usage:
+
+    ```python
+    dataset_builder = NullDatasetBuilder(train_data, valid_data)
+    train_dataset = dataset_builder.build_train_dataset()
+    ```
+
+    Args:
+      *arg: arguments that might be used to build training dataset.
+      **kwargs: keyword arguments that might be used to build training dataset.
+
+    Returns:
+      A `tf.data.Dataset`.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
   @abc.abstractmethod
   def build_valid_dataset(self, *arg, **kwargs) -> tf.data.Dataset:
-    """Returns the validation dataset."""
+    """Returns the validation dataset.
+
+    Example usage:
+
+    ```python
+    dataset_builder = NullDatasetBuilder(train_data, valid_data)
+    valid_dataset = dataset_builder.build_valid_dataset()
+    ```
+
+    Args:
+      *arg: arguments that might be used to build validation dataset.
+      **kwargs: keyword arguments that might be used to build validation
+        dataset.
+
+    Returns:
+      A `tf.data.Dataset`.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
   @abc.abstractmethod
   def build_signatures(self, *arg, **kwargs) -> Any:
-    """Returns the signatures to export saved model."""
+    """Returns the signatures to export a SavedModel.
+
+    Example usage:
+
+    ```python
+    dataset_builder = NullDatasetBuilder(train_data, valid_data)
+    signatures = dataset_builder.build_signatures()
+    ```
+
+    Args:
+      *arg: arguments that might be used to build signatures.
+      **kwargs: keyword arguments that might be used to build signatures.
+
+    Returns:
+      None or a dict of concrete functions.
+    """
     raise NotImplementedError("Calling an abstract method.")
 
 
 @dataclasses.dataclass
 class PipelineHparams:
-  """Hparams used in pipeline."""
+  """Hyperparameters used in `ModelFitPipeline`.
+
+  Hyperparameters to be specified for ranking pipeline.
+
+  Attributes:
+    model_dir: A path to output the model and training data.
+    num_epochs: An integer to specify the number of epochs of training.
+    num_train_steps: An integer to specify the total number of training steps.
+      Note that a mini-batch of data will be treated in each step and
+      `num_train_steps` / `num_epochs` of steps will be taken in one epoch.
+    num_valid_steps: An integer to specify the number of validation steps in
+      each epoch. Note that a mini-batch of data will be evaluated in each step
+      and `num_valid_steps` of steps will be taken for validation in each epoch.
+    learning_rate: A float to indicate the learning rate of the optimizer.
+    loss: A string or a map to strings that indicate the loss to be used. When
+      `loss` is a string, all outputs and labels will be trained with the same
+      loss. When `loss` is a map, outputs and labels will be trained with losses
+      implied by the corresponding keys.
+    loss_reduction: An option in `tf.keras.losses.Reduction` to specify the
+      reduction method.
+    optimizer: An option in `tf.keras.optimizers` identifiers to specify the
+      optimizer to be used.
+    loss_weights: None or a float or a map to floats that indicate the relative
+      weights for each loss. When not specified, all losses are applied with the
+      same weight 1.
+    steps_per_execution: An integer to specify the number of steps executed in
+      each operation. Tuning this to optimize the training performance in
+      distributed training.
+    automatic_reduce_lr: A boolean to indicate whether to use
+      `ReduceLROnPlateau` callback.
+    use_weighted_metrics: A boolean to indicate whether to use weighted metrics.
+    export_best_model: A boolean to indicate whether to export the best model
+      evaluated by the `best_exporter_metric` on the validation data.
+    best_exporter_metric_higher_better: A boolean to indicate whether the
+      `best_exporter_metric` is the higher the better.
+    best_exporter_metric: A string to specify the metric used to monitor the
+      training and to export the best model. Default to the 'loss'.
+    strategy: An option of strategies supported in `strategy_utils`. Choose from
+      ["MirroredStrategy", "MultiWorkerMirroredStrategy", "TPUStrategy"].
+    tpu: TPU address for TPUStrategy. Not used for other strategy.
+  """
   model_dir: str
   num_epochs: int
   num_train_steps: int
@@ -97,7 +323,26 @@ class PipelineHparams:
 
 @dataclasses.dataclass
 class DatasetHparams:
-  """Hparams used in dataset_builder."""
+  """Hyperparameters used in `BaseDatasetBuilder`.
+
+  Hyperparameters to be specified to create the dataset_builder.
+
+  Attributes:
+    train_input_pattern: A glob pattern to specify the paths to the input data
+      for training.
+    valid_input_pattern: A glob pattern to specify the paths to the input data
+      for validation.
+    train_batch_size: An integer to specify the batch size of training dataset.
+    valid_batch_size: An integer to specify the batch size of valid dataset.
+    list_size: An integer to specify the list size. When None, data will be
+      padded to the longest list in each batch.
+    valid_list_size: An integer to specify the list size in valid dataset. When
+      not specified, valid dataset uses the same list size as `list_size`.
+    dataset_reader: A function or class that can be called with a `filenames`
+      tensor and (optional) `reader_args` and returns a `Dataset`. Defaults to
+      `tf.data.TFRecordDataset`.
+    convert_labels_to_binary: A boolean to indicate whether to use binary label.
+  """
   train_input_pattern: str
   valid_input_pattern: str
   train_batch_size: int
@@ -109,7 +354,44 @@ class DatasetHparams:
 
 
 class ModelFitPipeline(AbstractPipeline):
-  """Pipeline using model.fit to train a ranking tf.keras.Model."""
+  """Pipeline using `model.fit` to train a ranking `tf.keras.Model`.
+
+  The `ModelFitPipeline` class is an abstract class inherit from
+  `AbstractPipeline` to train and validate a ranking `model` with `model.fit`
+  in a distributed strategy specified in hparams.
+
+  To be implemented by subclasses:
+
+    * `build_loss()`: Contains the logic to build a `tf.keras.losses.Loss` or a
+    dict or list of `tf.keras.losses.Loss`s to be optimized in training.
+    * `build_metrics()`: Contains the logic to build a list or dict of
+    `tf.keras.metrics.Metric`s to monitor and evaluate the training.
+    * `build_weighted_metrics()`: Contains the logic to build a list or dict of
+    `tf.keras.metrics.Metric`s which will take the weights.
+
+  Example subclass implementation:
+
+  ```python
+  class BasicModelFitPipeline(ModelFitPipeline):
+
+    def build_loss(self):
+      return tfr.keras.losses.get('softmax_loss')
+
+    def build_metrics(self):
+      return [
+          tfr.keras.metrics.get(
+              'ndcg', topn=topn, name='ndcg_{}'.format(topn)
+          ) for topn in [1, 5, 10]
+      ]
+
+    def build_weighted_metrics(self):
+      return [
+          tfr.keras.metrics.get(
+              'ndcg', topn=topn, name='weighted_ndcg_{}'.format(topn)
+          ) for topn in [1, 5, 10]
+      ]
+  ```
+  """
 
   def __init__(
       self,
@@ -117,7 +399,7 @@ class ModelFitPipeline(AbstractPipeline):
       dataset_builder: AbstractDatasetBuilder,
       hparams: PipelineHparams,
   ):
-    """Initializer.
+    """Initializes the instance.
 
     Args:
       model_builder: A `ModelBuilder` instance for model fit.
@@ -176,8 +458,19 @@ class ModelFitPipeline(AbstractPipeline):
   def build_callbacks(self) -> List[tf.keras.callbacks.Callback]:
     """Sets up Callbacks.
 
+    Example usage:
+
+    ```python
+    model_builder = ModelBuilder(...)
+    dataset_builder = DatasetBuilder(...)
+    hparams = PipelineHparams(...)
+    pipeline = BasicModelFitPipeline(model_builder, dataset_builder, hparams)
+    callbacks = pipeline.build_callbacks()
+    ```
+
     Returns:
-      A list of callbacks for tensorboard and checkpoint.
+      A list of `tf.keras.callbacks.Callback` or a
+      `tf.keras.callbacks.CallbackList` for tensorboard and checkpoint.
     """
     # Writing summary logs to file may have performance impact. Therefore, we
     # only write summary events every epoch.
@@ -217,6 +510,16 @@ class ModelFitPipeline(AbstractPipeline):
                          checkpoint: Optional[tf.train.Checkpoint] = None):
     """Exports the trained model with signatures.
 
+    Example usage:
+
+    ```python
+    model_builder = ModelBuilder(...)
+    dataset_builder = DatasetBuilder(...)
+    hparams = PipelineHparams(...)
+    pipeline = BasicModelFitPipeline(model_builder, dataset_builder, hparams)
+    pipeline.export_saved_model(model_builder.build(), 'saved_model/')
+    ```
+
     Args:
       model: Model to be saved.
       export_to: Specifies the directory the model is be exported to.
@@ -230,6 +533,44 @@ class ModelFitPipeline(AbstractPipeline):
 
   def train_and_validate(self, verbose=0):
     """Main function to train the model with TPU strategy.
+
+    Example usage:
+
+    ```python
+    context_feature_spec = {}
+    example_feature_spec = {
+        "example_feature_1": tf.io.FixedLenFeature(
+            shape=(1,), dtype=tf.float32, default_value=0.0)
+    }
+    mask_feature_name = "list_mask"
+    label_spec = {
+        "utility": tf.io.FixedLenFeature(
+            shape=(1,), dtype=tf.float32, default_value=0.0)
+    }
+    dataset_hparams = DatasetHparams(
+        train_input_pattern="train.dat",
+        valid_input_pattern="valid.dat",
+        train_batch_size=128,
+        valid_batch_size=128)
+    pipeline_hparams = pipeline.PipelineHparams(
+        model_dir="model/",
+        num_epochs=2,
+        num_train_steps=10,
+        num_valid_steps=2,
+        learning_rate=0.01,
+        loss="softmax_loss")
+    model_builder = SimpleModelBuilder(
+        context_feature_spec, example_feature_spec, mask_feature_name)
+    dataset_builder = SimpleDatasetBuilder(
+        context_feature_spec,
+        example_feature_spec,
+        mask_feature_name,
+        label_spec,
+        dataset_hparams)
+    pipeline = BasicModelFitPipeline(
+        model_builder, dataset_builder, pipeline_hparams)
+    pipeline.train_and_validate(verbose=1)
+    ```
 
     Args:
       verbose: An int for the verbosity level.
@@ -300,10 +641,47 @@ class SimplePipeline(ModelFitPipeline):
   uniformly.
 
   Use subclassing to customize the loss and metrics.
+
+  Example usage:
+
+  ```python
+  context_feature_spec = {}
+  example_feature_spec = {
+      "example_feature_1": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  mask_feature_name = "list_mask"
+  label_spec = {
+      "utility": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  dataset_hparams = DatasetHparams(
+      train_input_pattern="train.dat",
+      valid_input_pattern="valid.dat",
+      train_batch_size=128,
+      valid_batch_size=128)
+  pipeline_hparams = pipeline.PipelineHparams(
+      model_dir="model/",
+      num_epochs=2,
+      num_train_steps=10,
+      num_valid_steps=2,
+      learning_rate=0.01,
+      loss="softmax_loss")
+  model_builder = SimpleModelBuilder(
+      context_feature_spec, example_feature_spec, mask_feature_name)
+  dataset_builder = SimpleDatasetBuilder(
+      context_feature_spec,
+      example_feature_spec,
+      mask_feature_name,
+      label_spec,
+      dataset_hparams)
+  pipeline = SimplePipeline(model_builder, dataset_builder, pipeline_hparams)
+  pipeline.train_and_validate(verbose=1)
+  ```
   """
 
   def build_loss(self) -> tf.keras.losses.Loss:
-    """Returns the constructed loss from the hparams."""
+    """See `AbstractPipeline`."""
     if isinstance(self._hparams.loss, dict):
       raise TypeError("In the simple pipeline, losses are expected to be "
                       "specified in a str instead of a dict.")
@@ -311,7 +689,7 @@ class SimplePipeline(ModelFitPipeline):
         loss=self._hparams.loss, reduction=self._hparams.loss_reduction)
 
   def build_metrics(self) -> List[tf.keras.metrics.Metric]:
-    """Returns a list of ranking metrics."""
+    """See `AbstractPipeline`."""
     eval_metrics = [
         _get_metric("metric/", metrics.RankingMetricKey.NDCG, topn=topn)
         for topn in [1, 5, 10, None]
@@ -319,7 +697,7 @@ class SimplePipeline(ModelFitPipeline):
     return eval_metrics
 
   def build_weighted_metrics(self) -> List[tf.keras.metrics.Metric]:
-    """Returns a list of weighted ranking metrics."""
+    """See `AbstractPipeline`."""
     eval_metrics = [
         _get_metric(
             "weighted_metric/", metrics.RankingMetricKey.NDCG, topn=topn)
@@ -335,10 +713,60 @@ class MultiTaskPipeline(ModelFitPipeline):
   `MultiLabelDatasetBuilder`.
 
   Use subclassing to customize the losses and metrics.
+
+  Example usage:
+
+  ```python
+  context_feature_spec = {}
+  example_feature_spec = {
+      "example_feature_1": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  mask_feature_name = "list_mask"
+  label_spec_tuple = ("utility",
+                      tf.io.FixedLenFeature(
+                          shape=(1,),
+                          dtype=tf.float32,
+                          default_value=_PADDING_LABEL))
+  label_spec = {"task1": label_spec_tuple, "task2": label_spec_tuple}
+  weight_spec = ("weight",
+                 tf.io.FixedLenFeature(
+                     shape=(1,), dtype=tf.float32, default_value=1.))
+  dataset_hparams = DatasetHparams(
+      train_input_pattern="train.dat",
+      valid_input_pattern="valid.dat",
+      train_batch_size=128,
+      valid_batch_size=128)
+  pipeline_hparams = PipelineHparams(
+      model_dir="model/",
+      num_epochs=2,
+      num_train_steps=10,
+      num_valid_steps=2,
+      learning_rate=0.01,
+      loss={
+          "task1": "softmax_loss",
+          "task2": "pairwise_logistic_loss"
+      },
+      loss_weights={
+          "task1": 1.0,
+          "task2": 2.0
+      },
+      export_best_model=True)
+  model_builder = MultiTaskModelBuilder(...)
+  dataset_builder = MultiLabelDatasetBuilder(
+      context_feature_spec,
+      example_feature_spec,
+      mask_feature_name,
+      label_spec,
+      dataset_hparams,
+      sample_weight_spec=weight_spec)
+  pipeline = MultiTaskPipeline(model_builder, dataset_builder, pipeline_hparams)
+  pipeline.train_and_validate(verbose=1)
+  ```
   """
 
   def build_loss(self) -> Dict[str, tf.keras.losses.Loss]:
-    """Returns a dict of losses."""
+    """See `AbstractPipeline`."""
     reduction = self._hparams.loss_reduction
     if isinstance(self._hparams.loss, str):
       raise TypeError("In the multi-task pipeline, losses are expected to be "
@@ -349,7 +777,7 @@ class MultiTaskPipeline(ModelFitPipeline):
     }
 
   def build_metrics(self) -> Dict[str, List[tf.keras.metrics.Metric]]:
-    """Returns a list of ranking metrics for each task."""
+    """See `AbstractPipeline`."""
 
     def eval_metrics():
       return [
@@ -360,7 +788,7 @@ class MultiTaskPipeline(ModelFitPipeline):
     return {task_name: eval_metrics() for task_name in self._hparams.loss}
 
   def build_weighted_metrics(self) -> Dict[str, List[tf.keras.metrics.Metric]]:
-    """Returns a list of ranking metrics for each task."""
+    """See `AbstractPipeline`."""
 
     def eval_metrics():
       return [
@@ -373,9 +801,27 @@ class MultiTaskPipeline(ModelFitPipeline):
 
 
 class NullDatasetBuilder(AbstractDatasetBuilder):
-  """An no-op wrapper of datasets and signatures."""
+  """A no-op wrapper of datasets and signatures.
+
+  Example usage:
+
+  ```python
+  train_dataset = tf.data.Dataset(...)
+  valid_dataset = tf.data.Dataset(...)
+  dataset_builder = NullDatasetBuilder(train_dataset, valid_dataset)
+  ```
+  """
 
   def __init__(self, train_dataset, valid_dataset, signatures=None):
+    """Initializes the instance.
+
+    Args:
+      train_dataset: A `tf.data.Dataset` for training.
+      valid_dataset: A `tf.data.Dataset` for validation.
+      signatures: A dict of signatures that formulate the model in functions
+        that render the input data with given types. When None, no signatures
+        assigned.
+    """
     self._train_dataset = train_dataset
     self._valid_dataset = valid_dataset
     self._signatures = signatures
@@ -394,8 +840,29 @@ class NullDatasetBuilder(AbstractDatasetBuilder):
 
 
 class BaseDatasetBuilder(AbstractDatasetBuilder):
-  """Builds datasets from feature specs."""
+  """Builds datasets from feature specs.
 
+  The `BaseDatasetBuilder` class is an abstract class inherit from
+  `AbstractDatasetBuilder` to serve training and validation datasets and
+  signatures for training `ModelFitPipeline`.
+
+  To be implemented by subclasses:
+
+    * `_features_and_labels()`: Contains the logic to map a dict of tensors of
+    dataset to feature tensors and label tensors.
+
+  Example subclass implementation:
+
+  ```python
+  class SimpleDatasetBuilder(BaseDatasetBuilder):
+
+    def _features_and_labels(self, features):
+      label = features.pop("utility")
+      return features, label
+  ```
+  """
+
+  # TODO: Define these bulky types as globals at the top.
   def __init__(self,
                context_feature_spec: Dict[str, Union[tf.io.FixedLenFeature,
                                                      tf.io.VarLenFeature,
@@ -412,7 +879,7 @@ class BaseDatasetBuilder(AbstractDatasetBuilder):
                training_only_context_spec: Optional[Dict[
                    str, Union[tf.io.FixedLenFeature, tf.io.VarLenFeature,
                               tf.io.RaggedFeature]]] = None):
-    """Intializer.
+    """Intializes the instance.
 
     Args:
       context_feature_spec: Maps context (aka, query) names to feature specs.
@@ -521,7 +988,15 @@ class BaseDatasetBuilder(AbstractDatasetBuilder):
 
 
 def _convert_label(label, convert_labels_to_binary=False):
-  """Converts the label to 2D and optionally binarizes it."""
+  """Converts the label to 2D and optionally binarizes it.
+
+  Args:
+    label: A tensor of shape [batch_size, list_size, 1].
+    convert_labels_to_binary: A boolean to indicate whether to use binary label.
+
+  Returns:
+    A tensor of shape [batch_size, list_size].
+  """
   label = tf.cast(tf.squeeze(label, axis=2), tf.float32)
   if convert_labels_to_binary:
     label = tf.where(tf.greater(label, 0.), tf.ones_like(label), label)
@@ -533,6 +1008,32 @@ class SimpleDatasetBuilder(BaseDatasetBuilder):
 
   This supports a single dataset with a single label, which is supposed to be a
   dense Tensor.
+
+  Example usage:
+
+  ```python
+  context_feature_spec = {}
+  example_feature_spec = {
+      "example_feature_1": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  mask_feature_name = "list_mask"
+  label_spec = {
+      "utility": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  dataset_hparams = DatasetHparams(
+      train_input_pattern="train.dat",
+      valid_input_pattern="valid.dat",
+      train_batch_size=128,
+      valid_batch_size=128)
+  dataset_builder = SimpleDatasetBuilder(
+      context_feature_spec,
+      example_feature_spec,
+      mask_feature_name,
+      label_spec,
+      dataset_hparams)
+  ```
   """
 
   def __init__(
@@ -547,7 +1048,7 @@ class SimpleDatasetBuilder(BaseDatasetBuilder):
       label_spec: Tuple[str, tf.io.FixedLenFeature],
       hparams: DatasetHparams,
       sample_weight_spec: Optional[Tuple[str, tf.io.FixedLenFeature]] = None):
-    """Intializer.
+    """Intializes the instance.
 
     Args:
       context_feature_spec: Maps context (aka, query) names to feature specs.
@@ -602,6 +1103,38 @@ class MultiLabelDatasetBuilder(BaseDatasetBuilder):
   This supports a single data sets with multiple labels formed in a dict. The
   case where we have multiple datasets is not handled in the current code yet.
   We can consider to extend the dataset builder when the use case comes out.
+
+  Example usage:
+
+  ```python
+  context_feature_spec = {}
+  example_feature_spec = {
+      "example_feature_1": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  mask_feature_name = "list_mask"
+  label_spec_tuple = ("utility",
+                      tf.io.FixedLenFeature(
+                          shape=(1,),
+                          dtype=tf.float32,
+                          default_value=_PADDING_LABEL))
+  label_spec = {"task1": label_spec_tuple, "task2": label_spec_tuple}
+  weight_spec = ("weight",
+                 tf.io.FixedLenFeature(
+                     shape=(1,), dtype=tf.float32, default_value=1.))
+  dataset_hparams = DatasetHparams(
+      train_input_pattern="train.dat",
+      valid_input_pattern="valid.dat",
+      train_batch_size=128,
+      valid_batch_size=128)
+  dataset_builder = MultiLabelDatasetBuilder(
+      context_feature_spec,
+      example_feature_spec,
+      mask_feature_name,
+      label_spec,
+      dataset_hparams,
+      sample_weight_spec=weight_spec)
+  ```
   """
 
   def __init__(
@@ -616,7 +1149,7 @@ class MultiLabelDatasetBuilder(BaseDatasetBuilder):
       label_spec: Dict[str, Tuple[str, tf.io.FixedLenFeature]],
       hparams: DatasetHparams,
       sample_weight_spec: Optional[Tuple[str, tf.io.FixedLenFeature]] = None):
-    """Intializer.
+    """Intializes the instance.
 
     Args:
       context_feature_spec: Maps context (aka, query) names to feature specs.

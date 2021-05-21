@@ -15,7 +15,7 @@ description: Builds datasets for multi-task training.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L585-L654">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L1086-L1187">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -46,6 +46,38 @@ Inherits From:
 This supports a single data sets with multiple labels formed in a dict. The case
 where we have multiple datasets is not handled in the current code yet. We can
 consider to extend the dataset builder when the use case comes out.
+
+#### Example usage:
+
+```python
+context_feature_spec = {}
+example_feature_spec = {
+    "example_feature_1": tf.io.FixedLenFeature(
+        shape=(1,), dtype=tf.float32, default_value=0.0)
+}
+mask_feature_name = "list_mask"
+label_spec_tuple = ("utility",
+                    tf.io.FixedLenFeature(
+                        shape=(1,),
+                        dtype=tf.float32,
+                        default_value=_PADDING_LABEL))
+label_spec = {"task1": label_spec_tuple, "task2": label_spec_tuple}
+weight_spec = ("weight",
+               tf.io.FixedLenFeature(
+                   shape=(1,), dtype=tf.float32, default_value=1.))
+dataset_hparams = DatasetHparams(
+    train_input_pattern="train.dat",
+    valid_input_pattern="valid.dat",
+    train_batch_size=128,
+    valid_batch_size=128)
+dataset_builder = MultiLabelDatasetBuilder(
+    context_feature_spec,
+    example_feature_spec,
+    mask_feature_name,
+    label_spec,
+    dataset_hparams,
+    sample_weight_spec=weight_spec)
+```
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -104,7 +136,7 @@ Feature spec for per-example weight.
 
 <h3 id="build_signatures"><code>build_signatures</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L500-L506">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L967-L973">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -117,7 +149,7 @@ See `AbstractDatasetBuilder`.
 
 <h3 id="build_train_dataset"><code>build_train_dataset</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L483-L489">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L950-L956">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -128,7 +160,7 @@ See `AbstractDatasetBuilder`.
 
 <h3 id="build_valid_dataset"><code>build_valid_dataset</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L491-L498">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L958-L965">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

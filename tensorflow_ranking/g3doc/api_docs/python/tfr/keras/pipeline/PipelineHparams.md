@@ -1,4 +1,4 @@
-description: Hparams used in pipeline.
+description: Hyperparameters used in ModelFitPipeline.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.pipeline.PipelineHparams" />
@@ -24,14 +24,14 @@ description: Hparams used in pipeline.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L63-L81">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L249-L307">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Hparams used in pipeline.
+Hyperparameters used in `ModelFitPipeline`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.pipeline.PipelineHparams(
@@ -56,6 +56,8 @@ Hparams used in pipeline.
 
 <!-- Placeholder for "Used in" -->
 
+Hyperparameters to be specified for ranking pipeline.
+
 <!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
@@ -66,119 +68,137 @@ Hparams used in pipeline.
 `model_dir`
 </td>
 <td>
-Dataclass field
+A path to output the model and training data.
 </td>
 </tr><tr>
 <td>
 `num_epochs`
 </td>
 <td>
-Dataclass field
+An integer to specify the number of epochs of training.
 </td>
 </tr><tr>
 <td>
 `num_train_steps`
 </td>
 <td>
-Dataclass field
+An integer to specify the total number of training steps.
+Note that a mini-batch of data will be treated in each step and
+`num_train_steps` / `num_epochs` of steps will be taken in one epoch.
 </td>
 </tr><tr>
 <td>
 `num_valid_steps`
 </td>
 <td>
-Dataclass field
+An integer to specify the number of validation steps in
+each epoch. Note that a mini-batch of data will be evaluated in each step
+and `num_valid_steps` of steps will be taken for validation in each epoch.
 </td>
 </tr><tr>
 <td>
 `learning_rate`
 </td>
 <td>
-Dataclass field
+A float to indicate the learning rate of the optimizer.
 </td>
 </tr><tr>
 <td>
 `loss`
 </td>
 <td>
-Dataclass field
+A string or a map to strings that indicate the loss to be used. When
+`loss` is a string, all outputs and labels will be trained with the same
+loss. When `loss` is a map, outputs and labels will be trained with losses
+implied by the corresponding keys.
 </td>
 </tr><tr>
 <td>
 `loss_reduction`
 </td>
 <td>
-Dataclass field
+An option in `tf.keras.losses.Reduction` to specify the
+reduction method.
 </td>
 </tr><tr>
 <td>
 `optimizer`
 </td>
 <td>
-Dataclass field
+An option in `tf.keras.optimizers` identifiers to specify the
+optimizer to be used.
 </td>
 </tr><tr>
 <td>
 `loss_weights`
 </td>
 <td>
-Dataclass field
+None or a float or a map to floats that indicate the relative
+weights for each loss. When not specified, all losses are applied with the
+same weight 1.
 </td>
 </tr><tr>
 <td>
 `steps_per_execution`
 </td>
 <td>
-Dataclass field
+An integer to specify the number of steps executed in
+each operation. Tuning this to optimize the training performance in
+distributed training.
 </td>
 </tr><tr>
 <td>
 `automatic_reduce_lr`
 </td>
 <td>
-Dataclass field
+A boolean to indicate whether to use
+`ReduceLROnPlateau` callback.
 </td>
 </tr><tr>
 <td>
 `use_weighted_metrics`
 </td>
 <td>
-Dataclass field
+A boolean to indicate whether to use weighted metrics.
 </td>
 </tr><tr>
 <td>
 `export_best_model`
 </td>
 <td>
-Dataclass field
+A boolean to indicate whether to export the best model
+evaluated by the `best_exporter_metric` on the validation data.
 </td>
 </tr><tr>
 <td>
 `best_exporter_metric_higher_better`
 </td>
 <td>
-Dataclass field
+A boolean to indicate whether the
+`best_exporter_metric` is the higher the better.
 </td>
 </tr><tr>
 <td>
 `best_exporter_metric`
 </td>
 <td>
-Dataclass field
+A string to specify the metric used to monitor the
+training and to export the best model. Default to the 'loss'.
 </td>
 </tr><tr>
 <td>
 `strategy`
 </td>
 <td>
-Dataclass field
+An option of strategies supported in `strategy_utils`. Choose from
+["MirroredStrategy", "MultiWorkerMirroredStrategy", "TPUStrategy"].
 </td>
 </tr><tr>
 <td>
 `tpu`
 </td>
 <td>
-Dataclass field
+TPU address for TPUStrategy. Not used for other strategy.
 </td>
 </tr>
 </table>

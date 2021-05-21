@@ -1,4 +1,4 @@
-description: Hparams used in dataset_builder.
+description: Hyperparameters used in BaseDatasetBuilder.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.pipeline.DatasetHparams" />
@@ -17,14 +17,14 @@ description: Hparams used in dataset_builder.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L85-L94">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L311-L339">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Hparams used in dataset_builder.
+Hyperparameters used in `BaseDatasetBuilder`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.pipeline.DatasetHparams(
@@ -40,6 +40,8 @@ Hparams used in dataset_builder.
 
 <!-- Placeholder for "Used in" -->
 
+Hyperparameters to be specified to create the dataset_builder.
+
 <!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
@@ -50,56 +52,62 @@ Hparams used in dataset_builder.
 `train_input_pattern`
 </td>
 <td>
-Dataclass field
+A glob pattern to specify the paths to the input data
+for training.
 </td>
 </tr><tr>
 <td>
 `valid_input_pattern`
 </td>
 <td>
-Dataclass field
+A glob pattern to specify the paths to the input data
+for validation.
 </td>
 </tr><tr>
 <td>
 `train_batch_size`
 </td>
 <td>
-Dataclass field
+An integer to specify the batch size of training dataset.
 </td>
 </tr><tr>
 <td>
 `valid_batch_size`
 </td>
 <td>
-Dataclass field
+An integer to specify the batch size of valid dataset.
 </td>
 </tr><tr>
 <td>
 `list_size`
 </td>
 <td>
-Dataclass field
+An integer to specify the list size. When None, data will be
+padded to the longest list in each batch.
 </td>
 </tr><tr>
 <td>
 `valid_list_size`
 </td>
 <td>
-Dataclass field
+An integer to specify the list size in valid dataset. When
+not specified, valid dataset uses the same list size as `list_size`.
 </td>
 </tr><tr>
 <td>
 `dataset_reader`
 </td>
 <td>
-Dataclass field
+A function or class that can be called with a `filenames`
+tensor and (optional) `reader_args` and returns a `Dataset`. Defaults to
+`tf.data.TFRecordDataset`.
 </td>
 </tr><tr>
 <td>
 `convert_labels_to_binary`
 </td>
 <td>
-Dataclass field
+A boolean to indicate whether to use binary label.
 </td>
 </tr>
 </table>

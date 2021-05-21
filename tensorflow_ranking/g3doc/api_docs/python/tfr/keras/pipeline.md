@@ -1,4 +1,4 @@
-description: Ranking pipeline to train tf.keras.Model in TF-Ranking.
+description: Ranking pipeline to train tf.keras.Model in tfr.keras.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.pipeline" />
@@ -18,7 +18,7 @@ description: Ranking pipeline to train tf.keras.Model in TF-Ranking.
 </td>
 </table>
 
-Ranking pipeline to train tf.keras.Model in TF-Ranking.
+Ranking pipeline to train tf.keras.Model in tfr.keras.
 
 ## Classes
 
@@ -26,16 +26,16 @@ Ranking pipeline to train tf.keras.Model in TF-Ranking.
 Interface for datasets and signatures.
 
 [`class AbstractPipeline`](../../tfr/keras/pipeline/AbstractPipeline.md):
-Defines the interface for a pipeline to train a ranking tf.keras.Model.
+Interface for ranking pipeline to train a `tf.keras.Model`.
 
 [`class BaseDatasetBuilder`](../../tfr/keras/pipeline/BaseDatasetBuilder.md):
 Builds datasets from feature specs.
 
-[`class DatasetHparams`](../../tfr/keras/pipeline/DatasetHparams.md): Hparams
-used in dataset_builder.
+[`class DatasetHparams`](../../tfr/keras/pipeline/DatasetHparams.md):
+Hyperparameters used in `BaseDatasetBuilder`.
 
 [`class ModelFitPipeline`](../../tfr/keras/pipeline/ModelFitPipeline.md):
-Pipeline using model.fit to train a ranking tf.keras.Model.
+Pipeline using `model.fit` to train a ranking `tf.keras.Model`.
 
 [`class MultiLabelDatasetBuilder`](../../tfr/keras/pipeline/MultiLabelDatasetBuilder.md):
 Builds datasets for multi-task training.
@@ -43,11 +43,11 @@ Builds datasets for multi-task training.
 [`class MultiTaskPipeline`](../../tfr/keras/pipeline/MultiTaskPipeline.md):
 Pipeline for multi-task training.
 
-[`class NullDatasetBuilder`](../../tfr/keras/pipeline/NullDatasetBuilder.md): An
+[`class NullDatasetBuilder`](../../tfr/keras/pipeline/NullDatasetBuilder.md): A
 no-op wrapper of datasets and signatures.
 
-[`class PipelineHparams`](../../tfr/keras/pipeline/PipelineHparams.md): Hparams
-used in pipeline.
+[`class PipelineHparams`](../../tfr/keras/pipeline/PipelineHparams.md):
+Hyperparameters used in `ModelFitPipeline`.
 
 [`class SimpleDatasetBuilder`](../../tfr/keras/pipeline/SimpleDatasetBuilder.md):
 Builds datasets from feature specs with a single label spec.
