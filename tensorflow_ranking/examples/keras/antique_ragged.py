@@ -15,6 +15,10 @@
 # Lint as: python3
 r"""Antique TFR-KPL trainer using ragged tensors.
 
+This file has two ways to construct and train a model. One is using the standard
+way of `tf.keras.Model`. The other is based on the `tfr.keras.pipeline` and
+`tfr.keras.model`. The two are controlled by FLAGS.use_pipeline.
+
 --------------------------------------------------------------------------------
 Sample command lines:
 
@@ -35,6 +39,7 @@ You can use TensorBoard to display the training results stored in $MODEL_DIR.
 
 Notes:
   * Use --alsologtostderr if the output is not printed into screen.
+  * Use --use_pipeline to use the `tfr.keras.pipeline`.
 """
 import os
 from typing import List
@@ -46,55 +51,51 @@ import tensorflow as tf
 
 import tensorflow_ranking as tfr
 
+# Data config.
 flags.DEFINE_string("train_input_pattern", None,
                     "Input file path pattern used for training.")
-
 flags.DEFINE_string("eval_input_pattern", None,
                     "Input file path pattern used for eval.")
-
 flags.DEFINE_string("test_input_pattern", None,
                     "Input file path pattern used for test.")
 
+# Model config.
 flags.DEFINE_string(
     "vocab_file_path", None, "Path to vocab file used for tokenizing the "
     "Antique dataset.")
-
 flags.DEFINE_integer(
     "vocab_size", 30522, "Size of the vocab file used for "
     "tokenizing the Antique dataset.")
-
-flags.DEFINE_float("learning_rate", 0.005, "Learning rate for optimizer.")
-
+flags.DEFINE_integer("embedding_dimension", 20, "Size of embedding.")
 flags.DEFINE_multi_integer("hidden_layer_dims", [20, 10],
                            "Number of units in each hidden layer.")
 
-flags.DEFINE_integer("train_batch_size", 16,
-                     "Number of input records used per batch for training.")
-
-flags.DEFINE_integer("eval_batch_size", 64,
-                     "Number of input records used per batch for eval.")
-
-flags.DEFINE_integer("num_epochs", 100,
-                     "Number of passes over the training data.")
-
+# Training config.
 flags.DEFINE_string("loss", tfr.keras.losses.RankingLossKey.APPROX_NDCG_LOSS,
                     "See tfr.keras.losses.RankingLossKey.")
-
-flags.DEFINE_integer("embedding_dimension", 20, "Size of embedding.")
-
+flags.DEFINE_float("learning_rate", 0.005, "Learning rate for optimizer.")
+flags.DEFINE_integer("train_batch_size", 16,
+                     "Number of input records used per batch for training.")
+flags.DEFINE_integer("eval_batch_size", 64,
+                     "Number of input records used per batch for eval.")
+flags.DEFINE_integer("num_epochs", 100,
+                     "Number of passes over the training data.")
 flags.DEFINE_string(
     "model_dir", None, "The directory where the model weights and "
     "training/evaluation summaries are stored.")
+flags.DEFINE_integer("num_train_steps", 100000,
+                     "Number of training iterations.")
+flags.DEFINE_integer("num_valid_steps", 100, "Number of validation iterations.")
+
+# Others.
+flags.DEFINE_bool("use_pipeline", False,
+                  "If True, use the pipeline for training.")
 
 FLAGS = flags.FLAGS
 
 # The document relevance label and mask feature.
 _LABEL_FEATURE = "relevance"
 _MASK = "example_list_mask"
-
-# Context and example features.
-_CONTEXT_RAGGED_FEATURE_KEYS = ["query_tokens"]
-_EXAMPLE_RAGGED_FEATURE_KEYS = ["document_tokens"]
 
 
 class AntiqueEmbeddingRankingModel(tf.keras.Model):
@@ -154,18 +155,6 @@ class AntiqueEmbeddingRankingModel(tf.keras.Model):
     return tf.squeeze(scores, axis=2)
 
 
-class MyModelBuilder(tfr.keras.model.AbstractModelBuilder):
-  """Wraps the model into a ModelBuilder to work with `tfr.keras.pipeline`."""
-
-  def build(self) -> tf.keras.Model:
-    """Builds the model."""
-    return AntiqueEmbeddingRankingModel(
-        vocab_size=FLAGS.vocab_size,
-        vocab_file_path=FLAGS.vocab_file_path,
-        embedding_dim=FLAGS.embedding_dimension,
-        hidden_dims=FLAGS.hidden_layer_dims)
-
-
 def _add_ragged_label(inputs):
   mask = inputs[_MASK]
   features_dict = {
@@ -177,19 +166,8 @@ def _add_ragged_label(inputs):
   return features_dict, label
 
 
-def train_and_eval():
-  """Train and evaluate ranking model."""
-  # Create optimizer, ranking loss and ranking metrics.
-  optimizer = tf.keras.optimizers.Adagrad(learning_rate=FLAGS.learning_rate)
-  loss = tfr.keras.losses.get(loss=FLAGS.loss, ragged=True)
-  eval_metrics = tfr.keras.metrics.default_keras_metrics(ragged=True)
-
-  # Create ranking model to train. This model operates on ragged tensors and
-  # returns model scores as ragged tensors.
-  model_builder = MyModelBuilder()
-  model = model_builder.build()
-  model.compile(optimizer=optimizer, loss=loss, metrics=eval_metrics)
-
+def datasets():
+  """Creates the datasets."""
   # Create feature specification.
   context_feature_spec = {
       "query_tokens": tf.io.RaggedFeature(dtype=tf.string),
@@ -225,6 +203,26 @@ def train_and_eval():
   # is converted to a ragged tensor.
   train_dataset = train_dataset.map(_add_ragged_label)
   eval_dataset = eval_dataset.map(_add_ragged_label)
+  return train_dataset, eval_dataset
+
+
+def standalone_train_and_eval():
+  """Train and evaluate ranking model."""
+  train_dataset, eval_dataset = datasets()
+
+  # Create optimizer, ranking loss and ranking metrics.
+  optimizer = tf.keras.optimizers.Adagrad(learning_rate=FLAGS.learning_rate)
+  loss = tfr.keras.losses.get(loss=FLAGS.loss, ragged=True)
+  eval_metrics = tfr.keras.metrics.default_keras_metrics(ragged=True)
+
+  # Create ranking model to train. This model operates on ragged tensors and
+  # returns model scores as ragged tensors.
+  model = AntiqueEmbeddingRankingModel(
+      vocab_size=FLAGS.vocab_size,
+      vocab_file_path=FLAGS.vocab_file_path,
+      embedding_dim=FLAGS.embedding_dimension,
+      hidden_dims=FLAGS.hidden_layer_dims)
+  model.compile(optimizer=optimizer, loss=loss, metrics=eval_metrics)
 
   # Train ranker.
   logging.info("Training the model...")
@@ -232,7 +230,9 @@ def train_and_eval():
   model.fit(
       train_dataset,
       epochs=FLAGS.num_epochs,
+      steps_per_epoch=FLAGS.num_train_steps // FLAGS.num_epochs,
       validation_data=eval_dataset,
+      validation_steps=FLAGS.num_valid_steps,
       callbacks=[tensorboard_callback])
   logging.info("Finished training the model.")
 
@@ -243,9 +243,63 @@ def train_and_eval():
   logging.info("SavedModel exported successfully to: %s", saved_model_path)
 
 
+########
+# The following is to support training with tfr.keras.pipeline.
+########
+class MyModelBuilder(tfr.keras.model.AbstractModelBuilder):
+  """Wraps the model into a ModelBuilder to work with `tfr.keras.pipeline`."""
+
+  def build(self) -> tf.keras.Model:
+    """Builds the model."""
+    return AntiqueEmbeddingRankingModel(
+        vocab_size=FLAGS.vocab_size,
+        vocab_file_path=FLAGS.vocab_file_path,
+        embedding_dim=FLAGS.embedding_dimension,
+        hidden_dims=FLAGS.hidden_layer_dims)
+
+
+class RaggedPipeline(tfr.keras.pipeline.SimplePipeline):
+  """Supports ragged tensors."""
+
+  def build_loss(self):
+    """Builds the loss for ragged."""
+    return tfr.keras.losses.get(loss=FLAGS.loss, ragged=True)
+
+  def build_metrics(self):
+    """Builds the metrics for ragged."""
+    return tfr.keras.metrics.default_keras_metrics(ragged=True)
+
+
+def pipeline_train_and_eval():
+  """Train and evaluate ranking model."""
+  train_dataset, eval_dataset = datasets()
+  pipeline_hparams = tfr.keras.pipeline.PipelineHparams(
+      model_dir=FLAGS.model_dir,
+      num_epochs=FLAGS.num_epochs,
+      num_train_steps=FLAGS.num_train_steps,
+      num_valid_steps=FLAGS.num_valid_steps,
+      loss=FLAGS.loss,
+      loss_reduction=tf.losses.Reduction.AUTO,
+      optimizer="adagrad",
+      learning_rate=FLAGS.learning_rate,
+      steps_per_execution=10,
+      export_best_model=True,
+      strategy="MirroredStrategy")
+
+  ranking_pipeline = RaggedPipeline(
+      model_builder=MyModelBuilder(),
+      dataset_builder=tfr.keras.pipeline.NullDatasetBuilder(
+          train_dataset, eval_dataset),
+      hparams=pipeline_hparams)
+  ranking_pipeline.train_and_validate()
+
+
 def main(_):
   tf.random.set_seed(1234)
-  train_and_eval()
+  if FLAGS.use_pipeline:
+    pipeline_train_and_eval()
+  else:
+    standalone_train_and_eval()
 
 
 if __name__ == "__main__":

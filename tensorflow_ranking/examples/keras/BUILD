@@ -62,6 +62,7 @@ py_test(
     deps = [
         ":antique_ragged",
         # py/absl/testing:flagsaver dep,
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],

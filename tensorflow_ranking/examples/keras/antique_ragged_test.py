@@ -17,6 +17,7 @@
 import os
 
 from absl.testing import flagsaver
+from absl.testing import parameterized
 import tensorflow as tf
 
 from google.protobuf import text_format
@@ -63,9 +64,10 @@ VOCAB = [
 ]
 
 
-class ModelTrainAndEvaluateTest(tf.test.TestCase):
+class ModelTrainAndEvaluateTest(tf.test.TestCase, parameterized.TestCase):
 
-  def test_train_and_eval(self):
+  @parameterized.parameters((False, "export"), (True, "export/latest_model"))
+  def test_train_and_eval(self, use_pipeline, saved_model_dir):
     # `create_tempdir` creates an isolated directory for this test, and
     # will be properly cleaned up by the test.
     data_dir = self.create_tempdir()
@@ -89,27 +91,30 @@ class ModelTrainAndEvaluateTest(tf.test.TestCase):
         train_batch_size=2,
         eval_batch_size=2,
         num_epochs=5,
+        num_train_steps=10,
+        num_valid_steps=10,
         vocab_size=len(VOCAB),
+        use_pipeline=use_pipeline,
         hidden_layer_dims=[16, 8]):
 
       # Train and eval model.
       tf.random.set_seed(1234)
-      antique_ragged.train_and_eval()
+      antique_ragged.main(0)
 
       # Check SavedModel is exported correctly.
-      saved_model_path = os.path.join(model_dir, "export/")
+      saved_model_path = os.path.join(model_dir, saved_model_dir)
       self.assertTrue(tf.saved_model.contains_saved_model(saved_model_path))
 
     # Check SavedModel can be loaded and called with ragged tensors.
     saved_model = tf.keras.models.load_model(saved_model_path)
     inputs = {
-        "query_tokens": tf.ragged.constant(
-            [["this", "is", "a", "relevant", "question"]],
-            row_splits_dtype=tf.int32),
-        "document_tokens": tf.ragged.constant(
-            [[["this", "is", "a", "relevant", "answer"],
-              ["irrelevant", "data"]]],
-            row_splits_dtype=tf.int32),
+        "query_tokens":
+            tf.ragged.constant([["this", "is", "a", "relevant", "question"]],
+                               row_splits_dtype=tf.int32),
+        "document_tokens":
+            tf.ragged.constant([[["this", "is", "a", "relevant", "answer"],
+                                 ["irrelevant", "data"]]],
+                               row_splits_dtype=tf.int32),
     }
     scores = saved_model(inputs)
 

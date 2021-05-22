@@ -592,8 +592,6 @@ class ModelFitPipeline(AbstractPipeline):
 
       # Move the following out of strategy.scope only after b/173547275 fixed.
       # Otherwise, MultiWorkerMirroredStrategy will fail.
-      model.summary()
-
       train_dataset, valid_dataset = (
           self._dataset_builder.build_train_dataset(),
           self._dataset_builder.build_valid_dataset())
