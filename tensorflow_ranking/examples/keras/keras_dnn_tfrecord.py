@@ -166,8 +166,8 @@ def train_and_eval():
   pipeline_hparams = tfr.keras.pipeline.PipelineHparams(
       model_dir=FLAGS.model_dir,
       num_epochs=FLAGS.num_epochs,
-      num_train_steps=FLAGS.num_train_steps,
-      num_valid_steps=FLAGS.num_valid_steps,
+      steps_per_epoch=(FLAGS.num_train_steps // FLAGS.num_epochs),
+      validation_steps=FLAGS.num_valid_steps,
       loss=FLAGS.loss,
       loss_reduction=tf.losses.Reduction.AUTO,
       optimizer=FLAGS.optimizer,

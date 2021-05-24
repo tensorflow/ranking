@@ -268,12 +268,11 @@ class PipelineHparams:
   Attributes:
     model_dir: A path to output the model and training data.
     num_epochs: An integer to specify the number of epochs of training.
-    num_train_steps: An integer to specify the total number of training steps.
-      Note that a mini-batch of data will be treated in each step and
-      `num_train_steps` / `num_epochs` of steps will be taken in one epoch.
-    num_valid_steps: An integer to specify the number of validation steps in
+    steps_per_epoch: An integer to specify the number of steps per epoch. When
+      it is None, going over the training data once is counted as an epoch.
+    validation_steps: An integer to specify the number of validation steps in
       each epoch. Note that a mini-batch of data will be evaluated in each step
-      and `num_valid_steps` of steps will be taken for validation in each epoch.
+      and this is the number of steps taken for validation in each epoch.
     learning_rate: A float to indicate the learning rate of the optimizer.
     loss: A string or a map to strings that indicate the loss to be used. When
       `loss` is a string, all outputs and labels will be trained with the same
@@ -304,8 +303,8 @@ class PipelineHparams:
   """
   model_dir: str
   num_epochs: int
-  num_train_steps: int
-  num_valid_steps: int
+  steps_per_epoch: int
+  validation_steps: int
   learning_rate: float
   loss: Union[str, Dict[str, str]]
   loss_reduction: str = tf.losses.Reduction.AUTO
@@ -555,8 +554,8 @@ class ModelFitPipeline(AbstractPipeline):
     pipeline_hparams = pipeline.PipelineHparams(
         model_dir="model/",
         num_epochs=2,
-        num_train_steps=10,
-        num_valid_steps=2,
+        steps_per_epoch=5,
+        validation_steps=2,
         learning_rate=0.01,
         loss="softmax_loss")
     model_builder = SimpleModelBuilder(
@@ -598,9 +597,8 @@ class ModelFitPipeline(AbstractPipeline):
       model.fit(
           x=train_dataset,
           epochs=self._hparams.num_epochs,
-          steps_per_epoch=(self._hparams.num_train_steps //
-                           self._hparams.num_epochs),
-          validation_steps=self._hparams.num_valid_steps,
+          steps_per_epoch=self._hparams.steps_per_epoch,
+          validation_steps=self._hparams.validation_steps,
           validation_data=valid_dataset,
           callbacks=self.build_callbacks(),
           verbose=verbose)
@@ -661,8 +659,8 @@ class SimplePipeline(ModelFitPipeline):
   pipeline_hparams = pipeline.PipelineHparams(
       model_dir="model/",
       num_epochs=2,
-      num_train_steps=10,
-      num_valid_steps=2,
+      steps_per_epoch=5,
+      validation_steps=2,
       learning_rate=0.01,
       loss="softmax_loss")
   model_builder = SimpleModelBuilder(
@@ -738,8 +736,8 @@ class MultiTaskPipeline(ModelFitPipeline):
   pipeline_hparams = PipelineHparams(
       model_dir="model/",
       num_epochs=2,
-      num_train_steps=10,
-      num_valid_steps=2,
+      steps_per_epoch=5,
+      validation_steps=2,
       learning_rate=0.01,
       loss={
           "task1": "softmax_loss",

@@ -161,8 +161,8 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
     pipeline_hparams = pipeline.PipelineHparams(
         model_dir=model_dir,
         num_epochs=2,
-        num_train_steps=10,
-        num_valid_steps=2,
+        steps_per_epoch=5,
+        validation_steps=2,
         learning_rate=0.01,
         loss="softmax_loss",
         export_best_model=True,
@@ -252,8 +252,8 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
     pipeline_hparams = pipeline.PipelineHparams(
         model_dir=model_dir,
         num_epochs=2,
-        num_train_steps=10,
-        num_valid_steps=2,
+        steps_per_epoch=5,
+        validation_steps=2,
         learning_rate=0.01,
         loss={
             "task1": "softmax_loss",
