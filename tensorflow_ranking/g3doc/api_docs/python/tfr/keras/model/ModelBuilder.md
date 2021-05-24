@@ -16,7 +16,7 @@ description: Builds a tf.keras.Model.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L272-L351">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L303-L382">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -26,6 +26,7 @@ description: Builds a tf.keras.Model.
 Builds a `tf.keras.Model`.
 
 Inherits From:
+[`ModelBuilderWithMask`](../../../tfr/keras/model/ModelBuilderWithMask.md),
 [`AbstractModelBuilder`](../../../tfr/keras/model/AbstractModelBuilder.md)
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -40,7 +41,7 @@ Inherits From:
 
 <!-- Placeholder for "Used in" -->
 
-This class implements the `AbstractModelBuilder` by delegating the class
+This class implements the `ModelBuilderWithMask` by delegating the class
 behaviors to the following implementors that can be specified by callers:
 
 *   input_creator: A callable or a class like `InputCreator` to implement
@@ -67,7 +68,6 @@ model_builder = ModelBuilder(
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -116,7 +116,7 @@ name of 2D mask boolean feature.
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L241-L269">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L272-L300">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -137,7 +137,6 @@ model = model_builder.build()
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -151,18 +150,18 @@ A `tf.keras.Model`.
 
 <h3 id="create_inputs"><code>create_inputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L328-L333">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L359-L364">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>create_inputs() -> Tuple[TensorDict, TensorDict, tf.Tensor]
 </code></pre>
 
-See `AbstractModelBuilder`.
+See `ModelBuilderWithMask`.
 
 <h3 id="preprocess"><code>preprocess</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L335-L342">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L366-L373">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -173,11 +172,11 @@ source</a>
 ) -> Tuple[TensorDict, TensorDict]
 </code></pre>
 
-See `AbstractModelBuilder`.
+See `ModelBuilderWithMask`.
 
 <h3 id="score"><code>score</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L344-L351">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L375-L382">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -188,4 +187,4 @@ source</a>
 ) -> Union[TensorLike, TensorDict]
 </code></pre>
 
-See `AbstractModelBuilder`.
+See `ModelBuilderWithMask`.

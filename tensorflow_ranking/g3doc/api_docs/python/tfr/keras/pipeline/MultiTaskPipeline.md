@@ -18,7 +18,7 @@ description: Pipeline for multi-task training.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L695-L786">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L691-L782">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -72,8 +72,8 @@ dataset_hparams = DatasetHparams(
 pipeline_hparams = PipelineHparams(
     model_dir="model/",
     num_epochs=2,
-    num_train_steps=10,
-    num_valid_steps=2,
+    steps_per_epoch=5,
+    validation_steps=2,
     learning_rate=0.01,
     loss={
         "task1": "softmax_loss",
@@ -130,7 +130,7 @@ A dict containing model hyperparameters.
 
 <h3 id="build_callbacks"><code>build_callbacks</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L444-L491">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L443-L490">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -150,7 +150,6 @@ callbacks = pipeline.build_callbacks()
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -165,7 +164,7 @@ A list of `tf.keras.callbacks.Callback` or a
 
 <h3 id="build_loss"><code>build_loss</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L754-L763">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L750-L759">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -176,7 +175,7 @@ See `AbstractPipeline`.
 
 <h3 id="build_metrics"><code>build_metrics</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L765-L774">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L761-L770">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -187,7 +186,7 @@ See `AbstractPipeline`.
 
 <h3 id="build_weighted_metrics"><code>build_weighted_metrics</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L776-L786">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L772-L782">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -198,7 +197,7 @@ See `AbstractPipeline`.
 
 <h3 id="export_saved_model"><code>export_saved_model</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L493-L518">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L492-L517">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -252,7 +251,7 @@ If given, export the model with weights from this checkpoint.
 
 <h3 id="train_and_validate"><code>train_and_validate</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L520-L612">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L519-L608">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -284,8 +283,8 @@ dataset_hparams = DatasetHparams(
 pipeline_hparams = pipeline.PipelineHparams(
     model_dir="model/",
     num_epochs=2,
-    num_train_steps=10,
-    num_valid_steps=2,
+    steps_per_epoch=5,
+    validation_steps=2,
     learning_rate=0.01,
     loss="softmax_loss")
 model_builder = SimpleModelBuilder(

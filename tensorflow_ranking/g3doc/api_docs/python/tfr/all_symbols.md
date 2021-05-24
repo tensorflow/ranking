@@ -100,6 +100,7 @@
 *   <a href="../tfr/keras/model/GAMScorer.md"><code>tfr.keras.model.GAMScorer</code></a>
 *   <a href="../tfr/keras/model/InputCreator.md"><code>tfr.keras.model.InputCreator</code></a>
 *   <a href="../tfr/keras/model/ModelBuilder.md"><code>tfr.keras.model.ModelBuilder</code></a>
+*   <a href="../tfr/keras/model/ModelBuilderWithMask.md"><code>tfr.keras.model.ModelBuilderWithMask</code></a>
 *   <a href="../tfr/keras/model/Preprocessor.md"><code>tfr.keras.model.Preprocessor</code></a>
 *   <a href="../tfr/keras/model/PreprocessorWithSpec.md"><code>tfr.keras.model.PreprocessorWithSpec</code></a>
 *   <a href="../tfr/keras/model/Scorer.md"><code>tfr.keras.model.Scorer</code></a>

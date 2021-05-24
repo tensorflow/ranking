@@ -37,7 +37,7 @@ in Keras.
 
 [`metrics`](../tfr/keras/metrics.md) module: Keras metrics in TF-Ranking.
 
-[`model`](../tfr/keras/model.md) module: Ranking Model utilities and classes in
+[`model`](../tfr/keras/model.md) module: Ranking model utilities and classes in
 tfr.keras.
 
 [`network`](../tfr/keras/network.md) module: Ranking Networks in Keras.

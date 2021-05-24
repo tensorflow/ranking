@@ -17,7 +17,7 @@ description: Hyperparameters used in BaseDatasetBuilder.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L311-L339">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L310-L338">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -28,6 +28,7 @@ Hyperparameters used in `BaseDatasetBuilder`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.pipeline.DatasetHparams(
+    train_input_pattern: str,
     valid_input_pattern: str,
     train_batch_size: int,
     valid_batch_size: int,

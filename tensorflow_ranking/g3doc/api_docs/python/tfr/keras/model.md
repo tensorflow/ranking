@@ -1,4 +1,4 @@
-description: Ranking Model utilities and classes in tfr.keras.
+description: Ranking model utilities and classes in tfr.keras.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
 <meta itemprop="name" content="tfr.keras.model" />
@@ -18,12 +18,12 @@ description: Ranking Model utilities and classes in tfr.keras.
 </td>
 </table>
 
-Ranking Model utilities and classes in tfr.keras.
+Ranking model utilities and classes in tfr.keras.
 
 ## Classes
 
 [`class AbstractModelBuilder`](../../tfr/keras/model/AbstractModelBuilder.md):
-Interface to build a ranking `tf.keras.Model`.
+Interface to build a `tf.keras.Model` for ranking.
 
 [`class DNNScorer`](../../tfr/keras/model/DNNScorer.md): Univariate scorer using
 DNN.
@@ -39,6 +39,9 @@ input creator.
 
 [`class ModelBuilder`](../../tfr/keras/model/ModelBuilder.md): Builds a
 `tf.keras.Model`.
+
+[`class ModelBuilderWithMask`](../../tfr/keras/model/ModelBuilderWithMask.md):
+Interface to build a `tf.keras.Model` for ranking with a mask Tensor.
 
 [`class Preprocessor`](../../tfr/keras/model/Preprocessor.md): Interface for
 feature preprocessing.

@@ -24,7 +24,7 @@ description: Hyperparameters used in ModelFitPipeline.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L249-L307">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L249-L306">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,9 +35,10 @@ Hyperparameters used in `ModelFitPipeline`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.pipeline.PipelineHparams(
+    model_dir: str,
     num_epochs: int,
-    num_train_steps: int,
-    num_valid_steps: int,
+    steps_per_epoch: int,
+    validation_steps: int,
     learning_rate: float,
     loss: Union[str, Dict[str, str]],
     loss_reduction: str = &#x27;auto&#x27;,
@@ -79,21 +80,20 @@ An integer to specify the number of epochs of training.
 </td>
 </tr><tr>
 <td>
-`num_train_steps`
+`steps_per_epoch`
 </td>
 <td>
-An integer to specify the total number of training steps.
-Note that a mini-batch of data will be treated in each step and
-`num_train_steps` / `num_epochs` of steps will be taken in one epoch.
+An integer to specify the number of steps per epoch. When
+it is None, going over the training data once is counted as an epoch.
 </td>
 </tr><tr>
 <td>
-`num_valid_steps`
+`validation_steps`
 </td>
 <td>
 An integer to specify the number of validation steps in
 each epoch. Note that a mini-batch of data will be evaluated in each step
-and `num_valid_steps` of steps will be taken for validation in each epoch.
+and this is the number of steps taken for validation in each epoch.
 </td>
 </tr><tr>
 <td>

@@ -223,6 +223,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/model/InputCreator
     - title: ModelBuilder
       path: /ranking/api_docs/python/tfr/keras/model/ModelBuilder
+    - title: ModelBuilderWithMask
+      path: /ranking/api_docs/python/tfr/keras/model/ModelBuilderWithMask
     - title: Preprocessor
       path: /ranking/api_docs/python/tfr/keras/model/Preprocessor
     - title: PreprocessorWithSpec

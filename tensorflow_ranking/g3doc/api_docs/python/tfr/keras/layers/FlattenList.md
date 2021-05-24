@@ -67,7 +67,6 @@ flattened_context_features = {'context_feature_1':
 flattened_example_features = {'example_feature_1':
                               [[1], [0], [1], [0], [0], [0]]}
 ```
-
 `context_feature_1` is repeated by list_size=3 times. `example_feature_1` is
 flattened and padded with the invalid terms replaced by valid terms in each
 query in a circular way.
