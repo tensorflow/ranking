@@ -19,6 +19,8 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+
+from absl.testing import parameterized
 import tensorflow.compat.v2 as tf
 
 from tensorflow_ranking.python.keras import metrics as metrics_lib
@@ -159,7 +161,68 @@ def _example_weights_to_list_weights(weights, relevances, boost_form):
   return list_weights
 
 
-class MetricsSerializationTest(tf.test.TestCase):
+class MetricsSerializationTest(tf.test.TestCase, parameterized.TestCase):
+
+  @parameterized.parameters(
+      (metrics_lib.PrecisionMetric(topn=2)),
+      (metrics_lib.RecallMetric(topn=2)),
+      (metrics_lib.ARPMetric()),
+      (metrics_lib.MRRMetric()),
+      (metrics_lib.MeanAveragePrecisionMetric()),
+      (metrics_lib.DCGMetric()),
+      (metrics_lib.NDCGMetric()),
+      (metrics_lib.OPAMetric()),
+      (metrics_lib.AlphaDCGMetric()),
+      (metrics_lib.PrecisionIAMetric()))
+  def test_is_metric_serializable(self, metric):
+    serialized = tf.keras.utils.serialize_keras_object(metric)
+    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    self.assertDictEqual(metric.get_config(), deserialized.get_config())
+    y_true = tf.constant([[0., 0., 1.]])
+    y_pred = tf.constant([[3., 1., 2.]])
+    if isinstance(metric,
+                  (metrics_lib.AlphaDCGMetric, metrics_lib.PrecisionIAMetric)):
+      y_true = tf.stack([y_true, y_true], axis=2)
+
+    # Test whether the deserialized metric behaves the same as the original
+    # metric. Note that we have to reset the random seed in between calls to
+    # make sure results are reproducible for stochastic metrics.
+    tf.random.set_seed(0x4321)
+    original_output = metric(y_true, y_pred).numpy()
+    tf.random.set_seed(0x4321)
+    deserialized_output = deserialized(y_true, y_pred).numpy()
+    self.assertAllClose(original_output, deserialized_output)
+
+  @parameterized.parameters(
+      (metrics_lib.PrecisionMetric(topn=2, ragged=True)),
+      (metrics_lib.RecallMetric(topn=2, ragged=True)),
+      (metrics_lib.ARPMetric(ragged=True)),
+      (metrics_lib.MRRMetric(ragged=True)),
+      (metrics_lib.MeanAveragePrecisionMetric(ragged=True)),
+      (metrics_lib.DCGMetric(ragged=True)),
+      (metrics_lib.NDCGMetric(ragged=True)),
+      (metrics_lib.OPAMetric(ragged=True)),
+      (metrics_lib.AlphaDCGMetric(ragged=True)),
+      (metrics_lib.PrecisionIAMetric(ragged=True)))
+  def test_is_ragged_metric_serializable(self, metric):
+    y_pred = tf.ragged.constant([[1., 2., 4.], [0., 2.]])
+    y_true = tf.ragged.constant([[0., 2., 1.], [1., 0.]])
+
+    if isinstance(metric,
+                  (metrics_lib.AlphaDCGMetric, metrics_lib.PrecisionIAMetric)):
+      y_true = tf.stack([y_true, y_true], axis=2)
+
+    serialized = tf.keras.utils.serialize_keras_object(metric)
+    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+
+    # Test whether the deserialized metric behaves the same as the original
+    # metric. Note that we have to reset the random seed in between calls to
+    # make sure results are reproducible for stochastic metrics.
+    tf.random.set_seed(0x4321)
+    original_output = metric(y_true, y_pred).numpy()
+    tf.random.set_seed(0x4321)
+    deserialized_output = deserialized(y_true, y_pred).numpy()
+    self.assertAllClose(original_output, deserialized_output)
 
   def _check_config(self, metric_cls, init_args):
     """Checks if Keras metrics can be saved and restored.

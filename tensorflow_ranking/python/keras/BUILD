@@ -231,6 +231,7 @@ py_test(
     ],
     deps = [
         ":metrics",
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
     ],
 )

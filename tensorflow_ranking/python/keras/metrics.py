@@ -158,11 +158,12 @@ class _RankingMetric(tf.keras.metrics.Mean):
   customized training.
   """
 
-  def __init__(self, name=None, dtype=None, **kwargs):
+  def __init__(self, name=None, dtype=None, ragged=False, **kwargs):
     super(_RankingMetric, self).__init__(name=name, dtype=dtype, **kwargs)
     # An instance of `metrics_impl._RankingMetric`.
     # Overwrite this in subclasses.
     self._metric = None
+    self._ragged = ragged
 
   def update_state(self, y_true, y_pred, sample_weight=None):
     """Accumulates metric statistics.
@@ -187,6 +188,13 @@ class _RankingMetric(tf.keras.metrics.Mean):
         y_true, y_pred, sample_weight)
     return super(_RankingMetric, self).update_state(
         per_list_metric_val, sample_weight=per_list_metric_weights)
+
+  def get_config(self):
+    config = super(_RankingMetric, self).get_config()
+    config.update({
+        "ragged": self._ragged,
+    })
+    return config
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
@@ -241,7 +249,8 @@ class MRRMetric(_RankingMetric):
   """
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
-    super(MRRMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(MRRMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                    **kwargs)
     self._topn = topn
     self._metric = metrics_impl.MRRMetric(name=name, topn=topn, ragged=ragged)
 
@@ -296,7 +305,8 @@ class ARPMetric(_RankingMetric):
   """
 
   def __init__(self, name=None, dtype=None, ragged=False, **kwargs):
-    super(ARPMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(ARPMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                    **kwargs)
     self._metric = metrics_impl.ARPMetric(name=name, ragged=ragged)
 
 
@@ -361,7 +371,8 @@ class PrecisionMetric(_RankingMetric):
   """
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
-    super(PrecisionMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(PrecisionMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                          **kwargs)
     self._topn = topn
     self._metric = metrics_impl.PrecisionMetric(name=name, topn=topn,
                                                 ragged=ragged)
@@ -436,7 +447,8 @@ class RecallMetric(_RankingMetric):
   """
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
-    super(RecallMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(RecallMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                       **kwargs)
     self._topn = topn
     self._metric = metrics_impl.RecallMetric(name=name, topn=topn,
                                              ragged=ragged)
@@ -530,7 +542,8 @@ class PrecisionIAMetric(_RankingMetric):
         need to be ragged tensors with compatible shapes.
       **kwargs: Other keyward arguments used in `tf.keras.metrics.Metric`.
     """
-    super(PrecisionIAMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(PrecisionIAMetric, self).__init__(name=name, dtype=dtype,
+                                            ragged=ragged, **kwargs)
     self._topn = topn
     self._metric = metrics_impl.PrecisionIAMetric(name=name, topn=topn,
                                                   ragged=ragged)
@@ -610,7 +623,7 @@ class MeanAveragePrecisionMetric(_RankingMetric):
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
     super(MeanAveragePrecisionMetric, self).__init__(
-        name=name, dtype=dtype, **kwargs)
+        name=name, dtype=dtype, ragged=ragged, **kwargs)
     self._topn = topn
     self._metric = metrics_impl.MeanAveragePrecisionMetric(name=name, topn=topn,
                                                            ragged=ragged)
@@ -691,7 +704,8 @@ class NDCGMetric(_RankingMetric):
                dtype=None,
                ragged=False,
                **kwargs):
-    super(NDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(NDCGMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                     **kwargs)
     self._topn = topn
     self._gain_fn = gain_fn or utils.pow_minus_1
     self._rank_discount_fn = rank_discount_fn or utils.log2_inverse
@@ -776,7 +790,8 @@ class DCGMetric(_RankingMetric):
                dtype=None,
                ragged=False,
                **kwargs):
-    super(DCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(DCGMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                    **kwargs)
     self._topn = topn
     self._gain_fn = gain_fn or utils.pow_minus_1
     self._rank_discount_fn = rank_discount_fn or utils.log2_inverse
@@ -900,7 +915,8 @@ class AlphaDCGMetric(_RankingMetric):
         need to be ragged tensors with compatible shapes.
       **kwargs: Other keyward arguments used in `tf.keras.metrics.Metric`.
     """
-    super(AlphaDCGMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(AlphaDCGMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                         **kwargs)
     self._topn = topn
     self._alpha = alpha
     self._rank_discount_fn = rank_discount_fn or utils.log2_inverse
@@ -975,5 +991,6 @@ class OPAMetric(_RankingMetric):
   """
 
   def __init__(self, name=None, dtype=None, ragged=False, **kwargs):
-    super(OPAMetric, self).__init__(name=name, dtype=dtype, **kwargs)
+    super(OPAMetric, self).__init__(name=name, dtype=dtype, ragged=ragged,
+                                    **kwargs)
     self._metric = metrics_impl.OPAMetric(name=name, ragged=ragged)
