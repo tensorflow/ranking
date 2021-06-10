@@ -365,8 +365,8 @@ def _pairwise_logistic_loss(
   """Computes the pairwise logistic loss for a list.
 
   The preference probability of each pair is computed as the sigmoid function:
-  P(l_i > l_j) = 1 / (1 + exp(s_j - s_i)) and the logistic loss is log(P(l_i >
-  l_j)) if l_i > l_j and 0 otherwise.
+  `P(l_i > l_j) = 1 / (1 + exp(s_j - s_i))` and the logistic loss is
+  `-log(P(l_i > l_j))` if `l_i > l_j` and `0` otherwise.
 
   Args:
     labels: A `Tensor` of the same shape as `logits` representing graded
