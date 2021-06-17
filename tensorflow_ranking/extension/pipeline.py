@@ -334,11 +334,13 @@ class RankingPipeline(object):
       return tf.estimator.export.build_parsing_serving_input_receiver_fn(
           feature_spec)
 
-  def _export_strategies(self, event_file_pattern):
+  def _export_strategies(self, event_file_pattern, assets_extra=None):
     """Defines the export strategies.
 
     Args:
       event_file_pattern: (str) Event file name pattern relative to model_dir.
+      assets_extra: An optional dict specifying how to populate the assets.extra
+        directory within the exported SavedModel.
 
     Returns:
       A list of `tf.Exporter` strategies for model exporting.
@@ -346,7 +348,8 @@ class RankingPipeline(object):
     export_strategies = []
 
     latest_exporter = tf.estimator.LatestExporter(
-        "latest_model", serving_input_receiver_fn=self._make_serving_input_fn())
+        "latest_model", serving_input_receiver_fn=self._make_serving_input_fn(),
+        assets_extra=assets_extra)
     export_strategies.append(latest_exporter)
 
     # In case of not specifying the `best_exporter_metric`, uses the default
@@ -355,7 +358,8 @@ class RankingPipeline(object):
       best_exporter = tf.estimator.BestExporter(
           name="best_model_by_loss",
           serving_input_receiver_fn=self._make_serving_input_fn(),
-          event_file_pattern=event_file_pattern)
+          event_file_pattern=event_file_pattern,
+          assets_extra=assets_extra)
       export_strategies.append(best_exporter)
       return export_strategies
 
@@ -377,7 +381,8 @@ class RankingPipeline(object):
         name="best_model_by_metric",
         serving_input_receiver_fn=self._make_serving_input_fn(),
         event_file_pattern=event_file_pattern,
-        compare_fn=_compare_fn)
+        compare_fn=_compare_fn,
+        assets_extra=assets_extra)
     export_strategies.append(best_exporter)
 
     return export_strategies
@@ -408,7 +413,8 @@ class RankingPipeline(object):
         input_fn=eval_input_fn,
         steps=self._hparams.get("num_eval_steps"),
         exporters=self._export_strategies(
-            event_file_pattern="eval_on_eval/*.tfevents.*"),
+            event_file_pattern="eval_on_eval/*.tfevents.*",
+            assets_extra=self._hparams.get("assets_extra")),
         throttle_secs=5)
     return train_spec, eval_on_eval_spec, eval_on_train_spec
 

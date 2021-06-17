@@ -105,6 +105,13 @@ def _write_tfrecord_files(path):
       writer.write(elwc)
 
 
+def _write_assets(path, content):
+  if tf.io.gfile.exists(path):
+    tf.io.gfile.remove(path)
+  with tf.io.gfile.GFile(path, "w") as writer:
+    writer.write(content)
+
+
 def _make_hparams(train_input_pattern,
                   eval_input_pattern,
                   model_dir,
@@ -328,6 +335,9 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
     tf.io.gfile.makedirs(self._model_dir)
     self._data_file = os.path.join(self._model_dir, "elwc.tfrecord")
     _write_tfrecord_files(self._data_file)
+    self._asset_file = os.path.join(self._model_dir, "some_assets")
+    self._asset_content = "some_content"
+    _write_assets(self._asset_file, self._asset_content)
 
   def tearDown(self):
     super(RankingPipelineIntegrationTest, self).tearDown()
@@ -370,12 +380,25 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
         num_eval_steps=3,
         checkpoint_secs=1,
         num_checkpoints=2)
+    hparams["assets_extra"] = {"text_asset": self._asset_file}
 
     pip = RankingPipelineClient().build_best_exporter_pipeline(hparams)
     pip.train_and_eval(local_training=True)
     self.assertTrue(tf.io.gfile.exists(model_dir + "export/latest_model"))
     self.assertTrue(
         tf.io.gfile.exists(model_dir + "export/best_model_by_metric"))
+    for export_strategy in [
+        "export/latest_model", "export/best_model_by_metric"]:
+      base_dir = model_dir + export_strategy
+      saved_models = tf.io.gfile.listdir(base_dir)
+      self.assertNotEmpty(saved_models)
+      for saved_model_dir in saved_models:
+        asset_dir = base_dir + f"/{saved_model_dir}/assets.extra"
+        self.assertTrue(tf.io.gfile.exists(asset_dir))
+        self.assertTrue(tf.io.gfile.exists(asset_dir + "/text_asset"))
+        self.assertEqual(
+            self._asset_content,
+            tf.io.gfile.GFile(asset_dir + "/text_asset").read())
 
   def test_pipeline_with_listwise_inference(self):
     model_dir = self._model_dir + "pipeline-elwc/"
