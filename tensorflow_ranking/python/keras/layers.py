@@ -407,9 +407,8 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
   dia_layer = DocumentInteractionAttention(
       num_heads=1, head_size=64, num_layers=1)
   dia_output = dia_layer(
-      inputs=inputs,
-      training=False,
-      list_mask=list_mask)
+      inputs=(inputs, list_mask),
+      training=False)
   ```
 
   References:

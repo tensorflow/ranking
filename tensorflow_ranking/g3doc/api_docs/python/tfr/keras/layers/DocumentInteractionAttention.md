@@ -25,7 +25,7 @@ description: Cross Document Interaction Attention layer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L366-L525">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L366-L524">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -72,9 +72,8 @@ list_mask = [[True, True, False], [True, False, False]]
 dia_layer = DocumentInteractionAttention(
     num_heads=1, head_size=64, num_layers=1)
 dia_output = dia_layer(
-    inputs=inputs,
-    training=False,
-    list_mask=list_mask)
+    inputs=(inputs, list_mask),
+    training=False)
 ```
 
 #### References:
@@ -476,7 +475,7 @@ using a `keras.Metric.Mean`.
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L432-L480">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L431-L479">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -677,7 +676,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L517-L525">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L516-L524">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
