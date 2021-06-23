@@ -176,3 +176,22 @@ py_test(
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
+
+py_binary(
+    name = "tfrbert_antique_train",
+    srcs = ["tfrbert_antique_train.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        # py/absl:app dep,
+        # py/absl/flags dep,
+        # py/gin dep,
+        # tensorflow_models/official/common:distribute_utils dep,
+        # tensorflow_models/official/common:flags dep,
+        # tensorflow_models/official/core:task_factory dep,
+        # tensorflow_models/official/core:train_lib dep,
+        # tensorflow_models/official/core:train_utils dep,
+        # tensorflow_models/official/modeling:performance dep,
+        "//tensorflow_ranking/python/keras/tfrbert:experiments",
+    ],
+)
