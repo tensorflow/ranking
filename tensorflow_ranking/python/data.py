@@ -426,7 +426,7 @@ def parse_from_example_list(serialized,
         features {
           feature {
             key: "unigrams"
-            value { bytes_list { value: ["learning" "to" "rank" } }
+            value { bytes_list { value: ["learning" "to" "rank"] } }
           }
           feature {
             key: "utility"
