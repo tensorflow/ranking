@@ -37,10 +37,10 @@ https://ciir.cs.umass.edu/downloads/Antique/tfr-bert/ELWC/. The following
 command downloads the data set to "/tmp/tfrbert/data/" directory.
 
 ```
-mkdir /tmp/tfrbert/data && \
-wget https://ciir.cs.umass.edu/downloads/Antique/tfr-bert/ELWC/\
+mkdir -p /tmp/tfrbert/data && \
+wget https://ciir.cs.umass.edu/downloads/Antique/tf-ranking/\
 antique_train_seq_64_elwc.tfrecords -P /tmp/tfrbert/data && \
-wget https://ciir.cs.umass.edu/downloads/Antique/tfr-bert/ELWC/\
+wget https://ciir.cs.umass.edu/downloads/Antique/tf-ranking/\
 antique_test_seq_64_elwc.tfrecords -P /tmp/tfrbert/data
 ```
 
