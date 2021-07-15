@@ -228,7 +228,7 @@ The training results such as loss and metrics can be visualized using
 ### Jupyter Notebook
 
 An example jupyter notebook is available in
-`third_party/tensorflow_ranking/examples/handling_sparse_features.ipynb`.
+`tensorflow_ranking/examples/handling_sparse_features.ipynb`.
 
 1.  To run this notebook, first follow the steps in installation to set up
     `virtualenv` environment with tensorflow_ranking package installed.
@@ -242,7 +242,7 @@ An example jupyter notebook is available in
 3.  Start a jupyter notebook instance on remote server.
 
     ```shell
-    (tfr) $ jupyter notebook third_party/tensorflow_ranking/examples/handling_sparse_features.ipynb \
+    (tfr) $ jupyter notebook tensorflow_ranking/examples/handling_sparse_features.ipynb \
             --NotebookApp.allow_origin='https://colab.research.google.com' \
             --port=8888
     ```
