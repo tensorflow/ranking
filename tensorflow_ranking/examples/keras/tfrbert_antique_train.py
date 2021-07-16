@@ -69,6 +69,7 @@ prediction of a trained model.
 from absl import app
 from absl import flags
 import gin
+import tensorflow as tf
 
 from official.common import distribute_utils
 from official.common import flags as tfm_flags
@@ -77,7 +78,7 @@ from official.core import train_lib
 from official.core import train_utils
 from official.modeling import performance
 # pylint: disable=unused-import
-from tensorflow_ranking.python.keras.tfrbert import experiments
+from tensorflow_ranking.examples.keras import tfrbert_task_experiments
 # pylint: enable=unused-import
 
 FLAGS = flags.FLAGS
@@ -105,7 +106,11 @@ def main(_):
       tpu_address=params.runtime.tpu,
       **params.runtime.model_parallelism())
   with distribution_strategy.scope():
-    task = task_factory.get_task(params.task, logging_dir=model_dir)
+    task = task_factory.get_task(
+        params.task,
+        label_spec=('relevance', tf.io.FixedLenFeature(
+            shape=[1,], dtype=tf.int64, default_value=-1)),
+        logging_dir=model_dir)
 
   train_lib.run_experiment(
       distribution_strategy=distribution_strategy,

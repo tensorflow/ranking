@@ -24,6 +24,7 @@ py_library(
         ":pipeline",
         ":saved_model",
         ":strategy_utils",
+        ":task",
         ":utils",
         "//tensorflow_ranking/python/keras/canned",
     ],
@@ -331,6 +332,44 @@ py_test(
     deps = [
         ":model",
         ":pipeline",
+        # py/absl/testing:parameterized dep,
+        # py/tensorflow dep,
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
+
+py_library(
+    name = "task",
+    srcs = ["task.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":losses",
+        ":metrics",
+        ":model",
+        # py/absl/logging dep,
+        # py/dataclasses dep,
+        # py/orbit dep,
+        # py/tensorflow dep,
+        # tensorflow_models/official/core:base_task dep,
+        # tensorflow_models/official/core:config_definitions dep,
+        # tensorflow_models/official/core:input_reader dep,
+        # tensorflow_models/official/core:task_factory dep,
+        # tensorflow_models/official/modeling:tf_utils dep,
+        # tensorflow_models/official/nlp/data:data_loader dep,
+        # tensorflow_models/official/nlp/modeling dep,
+        "//tensorflow_ranking/python:data",
+    ],
+)
+
+py_test(
+    name = "task_test",
+    size = "large",
+    srcs = ["task_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":model",
+        ":task",
         # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,

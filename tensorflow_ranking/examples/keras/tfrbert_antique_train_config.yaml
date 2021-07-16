@@ -8,8 +8,6 @@ task:
     input_path: '/tmp/tfrbert/data/antique_train_seq_64_elwc.tfrecords'
     is_training: true
     seq_length: 64
-    label_type: 'int'
-    label_feature_name: 'relevance'
     list_size: 10
   validation_data:
     drop_remainder: false
@@ -17,8 +15,6 @@ task:
     input_path: '/tmp/tfrbert/data/antique_test_seq_64_elwc.tfrecords'
     is_training: false
     seq_length: 64
-    label_type: 'int'
-    label_feature_name: 'relevance'
     list_size: 10
   loss: 'softmax_loss'
   output_preds: false

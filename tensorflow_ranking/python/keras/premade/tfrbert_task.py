@@ -15,49 +15,132 @@
 """TF-Ranking BERT task."""
 import os
 import time
+from typing import Optional, Tuple, Dict, Mapping
 
 from absl import logging
 import dataclasses
 import numpy as np
 import tensorflow as tf
 
-from official.core import base_task
-from official.core import config_definitions as cfg
 from official.core import task_factory
-from official.modeling import tf_utils
 from official.modeling.hyperparams import base_config
 from official.nlp.configs import encoders
-from tensorflow_ranking.python.keras import losses as tfr_losses
 from tensorflow_ranking.python.keras import metrics as tfr_metrics
 from tensorflow_ranking.python.keras import model as tfr_model
-from tensorflow_ranking.python.keras.tfrbert import tfrbert_dataloader as dataloader
-from tensorflow_ranking.python.keras.tfrbert import tfrbert_model
+from tensorflow_ranking.python.keras import task as tfr_task
 
 _PADDING_LABEL = -1.
 _PREDICTION = 'prediction'
 _LABEL = 'label'
+QUERY_ID = 'query_id'
+DOCUMENT_ID = 'document_id'
+
+TensorLike = tf.types.experimental.TensorLike
+TensorDict = Dict[str, TensorLike]
 
 
 @dataclasses.dataclass
-class ModelConfig(base_config.Config):
+class TFRBertDataConfig(tfr_task.RankingDataConfig):
+  """Data config for TFR-BERT task."""
+  seq_length: int = 128
+  read_query_id: bool = False  # Only supports int64 ids.
+  read_document_id: bool = False  # Only supports int64 ids.
+
+
+class TFRBertDataLoader(tfr_task.RankingDataLoader):
+  """A class to load dataset for TFR-BERT task."""
+
+  def __init__(self,
+               params,
+               label_spec: Tuple[str, tf.io.FixedLenFeature] = None):
+    context_feature_spec = {}
+    example_feature_spec = {
+        'input_ids': tf.io.FixedLenFeature(
+            shape=(params.seq_length,), dtype=tf.int64,
+            default_value=[0] * params.seq_length),
+        'input_mask': tf.io.FixedLenFeature(
+            shape=(params.seq_length,), dtype=tf.int64,
+            default_value=[0] * params.seq_length),
+        'segment_ids': tf.io.FixedLenFeature(
+            shape=(params.seq_length,), dtype=tf.int64,
+            default_value=[0] * params.seq_length)}
+    if params.read_query_id:
+      example_feature_spec.update({
+          QUERY_ID: tf.io.FixedLenFeature(
+              shape=(1,), dtype=tf.int64, default_value=-1)})
+    if params.read_document_id:
+      example_feature_spec.update({
+          DOCUMENT_ID: tf.io.FixedLenFeature(
+              shape=(1,), dtype=tf.int64, default_value=-1)})
+
+    super().__init__(params=params,
+                     context_feature_spec=context_feature_spec,
+                     example_feature_spec=example_feature_spec,
+                     label_spec=label_spec)
+
+  def _parse(
+      self,
+      record: Mapping[str,
+                      tf.Tensor]) -> Tuple[Dict[str, tf.Tensor], tf.Tensor]:
+    """Maps feature names in data to feature names of encoder models."""
+    x, y = super()._parse(record)
+    feature_name_mapping = {
+        'input_ids': 'input_word_ids',
+        'input_mask': 'input_mask',
+        'segment_ids': 'input_type_ids'
+    }
+    converted_x = {
+        feature_name_mapping.get(name, name): tensor
+        for name, tensor in x.items()}
+    return converted_x, y
+
+
+@dataclasses.dataclass
+class TFRBertModelConfig(base_config.Config):
   """A TFR-BERT model configuration."""
   dropout_rate: float = 0.1
   encoder: encoders.EncoderConfig = encoders.EncoderConfig()
 
 
+# TODO: Extend to more generic encoders in addition to BERT.
+class TFRBertScorer(tfr_model.UnivariateScorer):
+  """Univariate BERT-based scorer."""
+
+  def __init__(self,
+               encoder: tf.keras.Model,
+               bert_output_dropout: float,
+               name: str = 'tfrbert',
+               **kwargs):
+    self.encoder = encoder
+    self._dropout_layer = tf.keras.layers.Dropout(rate=bert_output_dropout)
+    self._score_layer = tf.keras.layers.Dense(units=1, name='score')
+
+  def _score_flattened(
+      self,
+      context_features: TensorDict,
+      example_features: TensorDict,
+  ) -> tf.Tensor:
+    """See `UnivariateScorer`."""
+    # See BertEncoder class for `encoder` outputs.
+    bert_output = self.encoder(example_features)
+    pooled_output = bert_output['pooled_output']
+    output = self._dropout_layer(pooled_output)
+    return self._score_layer(output)
+
+
+class TFRBertModelBuilder(tfr_model.ModelBuilder):
+  """Model builder for TFR-BERT models."""
+
+  def build(self) -> tf.keras.Model:
+    model = super().build()
+    model.checkpoint_items = {'encoder': self._scorer.encoder}
+    return model
+
+
 @dataclasses.dataclass
-class TFRBertConfig(cfg.TaskConfig):
+class TFRBertConfig(tfr_task.RankingTaskConfig):
   """The tf-ranking BERT task config."""
-  init_checkpoint: str = ''
-  loss: str = 'softmax_loss'
-  # An enum of strings indicating the loss reduction type.
-  # See type definition in the `tf.compat.v2.losses.Reduction`.
-  # Only NONE works for TPU, while others may work on CPU/GPU.
-  loss_reduction: str = tf.keras.losses.Reduction.NONE
-  # Defines the concrete model config at instantiation time.
-  model: ModelConfig = ModelConfig()
-  train_data: dataloader.TFRBertDataConfig = dataloader.TFRBertDataConfig()
-  validation_data: dataloader.TFRBertDataConfig = dataloader.TFRBertDataConfig()
+  model: TFRBertModelConfig = TFRBertModelConfig()
   # If specified, group by `query_feature_name` to calculate aggregated metrics
   aggregated_metrics: bool = False
   # If True, output prediction results to a csv after each validation step.
@@ -65,13 +148,32 @@ class TFRBertConfig(cfg.TaskConfig):
 
 
 @task_factory.register_task_cls(TFRBertConfig)
-class TFRBertTask(base_task.Task):
+class TFRBertTask(tfr_task.RankingTask):
   """Task object for tf-ranking BERT."""
+
+  def __init__(self,
+               params,
+               label_spec: Tuple[str, tf.io.FixedLenFeature] = None,
+               logging_dir: Optional[str] = None,
+               name: Optional[str] = None):
+    super().__init__(params=params,
+                     model_builder=None,
+                     label_spec=label_spec,
+                     logging_dir=logging_dir,
+                     name=name)
+    if params.validation_data:
+      if (params.train_data.mask_feature_name !=
+          params.validation_data.mask_feature_name):
+        raise ValueError('`mask_feature_name` in train and validation data is '
+                         'not matched! \"${}\" in train but \"${}\" in '
+                         'validation.'.format(
+                             params.train_data.mask_feature_name,
+                             params.validation_data.mask_feature_name))
 
   def build_model(self):
     encoder_network = encoders.build_encoder(self.task_config.model.encoder)
     preprocess_dict = {}
-    scorer = tfrbert_model.TFRBertScorer(
+    scorer = TFRBertScorer(
         encoder=encoder_network,
         bert_output_dropout=self.task_config.model.dropout_rate)
 
@@ -84,62 +186,19 @@ class TFRBertTask(base_task.Task):
             shape=(None,), dtype=tf.int64)}
     context_feature_spec = {}
 
-    model_builder = tfrbert_model.TFRBertModelBuilder(
+    model_builder = TFRBertModelBuilder(
         input_creator=tfr_model.FeatureSpecInputCreator(
             context_feature_spec, example_feature_spec),
         preprocessor=tfr_model.PreprocessorWithSpec(preprocess_dict),
         scorer=scorer,
-        mask_feature_name=dataloader.MASK,
+        mask_feature_name=self._task_config.train_data.mask_feature_name,
         name='tfrbert_model')
     return model_builder.build()
 
-  def build_losses(self, labels, model_outputs, aux_losses=None) -> tf.Tensor:
-    ranking_loss = tfr_losses.get(
-        loss=self.task_config.loss, reduction=self.task_config.loss_reduction)
-    loss = ranking_loss(tf.cast(labels, tf.float32),
-                        tf.cast(model_outputs, tf.float32))
-    if aux_losses:
-      loss += tf.add_n(aux_losses)
-    return tf_utils.safe_mean(loss)
-
   def build_inputs(self, params, input_context=None):
     """Returns tf.data.Dataset for tf-ranking BERT task."""
-    return dataloader.TFRBertDataLoader(params).load(input_context)
-
-  def build_metrics(self, training=None):
-    del training
-    metrics = [
-        tfr_metrics.MeanAveragePrecisionMetric(name='MAP')
-    ]
-    for topn in [1, 5, 10]:
-      metrics.append(
-          tfr_metrics.NDCGMetric(name='NDCG@{}'.format(topn), topn=topn))
-    for topn in [1, 5, 10]:
-      metrics.append(
-          tfr_metrics.MRRMetric(name='MRR@{}'.format(topn), topn=topn))
-    return metrics
-
-  def process_metrics(self, metrics, labels, model_outputs):
-    for metric in metrics:
-      metric.update_state(labels, model_outputs)
-
-  def train_step(self, inputs, model: tf.keras.Model,
-                 optimizer: tf.keras.optimizers.Optimizer, metrics):
-    if isinstance(inputs, tuple) and len(inputs) == 2:
-      features, labels = inputs
-    else:
-      features, labels = inputs, inputs
-    with tf.GradientTape() as tape:
-      outputs = model(features, training=True)
-      # Computes per-replica loss.
-      loss = self.build_losses(
-          labels=labels, model_outputs=outputs, aux_losses=model.losses)
-      scaled_loss = loss / tf.distribute.get_strategy().num_replicas_in_sync
-    tvars = model.trainable_variables
-    grads = tape.gradient(scaled_loss, tvars)
-    optimizer.apply_gradients(list(zip(grads, tvars)))
-    self.process_metrics(metrics, labels, outputs)
-    return {self.loss: loss}
+    return TFRBertDataLoader(
+        params, label_spec=self._label_spec).load(input_context)
 
   def validation_step(self, inputs, model: tf.keras.Model, metrics=None):
     if isinstance(inputs, tuple) and len(inputs) == 2:
@@ -203,7 +262,7 @@ class TFRBertTask(base_task.Task):
     output = {}
     if self.task_config.aggregated_metrics:
       output = self._calculate_aggregated_metrics(
-          flattened_aggregated_logs, dataloader.QUERY_ID)
+          flattened_aggregated_logs, QUERY_ID)
 
     return output
 
@@ -212,14 +271,14 @@ class TFRBertTask(base_task.Task):
     feature_names = set()
     if self.task_config.output_preds:
       feature_names = feature_names.union(
-          {dataloader.QUERY_ID, dataloader.DOCUMENT_ID})
+          {QUERY_ID, DOCUMENT_ID})
     return feature_names
 
   def _get_logging_feature_names(self):
     """Returns a set of feature names that needs to be logged."""
     feature_names = self._get_output_feature_names()
     if self.task_config.aggregated_metrics:
-      feature_names.add(dataloader.QUERY_ID)
+      feature_names.add(QUERY_ID)
     return feature_names
 
   def _calculate_aggregated_metrics(

@@ -25,4 +25,5 @@ from tensorflow_ranking.python.keras import network
 from tensorflow_ranking.python.keras import pipeline
 from tensorflow_ranking.python.keras import saved_model
 from tensorflow_ranking.python.keras import strategy_utils
+from tensorflow_ranking.python.keras import task
 from tensorflow_ranking.python.keras import utils

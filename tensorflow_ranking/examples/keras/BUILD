@@ -177,21 +177,33 @@ py_test(
     ],
 )
 
+py_library(
+    name = "tfrbert_task_experiments",
+    srcs = ["tfrbert_task_experiments.py"],
+    deps = [
+        # tensorflow_models/official/core:config_definitions dep,
+        # tensorflow_models/official/core:exp_factory dep,
+        # tensorflow_models/official/modeling/optimization dep,
+        "//tensorflow_ranking/python/keras/premade:tfrbert_task",
+    ],
+)
+
 py_binary(
     name = "tfrbert_antique_train",
     srcs = ["tfrbert_antique_train.py"],
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
+        ":tfrbert_task_experiments",
         # py/absl:app dep,
         # py/absl/flags dep,
         # py/gin dep,
+        # py/tensorflow dep,
         # tensorflow_models/official/common:distribute_utils dep,
         # tensorflow_models/official/common:flags dep,
         # tensorflow_models/official/core:task_factory dep,
         # tensorflow_models/official/core:train_lib dep,
         # tensorflow_models/official/core:train_utils dep,
         # tensorflow_models/official/modeling:performance dep,
-        "//tensorflow_ranking/python/keras/tfrbert:experiments",
     ],
 )
