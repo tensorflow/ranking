@@ -538,6 +538,21 @@ def parse_from_example_list(serialized,
   return parser.parse(serialized)
 
 
+def _bounding_shape(tensor):
+  """Computes the bounding shape for given tensor.
+
+  Args:
+    tensor: The tensor to compute the bounding shape for.
+
+  Returns:
+    The bounding shape of the tensor.
+  """
+  if isinstance(tensor, tf.RaggedTensor):
+    return tensor.bounding_shape()
+  else:
+    return tf.shape(tensor)
+
+
 def _get_scalar_default_value(dtype, default_value):
   """Gets the scalar compatible default value."""
   if dtype == tf.string:
@@ -591,6 +606,16 @@ class _SequenceExampleParser(_RankingDataParser):
         context_features=context_feature_spec,
         sequence_features=sequence_features)
 
+    # Infer sizes from ragged and sparse tensors if there are no dense features
+    # to infer it from.
+    if not sizes:
+      for name, example in examples.items():
+        if isinstance(example, tf.RaggedTensor):
+          sizes[name] = example.row_lengths
+        elif isinstance(example, tf.sparse.SparseTensor):
+          sizes[name] = 1 + tf.math.segment_max(example.indices[:, 1],
+                                                example.indices[:, 0])
+
     # Reset to no trivial padding values for example features.
     for k, v in six.iteritems(non_trivial_padding_values):
       tensor = examples[k]  # [batch_size, num_frames, feature_size]
@@ -610,7 +635,7 @@ class _SequenceExampleParser(_RankingDataParser):
       # Use dynamic list_size. This is needed to pad missing feature_list.
       list_size_dynamic = tf.reduce_max(
           input_tensor=tf.stack(
-              [tf.shape(input=t)[1] for t in six.itervalues(examples)]))
+              [_bounding_shape(t)[1] for t in six.itervalues(examples)]))
       list_size = list_size_dynamic
 
     # Collect features. Truncate or pad example features to normalize the tensor
@@ -619,8 +644,8 @@ class _SequenceExampleParser(_RankingDataParser):
     features.update(context)
     for k, t in six.iteritems(examples):
       # Old shape: [batch_size, num_frames, ...]
-      shape = tf.shape(input=t)
-      ndims = t.get_shape().rank
+      shape = _bounding_shape(t)
+      ndims = shape.shape[0]
       num_frames = shape[1]
       # New shape: [batch_size, list_size, ...]
       new_shape = tf.concat([[shape[0], list_size], shape[2:]], 0)
@@ -630,6 +655,8 @@ class _SequenceExampleParser(_RankingDataParser):
         if isinstance(t, tf.sparse.SparseTensor):
           return tf.sparse.slice(t, [0] * ndims,
                                  tf.cast(new_shape, dtype=tf.int64))
+        elif isinstance(t, tf.RaggedTensor):
+          return t[:, :new_shape[1], ...]
         else:
           return tf.slice(t, [0] * ndims, new_shape)
 
@@ -641,6 +668,20 @@ class _SequenceExampleParser(_RankingDataParser):
         """Pads the tensor."""
         if isinstance(t, tf.sparse.SparseTensor):
           return tf.sparse.reset_shape(t, new_shape)
+        elif isinstance(t, tf.RaggedTensor):
+          # Convert ragged to a flattened sparse tensor with shape
+          # [batch_size * list_size, ...].
+          sparse_tensor = tf.sparse.reset_shape(t.to_sparse(), new_shape)
+          flattened_shape = tf.concat(
+              [[new_shape[0] * list_size], new_shape[2:]], axis=0)
+          flattened_sparse_tensor = tf.sparse.reshape(sparse_tensor,
+                                                      flattened_shape)
+          # Convert to a ragged tensor of shape [batch_size * list_size, ...].
+          ragged_tensor = tf.RaggedTensor.from_sparse(
+              flattened_sparse_tensor, row_splits_dtype=t.row_splits.dtype)
+          # Reshape ragged tensor to [batch_size, list_size, ...]
+          return tf.RaggedTensor.from_uniform_row_length(
+              ragged_tensor, list_size)
         else:
           # Paddings has shape [n, 2] where n is the rank of the tensor.
           paddings = tf.stack([[0, 0], [0, list_size - num_frames]] + [[0, 0]] *
@@ -652,12 +693,13 @@ class _SequenceExampleParser(_RankingDataParser):
           pred=num_frames > list_size, true_fn=truncate_fn, false_fn=pad_fn)
       # Infer static shape for Tensor. Set the 2nd dim to None and set_shape
       # merges `static_shape` with the existing static shape of the tensor.
-      if not isinstance(tensor, tf.sparse.SparseTensor):
+      if not isinstance(tensor, (tf.sparse.SparseTensor, tf.RaggedTensor)):
         static_shape = t.get_shape().as_list()
         static_shape[1] = list_size_arg
         tensor.set_shape(static_shape)
       features[k] = tensor
-    example_sizes = tf.stack([sizes[k] for k in sorted(sizes.keys())], axis=1)
+
+    example_sizes = tf.stack(list(sizes.values()), axis=1)
     sizes = tf.reduce_max(input_tensor=example_sizes, axis=1)
 
     if self._size_feature_name:
