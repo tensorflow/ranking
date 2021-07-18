@@ -999,14 +999,18 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
     label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
     # Padding for rows with label_sum = 0.
     nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
     padded_labels = tf.compat.v1.where(nonzero_mask, labels,
                                        _EPSILON * tf.ones_like(labels))
+    padded_labels = tf.compat.v1.where(mask, padded_labels,
+                                       tf.zeros_like(padded_labels))
     padded_label_sum = tf.reduce_sum(
         input_tensor=padded_labels, axis=1, keepdims=True)
-    labels_for_softmax = padded_labels / padded_label_sum
+    labels_for_softmax = tf.math.divide_no_nan(padded_labels, padded_label_sum)
     logits_for_softmax = logits
     # Padded labels have 0 weights in label_sum.
     weights_for_softmax = tf.reshape(label_sum, [-1])
@@ -1039,6 +1043,14 @@ class SoftmaxLoss(_ListwiseLoss):
     # squeezed losses, which can be returned directly.
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights, mask)
+    return self._compute_unreduced_loss_impl(labels, logits, mask)
+
+  def compute_unreduced_loss(self, labels, logits, mask=None):
+    """See `_RankingLoss`."""
+    labels, logits, _, mask = self._prepare_and_validate_params(
+        labels, logits, None, mask)
+    logits = self.get_logits(logits)
+    labels, logits = self.precompute(labels, logits, weights=None, mask=mask)
     return self._compute_unreduced_loss_impl(labels, logits, mask)
 
 

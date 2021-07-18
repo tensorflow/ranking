@@ -1115,6 +1115,31 @@ class SoftmaxLossTest(tf.test.TestCase):
 
       self.assertAlmostEqual(result, -(math.log(_softmax([1, 3])[1])), places=5)
 
+  def test_softmax_loss_should_handle_padded_labels_when_labels_are_zero(self):
+    with tf.Graph().as_default():
+      loss_fn = losses_impl.SoftmaxLoss(name=None)
+      with self.cached_session():
+        scores_padded = [[0., 0.]]
+        labels_padded = [[0., -1.]]
+        result_padded = loss_fn.compute_unreduced_loss(labels_padded,
+                                                       scores_padded)[0].eval()
+
+        scores = [[0.]]
+        labels = [[0.]]
+        result = loss_fn.compute_unreduced_loss(labels, scores)[0].eval()
+
+      self.assertAllClose(result_padded, result)
+
+  def test_softmax_loss_should_handle_fully_padded_labels(self):
+    with tf.Graph().as_default():
+      loss_fn = losses_impl.SoftmaxLoss(name=None)
+      with self.cached_session():
+        scores = [[0., 0.]]
+        labels = [[-1., -1.]]
+        result = loss_fn.compute_unreduced_loss(labels, scores)[0].eval()
+
+      self.assertAlmostEqual(result[0], 0.0)
+
 
 class UniqueSoftmaxLossTest(tf.test.TestCase):
 
