@@ -52,7 +52,8 @@ class TFRBertDataLoader(tfr_task.RankingDataLoader):
 
   def __init__(self,
                params,
-               label_spec: Tuple[str, tf.io.FixedLenFeature] = None):
+               label_spec: Tuple[str, tf.io.FixedLenFeature] = None,
+               **kwargs):
     context_feature_spec = {}
     example_feature_spec = {
         'input_ids': tf.io.FixedLenFeature(
@@ -76,7 +77,8 @@ class TFRBertDataLoader(tfr_task.RankingDataLoader):
     super().__init__(params=params,
                      context_feature_spec=context_feature_spec,
                      example_feature_spec=example_feature_spec,
-                     label_spec=label_spec)
+                     label_spec=label_spec,
+                     **kwargs)
 
   def _parse(
       self,
@@ -155,12 +157,14 @@ class TFRBertTask(tfr_task.RankingTask):
                params,
                label_spec: Tuple[str, tf.io.FixedLenFeature] = None,
                logging_dir: Optional[str] = None,
-               name: Optional[str] = None):
+               name: Optional[str] = None,
+               **kwargs):
     super().__init__(params=params,
                      model_builder=None,
                      label_spec=label_spec,
                      logging_dir=logging_dir,
-                     name=name)
+                     name=name,
+                     **kwargs)
     if params.validation_data:
       if (params.train_data.mask_feature_name !=
           params.validation_data.mask_feature_name):
@@ -198,7 +202,9 @@ class TFRBertTask(tfr_task.RankingTask):
   def build_inputs(self, params, input_context=None):
     """Returns tf.data.Dataset for tf-ranking BERT task."""
     return TFRBertDataLoader(
-        params, label_spec=self._label_spec).load(input_context)
+        params,
+        label_spec=self._label_spec,
+        dataset_fn=self._dataset_fn).load(input_context)
 
   def validation_step(self, inputs, model: tf.keras.Model, metrics=None):
     if isinstance(inputs, tuple) and len(inputs) == 2:

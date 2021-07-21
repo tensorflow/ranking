@@ -213,7 +213,10 @@ class TFRBertTaskTest(tf.test.TestCase):
                   tf.io.FixedLenFeature(
                       shape=(1,), dtype=tf.int64, default_value=-1))
     task = tfrbert_task.TFRBertTask(
-        task_config, label_spec=label_spec, logging_dir=self._logging_dir)
+        task_config,
+        label_spec=label_spec,
+        dataset_fn=tf.data.TFRecordDataset,
+        logging_dir=self._logging_dir)
 
     # Test
     model = task.build_model()

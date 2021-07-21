@@ -15,7 +15,8 @@
 r"""A training driver which fine-tunes a TFR-BERT model.
 
 Please download a BERT checkpoint from tensorflow models
-website: https://github.com/tensorflow/models/tree/master/official/nlp/bert.
+website:
+https://github.com/tensorflow/models/blob/master/official/nlp/docs/pretrained_models.md.
 Note that those checkpoints are TF 2.x compatible, which are different from the
 checkpoints downloaded here: https://github.com/google-research/bert. You may
 convert a TF 1.x checkpoint to TF 2.x using `tf2_encoder_checkpoint_converter`

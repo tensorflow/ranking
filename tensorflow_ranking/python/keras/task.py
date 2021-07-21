@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Orbit task for TF-Ranking."""
-from typing import Dict, Mapping, Optional, Tuple, Union
+from typing import Dict, Mapping, Optional, Tuple, Union, Callable
 
 import dataclasses
 import tensorflow as tf
@@ -80,15 +80,18 @@ class RankingDataLoader(data_loader.DataLoader):
                params,
                context_feature_spec: FeatureSpec = None,
                example_feature_spec: FeatureSpec = None,
-               label_spec: Tuple[str, tf.io.FixedLenFeature] = None):
+               label_spec: Tuple[str, tf.io.FixedLenFeature] = None,
+               dataset_fn: Optional[Callable[[], tf.data.Dataset]] = None):
     self._params = params
     self._context_feature_spec = context_feature_spec or {}
     self._example_feature_spec = example_feature_spec or {}
     self._label_spec = label_spec
-    if params.dataset_fn not in DATASET_FN_MAP:
-      raise ValueError('Wrong dataset_fn: {}! Expected: {}'.format(
-          params.dataset_fn, list(DATASET_FN_MAP.keys())))
-    self._dataset_fn = DATASET_FN_MAP[params.dataset_fn]
+    self._dataset_fn = dataset_fn
+    if not self._dataset_fn:
+      if params.dataset_fn not in DATASET_FN_MAP:
+        raise ValueError('Wrong dataset_fn: {}! Expected: {}'.format(
+            params.dataset_fn, list(DATASET_FN_MAP.keys())))
+      self._dataset_fn = DATASET_FN_MAP[params.dataset_fn]
 
   def _decode(self, record: tf.Tensor) -> Dict[str, tf.Tensor]:
     """Decodes a serialized ELWC."""
@@ -176,6 +179,7 @@ class RankingTask(base_task.Task):
                context_feature_spec: FeatureSpec = None,
                example_feature_spec: FeatureSpec = None,
                label_spec: Tuple[str, tf.io.FixedLenFeature] = None,
+               dataset_fn: Optional[Callable[[], tf.data.Dataset]] = None,
                logging_dir: Optional[str] = None,
                name: Optional[str] = None):
     super().__init__(params=params,
@@ -185,6 +189,7 @@ class RankingTask(base_task.Task):
     self._context_feature_spec = context_feature_spec or {}
     self._example_feature_spec = example_feature_spec or {}
     self._label_spec = label_spec
+    self._dataset_fn = dataset_fn
 
   def build_model(self):
     return self._model_builder.build()
@@ -194,7 +199,8 @@ class RankingTask(base_task.Task):
         params,
         context_feature_spec=self._context_feature_spec,
         example_feature_spec=self._example_feature_spec,
-        label_spec=self._label_spec)
+        label_spec=self._label_spec,
+        dataset_fn=self._dataset_fn)
     return ranking_dataloader.load(input_context)
 
   def build_losses(self, labels, model_outputs, aux_losses=None) -> tf.Tensor:
