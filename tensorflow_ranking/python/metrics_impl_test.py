@@ -124,16 +124,16 @@ class MRRMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output_weights, [[2.], [(2. + 3.) / 2.]])
 
-  def test_mrr_weights_should_be_0_without_rel_items(self):
+  def test_mrr_weights_should_be_1_without_rel_items(self):
     with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., 0., 0.]]
-      weights = [[2., 5., 1.]]
+      scores = [[1., 3., 2.], [1., 3., 2.]]
+      labels = [[0., 0., 0.], [0., 0., 0.]]
+      weights = [[2., 5., 1.], [1., 1., 0.]]
 
       metric = metrics_impl.MRRMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.], [1.]])
 
   def test_mrr_weights_should_be_regardless_of_topn(self):
     with tf.Graph().as_default():
@@ -341,7 +341,7 @@ class RecallMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output_weights, [[(3. + 9.) / 2.]])
 
-  def test_recall_weights_should_be_0_when_no_rel_items(self):
+  def test_recall_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[0., 0., 0.]]
@@ -349,7 +349,7 @@ class RecallMetricTest(tf.test.TestCase):
       metric = metrics_impl.RecallMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, None)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
 
 class PrecisionMetricTest(tf.test.TestCase):
@@ -453,7 +453,7 @@ class PrecisionMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output_weights, [[(3. + 7.) / 2.]])
 
-  def test_precision_weights_should_be_0_when_no_rel_items(self):
+  def test_precision_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[0., 0., 0.]]
@@ -462,7 +462,7 @@ class PrecisionMetricTest(tf.test.TestCase):
       metric = metrics_impl.PrecisionMetric(name=None, topn=1)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
 
 class MeanAveragePrecisionMetricTest(tf.test.TestCase):
@@ -564,7 +564,7 @@ class MeanAveragePrecisionMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output_weights, [[(3. + 7.) / 2.]])
 
-  def test_map_weights_should_be_0_when_no_rel_items(self):
+  def test_map_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[0., 0., 0.]]
@@ -573,7 +573,7 @@ class MeanAveragePrecisionMetricTest(tf.test.TestCase):
       metric = metrics_impl.MeanAveragePrecisionMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
 
 class NDCGMetricTest(tf.test.TestCase):
@@ -736,7 +736,7 @@ class NDCGMetricTest(tf.test.TestCase):
           output_weights,
           [[(1. * 3. + (2. ** 2. - 1.) * 9.) / (1. + (2. ** 2. - 1.))]])
 
-  def test_ndcg_weights_should_be_0_when_no_rel_items(self):
+  def test_ndcg_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[0., 0., 0.]]
@@ -745,7 +745,7 @@ class NDCGMetricTest(tf.test.TestCase):
       metric = metrics_impl.NDCGMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
   def test_ndcg_weights_should_use_custom_gain_fn(self):
     with tf.Graph().as_default():
@@ -899,7 +899,7 @@ class DCGMetricTest(tf.test.TestCase):
           output_weights,
           [[(1. * 3. + (2. ** 2. - 1.) * 9.) / (1. + (2. ** 2. - 1.))]])
 
-  def test_dcg_weights_should_be_0_when_no_rel_items(self):
+  def test_dcg_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[0., 0., 0.]]
@@ -908,7 +908,7 @@ class DCGMetricTest(tf.test.TestCase):
       metric = metrics_impl.DCGMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
   def test_dcg_weights_should_use_custom_gain_fn(self):
     with tf.Graph().as_default():
@@ -1200,7 +1200,7 @@ class PrecisionIAMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output_weights, [[(3. + 4.) / 2.]])
 
-  def test_precisionia_weights_should_be_0_when_no_rel_items(self):
+  def test_precisionia_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[[0., 0.], [0., 0.], [0., 0.]]]
@@ -1209,7 +1209,7 @@ class PrecisionIAMetricTest(tf.test.TestCase):
       metric = metrics_impl.PrecisionIAMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
 
 class AlphaDCGMetricTest(tf.test.TestCase):
@@ -1394,7 +1394,7 @@ class AlphaDCGMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output_weights, [[(3. + 4.) / 2.]])
 
-  def test_alphadcg_weights_should_be_0_when_no_rel_items(self):
+  def test_alphadcg_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[[0., 0.], [0., 0.], [0., 0.]]]
@@ -1403,7 +1403,7 @@ class AlphaDCGMetricTest(tf.test.TestCase):
       metric = metrics_impl.AlphaDCGMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
 
 class BPrefMetricTest(tf.test.TestCase):
@@ -1568,7 +1568,7 @@ class BPrefMetricTest(tf.test.TestCase):
 
       self.assertAllClose(output_weights, [[(3. + 7.) / 2.]])
 
-  def test_bpref_weights_should_be_0_when_no_rel_items(self):
+  def test_bpref_weights_should_be_1_when_no_rel_items(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.]]
       labels = [[0., 0., 0.]]
@@ -1577,7 +1577,7 @@ class BPrefMetricTest(tf.test.TestCase):
       metric = metrics_impl.BPrefMetric(name=None, topn=None)
       _, output_weights = metric.compute(labels, scores, weights)
 
-      self.assertAllClose(output_weights, [[0.]])
+      self.assertAllClose(output_weights, [[1.]])
 
   def test_bpref_should_give_a_value_for_each_list_in_batch_inputs(self):
     with tf.Graph().as_default():

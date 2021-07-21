@@ -70,6 +70,7 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   For a list with sum(relevance) = 0, we set a default weight as the following
   average weight while all the lists with sum(weights) = 0 are ignored.
     sum(per_list_weights) / num(sum(relevance) != 0 && sum(weights) != 0)
+  When all the lists have sum(relevance) == 0, we set the average weight to 1.0.
 
   Such a computation is good for the following scenarios:
     - When all the weights are 1.0, the per list weights will be 1.0 everywhere,
@@ -107,8 +108,10 @@ def _per_example_weights_to_per_list_weights(weights, relevance):
   sum_weights = tf.reduce_sum(
       input_tensor=per_list_weights, axis=0, keepdims=True)
 
-  avg_weight = tf.compat.v1.math.divide_no_nan(sum_weights,
-                                               nonzero_relevance_count)
+  avg_weight = tf.compat.v1.where(
+      tf.greater(nonzero_relevance_count, 0.0),
+      tf.compat.v1.math.divide_no_nan(sum_weights, nonzero_relevance_count),
+      tf.ones_like(nonzero_relevance_count))
   return tf.compat.v1.where(
       nonzero_weights,
       tf.where(
