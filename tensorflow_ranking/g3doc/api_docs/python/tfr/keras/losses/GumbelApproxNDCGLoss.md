@@ -110,7 +110,7 @@ $$
 `reduction`
 </td>
 <td>
-(Optional) Type of `tf.keras.losses.Reduction` to apply to
+Type of `tf.keras.losses.Reduction` to apply to
 loss. Default value is `AUTO`. `AUTO` indicates that the reduction
 option will be determined by the usage context. For almost all cases
 this defaults to `SUM_OVER_BATCH_SIZE`. When used with
@@ -124,7 +124,7 @@ more details.
 `name`
 </td>
 <td>
-Optional name for the op.
+Optional name for the instance.
 </td>
 </tr>
 </table>

@@ -51,8 +51,8 @@ source</a>
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@abc.abstractmethod</code>
 <code>__call__(
-    context_features: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
-    example_features: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    context_features: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
+    example_features: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
     mask: tf.Tensor
 ) -> Union[TensorLike, TensorDict]
 </code></pre>

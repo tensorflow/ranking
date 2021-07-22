@@ -64,4 +64,8 @@ Creates a Functional Keras ranking model.
 
 ## Type Aliases
 
-[`TensorLike`](../../tfr/keras/model/TensorLike.md)
+[`TensorDict`](../../tfr/keras/model/TensorDict.md): The central part of
+internal API.
+
+[`TensorLike`](../../tfr/keras/model/TensorLike.md): Union of all types that can
+be converted to a `tf.Tensor` by `tf.convert_to_tensor`.

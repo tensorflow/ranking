@@ -104,6 +104,7 @@
 *   <a href="../tfr/keras/model/Preprocessor.md"><code>tfr.keras.model.Preprocessor</code></a>
 *   <a href="../tfr/keras/model/PreprocessorWithSpec.md"><code>tfr.keras.model.PreprocessorWithSpec</code></a>
 *   <a href="../tfr/keras/model/Scorer.md"><code>tfr.keras.model.Scorer</code></a>
+*   <a href="../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>
 *   <a href="../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>
 *   <a href="../tfr/keras/model/TypeSpecInputCreator.md"><code>tfr.keras.model.TypeSpecInputCreator</code></a>
 *   <a href="../tfr/keras/model/UnivariateScorer.md"><code>tfr.keras.model.UnivariateScorer</code></a>
@@ -132,6 +133,12 @@
 *   <a href="../tfr/keras/strategy_utils/get_output_filepath.md"><code>tfr.keras.strategy_utils.get_output_filepath</code></a>
 *   <a href="../tfr/keras/strategy_utils/get_strategy.md"><code>tfr.keras.strategy_utils.get_strategy</code></a>
 *   <a href="../tfr/keras/strategy_utils/strategy_scope.md"><code>tfr.keras.strategy_utils.strategy_scope</code></a>
+*   <a href="../tfr/keras/task.md"><code>tfr.keras.task</code></a>
+*   <a href="../tfr/keras/task/FeatureSpec.md"><code>tfr.keras.task.FeatureSpec</code></a>
+*   <a href="../tfr/keras/task/RankingDataConfig.md"><code>tfr.keras.task.RankingDataConfig</code></a>
+*   <a href="../tfr/keras/task/RankingDataLoader.md"><code>tfr.keras.task.RankingDataLoader</code></a>
+*   <a href="../tfr/keras/task/RankingTask.md"><code>tfr.keras.task.RankingTask</code></a>
+*   <a href="../tfr/keras/task/RankingTaskConfig.md"><code>tfr.keras.task.RankingTaskConfig</code></a>
 *   <a href="../tfr/keras/utils.md"><code>tfr.keras.utils</code></a>
 *   <a href="../tfr/keras/utils/identity.md"><code>tfr.keras.utils.identity</code></a>
 *   <a href="../tfr/keras/utils/inverse.md"><code>tfr.keras.utils.inverse</code></a>

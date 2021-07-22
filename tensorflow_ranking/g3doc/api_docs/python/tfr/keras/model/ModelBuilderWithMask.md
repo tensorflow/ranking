@@ -97,7 +97,6 @@ class SimpleModelBuilder(ModelBuilderWithMask):
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -144,7 +143,6 @@ model = model_builder.build()
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -163,7 +161,7 @@ source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@abc.abstractmethod</code>
-<code>create_inputs() -> Tuple[TensorDict, TensorDict, tf.Tensor]
+<code>create_inputs() -> Tuple[<a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, tf.Tensor]
 </code></pre>
 
 Creates context and example inputs.
@@ -180,7 +178,6 @@ context_inputs, example_inputs, mask = model_builder.create_inputs()
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -221,10 +218,10 @@ source</a>
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@abc.abstractmethod</code>
 <code>preprocess(
-    context_inputs: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
-    example_inputs: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    context_inputs: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
+    example_inputs: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
     mask: tf.Tensor
-) -> Tuple[TensorDict, TensorDict]
+) -> Tuple[<a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>]
 </code></pre>
 
 Preprocesses context and example inputs.
@@ -243,7 +240,6 @@ context_features, example_features = model_builder.preprocess(
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -273,7 +269,6 @@ maps example feature keys to `tf.keras.Input`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -309,8 +304,8 @@ source</a>
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@abc.abstractmethod</code>
 <code>score(
-    context_features: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
-    example_features: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    context_features: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
+    example_features: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
     mask: tf.Tensor
 ) -> Union[TensorLike, TensorDict]
 </code></pre>
@@ -332,7 +327,6 @@ scores = model_builder.score(context_features, example_features)
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -364,7 +358,6 @@ list_size, feature_dims]-tensors of preprocessed example features.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

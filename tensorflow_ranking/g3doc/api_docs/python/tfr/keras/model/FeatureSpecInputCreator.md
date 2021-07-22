@@ -76,7 +76,7 @@ corresponding example feature specs.
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>__call__() -> Tuple[TensorDict, TensorDict]
+<code>__call__() -> Tuple[<a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>]
 </code></pre>
 
 See `InputCreator`.

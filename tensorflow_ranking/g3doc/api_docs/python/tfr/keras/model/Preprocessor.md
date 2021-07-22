@@ -57,10 +57,10 @@ source</a>
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@abc.abstractmethod</code>
 <code>__call__(
-    context_inputs: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
-    example_inputs: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    context_inputs: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
+    example_inputs: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
     mask: tf.Tensor
-) -> Tuple[TensorDict, TensorDict]
+) -> Tuple[<a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>]
 </code></pre>
 
 Invokes the `Preprocessor` instance.

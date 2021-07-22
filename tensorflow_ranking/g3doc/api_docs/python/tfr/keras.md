@@ -51,4 +51,6 @@ TF-Ranking.
 [`strategy_utils`](../tfr/keras/strategy_utils.md) module: tf.distribute
 strategy utils for Ranking pipeline in tfr.keras.
 
+[`task`](../tfr/keras/task.md) module: Orbit task for TF-Ranking.
+
 [`utils`](../tfr/keras/utils.md) module: Utils for tfr.keras.

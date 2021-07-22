@@ -33,11 +33,15 @@ description: A Dataset comprising records from one or more TFRecord files.
 <meta itemprop="property" content="range"/>
 <meta itemprop="property" content="reduce"/>
 <meta itemprop="property" content="repeat"/>
+<meta itemprop="property" content="scan"/>
 <meta itemprop="property" content="shard"/>
 <meta itemprop="property" content="shuffle"/>
 <meta itemprop="property" content="skip"/>
+<meta itemprop="property" content="snapshot"/>
 <meta itemprop="property" content="take"/>
+<meta itemprop="property" content="take_while"/>
 <meta itemprop="property" content="unbatch"/>
+<meta itemprop="property" content="unique"/>
 <meta itemprop="property" content="window"/>
 <meta itemprop="property" content="with_options"/>
 <meta itemprop="property" content="zip"/>
@@ -562,13 +566,13 @@ batch.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset` transformation function, which can be passed to
-`tf.data.Dataset.apply`.
+A `Dataset`.
 </td>
 </tr>
 
@@ -900,6 +904,15 @@ The `Dataset` containing the elements of this dataset for which
 </code></pre>
 
 Maps `map_func` across this dataset and flattens the result.
+
+#### The type signature is:
+
+```
+def flat_map(
+  self: Dataset[T],
+  map_func: Callable[[T], Dataset[S]]
+) -> Dataset[S]
+```
 
 Use `flat_map` if you want to make sure that the order of your dataset stays the
 same. For example, to flatten a dataset of batches into a dataset of their
@@ -1320,7 +1333,7 @@ This can be particularly useful when your tensor transformations are expressed
 as `tf.data.Dataset` operations, and you want to use those transformations while
 serving your model.
 
-# Keras
+#### Keras
 
 ```python
 
@@ -1345,7 +1358,7 @@ tf.saved_model.save(preprocessing_model, your_exported_model_dir,
               )
 ```
 
-# Estimator
+#### Estimator
 
 In the case of estimators, you need to generally define a `serving_input_fn`
 which would require the features to be processed by the model while inferencing.
@@ -1491,12 +1504,13 @@ the same key to combine in a single batch, which will be passed to
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `tf.data.Dataset`
+A `Dataset`.
 </td>
 </tr>
 
@@ -1528,6 +1542,15 @@ passed.
 </code></pre>
 
 Maps `map_func` across this dataset, and interleaves the results.
+
+#### The type signature is:
+
+```
+def interleave(
+  self: Dataset[T],
+  map_func: Callable[[T], Dataset[S]]
+) -> Dataset[S]
+```
 
 For example, you can use `Dataset.interleave()` to process many input files
 concurrently:
@@ -1604,7 +1627,8 @@ required, it can also improve performance to set `deterministic=False`.
 `map_func`
 </td>
 <td>
-A function mapping a dataset element to a dataset.
+A function that takes a dataset element and returns a
+`tf.data.Dataset`.
 </td>
 </tr><tr>
 <td>
@@ -2451,6 +2475,69 @@ A `Dataset`.
 </tr>
 </table>
 
+<h3 id="scan"><code>scan</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>scan(
+    initial_state, scan_func
+)
+</code></pre>
+
+A transformation that scans a function across an input dataset.
+
+This transformation is a stateful relative of `tf.data.Dataset.map`. In addition
+to mapping `scan_func` across the elements of the input dataset, `scan()`
+accumulates one or more state tensors, whose initial values are `initial_state`.
+
+```
+>>> dataset = tf.data.Dataset.range(10)
+>>> initial_state = tf.constant(0, dtype=tf.int64)
+>>> scan_func = lambda state, i: (state + i, state + i)
+>>> dataset = dataset.scan(initial_state=initial_state, scan_func=scan_func)
+>>> list(dataset.as_numpy_iterator())
+[0, 1, 3, 6, 10, 15, 21, 28, 36, 45]
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`initial_state`
+</td>
+<td>
+A nested structure of tensors, representing the initial
+state of the accumulator.
+</td>
+</tr><tr>
+<td>
+`scan_func`
+</td>
+<td>
+A function that maps `(old_state, input_element)` to
+`(new_state, output_element)`. It must take two arguments and return a
+pair of nested structures of tensors. The `new_state` must match the
+structure of `initial_state`.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `Dataset`.
+</td>
+</tr>
+
+</table>
+
 <h3 id="shard"><code>shard</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -2720,6 +2807,128 @@ A `Dataset`.
 </tr>
 </table>
 
+<h3 id="snapshot"><code>snapshot</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>snapshot(
+    path, compression=&#x27;AUTO&#x27;, reader_func=None, shard_func=None
+)
+</code></pre>
+
+API to persist the output of the input dataset.
+
+The snapshot API allows users to transparently persist the output of their
+preprocessing pipeline to disk, and materialize the pre-processed data on a
+different training run.
+
+This API enables repeated preprocessing steps to be consolidated, and allows
+re-use of already processed data, trading off disk storage and network bandwidth
+for freeing up more valuable CPU resources and accelerator compute time.
+
+https://github.com/tensorflow/community/blob/master/rfcs/20200107-tf-data-snapshot.md
+has detailed design documentation of this feature.
+
+Users can specify various options to control the behavior of snapshot, including
+how snapshots are read from and written to by passing in user-defined functions
+to the `reader_func` and `shard_func` parameters.
+
+`shard_func` is a user specified function that maps input elements to snapshot
+shards.
+
+Users may want to specify this function to control how snapshot files should be
+written to disk. Below is an example of how a potential `shard_func` could be
+written.
+
+```python
+dataset = ...
+dataset = dataset.enumerate()
+dataset = dataset.snapshot("/path/to/snapshot/dir",
+    shard_func=lambda x, y: x % NUM_SHARDS, ...)
+dataset = dataset.map(lambda x, y: y)
+```
+
+`reader_func` is a user specified function that accepts a single argument: (1) a
+Dataset of Datasets, each representing a "split" of elements of the original
+dataset. The cardinality of the input dataset matches the number of the shards
+specified in the `shard_func` (see above). The function should return a Dataset
+of elements of the original dataset.
+
+Users may want specify this function to control how snapshot files should be
+read from disk, including the amount of shuffling and parallelism.
+
+Here is an example of a standard reader function a user can define. This
+function enables both dataset shuffling and parallel reading of datasets:
+
+```python
+def user_reader_func(datasets):
+  # shuffle the datasets splits
+  datasets = datasets.shuffle(NUM_CORES)
+  # read datasets in parallel and interleave their elements
+  return datasets.interleave(lambda x: x, num_parallel_calls=AUTOTUNE)
+
+dataset = dataset.snapshot("/path/to/snapshot/dir",
+    reader_func=user_reader_func)
+```
+
+By default, snapshot parallelizes reads by the number of cores available on the
+system, but will not attempt to shuffle the data.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`path`
+</td>
+<td>
+Required. A directory to use for storing / loading the snapshot to /
+from.
+</td>
+</tr><tr>
+<td>
+`compression`
+</td>
+<td>
+Optional. The type of compression to apply to the snapshot
+written to disk. Supported options are `GZIP`, `SNAPPY`, `AUTO` or None.
+Defaults to `AUTO`, which attempts to pick an appropriate compression
+algorithm for the dataset.
+</td>
+</tr><tr>
+<td>
+`reader_func`
+</td>
+<td>
+Optional. A function to control how to read data from
+snapshot shards.
+</td>
+</tr><tr>
+<td>
+`shard_func`
+</td>
+<td>
+Optional. A function to control how to shard data when writing
+a snapshot.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `Dataset`.
+</td>
+</tr>
+
+</table>
+
 <h3 id="take"><code>take</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -2770,6 +2979,54 @@ A `Dataset`.
 </tr>
 </table>
 
+<h3 id="take_while"><code>take_while</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>take_while(
+    predicate
+)
+</code></pre>
+
+A transformation that stops dataset iteration based on a `predicate`.
+
+```
+>>> dataset = tf.data.Dataset.range(10)
+>>> dataset = dataset.take_while(lambda x: x < 5)
+>>> list(dataset.as_numpy_iterator())
+[0, 1, 2, 3, 4]
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`predicate`
+</td>
+<td>
+A function that maps a nested structure of tensors (having
+shapes and types defined by `self.output_shapes` and
+`self.output_types`) to a scalar `tf.bool` tensor.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `Dataset`.
+</td>
+</tr>
+
+</table>
+
 <h3 id="unbatch"><code>unbatch</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -2807,6 +3064,40 @@ A `Dataset`.
 
 </table>
 
+<h3 id="unique"><code>unique</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>unique()
+</code></pre>
+
+A transformation that discards duplicate elements of a `Dataset`.
+
+Use this transformation to produce a dataset that contains one instance of each
+unique element in the input. For example:
+
+```
+>>> dataset = tf.data.Dataset.from_tensor_slices([1, 37, 2, 37, 2, 1])
+>>> dataset = dataset.unique()
+>>> sorted(list(dataset.as_numpy_iterator()))
+[1, 2, 37]
+```
+
+Note: This transformation only supports datasets which fit into memory and have
+elements of either `tf.int32`, `tf.int64` or `tf.string` type.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `Dataset`.
+</td>
+</tr>
+
+</table>
+
 <h3 id="window"><code>window</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -2815,38 +3106,62 @@ A `Dataset`.
 )
 </code></pre>
 
-Combines (nests of) input elements into a dataset of (nests of) windows.
+Returns a dataset of "windows".
 
-A "window" is a finite dataset of flat elements of size `size` (or possibly
-fewer if there are not enough input elements to fill the window and
-`drop_remainder` evaluates to `False`).
-
-The `shift` argument determines the number of input elements by which the window
-moves on each iteration. If windows and elements are both numbered starting at
-0, the first element in window `k` will be element `k * shift` of the input
-dataset. In particular, the first element of the first window will always be the
-first element of the input dataset.
-
-The `stride` argument determines the stride of the input elements, and the
-`shift` argument determines the shift of the window.
+Each "window" is a dataset that contains a subset of elements of the input
+dataset. These are finite datasets of size `size` (or possibly fewer if there
+are not enough input elements to fill the window and `drop_remainder` evaluates
+to `False`).
 
 #### For example:
 
 ```
->>> dataset = tf.data.Dataset.range(7).window(2)
+>>> dataset = tf.data.Dataset.range(7).window(3)
 >>> for window in dataset:
-...   print(list(window.as_numpy_iterator()))
-[0, 1]
-[2, 3]
-[4, 5]
+...   print(window)
+<...Dataset shapes: (), types: tf.int64>
+<...Dataset shapes: (), types: tf.int64>
+<...Dataset shapes: (), types: tf.int64>
+```
+
+Since windows are datasets, they can be iterated over:
+
+```
+>>> for window in dataset:
+...   print([item.numpy() for item in window])
+[0, 1, 2]
+[3, 4, 5]
 [6]
->>> dataset = tf.data.Dataset.range(7).window(3, 2, 1, True)
+```
+
+#### Shift
+
+The `shift` argument determines the number of input elements to shift between
+the start of each window. If windows and elements are both numbered starting at
+0, the first element in window `k` will be element `k * shift` of the input
+dataset. In particular, the first element of the first window will always be the
+first element of the input dataset.
+
+```
+>>> dataset = tf.data.Dataset.range(7).window(3, shift=1,
+...                                           drop_remainder=True)
 >>> for window in dataset:
 ...   print(list(window.as_numpy_iterator()))
 [0, 1, 2]
+[1, 2, 3]
 [2, 3, 4]
+[3, 4, 5]
 [4, 5, 6]
->>> dataset = tf.data.Dataset.range(7).window(3, 1, 2, True)
+```
+
+#### Stride
+
+The `stride` argument determines the stride between input elements within a
+window.
+
+```
+>>> dataset = tf.data.Dataset.range(7).window(3, shift=1, stride=2,
+...                                           drop_remainder=True)
 >>> for window in dataset:
 ...   print(list(window.as_numpy_iterator()))
 [0, 2, 4]
@@ -2854,29 +3169,84 @@ The `stride` argument determines the stride of the input elements, and the
 [2, 4, 6]
 ```
 
-Note that when the `window` transformation is applied to a dataset of nested
-elements, it produces a dataset of nested windows.
+#### Nested elements
+
+When the `window` transformation is applied to a dataset whos elements are
+nested structures, it produces a dataset where the elements have the same nested
+structure but each leaf is replaced by a window. In other words, the nesting is
+applied outside of the windows as opposed inside of them.
+
+#### The type signature is:
 
 ```
->>> nested = ([1, 2, 3, 4], [5, 6, 7, 8])
->>> dataset = tf.data.Dataset.from_tensor_slices(nested).window(2)
->>> for window in dataset:
-...   def to_numpy(ds):
-...     return list(ds.as_numpy_iterator())
-...   print(tuple(to_numpy(component) for component in window))
-([1, 2], [5, 6])
-([3, 4], [7, 8])
+def window(
+    self: Dataset[Nest[T]], ...
+) -> Dataset[Nest[Dataset[T]]]
 ```
 
+Applying `window` to a `Dataset` of tuples gives a tuple of windows:
+
 ```
->>> dataset = tf.data.Dataset.from_tensor_slices({'a': [1, 2, 3, 4]})
+>>> dataset = tf.data.Dataset.from_tensor_slices(([1, 2, 3, 4, 5],
+...                                               [6, 7, 8, 9, 10]))
 >>> dataset = dataset.window(2)
->>> for window in dataset:
-...   def to_numpy(ds):
-...     return list(ds.as_numpy_iterator())
-...   print({'a': to_numpy(window['a'])})
-{'a': [1, 2]}
-{'a': [3, 4]}
+>>> windows = next(iter(dataset))
+>>> windows
+(<...Dataset shapes: (), types: tf.int32>,
+ <...Dataset shapes: (), types: tf.int32>)
+```
+
+```
+>>> def to_numpy(ds):
+...   return list(ds.as_numpy_iterator())
+>>>
+>>> for windows in dataset:
+...   print(to_numpy(windows[0]), to_numpy(windows[1]))
+[1, 2] [6, 7]
+[3, 4] [8, 9]
+[5] [10]
+```
+
+Applying `window` to a `Dataset` of dictionaries gives a dictionary of
+`Datasets`:
+
+```
+>>> dataset = tf.data.Dataset.from_tensor_slices({'a': [1, 2, 3],
+...                                               'b': [4, 5, 6],
+...                                               'c': [7, 8, 9]})
+>>> dataset = dataset.window(2)
+>>> def to_numpy(ds):
+...   return list(ds.as_numpy_iterator())
+>>>
+>>> for windows in dataset:
+...   print(tf.nest.map_structure(to_numpy, windows))
+{'a': [1, 2], 'b': [4, 5], 'c': [7, 8]}
+{'a': [3], 'b': [6], 'c': [9]}
+```
+
+#### Flatten a dataset of windows
+
+The `Dataset.flat_map` and `Dataset.interleave` methods can be used to flatten a
+dataset of windows into a single dataset.
+
+The argument to `flat_map` is a function that takes an element from the dataset
+and returns a `Dataset`. `flat_map` chains together the resulting datasets
+sequentially.
+
+For example, to turn each window into a dense tensor:
+
+```
+>>> size = 3
+>>> dataset = tf.data.Dataset.range(7).window(size, shift=1,
+...                                           drop_remainder=True)
+>>> batched = dataset.flat_map(lambda x:x.batch(3))
+>>> for batch in batched:
+...   print(batch.numpy())
+[0 1 2]
+[1 2 3]
+[2 3 4]
+[3 4 5]
+[4 5 6]
 ```
 
 <!-- Tabular view -->
@@ -2932,8 +3302,8 @@ whether the last windows should be dropped if their size is smaller than
 `Dataset`
 </td>
 <td>
-A `Dataset` of (nests of) windows -- a finite datasets of flat
-elements created from the (nests of) input elements.
+A `Dataset` of (nests of) windows. Each window is a finite
+datasets of flat elements.
 </td>
 </tr>
 </table>

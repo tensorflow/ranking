@@ -14,7 +14,7 @@ Ranking model.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py#L20-L408">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py#L20-L414">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -221,7 +221,7 @@ generated.
 
 <h3 id="train_and_eval"><code>train_and_eval</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py#L401-L408">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/pipeline.py#L407-L414">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

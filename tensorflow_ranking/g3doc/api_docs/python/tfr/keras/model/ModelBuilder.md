@@ -154,7 +154,7 @@ A `tf.keras.Model`.
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>create_inputs() -> Tuple[TensorDict, TensorDict, tf.Tensor]
+<code>create_inputs() -> Tuple[<a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, tf.Tensor]
 </code></pre>
 
 See `ModelBuilderWithMask`.
@@ -166,10 +166,10 @@ source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>preprocess(
-    context_inputs: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
-    example_inputs: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    context_inputs: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
+    example_inputs: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
     mask: tf.Tensor
-) -> Tuple[TensorDict, TensorDict]
+) -> Tuple[<a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>, <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>]
 </code></pre>
 
 See `ModelBuilderWithMask`.
@@ -181,8 +181,8 @@ source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>score(
-    context_features: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
-    example_features: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    context_features: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
+    example_features: <a href="../../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
     mask: tf.Tensor
 ) -> Union[TensorLike, TensorDict]
 </code></pre>

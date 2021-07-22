@@ -231,6 +231,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/model/PreprocessorWithSpec
     - title: Scorer
       path: /ranking/api_docs/python/tfr/keras/model/Scorer
+    - title: TensorDict
+      path: /ranking/api_docs/python/tfr/keras/model/TensorDict
     - title: TensorLike
       path: /ranking/api_docs/python/tfr/keras/model/TensorLike
     - title: TypeSpecInputCreator
@@ -295,6 +297,20 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/strategy_utils/get_strategy
     - title: strategy_scope
       path: /ranking/api_docs/python/tfr/keras/strategy_utils/strategy_scope
+  - title: task
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/task
+    - title: FeatureSpec
+      path: /ranking/api_docs/python/tfr/keras/task/FeatureSpec
+    - title: RankingDataConfig
+      path: /ranking/api_docs/python/tfr/keras/task/RankingDataConfig
+    - title: RankingDataLoader
+      path: /ranking/api_docs/python/tfr/keras/task/RankingDataLoader
+    - title: RankingTask
+      path: /ranking/api_docs/python/tfr/keras/task/RankingTask
+    - title: RankingTaskConfig
+      path: /ranking/api_docs/python/tfr/keras/task/RankingTaskConfig
   - title: utils
     section:
     - title: Overview
