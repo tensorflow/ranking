@@ -45,6 +45,9 @@ tfr.keras.
 [`pipeline`](../tfr/keras/pipeline.md) module: Ranking pipeline to train
 tf.keras.Model in tfr.keras.
 
+[`premade`](../tfr/keras/premade.md) module: TensorFlow Ranking Premade Orbit
+Task Module.
+
 [`saved_model`](../tfr/keras/saved_model.md) module: SavedModel utilities for
 TF-Ranking.
 

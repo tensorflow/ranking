@@ -1,7 +1,7 @@
-description: The TF-Ranking task config.
+description: Data config for TFR-BERT task.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.task.RankingTaskConfig" />
+<meta itemprop="name" content="tfr.keras.premade.TFRBertDataConfig" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__contains__"/>
 <meta itemprop="property" content="__eq__"/>
@@ -18,51 +18,102 @@ description: The TF-Ranking task config.
 <meta itemprop="property" content="IMMUTABLE_TYPES"/>
 <meta itemprop="property" content="RESERVED_ATTR"/>
 <meta itemprop="property" content="SEQUENCE_TYPES"/>
-<meta itemprop="property" content="aggregated_metrics"/>
+<meta itemprop="property" content="block_length"/>
+<meta itemprop="property" content="cache"/>
+<meta itemprop="property" content="convert_labels_to_binary"/>
+<meta itemprop="property" content="cycle_length"/>
+<meta itemprop="property" content="data_format"/>
+<meta itemprop="property" content="dataset_fn"/>
 <meta itemprop="property" content="default_params"/>
-<meta itemprop="property" content="init_checkpoint"/>
-<meta itemprop="property" content="loss"/>
-<meta itemprop="property" content="loss_reduction"/>
-<meta itemprop="property" content="model"/>
-<meta itemprop="property" content="output_preds"/>
+<meta itemprop="property" content="deterministic"/>
+<meta itemprop="property" content="drop_remainder"/>
+<meta itemprop="property" content="enable_tf_data_service"/>
+<meta itemprop="property" content="global_batch_size"/>
+<meta itemprop="property" content="input_path"/>
+<meta itemprop="property" content="is_training"/>
+<meta itemprop="property" content="list_size"/>
+<meta itemprop="property" content="mask_feature_name"/>
+<meta itemprop="property" content="read_document_id"/>
+<meta itemprop="property" content="read_query_id"/>
 <meta itemprop="property" content="restrictions"/>
-<meta itemprop="property" content="train_data"/>
-<meta itemprop="property" content="validation_data"/>
+<meta itemprop="property" content="seed"/>
+<meta itemprop="property" content="seq_length"/>
+<meta itemprop="property" content="sharding"/>
+<meta itemprop="property" content="shuffle_buffer_size"/>
+<meta itemprop="property" content="shuffle_examples"/>
+<meta itemprop="property" content="tf_data_service_address"/>
+<meta itemprop="property" content="tf_data_service_job_name"/>
+<meta itemprop="property" content="tfds_as_supervised"/>
+<meta itemprop="property" content="tfds_data_dir"/>
+<meta itemprop="property" content="tfds_name"/>
+<meta itemprop="property" content="tfds_skip_decoding_feature"/>
+<meta itemprop="property" content="tfds_split"/>
 </div>
 
-# tfr.keras.task.RankingTaskConfig
+# tfr.keras.premade.TFRBertDataConfig
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/task.py#L143-L155">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L29-L33">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-The TF-Ranking task config.
+Data config for TFR-BERT task.
+
+Inherits From:
+[`RankingDataConfig`](../../../tfr/keras/task/RankingDataConfig.md)
+
+<section class="expandable">
+  <h4 class="showalways">View aliases</h4>
+  <p>
+<b>Main aliases</b>
+<p>`tfr.keras.premade.tfrbert_task.TFRBertDataConfig`</p>
+</p>
+</section>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.task.RankingTaskConfig(
+<code>tfr.keras.premade.TFRBertDataConfig(
     default_params=None,
     restrictions=None,
-    init_checkpoint=&#x27;&#x27;,
-    model=None,
-    train_data: <a href="../../../tfr/keras/task/RankingDataConfig.md"><code>tfr.keras.task.RankingDataConfig</code></a> = None,
-    validation_data: <a href="../../../tfr/keras/task/RankingDataConfig.md"><code>tfr.keras.task.RankingDataConfig</code></a> = None,
-    loss: str = &#x27;softmax_loss&#x27;,
-    loss_reduction: str = &#x27;none&#x27;,
-    aggregated_metrics: bool = False,
-    output_preds: bool = False
+    input_path=&#x27;&#x27;,
+    tfds_name=&#x27;&#x27;,
+    tfds_split=&#x27;&#x27;,
+    global_batch_size=0,
+    is_training=True,
+    drop_remainder=True,
+    shuffle_buffer_size=100,
+    cache=False,
+    cycle_length=None,
+    block_length=1,
+    deterministic=None,
+    sharding=True,
+    enable_tf_data_service=False,
+    tf_data_service_address=None,
+    tf_data_service_job_name=None,
+    tfds_data_dir=&#x27;&#x27;,
+    tfds_as_supervised=False,
+    tfds_skip_decoding_feature=&#x27;&#x27;,
+    seed=None,
+    data_format=&#x27;example_list_with_context&#x27;,
+    dataset_fn=&#x27;tfrecord&#x27;,
+    list_size=None,
+    shuffle_examples=False,
+    convert_labels_to_binary=False,
+    mask_feature_name=&#x27;example_list_mask&#x27;,
+    seq_length: int = 128,
+    read_query_id: bool = False,
+    read_document_id: bool = False
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -83,56 +134,196 @@ Dataclass field
 </td>
 </tr><tr>
 <td>
-`init_checkpoint`
+`input_path`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`model`
+`tfds_name`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`train_data`
+`tfds_split`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`validation_data`
+`global_batch_size`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`loss`
+`is_training`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`loss_reduction`
+`drop_remainder`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`aggregated_metrics`
+`shuffle_buffer_size`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`output_preds`
+`cache`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`cycle_length`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`block_length`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`deterministic`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`sharding`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`enable_tf_data_service`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`tf_data_service_address`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`tf_data_service_job_name`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`tfds_data_dir`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`tfds_as_supervised`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`tfds_skip_decoding_feature`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`seed`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`data_format`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`dataset_fn`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`list_size`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`shuffle_examples`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`convert_labels_to_binary`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`mask_feature_name`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`seq_length`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`read_query_id`
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`read_document_id`
 </td>
 <td>
 Dataclass field
@@ -212,6 +403,7 @@ Makes the ParamsDict immutable.
 Override the ParamsDict with a set of given params.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -273,6 +465,7 @@ b.ccc.a1', 'a.a2 <= b.bb.bb2']
 -   a.a2 = 2 <= b.bb.bb2 = 20
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -316,6 +509,7 @@ Implements the membership test operator.
 </code></pre>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>
@@ -347,10 +541,45 @@ SEQUENCE_TYPES<a id="SEQUENCE_TYPES"></a>
 </td>
 </tr><tr>
 <td>
-aggregated_metrics<a id="aggregated_metrics"></a>
+block_length<a id="block_length"></a>
+</td>
+<td>
+`1`
+</td>
+</tr><tr>
+<td>
+cache<a id="cache"></a>
 </td>
 <td>
 `False`
+</td>
+</tr><tr>
+<td>
+convert_labels_to_binary<a id="convert_labels_to_binary"></a>
+</td>
+<td>
+`False`
+</td>
+</tr><tr>
+<td>
+cycle_length<a id="cycle_length"></a>
+</td>
+<td>
+`None`
+</td>
+</tr><tr>
+<td>
+data_format<a id="data_format"></a>
+</td>
+<td>
+`'example_list_with_context'`
+</td>
+</tr><tr>
+<td>
+dataset_fn<a id="dataset_fn"></a>
+</td>
+<td>
+`'tfrecord'`
 </td>
 </tr><tr>
 <td>
@@ -361,35 +590,70 @@ default_params<a id="default_params"></a>
 </td>
 </tr><tr>
 <td>
-init_checkpoint<a id="init_checkpoint"></a>
-</td>
-<td>
-`''`
-</td>
-</tr><tr>
-<td>
-loss<a id="loss"></a>
-</td>
-<td>
-`'softmax_loss'`
-</td>
-</tr><tr>
-<td>
-loss_reduction<a id="loss_reduction"></a>
-</td>
-<td>
-`'none'`
-</td>
-</tr><tr>
-<td>
-model<a id="model"></a>
+deterministic<a id="deterministic"></a>
 </td>
 <td>
 `None`
 </td>
 </tr><tr>
 <td>
-output_preds<a id="output_preds"></a>
+drop_remainder<a id="drop_remainder"></a>
+</td>
+<td>
+`True`
+</td>
+</tr><tr>
+<td>
+enable_tf_data_service<a id="enable_tf_data_service"></a>
+</td>
+<td>
+`False`
+</td>
+</tr><tr>
+<td>
+global_batch_size<a id="global_batch_size"></a>
+</td>
+<td>
+`0`
+</td>
+</tr><tr>
+<td>
+input_path<a id="input_path"></a>
+</td>
+<td>
+`''`
+</td>
+</tr><tr>
+<td>
+is_training<a id="is_training"></a>
+</td>
+<td>
+`True`
+</td>
+</tr><tr>
+<td>
+list_size<a id="list_size"></a>
+</td>
+<td>
+`None`
+</td>
+</tr><tr>
+<td>
+mask_feature_name<a id="mask_feature_name"></a>
+</td>
+<td>
+`'example_list_mask'`
+</td>
+</tr><tr>
+<td>
+read_document_id<a id="read_document_id"></a>
+</td>
+<td>
+`False`
+</td>
+</tr><tr>
+<td>
+read_query_id<a id="read_query_id"></a>
 </td>
 <td>
 `False`
@@ -403,17 +667,87 @@ restrictions<a id="restrictions"></a>
 </td>
 </tr><tr>
 <td>
-train_data<a id="train_data"></a>
+seed<a id="seed"></a>
 </td>
 <td>
 `None`
 </td>
 </tr><tr>
 <td>
-validation_data<a id="validation_data"></a>
+seq_length<a id="seq_length"></a>
+</td>
+<td>
+`128`
+</td>
+</tr><tr>
+<td>
+sharding<a id="sharding"></a>
+</td>
+<td>
+`True`
+</td>
+</tr><tr>
+<td>
+shuffle_buffer_size<a id="shuffle_buffer_size"></a>
+</td>
+<td>
+`100`
+</td>
+</tr><tr>
+<td>
+shuffle_examples<a id="shuffle_examples"></a>
+</td>
+<td>
+`False`
+</td>
+</tr><tr>
+<td>
+tf_data_service_address<a id="tf_data_service_address"></a>
 </td>
 <td>
 `None`
+</td>
+</tr><tr>
+<td>
+tf_data_service_job_name<a id="tf_data_service_job_name"></a>
+</td>
+<td>
+`None`
+</td>
+</tr><tr>
+<td>
+tfds_as_supervised<a id="tfds_as_supervised"></a>
+</td>
+<td>
+`False`
+</td>
+</tr><tr>
+<td>
+tfds_data_dir<a id="tfds_data_dir"></a>
+</td>
+<td>
+`''`
+</td>
+</tr><tr>
+<td>
+tfds_name<a id="tfds_name"></a>
+</td>
+<td>
+`''`
+</td>
+</tr><tr>
+<td>
+tfds_skip_decoding_feature<a id="tfds_skip_decoding_feature"></a>
+</td>
+<td>
+`''`
+</td>
+</tr><tr>
+<td>
+tfds_split<a id="tfds_split"></a>
+</td>
+<td>
+`''`
 </td>
 </tr>
 </table>

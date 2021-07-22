@@ -95,8 +95,8 @@ Data set config.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-<!-- Tabular view -->
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -365,7 +365,6 @@ Makes the ParamsDict immutable.
 Override the ParamsDict with a set of given params.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -427,7 +426,6 @@ b.ccc.a1', 'a.a2 <= b.bb.bb2']
 -   a.a2 = 2 <= b.bb.bb2 = 20
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -471,7 +469,6 @@ Implements the membership test operator.
 </code></pre>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>

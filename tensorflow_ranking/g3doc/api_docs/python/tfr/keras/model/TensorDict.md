@@ -8,7 +8,6 @@ description: The central part of internal API.
 # tfr.keras.model.TensorDict
 
 <!-- Insert buttons and diff -->
-
 This symbol is a **type alias**.
 
 The central part of internal API.

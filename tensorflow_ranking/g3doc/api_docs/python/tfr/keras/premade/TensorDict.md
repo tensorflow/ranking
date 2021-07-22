@@ -1,13 +1,14 @@
 description: The central part of internal API.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.task.FeatureSpec" />
+<meta itemprop="name" content="tfr.keras.premade.TensorDict" />
 <meta itemprop="path" content="Stable" />
 </div>
 
-# tfr.keras.task.FeatureSpec
+# tfr.keras.premade.TensorDict
 
 <!-- Insert buttons and diff -->
+
 This symbol is a **type alias**.
 
 The central part of internal API.
@@ -15,9 +16,9 @@ The central part of internal API.
 #### Source:
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>FeatureSpec = <class 'dict'>[
+<code>TensorDict = <class 'dict'>[
     str,
-    Union[tensorflow.python.ops.parsing_config.FixedLenFeature, tensorflow.python.ops.parsing_config.VarLenFeature, tensorflow.python.ops.parsing_config.RaggedFeature]
+    <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>
 ]
 </code></pre>
 

@@ -12,7 +12,6 @@ py_library(
     name = "keras",
     srcs = ["__init__.py"],
     srcs_version = "PY2AND3",
-    visibility = ["//visibility:public"],
     deps = [
         ":estimator",
         ":feature",
@@ -27,6 +26,7 @@ py_library(
         ":task",
         ":utils",
         "//tensorflow_ranking/python/keras/canned",
+        "//tensorflow_ranking/python/keras/premade",
     ],
 )
 

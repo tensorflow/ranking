@@ -184,7 +184,7 @@ py_library(
         # tensorflow_models/official/core:config_definitions dep,
         # tensorflow_models/official/core:exp_factory dep,
         # tensorflow_models/official/modeling/optimization dep,
-        "//tensorflow_ranking/python/keras/premade:tfrbert_task",
+        "//tensorflow_ranking",
     ],
 )
 

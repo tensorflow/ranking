@@ -1,7 +1,7 @@
-description: Task object for TF-Ranking.
+description: Task object for tf-ranking BERT.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.task.RankingTask" />
+<meta itemprop="name" content="tfr.keras.premade.TFRBertTask" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__init__"/>
 <meta itemprop="property" content="aggregate_logs"/>
@@ -21,37 +21,44 @@ description: Task object for TF-Ranking.
 <meta itemprop="property" content="loss"/>
 </div>
 
-# tfr.keras.task.RankingTask
+# tfr.keras.premade.TFRBertTask
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/task.py#L159-L247">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L139-L343">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Task object for TF-Ranking.
+Task object for tf-ranking BERT.
+
+Inherits From: [`RankingTask`](../../../tfr/keras/task/RankingTask.md)
+
+<section class="expandable">
+  <h4 class="showalways">View aliases</h4>
+  <p>
+<b>Main aliases</b>
+<p>`tfr.keras.premade.tfrbert_task.TFRBertTask`</p>
+</p>
+</section>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.task.RankingTask(
+<code>tfr.keras.premade.TFRBertTask(
     params,
-    model_builder: <a href="../../../tfr/keras/model/AbstractModelBuilder.md"><code>tfr.keras.model.AbstractModelBuilder</code></a>,
-    context_feature_spec: <a href="../../../tfr/keras/task/FeatureSpec.md"><code>tfr.keras.task.FeatureSpec</code></a> = None,
-    example_feature_spec: <a href="../../../tfr/keras/task/FeatureSpec.md"><code>tfr.keras.task.FeatureSpec</code></a> = None,
     label_spec: Tuple[str, tf.io.FixedLenFeature] = None,
-    dataset_fn: Optional[Callable[[], tf.data.Dataset]] = None,
     logging_dir: Optional[str] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
+    **kwargs
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -83,6 +90,7 @@ the task name.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -142,48 +150,20 @@ of calling this method if you don't expect the return value to change.
 
 <h3 id="aggregate_logs"><code>aggregate_logs</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L220-L229">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>aggregate_logs(
-    state, step_logs
+    state=None, step_outputs=None
 )
 </code></pre>
 
-Optional aggregation over logs returned from a validation step.
-
-Given step_logs from a validation step, this function aggregates the logs after
-each eval_step() (see eval_reduce() function in official/core/base_trainer.py).
-It runs on CPU and can be used to aggregate metrics during validation, when
-there are too many metrics that cannot fit into TPU memory. Note that this may
-increase latency due to data transfer between TPU and CPU. Also, the step output
-from a validation step may be a tuple with elements from replicas, and a
-concatenation of the elements is needed in such case.
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`state`
-</td>
-<td>
-The current state of training, for example, it can be a sequence of
-metrics.
-</td>
-</tr><tr>
-<td>
-`step_logs`
-</td>
-<td>
-Logs from a validation step. Can be a dictionary.
-</td>
-</tr>
-</table>
+Aggregates over logs. This runs on CPU in eager mode.
 
 <h3 id="build_inputs"><code>build_inputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/task.py#L183-L190">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L188-L193">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -192,45 +172,7 @@ source</a>
 )
 </code></pre>
 
-Returns a dataset or a nested structure of dataset functions.
-
-Dataset functions define per-host datasets with the per-replica batch size. With
-distributed training, this method runs on remote hosts.
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`params`
-</td>
-<td>
-hyperparams to create input pipelines, which can be any of
-dataclass, ConfigDict, namedtuple, etc.
-</td>
-</tr><tr>
-<td>
-`input_context`
-</td>
-<td>
-optional distribution input pipeline context.
-</td>
-</tr>
-</table>
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Returns</th></tr>
-<tr class="alt">
-<td colspan="2">
-A nested structure of per-replica input functions.
-</td>
-</tr>
-
-</table>
+Returns tf.data.Dataset for tf-ranking BERT task.
 
 <h3 id="build_losses"><code>build_losses</code></h3>
 
@@ -246,6 +188,7 @@ source</a>
 Standard interface to compute losses.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -275,6 +218,7 @@ auxiliary loss tensors, i.e. `losses` in keras.Model.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -301,7 +245,7 @@ Gets streaming metrics for training/validation.
 
 <h3 id="build_model"><code>build_model</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/task.py#L180-L181">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L163-L186">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -311,6 +255,7 @@ source</a>
 [Optional] Creates model architecture.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -335,6 +280,7 @@ A model instance.
 Creates an TF optimizer from configurations.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -357,6 +303,7 @@ the parameters of the runtime.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -382,6 +329,7 @@ Performs the forward step.
 With distribution strategies, this method runs on devices.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -404,6 +352,7 @@ the keras.Model.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -417,33 +366,16 @@ Model outputs.
 
 <h3 id="initialize"><code>initialize</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L328-L343">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>initialize(
-    model: tf.keras.Model
+    model
 )
 </code></pre>
 
-[Optional] A callback function used as CheckpointManager's init_fn.
-
-This function will be called when no checkpoint is found for the model. If there
-is a checkpoint, the checkpoint will be loaded and this function will not be
-called. You can use this callback function to load a pretrained checkpoint,
-saved under a directory other than the model_dir.
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`model`
-</td>
-<td>
-The keras.Model built or used by this task.
-</td>
-</tr>
-</table>
+Load a pretrained checkpoint (if exists) and then train from iter 0.
 
 <h3 id="process_compiled_metrics"><code>process_compiled_metrics</code></h3>
 
@@ -458,6 +390,7 @@ Process and update compiled_metrics.
 call when using compile/fit API.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -503,6 +436,7 @@ Process and update metrics.
 Called when using custom training loop API.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -535,52 +469,16 @@ output of the keras model built by self.build_model.
 
 <h3 id="reduce_aggregated_logs"><code>reduce_aggregated_logs</code></h3>
 
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L231-L259">View
+source</a>
+
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>reduce_aggregated_logs(
-    aggregated_logs,
-    global_step: Optional[tf.Tensor] = None
+    aggregated_logs, global_step=None
 )
 </code></pre>
 
-Optional reduce of aggregated logs over validation steps.
-
-This function reduces aggregated logs at the end of validation, and can be used
-to compute the final metrics. It runs on CPU and in each eval_end() in base
-trainer (see eval_end() function in official/core/base_trainer.py).
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`aggregated_logs`
-</td>
-<td>
-Aggregated logs over multiple validation steps.
-</td>
-</tr><tr>
-<td>
-`global_step`
-</td>
-<td>
-An optional variable of global step.
-</td>
-</tr>
-</table>
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Returns</th></tr>
-<tr class="alt">
-<td colspan="2">
-A dictionary of reduced results.
-</td>
-</tr>
-
-</table>
+Calculates aggregated metrics and writes predictions to csv.
 
 <h3 id="train_step"><code>train_step</code></h3>
 
@@ -601,6 +499,7 @@ Does forward and backward.
 With distribution strategies, this method runs on devices.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -637,6 +536,7 @@ a nested structure of metrics objects.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -650,7 +550,7 @@ A dictionary of logs.
 
 <h3 id="validation_step"><code>validation_step</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/task.py#L236-L247">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L195-L218">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -666,6 +566,7 @@ Validation step.
 With distribution strategies, this method runs on devices.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -695,6 +596,7 @@ a nested structure of metrics objects.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -739,6 +641,7 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -754,6 +657,7 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -766,6 +670,7 @@ The original method wrapped such that it enters the module's name scope.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>

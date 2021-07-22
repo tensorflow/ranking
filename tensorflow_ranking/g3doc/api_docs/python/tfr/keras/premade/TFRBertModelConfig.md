@@ -1,7 +1,7 @@
-description: The TF-Ranking task config.
+description: A TFR-BERT model configuration.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.task.RankingTaskConfig" />
+<meta itemprop="name" content="tfr.keras.premade.TFRBertModelConfig" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__contains__"/>
 <meta itemprop="property" content="__eq__"/>
@@ -18,51 +18,47 @@ description: The TF-Ranking task config.
 <meta itemprop="property" content="IMMUTABLE_TYPES"/>
 <meta itemprop="property" content="RESERVED_ATTR"/>
 <meta itemprop="property" content="SEQUENCE_TYPES"/>
-<meta itemprop="property" content="aggregated_metrics"/>
 <meta itemprop="property" content="default_params"/>
-<meta itemprop="property" content="init_checkpoint"/>
-<meta itemprop="property" content="loss"/>
-<meta itemprop="property" content="loss_reduction"/>
-<meta itemprop="property" content="model"/>
-<meta itemprop="property" content="output_preds"/>
+<meta itemprop="property" content="dropout_rate"/>
+<meta itemprop="property" content="encoder"/>
 <meta itemprop="property" content="restrictions"/>
-<meta itemprop="property" content="train_data"/>
-<meta itemprop="property" content="validation_data"/>
 </div>
 
-# tfr.keras.task.RankingTaskConfig
+# tfr.keras.premade.TFRBertModelConfig
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/task.py#L143-L155">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L87-L90">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-The TF-Ranking task config.
+A TFR-BERT model configuration.
+
+<section class="expandable">
+  <h4 class="showalways">View aliases</h4>
+  <p>
+<b>Main aliases</b>
+<p>`tfr.keras.premade.tfrbert_task.TFRBertModelConfig`</p>
+</p>
+</section>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.task.RankingTaskConfig(
+<code>tfr.keras.premade.TFRBertModelConfig(
     default_params=None,
     restrictions=None,
-    init_checkpoint=&#x27;&#x27;,
-    model=None,
-    train_data: <a href="../../../tfr/keras/task/RankingDataConfig.md"><code>tfr.keras.task.RankingDataConfig</code></a> = None,
-    validation_data: <a href="../../../tfr/keras/task/RankingDataConfig.md"><code>tfr.keras.task.RankingDataConfig</code></a> = None,
-    loss: str = &#x27;softmax_loss&#x27;,
-    loss_reduction: str = &#x27;none&#x27;,
-    aggregated_metrics: bool = False,
-    output_preds: bool = False
+    dropout_rate: float = 0.1,
+    encoder: encoders.EncoderConfig = tfr.keras.premade.TFRBertModelConfig.encoder
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -83,56 +79,14 @@ Dataclass field
 </td>
 </tr><tr>
 <td>
-`init_checkpoint`
+`dropout_rate`
 </td>
 <td>
 Dataclass field
 </td>
 </tr><tr>
 <td>
-`model`
-</td>
-<td>
-Dataclass field
-</td>
-</tr><tr>
-<td>
-`train_data`
-</td>
-<td>
-Dataclass field
-</td>
-</tr><tr>
-<td>
-`validation_data`
-</td>
-<td>
-Dataclass field
-</td>
-</tr><tr>
-<td>
-`loss`
-</td>
-<td>
-Dataclass field
-</td>
-</tr><tr>
-<td>
-`loss_reduction`
-</td>
-<td>
-Dataclass field
-</td>
-</tr><tr>
-<td>
-`aggregated_metrics`
-</td>
-<td>
-Dataclass field
-</td>
-</tr><tr>
-<td>
-`output_preds`
+`encoder`
 </td>
 <td>
 Dataclass field
@@ -212,6 +166,7 @@ Makes the ParamsDict immutable.
 Override the ParamsDict with a set of given params.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -273,6 +228,7 @@ b.ccc.a1', 'a.a2 <= b.bb.bb2']
 -   a.a2 = 2 <= b.bb.bb2 = 20
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -316,6 +272,7 @@ Implements the membership test operator.
 </code></pre>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>
@@ -347,13 +304,6 @@ SEQUENCE_TYPES<a id="SEQUENCE_TYPES"></a>
 </td>
 </tr><tr>
 <td>
-aggregated_metrics<a id="aggregated_metrics"></a>
-</td>
-<td>
-`False`
-</td>
-</tr><tr>
-<td>
 default_params<a id="default_params"></a>
 </td>
 <td>
@@ -361,56 +311,21 @@ default_params<a id="default_params"></a>
 </td>
 </tr><tr>
 <td>
-init_checkpoint<a id="init_checkpoint"></a>
+dropout_rate<a id="dropout_rate"></a>
 </td>
 <td>
-`''`
-</td>
-</tr><tr>
-<td>
-loss<a id="loss"></a>
-</td>
-<td>
-`'softmax_loss'`
+`0.1`
 </td>
 </tr><tr>
 <td>
-loss_reduction<a id="loss_reduction"></a>
+encoder<a id="encoder"></a>
 </td>
 <td>
-`'none'`
-</td>
-</tr><tr>
-<td>
-model<a id="model"></a>
-</td>
-<td>
-`None`
-</td>
-</tr><tr>
-<td>
-output_preds<a id="output_preds"></a>
-</td>
-<td>
-`False`
+Instance of `tensorflow_models.official.nlp.configs.encoders.EncoderConfig`
 </td>
 </tr><tr>
 <td>
 restrictions<a id="restrictions"></a>
-</td>
-<td>
-`None`
-</td>
-</tr><tr>
-<td>
-train_data<a id="train_data"></a>
-</td>
-<td>
-`None`
-</td>
-</tr><tr>
-<td>
-validation_data<a id="validation_data"></a>
 </td>
 <td>
 `None`

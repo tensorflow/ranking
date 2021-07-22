@@ -1,7 +1,7 @@
-description: The TF-Ranking task config.
+description: The tf-ranking BERT task config.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.task.RankingTaskConfig" />
+<meta itemprop="name" content="tfr.keras.premade.TFRBertConfig" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__contains__"/>
 <meta itemprop="property" content="__eq__"/>
@@ -30,39 +30,50 @@ description: The TF-Ranking task config.
 <meta itemprop="property" content="validation_data"/>
 </div>
 
-# tfr.keras.task.RankingTaskConfig
+# tfr.keras.premade.TFRBertConfig
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/task.py#L143-L155">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/premade/tfrbert_task.py#L129-L135">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-The TF-Ranking task config.
+The tf-ranking BERT task config.
+
+Inherits From:
+[`RankingTaskConfig`](../../../tfr/keras/task/RankingTaskConfig.md)
+
+<section class="expandable">
+  <h4 class="showalways">View aliases</h4>
+  <p>
+<b>Main aliases</b>
+<p>`tfr.keras.premade.tfrbert_task.TFRBertConfig`</p>
+</p>
+</section>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.task.RankingTaskConfig(
+<code>tfr.keras.premade.TFRBertConfig(
     default_params=None,
     restrictions=None,
     init_checkpoint=&#x27;&#x27;,
-    model=None,
-    train_data: <a href="../../../tfr/keras/task/RankingDataConfig.md"><code>tfr.keras.task.RankingDataConfig</code></a> = None,
-    validation_data: <a href="../../../tfr/keras/task/RankingDataConfig.md"><code>tfr.keras.task.RankingDataConfig</code></a> = None,
-    loss: str = &#x27;softmax_loss&#x27;,
-    loss_reduction: str = &#x27;none&#x27;,
+    model: <a href="../../../tfr/keras/premade/TFRBertModelConfig.md"><code>tfr.keras.premade.TFRBertModelConfig</code></a> = tfr.keras.premade.TFRBertConfig.model,
+    train_data=None,
+    validation_data=None,
+    loss=&#x27;softmax_loss&#x27;,
+    loss_reduction=&#x27;none&#x27;,
     aggregated_metrics: bool = False,
     output_preds: bool = False
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
-
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -212,6 +223,7 @@ Makes the ParamsDict immutable.
 Override the ParamsDict with a set of given params.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -273,6 +285,7 @@ b.ccc.a1', 'a.a2 <= b.bb.bb2']
 -   a.a2 = 2 <= b.bb.bb2 = 20
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -316,6 +329,7 @@ Implements the membership test operator.
 </code></pre>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>
@@ -385,7 +399,7 @@ loss_reduction<a id="loss_reduction"></a>
 model<a id="model"></a>
 </td>
 <td>
-`None`
+Instance of <a href="../../../tfr/keras/premade/TFRBertModelConfig.md"><code>tfr.keras.premade.TFRBertModelConfig</code></a>
 </td>
 </tr><tr>
 <td>

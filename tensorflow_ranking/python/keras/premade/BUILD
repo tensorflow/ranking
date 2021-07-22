@@ -1,8 +1,21 @@
 """TFR-BERT."""
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = [
+        "//tensorflow_ranking:__subpackages__",
+    ],
+)
 
 licenses(["notice"])
+
+py_library(
+    name = "premade",
+    srcs = ["__init__.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":tfrbert_task",
+    ],
+)
 
 py_library(
     name = "tfrbert_task",

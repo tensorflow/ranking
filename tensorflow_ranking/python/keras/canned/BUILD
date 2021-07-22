@@ -1,6 +1,10 @@
 # TensorFlow Ranking Keras canned models.
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = [
+        "//tensorflow_ranking:__subpackages__",
+    ],
+)
 
 licenses(["notice"])
 
@@ -8,7 +12,6 @@ py_library(
     name = "canned",
     srcs = ["__init__.py"],
     srcs_version = "PY2AND3",
-    visibility = ["//visibility:public"],
     deps = [
         ":dnn",
         ":gam",

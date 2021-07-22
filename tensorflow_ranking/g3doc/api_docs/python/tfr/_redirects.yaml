@@ -3,3 +3,23 @@ redirects:
   to: /ranking/api_docs/python/tfr/keras/canned/DNNRankingNetwork
 - from: /ranking/api_docs/python/tfr/keras/canned/gam/GAMRankingNetwork
   to: /ranking/api_docs/python/tfr/keras/canned/GAMRankingNetwork
+- from: /ranking/api_docs/python/tfr/keras/premade/TensorLike
+  to: /ranking/api_docs/python/tfr/keras/model/TensorLike
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TFRBertConfig
+  to: /ranking/api_docs/python/tfr/keras/premade/TFRBertConfig
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TFRBertDataConfig
+  to: /ranking/api_docs/python/tfr/keras/premade/TFRBertDataConfig
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TFRBertDataLoader
+  to: /ranking/api_docs/python/tfr/keras/premade/TFRBertDataLoader
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TFRBertModelBuilder
+  to: /ranking/api_docs/python/tfr/keras/premade/TFRBertModelBuilder
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TFRBertModelConfig
+  to: /ranking/api_docs/python/tfr/keras/premade/TFRBertModelConfig
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TFRBertScorer
+  to: /ranking/api_docs/python/tfr/keras/premade/TFRBertScorer
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TFRBertTask
+  to: /ranking/api_docs/python/tfr/keras/premade/TFRBertTask
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TensorDict
+  to: /ranking/api_docs/python/tfr/keras/premade/TensorDict
+- from: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task/TensorLike
+  to: /ranking/api_docs/python/tfr/keras/model/TensorLike

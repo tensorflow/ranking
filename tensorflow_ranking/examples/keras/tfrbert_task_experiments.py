@@ -18,18 +18,17 @@
 from official.core import config_definitions as cfg
 from official.core import exp_factory
 from official.modeling import optimization
-from tensorflow_ranking.python.keras.premade import tfrbert_task
+import tensorflow_ranking as tfr
 
 
 @exp_factory.register_config_factory('tfr_bert')
 def tfrbert_exp() -> cfg.ExperimentConfig:
   """Defines a TFR-BERT experiment."""
   config = cfg.ExperimentConfig(
-      task=tfrbert_task.TFRBertConfig(
-          train_data=tfrbert_task.TFRBertDataConfig(),
-          validation_data=tfrbert_task.TFRBertDataConfig(
-              is_training=False,
-              drop_remainder=False)),
+      task=tfr.keras.premade.TFRBertConfig(
+          train_data=tfr.keras.premade.TFRBertDataConfig(),
+          validation_data=tfr.keras.premade.TFRBertDataConfig(
+              is_training=False, drop_remainder=False)),
       trainer=cfg.TrainerConfig(
           optimizer_config=optimization.OptimizationConfig({
               'optimizer': {

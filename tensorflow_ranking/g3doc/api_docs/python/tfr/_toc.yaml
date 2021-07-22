@@ -279,6 +279,30 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/pipeline/SimpleDatasetBuilder
     - title: SimplePipeline
       path: /ranking/api_docs/python/tfr/keras/pipeline/SimplePipeline
+  - title: premade
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/keras/premade
+    - title: TFRBertConfig
+      path: /ranking/api_docs/python/tfr/keras/premade/TFRBertConfig
+    - title: TFRBertDataConfig
+      path: /ranking/api_docs/python/tfr/keras/premade/TFRBertDataConfig
+    - title: TFRBertDataLoader
+      path: /ranking/api_docs/python/tfr/keras/premade/TFRBertDataLoader
+    - title: TFRBertModelBuilder
+      path: /ranking/api_docs/python/tfr/keras/premade/TFRBertModelBuilder
+    - title: TFRBertModelConfig
+      path: /ranking/api_docs/python/tfr/keras/premade/TFRBertModelConfig
+    - title: TFRBertScorer
+      path: /ranking/api_docs/python/tfr/keras/premade/TFRBertScorer
+    - title: TFRBertTask
+      path: /ranking/api_docs/python/tfr/keras/premade/TFRBertTask
+    - title: TensorDict
+      path: /ranking/api_docs/python/tfr/keras/premade/TensorDict
+    - title: tfrbert_task
+      section:
+      - title: Overview
+        path: /ranking/api_docs/python/tfr/keras/premade/tfrbert_task
   - title: saved_model
     section:
     - title: Overview

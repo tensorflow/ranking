@@ -56,7 +56,7 @@ library.
 __version__<a id="__version__"></a>
 </td>
 <td>
-`'0.4.1.dev'`
+`'0.4.2.dev'`
 </td>
 </tr>
 </table>
