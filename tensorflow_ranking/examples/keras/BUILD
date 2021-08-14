@@ -56,6 +56,7 @@ py_binary(
 
 py_test(
     name = "antique_ragged_test",
+    size = "large",
     srcs = ["antique_ragged_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
