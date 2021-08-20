@@ -42,9 +42,14 @@ MWMS_STRATEGY = "MultiWorkerMirroredStrategy"
 
 def get_strategy(
     strategy: str,
+    cluster_resolver: Optional[
+        tf.distribute.cluster_resolver.ClusterResolver] = None,
+    variable_partitioner: Optional[
+        tf.distribute.experimental.partitioners.MinSizePartitioner] = None,
     tpu: Optional[str] = ""
 ) -> Union[None, tf.distribute.MirroredStrategy,
            tf.distribute.MultiWorkerMirroredStrategy,
+           tf.distribute.experimental.ParameterServerStrategy,
            tf.distribute.experimental.TPUStrategy,]:
   """Creates and initializes the requested tf.distribute strategy.
 
@@ -57,7 +62,11 @@ def get_strategy(
   Args:
     strategy: Key for a `tf.distribute` strategy to be used to train the model.
       Choose from ["MirroredStrategy", "MultiWorkerMirroredStrategy",
-      "TPUStrategy"]. If None, no distributed strategy will be used.
+      "ParameterServerStrategy", "TPUStrategy"]. If None, no distributed
+      strategy will be used.
+    cluster_resolver: A cluster_resolver to build strategy.
+    variable_partitioner: Variable partitioner to be used in
+      ParameterServerStrategy.
     tpu: TPU address for TPUStrategy. Not used for other strategy.
 
   Returns:
@@ -71,7 +80,6 @@ def get_strategy(
   elif strategy == MIRRORED_STRATEGY:
     return tf.distribute.MirroredStrategy()
   elif strategy == MWMS_STRATEGY:
-    cluster_resolver = tf.distribute.cluster_resolver.TFConfigClusterResolver()
     return tf.distribute.MultiWorkerMirroredStrategy(
         cluster_resolver=cluster_resolver)
   elif strategy == TPU_STRATEGY:
@@ -80,6 +88,12 @@ def get_strategy(
     tf.tpu.experimental.initialize_tpu_system(resolver)
     strategy = tf.distribute.experimental.TPUStrategy(resolver)
     return strategy
+  elif strategy == PS_STRATEGY:
+    if cluster_resolver is None:
+      cluster_resolver = tf.distribute.cluster_resolver.TFConfigClusterResolver(
+          )
+    return tf.distribute.experimental.ParameterServerStrategy(
+        cluster_resolver, variable_partitioner)
   else:
     # TODO: integrate PSStrategy to pipeline.
     raise ValueError("Unsupported strategy {}".format(strategy))
