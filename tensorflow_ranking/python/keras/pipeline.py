@@ -16,10 +16,10 @@
 """Ranking pipeline to train tf.keras.Model in tfr.keras."""
 
 import abc
+import dataclasses
 import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import dataclasses
 import tensorflow as tf
 
 from tensorflow_ranking.python import data
@@ -298,7 +298,11 @@ class PipelineHparams:
     best_exporter_metric: A string to specify the metric used to monitor the
       training and to export the best model. Default to the 'loss'.
     strategy: An option of strategies supported in `strategy_utils`. Choose from
-      ["MirroredStrategy", "MultiWorkerMirroredStrategy", "TPUStrategy"].
+      ["MirroredStrategy", "MultiWorkerMirroredStrategy",
+      "ParameterServerStrategy", "TPUStrategy"].
+    cluster_resolver: A cluster_resolver to build strategy.
+    variable_partitioner: Variable partitioner to be used in
+      ParameterServerStrategy.
     tpu: TPU address for TPUStrategy. Not used for other strategy.
   """
   model_dir: str
@@ -317,6 +321,10 @@ class PipelineHparams:
   best_exporter_metric_higher_better: bool = False
   best_exporter_metric: str = "loss"
   strategy: Optional[str] = None
+  cluster_resolver: Optional[
+      tf.distribute.cluster_resolver.ClusterResolver] = None
+  variable_partitioner: Optional[
+      tf.distribute.experimental.partitioners.Partitioner] = None
   tpu: Optional[str] = ""
 
 
@@ -419,8 +427,9 @@ class ModelFitPipeline(AbstractPipeline):
         }
     })
 
-    self._strategy = strategy_utils.get_strategy(self._hparams.strategy,
-                                                 self._hparams.tpu)
+    self._strategy = strategy_utils.get_strategy(
+        self._hparams.strategy, self._hparams.cluster_resolver,
+        self._hparams.variable_partitioner, self._hparams.tpu)
 
   def _validate_parameters(self, model_builder: model_lib.AbstractModelBuilder,
                            dataset_builder: AbstractDatasetBuilder):

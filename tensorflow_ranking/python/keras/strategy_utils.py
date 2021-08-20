@@ -45,7 +45,7 @@ def get_strategy(
     cluster_resolver: Optional[
         tf.distribute.cluster_resolver.ClusterResolver] = None,
     variable_partitioner: Optional[
-        tf.distribute.experimental.partitioners.MinSizePartitioner] = None,
+        tf.distribute.experimental.partitioners.Partitioner] = None,
     tpu: Optional[str] = ""
 ) -> Union[None, tf.distribute.MirroredStrategy,
            tf.distribute.MultiWorkerMirroredStrategy,
