@@ -44,3 +44,9 @@ def log2_inverse(rank):
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def is_greater_equal_1(label):
   return tf.greater_equal(label, 1.0)
+
+
+@tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
+def symmetric_log1p(t):
+  return tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
+

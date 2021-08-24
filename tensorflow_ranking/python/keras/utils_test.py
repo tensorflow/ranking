@@ -27,6 +27,7 @@ class UtilsTest(tf.test.TestCase):
         utils.pow_minus_1,
         utils.log2_inverse,
         utils.is_greater_equal_1,
+        utils.symmetric_log1p,
     ]:
       self.assertIsNotNone(tf.keras.utils.serialize_keras_object(fn))
 
@@ -36,6 +37,7 @@ class UtilsTest(tf.test.TestCase):
     self.assertEqual(utils.pow_minus_1(1.0), 1.0)
     self.assertEqual(utils.log2_inverse(1.0), 1.0)
     self.assertEqual(utils.is_greater_equal_1(1.0), True)
+    self.assertAllClose(utils.symmetric_log1p(-1.0), -0.69314718056)
 
 
 if __name__ == '__main__':
