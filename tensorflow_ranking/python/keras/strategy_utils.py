@@ -39,13 +39,16 @@ PS_STRATEGY = "ParameterServerStrategy"
 MIRRORED_STRATEGY = "MirroredStrategy"
 MWMS_STRATEGY = "MultiWorkerMirroredStrategy"
 
+_USE_DEFAULT_VARIABLE_PARTITIONER = object()
+
 
 def get_strategy(
     strategy: str,
     cluster_resolver: Optional[
         tf.distribute.cluster_resolver.ClusterResolver] = None,
     variable_partitioner: Optional[
-        tf.distribute.experimental.partitioners.Partitioner] = None,
+        tf.distribute.experimental.partitioners
+        .Partitioner] = _USE_DEFAULT_VARIABLE_PARTITIONER,
     tpu: Optional[str] = ""
 ) -> Union[None, tf.distribute.MirroredStrategy,
            tf.distribute.MultiWorkerMirroredStrategy,
@@ -66,7 +69,13 @@ def get_strategy(
       strategy will be used.
     cluster_resolver: A cluster_resolver to build strategy.
     variable_partitioner: Variable partitioner to be used in
-      ParameterServerStrategy.
+      ParameterServerStrategy. If the argument is not specified, a recommended
+      `tf.distribute.experimental.partitioners.MinSizePartitioner` is used. If
+      the argument is explicitly specified as `None`, no partitioner is used and
+      that variables are not partitioned. This arg is used only when the
+      strategy is `tf.distribute.experimental.ParameterServerStrategy`.
+      See `tf.distribute.experimental.ParameterServerStrategy` class doc for
+      more information.
     tpu: TPU address for TPUStrategy. Not used for other strategy.
 
   Returns:
@@ -92,6 +101,14 @@ def get_strategy(
     if cluster_resolver is None:
       cluster_resolver = tf.distribute.cluster_resolver.TFConfigClusterResolver(
           )
+    if variable_partitioner == _USE_DEFAULT_VARIABLE_PARTITIONER:
+      cluster_spec = cluster_resolver.cluster_spec()
+      # The following assumes parameter servers are named "ps".
+      variable_partitioner = (
+          tf.distribute.experimental.partitioners.MinSizePartitioner(
+              max_shards=cluster_spec.num_tasks("ps")
+          )
+      )
     return tf.distribute.experimental.ParameterServerStrategy(
         cluster_resolver, variable_partitioner)
   else:
