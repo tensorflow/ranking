@@ -22,7 +22,6 @@ py_library(
     srcs = ["tfrbert_task.py"],
     deps = [
         # py/absl/logging dep,
-        # py/dataclasses dep,
         # py/numpy dep,
         # py/orbit dep,
         # py/scipy dep,
