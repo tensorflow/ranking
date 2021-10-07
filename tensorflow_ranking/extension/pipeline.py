@@ -398,7 +398,8 @@ class RankingPipeline(object):
     eval_input_fn = self._make_input_fn(
         input_pattern=self._hparams.get("eval_input_pattern"),
         batch_size=self._hparams.get("eval_batch_size"),
-        list_size=eval_list_size)
+        list_size=eval_list_size,
+        randomize_input=False)
 
     train_spec = tf.estimator.TrainSpec(
         input_fn=train_input_fn, max_steps=self._hparams.get("num_train_steps"))
