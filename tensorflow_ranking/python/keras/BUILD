@@ -127,7 +127,6 @@ py_library(
         ":layers",
         # py/absl/logging dep,
         # py/tensorflow dep,
-        # py/typing dep,
     ],
 )
 
@@ -264,7 +263,6 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         # py/tensorflow dep,
-        # py/typing dep,
         "//tensorflow_ranking/python:data",
     ],
 )
