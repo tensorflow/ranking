@@ -424,6 +424,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
                num_layers: int = 1,
                dropout: float = 0.5,
                name: Optional[str] = None,
+               input_noise_stddev: Optional[float] = None,
                **kwargs: Dict[Any, Any]):
     """Initializes the layer.
 
@@ -434,6 +435,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
       num_layers: Number of cross-document attention layers.
       dropout: Dropout probability.
       name: Name of the layer.
+      input_noise_stddev: Input Gaussian noise standard deviation.
       **kwargs: keyword arguments.
     """
     super().__init__(name=name, **kwargs)
@@ -441,6 +443,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     self._head_size = head_size
     self._num_layers = num_layers
     self._dropout = dropout
+    self._input_noise_stddev = input_noise_stddev
 
   def build(self, input_shape: tf.TensorShape):
     """Build method to create weights and sub-layers.
@@ -463,6 +466,10 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     # recursively for `num_layers` times.
     # Shape: [batch_size, list_size, feature_dims] ->
     # [batch_size, list_size, head_size].
+    self._input_noise = None
+    if self._input_noise_stddev:
+      self._input_noise = tf.keras.layers.GaussianNoise(
+          self._input_noise_stddev)
     self._input_projection = tf.keras.layers.Dense(
         units=self._head_size, activation='relu')
     self._input_projection.build(example_inputs_shape)
@@ -513,6 +520,8 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
     if list_mask is None:
       list_mask = tf.ones(shape=(batch_size, list_size), dtype=tf.bool)
     x = self._input_projection(example_inputs, training=training)
+    if self._input_noise:
+      x = self._input_noise(x, training=training)
 
     list_mask = tf.cast(list_mask, dtype=tf.int32)
     attention_mask = nlp_modeling_layers.SelfAttentionMask()(
@@ -534,6 +543,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
         'head_size': self._head_size,
         'num_layers': self._num_layers,
         'dropout': self._dropout,
+        'input_noise_stddev': self._input_noise_stddev,
     })
     return config
 
