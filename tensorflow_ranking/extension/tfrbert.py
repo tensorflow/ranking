@@ -69,7 +69,7 @@ class TFRBertRankingNetwork(tfrkeras_network.UnivariateRankingNetwork):
     self._bert_output_dropout = bert_output_dropout
 
     bert_config = configs.BertConfig.from_json_file(self._bert_config_file)
-    self._bert_encoder = tfmodel_networks.TransformerEncoder(
+    self._bert_encoder = tfmodel_networks.BertEncoder(
         vocab_size=bert_config.vocab_size,
         hidden_size=bert_config.hidden_size,
         num_layers=bert_config.num_hidden_layers,
