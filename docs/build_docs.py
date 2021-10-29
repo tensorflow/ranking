@@ -42,6 +42,20 @@ del tfr.losses.losses_impl
 del tfr.metrics_impl
 del tfr.metrics.metrics_impl
 
+# Removing references to `estimator` or feature columns APIs in docstrings.
+del tfr.estimator
+del tfr.ext
+del tfr.feature
+del tfr.head
+del tfr.keras.estimator
+del tfr.keras.feature
+del tfr.keras.network
+del tfr.keras.canned
+del tfr.losses  # Keras losses available via tfr.keras.losses.
+del tfr.metrics  # Keras metrics available via tfr.keras.metrics.
+del tfr.model
+
+
 FLAGS = flags.FLAGS
 
 
