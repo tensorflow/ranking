@@ -1,0 +1,35 @@
+upper_tabs:
+# Tabs left of dropdown menu
+- include: /_upper_tabs_left.yaml
+- include: /api_docs/_upper_tabs_api.yaml
+# Dropdown menu
+- name: Resources
+  path: /resources
+  is_default: true
+  menu:
+  - include: /resources/_menu_toc.yaml
+  lower_tabs:
+
+    # Subsite tabs
+    other:
+    # Overview added automatically
+    - name: Guide & Tutorials
+      contents:
+      - title: Overview
+        path: /ranking/overview
+      - title: Install
+        path: /ranking/install
+      - heading: Tutorials
+      - title: Recommend movies
+        path: /ranking/tutorials/quickstart
+      - title: Distributed ranking
+        path: /ranking/tutorials/ranking_dnn_distributed
+
+    - name: API
+      skip_translation: true
+      contents:
+      - title: All Symbols
+        path: /ranking/api_docs/python/tfr/all_symbols
+      - include: /ranking/api_docs/python/tfr/_toc.yaml
+
+- include: /_upper_tabs_right.yaml

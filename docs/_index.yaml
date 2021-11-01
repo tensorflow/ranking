@@ -1,0 +1,118 @@
+book_path: /ranking/_book.yaml
+project_path: /ranking/_project.yaml
+
+description: A library for developing scalable, neural learning to rank (LTR) models.
+landing_page:
+  custom_css_path: /site-assets/css/style.css
+  rows:
+  - heading: Scalable, neural learning to rank (LTR) models
+    items:
+    - classname: devsite-landing-row-50
+      description: >
+        <p>TensorFlow Ranking is an
+        open-source library for developing scalable, neural <a
+        href="https://en.wikipedia.org/wiki/Learning_to_rank">learning to rank</a> (LTR)
+        models. Ranking models are typically used in search and recommendation systems,
+        but have also been successfully applied in a wide variety of fields, including
+        <a href="http://www.aclweb.org/anthology/K17-1011">machine translation</a>, <a
+        href="https://arxiv.org/abs/1805.00188">dialogue systems</a> <a
+        href="https://dl.acm.org/doi/abs/10.1145/3308560.3316603">e-commerce</a>, <a
+        href="https://arxiv.org/abs/1904.12084">SAT solvers</a>, <a
+        href="https://dl.acm.org/doi/abs/10.1145/3450267.3450538">smart city
+        planning</a>, and even <a
+        href="https://www.ncbi.nlm.nih.gov/pubmed/26163693">computational
+        biology.</a></p>
+
+        <p>A ranking model takes a list of items (web pages, documents, products,
+        movies, etc.) and generates a list in an optimized order, such as most relevant
+        items on top and the least relevant items at the bottom, usually in response to
+        a user query:</p>
+
+        <figure>
+            <img src="images/ranking-overview.jpeg">
+        </figure>
+
+        <p>This library supports standard pointwise, pairwise, and listwise loss functions
+        for LTR models. It also supports a wide range of ranking metrics, including <a
+        href="https://en.wikipedia.org/wiki/Mean_reciprocal_rank">Mean Reciprocal
+        Rank</a> (MRR) and <a
+        href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain">Normalized
+        Discounted Cumulative Gain</a> (NDCG), so you can evaluate and compare these
+        approaches for your ranking task. The Ranking library also provides functions for
+        enhanced ranking approaches that are researched, tested, and built by machine
+        learning engineers at Google.</p>
+
+        <p>Get started with the TensorFlow Ranking library by checking out the
+        <a href="/ranking/tutorials/quickstart">tutorial</a>. Learn more about the capabilities
+        of the library by reading the <a href="/ranking/overview">Overview</a> Check out the
+        source code for TensorFlow Ranking on
+        <a href="https://github.com/tensorflow/ranking">GitHub</a>.</p>
+
+      code_block: |
+        <pre class = "prettyprint">
+        import tensorflow as tf
+        import tensorflow_datasets as tfds
+        import tensorflow_ranking as tfr
+
+        # Load MSLR-WEB10K dataset
+        ds = tfds.load("mslr_web/10k_fold1", split="train")
+
+        # Add a mask tensor
+        ds = ds.map(lambda feature_map: {
+            "_mask": tf.ones_like(feature_map["label"], dtype=tf.bool),
+            **feature_map
+        })
+
+        # Shuffle data and create padded batches
+        ds = ds.shuffle(buffer_size=1000).padded_batch(batch_size=32)
+
+        # Create features and label tuples from data
+        ds = ds.map(lambda feature_map: (
+            feature_map, tf.where(feature_map["_mask"], feature_map.pop("label"), -1.)))
+
+        context_inputs = {}
+        example_inputs = {
+            name: tf.keras.Input(shape=(1,), dtype=tf.float32, name=name)
+            for name in ds.element_spec[0]
+            if name != "_mask"
+        }
+
+        # Create a model builder with inputs, preprocessor, and scorer
+        model_builder = tfr.keras.model.ModelBuilder(
+            input_creator=lambda: (context_inputs, example_inputs),
+            preprocessor=tfr.keras.model.PreprocessorWithSpec(),
+            scorer=tfr.keras.model.DNNScorer(
+                hidden_layer_dims=[128],
+                output_units=1,
+                input_batch_norm=True,
+                activation=tf.nn.relu),
+            mask_feature_name="_mask")
+
+        # Compile and train the model
+        model = model_builder.build()
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+            loss=tfr.keras.losses.SoftmaxLoss(),
+            metrics=tfr.keras.metrics.default_keras_metrics())
+        model.fit(ds, epochs=10)
+        </pre>
+
+  - classname: devsite-landing-row-cards
+    items:
+    - heading: "TensorFlow Ranking: A Scalable TensorFlow Library for Learning to Rank"
+      image_path: /resources/images/tf-logo-card-16x9.png
+      path: https://ai.googleblog.com/2018/12/tf-ranking-scalable-tensorflow-library.html
+      buttons:
+      - label: "Read on the Google AI blog"
+        path: https://ai.googleblog.com/2018/12/tf-ranking-scalable-tensorflow-library.html
+    - heading: "Advances in TensorFlow Ranking"
+      image_path: /resources/images/tf-logo-card-16x9.png
+      path: https://ai.googleblog.com/2021/07/advances-in-tf-ranking.html
+      buttons:
+      - label: "Read on the Google AI blog"
+        path: https://ai.googleblog.com/2021/07/advances-in-tf-ranking.html
+    - heading: "Cutting Edge TensorFlow: New Techniques"
+      youtube_id: Un0JDL3i5Hg
+      buttons:
+      - label: Watch the video
+        path: https://youtu.be/Un0JDL3i5Hg?t=1056
