@@ -802,7 +802,7 @@ class ApproxNDCGLoss(_ListwiseLoss):
   >>> y_pred = [[0.6, 0.8]]
   >>> loss = tfr.keras.losses.ApproxNDCGLoss()
   >>> loss(y_true, y_pred).numpy()
-  -0.6536734
+  -0.655107
 
   >>> # Using ragged tensors
   >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
@@ -976,7 +976,7 @@ class ClickEMLoss(_RankingLoss):
   >>> y_pred = [[[0.6, 0.9], [0.8, 0.2]]]
   >>> loss = tfr.keras.losses.ClickEMLoss()
   >>> loss(y_true, y_pred).numpy()
-  0.7981389
+  1.1462884
 
   >>> # Using ragged tensors
   >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
