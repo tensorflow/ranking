@@ -112,7 +112,7 @@ def encode_features(features,
     ]
 
     if dense_feature_columns:
-      dense_layer = feature_column_lib.DenseFeatures(
+      dense_layer = tf.compat.v1.keras.layers.DenseFeatures(
           feature_columns=dense_feature_columns,
           name="encoding_layer",
           trainable=trainable)
