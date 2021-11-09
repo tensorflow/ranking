@@ -20,7 +20,7 @@ upper_tabs:
       - title: Install
         path: /ranking/install
       - heading: Tutorials
-      - title: Recommend movies
+      - title: Quickstart
         path: /ranking/tutorials/quickstart
       - title: Distributed ranking
         path: /ranking/tutorials/ranking_dnn_distributed
