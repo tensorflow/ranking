@@ -23,30 +23,88 @@ import tensorflow.compat.v2 as tf
 # following the same annotations.
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def identity(label):
+  """Identity function that returns the input label.
+
+  Args:
+    label: A `Tensor` or anything that can be converted to a tensor using
+      `tf.convert_to_tensor`.
+
+  Returns:
+    The input label.
+  """
   return label
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def inverse(rank):
+  """Computes the inverse of input rank.
+
+  Args:
+    rank: A `Tensor` or anything that can be converted to a tensor using
+      `tf.convert_to_tensor`.
+
+  Returns:
+    A `Tensor` that has each input element transformed as `x` to `1/x`.
+  """
   return tf.math.divide_no_nan(1., rank)
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def pow_minus_1(label):
+  """Computes `2**x - 1` element-wise for each label.
+
+  Can be used to define `gain_fn` for `tfr.keras.metrics.NDCGMetric`.
+
+  Args:
+    label: A `Tensor` or anything that can be converted to a tensor using
+      `tf.convert_to_tensor`.
+
+  Returns:
+    A `Tensor` that has each input element transformed as `x` to `2**x - 1`.
+  """
   return tf.math.pow(2., label) - 1.
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def log2_inverse(rank):
+  """Computes `1./log2(1+x)` element-wise for each label.
+
+  Can be used to define `rank_discount_fn` for `tfr.keras.metrics.NDCGMetric`.
+
+  Args:
+    rank: A `Tensor` or anything that can be converted to a tensor using
+      `tf.convert_to_tensor`.
+
+  Returns:
+    A `Tensor` that has each input element transformed as `x` to `1./log2(1+x)`.
+  """
   return tf.math.divide_no_nan(tf.math.log(2.), tf.math.log1p(rank))
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def is_greater_equal_1(label):
+  """Computes whether label is greater or equal to 1.
+
+  Args:
+    label: A `Tensor` or anything that can be converted to a tensor using
+      `tf.convert_to_tensor`.
+
+  Returns:
+    A `Tensor` that has each input element transformed as `x` to `I(x > 1)`.
+  """
   return tf.greater_equal(label, 1.0)
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
 def symmetric_log1p(t):
+  """Computes `sign(x) * log(1 + sign(x))`.
+
+  Args:
+    t: A `Tensor` or anything that can be converted to a tensor using
+      `tf.convert_to_tensor`.
+
+  Returns:
+    A `Tensor` that has each input element transformed as `x` to `I(x > 1)`.
+  """
   return tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
 
