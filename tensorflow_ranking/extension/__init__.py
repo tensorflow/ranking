@@ -19,10 +19,9 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_ranking.extension import pipeline
-from tensorflow_ranking.extension import tfrbert
 
 from tensorflow.python.util.all_util import remove_undocumented  # pylint: disable=g-bad-import-order
 
-_allowed_symbols = ['pipeline', 'tfrbert']
+_allowed_symbols = ['pipeline']
 
 remove_undocumented(__name__, _allowed_symbols)

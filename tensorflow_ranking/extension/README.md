@@ -360,7 +360,7 @@ logic for each query and document pair.
 
 ```python
 from tensorflow_ranking import tfr
-from tfr.extension import tfrbert
+from tensorflow_ranking.extension import tfrbert
 
 def context_feature_columns():
   return {}
