@@ -18,7 +18,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import tensorflow as tf
 
-from official.nlp.modeling import layers as nlp_modeling_layers
 from tensorflow_ranking.python import utils
 
 _EPSILON = 1e-10
@@ -376,6 +375,47 @@ class ConcatFeatures(tf.keras.layers.Layer):
     return config
 
 
+# Copied from `tf-models-official` to reduce dependency.
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class SelfAttentionMask(tf.keras.layers.Layer):
+  """Create 3D attention mask from a 2D tensor mask.
+
+    inputs[0]: from_tensor: 2D or 3D Tensor of shape
+      [batch_size, from_seq_length, ...].
+    inputs[1]: to_mask: int32 Tensor of shape [batch_size, to_seq_length].
+
+    Returns:
+      float Tensor of shape [batch_size, from_seq_length, to_seq_length].
+  """
+
+  def call(self, inputs, to_mask=None):
+    if isinstance(inputs, list) and to_mask is None:
+      to_mask = inputs[1]
+      inputs = inputs[0]
+    from_shape = tf.shape(inputs)
+    batch_size = from_shape[0]
+    from_seq_length = from_shape[1]
+
+    to_shape = tf.shape(to_mask)
+    to_seq_length = to_shape[1]
+
+    to_mask = tf.cast(
+        tf.reshape(to_mask, [batch_size, 1, to_seq_length]), dtype=inputs.dtype)
+
+    # We don't assume that `from_tensor` is a mask (although it could be). We
+    # don't actually care if we attend *from* padding tokens (only *to* padding)
+    # tokens so we create a tensor of all ones.
+    #
+    # `broadcast_ones` = [batch_size, from_seq_length, 1]
+    broadcast_ones = tf.ones(
+        shape=[batch_size, from_seq_length, 1], dtype=inputs.dtype)
+
+    # Here we broadcast along two dimensions to create the mask.
+    mask = broadcast_ones * to_mask
+
+    return mask
+
+
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class DocumentInteractionAttention(tf.keras.layers.Layer):
   """Cross Document Interaction Attention layer.
@@ -454,7 +494,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
 
     Args:
       input_shape: A tuple of shapes for `example_inputs`, `list_mask`. These
-      correspond to `inputs` argument of call.
+        correspond to `inputs` argument of call.
     """
     example_inputs_shape, list_mask_shape = input_shape
     example_inputs_shape = tf.TensorShape(example_inputs_shape)
@@ -507,8 +547,8 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
         `example_inputs`: A tensor of shape [batch_size, list_size,
           feature_dims].
         `list_mask`: A boolean tensor of shape [batch_size, list_size], which is
-        True for a valid example and False for invalid one. If this is `None`,
-        then all examples are treated as valid.
+          True for a valid example and False for invalid one. If this is `None`,
+          then all examples are treated as valid.
       training: Whether in training or inference mode.
 
     Returns:
@@ -524,8 +564,7 @@ class DocumentInteractionAttention(tf.keras.layers.Layer):
       x = self._input_noise(x, training=training)
 
     list_mask = tf.cast(list_mask, dtype=tf.int32)
-    attention_mask = nlp_modeling_layers.SelfAttentionMask()(
-        [list_mask, list_mask])
+    attention_mask = SelfAttentionMask()([list_mask, list_mask])
 
     for attention_layer, dropout_layer, norm_layer in self._attention_layers:
       output = attention_layer(

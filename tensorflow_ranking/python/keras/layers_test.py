@@ -338,5 +338,23 @@ class GAMLayerTest(tf.test.TestCase):
       _ = gam(([example_inputs], [context_inputs]))
 
 
+class SelfAttentionMaskTest(tf.test.TestCase):
+
+  def test_serialization(self):
+    # Check save and restore config.
+    layer = layers.SelfAttentionMask()
+    serialized = tf.keras.layers.serialize(layer)
+    loaded = tf.keras.layers.deserialize(serialized)
+    self.assertAllEqual(loaded.get_config(), layer.get_config())
+
+  def test_call(self):
+    list_mask = tf.constant([[1, 1], [1, 0]], dtype=tf.int32)
+    self_attention_mask = tf.constant([[[1, 1], [1, 1]], [[1, 0], [1, 0]]],
+                                      dtype=tf.int32)
+    self.assertAllClose(
+        layers.SelfAttentionMask()(inputs=[list_mask, list_mask]),
+        self_attention_mask)
+
+
 if __name__ == '__main__':
   tf.test.main()

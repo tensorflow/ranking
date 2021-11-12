@@ -242,7 +242,6 @@ py_library(
     srcs_version = "PY3",
     deps = [
         # py/tensorflow dep,
-        # tensorflow_models/official/nlp/modeling dep,
         "//tensorflow_ranking/python:utils",
     ],
 )
