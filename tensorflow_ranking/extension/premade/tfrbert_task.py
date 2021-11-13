@@ -13,21 +13,21 @@
 # limitations under the License.
 
 """TF-Ranking BERT task."""
+import dataclasses
 import os
 import time
-from typing import Optional, Tuple, Dict, Mapping
+from typing import Dict, Mapping, Optional, Tuple
 
 from absl import logging
-import dataclasses
 import numpy as np
 import tensorflow as tf
 
 from official.core import task_factory
 from official.modeling.hyperparams import base_config
 from official.nlp.configs import encoders
+from tensorflow_ranking.extension import task as tfr_task
 from tensorflow_ranking.python.keras import metrics as tfr_metrics
 from tensorflow_ranking.python.keras import model as tfr_model
-from tensorflow_ranking.python.keras import task as tfr_task
 
 _PADDING_LABEL = -1.
 _PREDICTION = 'prediction'

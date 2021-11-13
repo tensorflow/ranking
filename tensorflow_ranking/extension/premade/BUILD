@@ -32,9 +32,9 @@ py_library(
         # tensorflow_models/official/modeling/hyperparams:base_config dep,
         # tensorflow_models/official/nlp/configs:encoders dep,
         # tensorflow_models/official/nlp/modeling dep,
+        "//tensorflow_ranking/extension:task",
         "//tensorflow_ranking/python/keras:metrics",
         "//tensorflow_ranking/python/keras:model",
-        "//tensorflow_ranking/python/keras:task",
     ],
 )
 

@@ -15,14 +15,13 @@
 # Lint as: python3
 """Tests for pipeline.py."""
 import os
-from absl.testing import parameterized
 
+from absl.testing import parameterized
 import tensorflow as tf
 
-from tensorflow_ranking.python.keras import model as model_lib
-from tensorflow_ranking.python.keras import task as task_lib
-
 from google.protobuf import text_format
+from tensorflow_ranking.extension import task as task_lib
+from tensorflow_ranking.python.keras import model as model_lib
 from tensorflow_serving.apis import input_pb2
 
 _MASK = "__list_mask__"

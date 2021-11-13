@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""TensorFlow Ranking Premade Orbit Task Module."""
+"""Tests for tfrbert_task_experiments."""
 
-from tensorflow_ranking.python.keras.premade.tfrbert_task import *  # pylint: disable=wildcard-import,line-too-long
+import tensorflow as tf
+
+from official.core import config_definitions as cfg
+from tensorflow_ranking.examples.keras import tfrbert_task_experiments
+
+
+class TfrbertTaskExperimentsTest(tf.test.TestCase):
+
+  def test_create_experiment_config(self):
+    exp_config = tfrbert_task_experiments.tfrbert_exp()
+    self.assertIsInstance(exp_config, cfg.ExperimentConfig)
+
+
+if __name__ == '__main__':
+  tf.test.main()

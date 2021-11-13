@@ -22,9 +22,9 @@ import numpy as np
 import tensorflow as tf
 
 from official.nlp.configs import encoders
+from tensorflow_ranking.extension.premade import tfrbert_task
 from tensorflow_ranking.python import data as tfr_data
 from tensorflow_ranking.python.keras import model as tfr_model
-from tensorflow_ranking.python.keras.premade import tfrbert_task
 from tensorflow_serving.apis import input_pb2
 
 

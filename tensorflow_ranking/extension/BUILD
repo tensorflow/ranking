@@ -17,6 +17,7 @@ py_library(
     deps = [
         ":pipeline",
         ":tfrbert",
+        "//tensorflow_ranking/extension/premade",
     ],
 )
 
@@ -86,6 +87,43 @@ py_test(
         # py/absl/flags dep,
         # py/tensorflow dep,
         "//tensorflow_ranking",
+        # tensorflow_serving/apis:input_proto_py_pb2 dep,
+    ],
+)
+
+py_library(
+    name = "task",
+    srcs = ["task.py"],
+    srcs_version = "PY3",
+    deps = [
+        # py/absl/logging dep,
+        # py/orbit dep,
+        # py/tensorflow dep,
+        # tensorflow_models/official/core:base_task dep,
+        # tensorflow_models/official/core:config_definitions dep,
+        # tensorflow_models/official/core:input_reader dep,
+        # tensorflow_models/official/core:task_factory dep,
+        # tensorflow_models/official/modeling:tf_utils dep,
+        # tensorflow_models/official/nlp/data:data_loader dep,
+        # tensorflow_models/official/nlp/modeling dep,
+        "//tensorflow_ranking/python:data",
+        "//tensorflow_ranking/python/keras:losses",
+        "//tensorflow_ranking/python/keras:metrics",
+        "//tensorflow_ranking/python/keras:model",
+    ],
+)
+
+py_test(
+    name = "task_test",
+    size = "large",
+    srcs = ["task_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":task",
+        # py/absl/testing:parameterized dep,
+        # py/tensorflow dep,
+        "//tensorflow_ranking/python/keras:model",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )

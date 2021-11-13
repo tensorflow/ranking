@@ -186,6 +186,19 @@ py_library(
         # tensorflow_models/official/core:exp_factory dep,
         # tensorflow_models/official/modeling/optimization dep,
         "//tensorflow_ranking",
+        "//tensorflow_ranking/extension/premade",
+    ],
+)
+
+py_test(
+    name = "tfrbert_task_experiments_test",
+    srcs = ["tfrbert_task_experiments_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":tfrbert_task_experiments",
+        # py/tensorflow dep,
+        # tensorflow_models/official/core:config_definitions dep,
     ],
 )
 
