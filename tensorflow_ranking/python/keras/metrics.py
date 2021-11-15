@@ -237,8 +237,8 @@ class MRRMetric(_RankingMetric):
   \text{MRR}(\{y\}, \{s\}) = \max_i \frac{\bar{y}_i}{\text{rank}(s_i)}
   $$
 
-  where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
-  $$s$$ with ties broken randomly and $$\bar{y_i}$$ are truncated labels:
+  where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores
+  $s$ with ties broken randomly and $\bar{y_i}$ are truncated labels:
 
   $$
   \bar{y}_i = \begin{cases}
@@ -300,8 +300,8 @@ class ARPMetric(_RankingMetric):
   \frac{1}{\sum_i y_i} \sum_i y_i \cdot \text{rank}(s_i)
   $$
 
-  where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
-  $$s$$ with ties broken randomly.
+  where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores
+  $s$ with ties broken randomly.
   """
 
   def __init__(self, name=None, dtype=None, ragged=False, **kwargs):
@@ -353,21 +353,21 @@ class PrecisionMetric(_RankingMetric):
 
   where:
 
-  * $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores $$s$$
+  * $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores $s$
     with ties broken randomly
-  * $$I[]$$ is the indicator function:\
-    $$I[\text{cond}] = \begin{cases}
+  * $I[]$ is the indicator function:\
+    $I[\text{cond}] = \begin{cases}
     1 & \text{if cond is true}\\
     0 & \text{else}\end{cases}
-    $$
-  * $$\bar{y}_i$$ are the truncated labels:\
-    $$
+    $
+  * $\bar{y}_i$ are the truncated labels:\
+    $
     \bar{y}_i = \begin{cases}
     1 & \text{if }y_i \geq 1 \\
     0 & \text{else}
     \end{cases}
-    $$
-  * $$k = |y|$$ if $$k$$ is not provided
+    $
+  * $k = |y|$ if $k$ is not provided
   """
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
@@ -429,21 +429,21 @@ class RecallMetric(_RankingMetric):
 
   where:
 
-  * $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores $$s$$
+  * $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores $s$
     with ties broken randomly
-  * $$I[]$$ is the indicator function:\
-    $$I[\text{cond}] = \begin{cases}
+  * $I[]$ is the indicator function:\
+    $I[\text{cond}] = \begin{cases}
     1 & \text{if cond is true}\\
     0 & \text{else}\end{cases}
-    $$
-  * $$\bar{y}_i$$ are the truncated labels:\
-    $$
+    $
+  * $\bar{y}_i$ are the truncated labels:\
+    $
     \bar{y}_i = \begin{cases}
     1 & \text{if }y_i \geq 1 \\
     0 & \text{else}
     \end{cases}
-    $$
-  * $$k = |y|$$ if $$k$$ is not provided
+    $
+  * $k = |y|$ if $k$ is not provided
   """
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
@@ -512,8 +512,8 @@ class PrecisionIAMetric(_RankingMetric):
   \sum_t \sum_i I[\text{rank}(s_i) \leq k] y_{i,t}
   $$
 
-  where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
-  $$s$$ with ties broken randomly.
+  where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores
+  $s$ with ties broken randomly.
 
   References:
 
@@ -603,22 +603,22 @@ class MeanAveragePrecisionMetric(_RankingMetric):
 
   where:
 
-  * $$P@k(y, s)$$ is the Precision at rank $$k$$. See
+  * $P@k(y, s)$ is the Precision at rank $k$. See
     `tfr.keras.metrics.PrecisionMetric`.
-  * $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores $$s$$
+  * $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores $s$
     with ties broken randomly
-  * $$I[]$$ is the indicator function:\
-    $$I[\text{cond}] = \begin{cases}
+  * $I[]$ is the indicator function:\
+    $I[\text{cond}] = \begin{cases}
     1 & \text{if cond is true}\\
     0 & \text{else}\end{cases}
-    $$
-  * $$\bar{y}_i$$ are the truncated labels:\
-    $$
+    $
+  * $\bar{y}_i$ are the truncated labels:\
+    $
     \bar{y}_i = \begin{cases}
     1 & \text{if }y_i \geq 1 \\
     0 & \text{else}
     \end{cases}
-    $$
+    $
   """
 
   def __init__(self, name=None, topn=None, dtype=None, ragged=False, **kwargs):
@@ -685,8 +685,8 @@ class NDCGMetric(_RankingMetric):
   \sum_i \text{gain}(y_i) \cdot \text{rank_discount}(\text{rank}(s_i))
   $$
 
-  where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
-  $$s$$ with ties broken randomly.
+  where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores
+  $s$ with ties broken randomly.
 
   References:
 
@@ -771,8 +771,8 @@ class DCGMetric(_RankingMetric):
   \sum_i \text{gain}(y_i) \cdot \text{rank_discount}(\text{rank}(s_i))
   $$
 
-  where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
-  $$s$$ with ties broken randomly.
+  where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores
+  $s$ with ties broken randomly.
 
   References:
 
@@ -868,8 +868,8 @@ class AlphaDCGMetric(_RankingMetric):
   y_{i, t} (1 - \alpha)^{\sum_j I[\text{rank}(s_j) < \text{rank}(s_i)] y_{j, t}}
   $$
 
-  where $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores
-  $$s$$ with ties broken randomly and $$I[]$$ is the indicator function:
+  where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores
+  $s$ with ties broken randomly and $I[]$ is the indicator function:
 
   $$
   I[\text{cond}] = \begin{cases}
@@ -981,7 +981,7 @@ class OPAMetric(_RankingMetric):
   \frac{\sum_i \sum_j I[s_i > s_j] I[y_i > y_j]}{\sum_i \sum_j I[y_i > y_j]}
   $$
 
-  where $$I[]$$ is the indicator function:
+  where $I[]$ is the indicator function:
 
   $$
   I[\text{cond}] = \begin{cases}
