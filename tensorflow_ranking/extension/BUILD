@@ -16,7 +16,6 @@ py_library(
     visibility = ["//tensorflow_ranking:__pkg__"],
     deps = [
         ":pipeline",
-        ":tfrbert",
         "//tensorflow_ranking/extension/premade",
     ],
 )
@@ -54,41 +53,6 @@ py_test(
 filegroup(
     name = "testdata",
     srcs = glob(["testdata/**"]),
-)
-
-py_library(
-    name = "tfrbert",
-    srcs = ["tfrbert.py"],
-    srcs_version = "PY2AND3",
-    deps = [
-        # py/tensorflow dep,
-        # tensorflow_models/official/modeling/activations dep,
-        # tensorflow_models/official/nlp:optimization dep,
-        # tensorflow_models/official/nlp/bert:configs dep,
-        # tensorflow_models/official/nlp/bert:tokenization dep,
-        # tensorflow_models/official/nlp/modeling dep,
-        "//tensorflow_ranking/python:estimator",
-        "//tensorflow_ranking/python:head",
-        "//tensorflow_ranking/python:losses",
-        "//tensorflow_ranking/python:model",
-        # tensorflow_serving/apis:input_proto_py_pb2 dep,
-    ],
-)
-
-py_test(
-    name = "tfrbert_test",
-    size = "large",
-    srcs = ["tfrbert_test.py"],
-    data = [":testdata"],
-    python_version = "PY3",
-    srcs_version = "PY2AND3",
-    deps = [
-        ":tfrbert",
-        # py/absl/flags dep,
-        # py/tensorflow dep,
-        "//tensorflow_ranking",
-        # tensorflow_serving/apis:input_proto_py_pb2 dep,
-    ],
 )
 
 py_library(
