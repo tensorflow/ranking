@@ -15,11 +15,18 @@
 """TFR-BERT experiment configurations."""
 # pylint: disable=g-doc-return-or-yield,line-too-long
 
-from official.core import config_definitions as cfg
-from official.core import exp_factory
-from official.modeling import optimization
-
 from tensorflow_ranking.extension import premade
+
+# pylint: disable=g-import-not-at-top
+try:
+  from official.core import config_definitions as cfg
+  from official.core import exp_factory
+  from official.modeling import optimization
+except ModuleNotFoundError:
+  raise ModuleNotFoundError(
+      'tf-models-official needs to be installed. Run command: '
+      '`pip install tf-models-official`.') from None
+# pylint: enable=g-import-not-at-top
 
 
 @exp_factory.register_config_factory('tfr_bert')

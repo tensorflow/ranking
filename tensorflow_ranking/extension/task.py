@@ -13,22 +13,29 @@
 # limitations under the License.
 
 """Orbit task for TF-Ranking."""
-from typing import Dict, Mapping, Optional, Tuple, Union, Callable
-
 import dataclasses
+from typing import Callable, Dict, Mapping, Optional, Tuple, Union
+
 import tensorflow as tf
 
-from official.core import base_task
-from official.core import config_definitions as cfg
-from official.core import input_reader
-from official.core import task_factory
-from official.modeling import tf_utils
-from official.nlp.data import data_loader
 from tensorflow_ranking.python import data as tfr_data
 from tensorflow_ranking.python.keras import losses as tfr_losses
 from tensorflow_ranking.python.keras import metrics as tfr_metrics
 from tensorflow_ranking.python.keras import model as tfr_model
 
+# pylint: disable=g-import-not-at-top
+try:
+  from official.core import base_task
+  from official.core import config_definitions as cfg
+  from official.core import input_reader
+  from official.core import task_factory
+  from official.modeling import tf_utils
+  from official.nlp.data import data_loader
+except ModuleNotFoundError:
+  raise ModuleNotFoundError(
+      'tf-models-official needs to be installed. Run command: '
+      '`pip install tf-models-official`.') from None
+# pylint: enable=g-import-not-at-top
 
 FeatureSpec = Dict[
     str, Union[tf.io.FixedLenFeature, tf.io.VarLenFeature, tf.io.RaggedFeature]]
@@ -259,4 +266,3 @@ class RankingTask(base_task.Task):
     if metrics:
       self.process_metrics(metrics, labels, outputs)
     return logs
-

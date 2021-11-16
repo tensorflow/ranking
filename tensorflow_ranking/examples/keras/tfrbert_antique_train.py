@@ -72,15 +72,23 @@ from absl import flags
 import gin
 import tensorflow as tf
 
-from official.common import distribute_utils
-from official.common import flags as tfm_flags
-from official.core import task_factory
-from official.core import train_lib
-from official.core import train_utils
-from official.modeling import performance
 # pylint: disable=unused-import
 from tensorflow_ranking.examples.keras import tfrbert_task_experiments
 # pylint: enable=unused-import
+
+# pylint: disable=g-import-not-at-top
+try:
+  from official.common import distribute_utils
+  from official.common import flags as tfm_flags
+  from official.core import task_factory
+  from official.core import train_lib
+  from official.core import train_utils
+  from official.modeling import performance
+except ModuleNotFoundError:
+  raise ModuleNotFoundError(
+      'tf-models-official needs to be installed. Run command: '
+      '`pip install tf-models-official`.') from None
+# pylint: enable=g-import-not-at-top
 
 FLAGS = flags.FLAGS
 
