@@ -25,7 +25,7 @@ description: Cross Document Interaction Attention layer.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L366-L524">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L406-L573">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -41,6 +41,7 @@ Cross Document Interaction Attention layer.
     num_layers: int = 1,
     dropout: float = 0.5,
     name: Optional[str] = None,
+    input_noise_stddev: Optional[float] = None,
     **kwargs
 )
 </code></pre>
@@ -123,6 +124,13 @@ Dropout probability.
 </td>
 <td>
 Name of the layer.
+</td>
+</tr><tr>
+<td>
+`input_noise_stddev`
+</td>
+<td>
+Input Gaussian noise standard deviation.
 </td>
 </tr><tr>
 <td>
@@ -385,7 +393,7 @@ may also be zero-argument callables which create a loss tensor.
 <td>
 Additional keyword arguments for backward compatibility.
 Accepted values:
-inputs - Deprecated, will be automatically inferred.
+  inputs - Deprecated, will be automatically inferred.
 </td>
 </tr>
 </table>
@@ -475,7 +483,7 @@ using a `keras.Metric.Mean`.
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L431-L479">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L474-L526">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -561,9 +569,9 @@ one per output tensor of the layer).
 
 Computes the output shape of the layer.
 
-If the layer has not been built, this method will call `build` on the layer.
-This assumes that the layer will later be used with inputs that match the input
-shape provided here.
+This method will cause the layer's state to be built, if that has not happened
+before. This requires that the layer will later be used with inputs that match
+the input shape provided here.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -676,7 +684,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L516-L524">View
+<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L564-L573">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

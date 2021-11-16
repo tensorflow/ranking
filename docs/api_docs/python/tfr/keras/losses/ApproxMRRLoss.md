@@ -108,7 +108,7 @@ this defaults to `SUM_OVER_BATCH_SIZE`. When used with
 `tf.distribute.Strategy`, outside of built-in training loops such as
 `tf.keras` `compile` and `fit`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
 will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training) for
-more details.
+    more details.
 </td>
 </tr><tr>
 <td>

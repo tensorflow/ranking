@@ -11,7 +11,7 @@ description: Creates and initializes the requested tf.distribute strategy.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L29-L71">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/strategy_utils.py#L31-L102">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -23,9 +23,12 @@ Creates and initializes the requested tf.distribute strategy.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.strategy_utils.get_strategy(
     strategy: str,
+    cluster_resolver: Optional[tf.distribute.cluster_resolver.ClusterResolver] = None,
+    variable_partitioner: Optional[tf.distribute.experimental.partitioners.Partitioner] = _USE_DEFAULT_VARIABLE_PARTITIONER,
     tpu: Optional[str] = &#x27;&#x27;
 ) -> Union[None, tf.distribute.MirroredStrategy, tf.distribute.
-    MultiWorkerMirroredStrategy, tf.distribute.experimental.TPUStrategy]
+    MultiWorkerMirroredStrategy, tf.distribute.experimental.
+    ParameterServerStrategy, tf.distribute.experimental.TPUStrategy]
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
@@ -48,7 +51,29 @@ strategy = get_strategy("MirroredStrategy")
 <td>
 Key for a `tf.distribute` strategy to be used to train the model.
 Choose from ["MirroredStrategy", "MultiWorkerMirroredStrategy",
-"TPUStrategy"]. If None, no distributed strategy will be used.
+"ParameterServerStrategy", "TPUStrategy"]. If None, no distributed
+strategy will be used.
+</td>
+</tr><tr>
+<td>
+`cluster_resolver`
+</td>
+<td>
+A cluster_resolver to build strategy.
+</td>
+</tr><tr>
+<td>
+`variable_partitioner`
+</td>
+<td>
+Variable partitioner to be used in
+ParameterServerStrategy. If the argument is not specified, a recommended
+`tf.distribute.experimental.partitioners.MinSizePartitioner` is used. If
+the argument is explicitly specified as `None`, no partitioner is used and
+that variables are not partitioned. This arg is used only when the
+strategy is `tf.distribute.experimental.ParameterServerStrategy`.
+See `tf.distribute.experimental.ParameterServerStrategy` class doc for
+more information.
 </td>
 </tr><tr>
 <td>

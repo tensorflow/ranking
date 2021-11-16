@@ -26,23 +26,7 @@ TensorFlow Ranking, the project to build ranking models on TensorFlow.
 
 [`data`](./tfr/data.md) module: Input data parsing for tf-ranking library.
 
-[`estimator`](./tfr/estimator.md) module: Provides an `EstimatorBuilder` for
-creating a TF-Ranking model estimator.
-
-[`ext`](./tfr/ext.md) module: TensorFlow Ranking library.
-
-[`feature`](./tfr/feature.md) module: Feature transformations for ranking
-library.
-
-[`head`](./tfr/head.md) module: Defines `Head`s of TF ranking models.
-
 [`keras`](./tfr/keras.md) module: TensorFlow Ranking Keras Module.
-
-[`losses`](./tfr/losses.md) module: Defines ranking losses as TF ops.
-
-[`metrics`](./tfr/metrics.md) module: Defines ranking metrics as TF ops.
-
-[`model`](./tfr/model.md) module: Tensorflow Ranking model library.
 
 [`utils`](./tfr/utils.md) module: Utility functions for ranking library.
 
@@ -53,10 +37,10 @@ library.
 
 <tr>
 <td>
-__version__<a id="__version__"></a>
+**version**<a id="__version__"></a>
 </td>
 <td>
-`'0.4.2.dev'`
+`'0.5.0.dev'`
 </td>
 </tr>
 </table>

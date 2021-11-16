@@ -41,7 +41,7 @@ feature dictionary as inputs.
 `network`
 </td>
 <td>
-(<a href="../../../tfr/keras/network/RankingNetwork.md"><code>tfr.keras.network.RankingNetwork</code></a>) A ranking network which
+(`tfr.keras.network.RankingNetwork`) A ranking network which
 generates a list of scores.
 </td>
 </tr><tr>

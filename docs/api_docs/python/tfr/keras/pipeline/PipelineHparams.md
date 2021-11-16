@@ -8,6 +8,7 @@ description: Hyperparameters used in ModelFitPipeline.
 <meta itemprop="property" content="automatic_reduce_lr"/>
 <meta itemprop="property" content="best_exporter_metric"/>
 <meta itemprop="property" content="best_exporter_metric_higher_better"/>
+<meta itemprop="property" content="cluster_resolver"/>
 <meta itemprop="property" content="export_best_model"/>
 <meta itemprop="property" content="loss_reduction"/>
 <meta itemprop="property" content="loss_weights"/>
@@ -16,6 +17,7 @@ description: Hyperparameters used in ModelFitPipeline.
 <meta itemprop="property" content="strategy"/>
 <meta itemprop="property" content="tpu"/>
 <meta itemprop="property" content="use_weighted_metrics"/>
+<meta itemprop="property" content="variable_partitioner"/>
 </div>
 
 # tfr.keras.pipeline.PipelineHparams
@@ -24,7 +26,7 @@ description: Hyperparameters used in ModelFitPipeline.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L249-L306">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L249-L314">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -51,6 +53,8 @@ Hyperparameters used in `ModelFitPipeline`.
     best_exporter_metric_higher_better: bool = False,
     best_exporter_metric: str = &#x27;loss&#x27;,
     strategy: Optional[str] = None,
+    cluster_resolver: Optional[tf.distribute.cluster_resolver.ClusterResolver] = None,
+    variable_partitioner: Optional[tf.distribute.experimental.partitioners.Partitioner] = None,
     tpu: Optional[str] = &#x27;&#x27;
 )
 </code></pre>
@@ -191,7 +195,23 @@ training and to export the best model. Default to the 'loss'.
 </td>
 <td>
 An option of strategies supported in `strategy_utils`. Choose from
-["MirroredStrategy", "MultiWorkerMirroredStrategy", "TPUStrategy"].
+["MirroredStrategy", "MultiWorkerMirroredStrategy",
+"ParameterServerStrategy", "TPUStrategy"].
+</td>
+</tr><tr>
+<td>
+`cluster_resolver`
+</td>
+<td>
+A cluster_resolver to build strategy.
+</td>
+</tr><tr>
+<td>
+`variable_partitioner`
+</td>
+<td>
+Variable partitioner to be used in
+ParameterServerStrategy.
 </td>
 </tr><tr>
 <td>
@@ -238,6 +258,13 @@ best_exporter_metric_higher_better<a id="best_exporter_metric_higher_better"></a
 </td>
 <td>
 `False`
+</td>
+</tr><tr>
+<td>
+cluster_resolver<a id="cluster_resolver"></a>
+</td>
+<td>
+`None`
 </td>
 </tr><tr>
 <td>
@@ -294,6 +321,13 @@ use_weighted_metrics<a id="use_weighted_metrics"></a>
 </td>
 <td>
 `False`
+</td>
+</tr><tr>
+<td>
+variable_partitioner<a id="variable_partitioner"></a>
+</td>
+<td>
+`None`
 </td>
 </tr>
 </table>

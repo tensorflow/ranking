@@ -37,6 +37,9 @@ additive model (GAM) layer.
 [`class RestoreList`](../../tfr/keras/layers/RestoreList.md): Output layer to
 restore listwise output shape.
 
+[`class SelfAttentionMask`](../../tfr/keras/layers/SelfAttentionMask.md): Create
+3D attention mask from a 2D tensor mask.
+
 ## Functions
 
 [`create_tower(...)`](../../tfr/keras/layers/create_tower.md): Creates a

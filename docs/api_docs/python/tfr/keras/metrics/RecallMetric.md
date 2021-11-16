@@ -15,6 +15,7 @@ description: Recall@k (R@k).
 <meta itemprop="property" content="from_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
+<meta itemprop="property" content="merge_state"/>
 <meta itemprop="property" content="reset_state"/>
 <meta itemprop="property" content="result"/>
 <meta itemprop="property" content="set_weights"/>
@@ -88,15 +89,15 @@ $$
 
 where:
 
-*   $$\text{rank}(s_i)$$ is the rank of item $$i$$ after sorting by scores $$s$$
-    with ties broken randomly
-*   $$I[]$$ is the indicator function: \
-    $$I[\text{cond}] = \begin{cases} 1 & \text{if cond is true}\\ 0 &
-    \text{else}\end{cases} $$
-*   $$\bar{y}_i$$ are the truncated labels: \
-    $$ \bar{y}_i = \begin{cases} 1 & \text{if }y_i \geq 1 \\ 0 & \text{else}
-    \end{cases} $$
-*   $$k = |y|$$ if $$k$$ is not provided
+*   $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores $s$ with
+    ties broken randomly
+*   $I[]$ is the indicator function: \
+    $I[\text{cond}] = \begin{cases} 1 & \text{if cond is true}\\ 0 &
+    \text{else}\end{cases} $
+*   $\bar{y}_i$ are the truncated labels: \
+    $ \bar{y}_i = \begin{cases} 1 & \text{if }y_i \geq 1 \\ 0 & \text{else}
+    \end{cases} $
+*   $k = |y|$ if $k$ is not provided
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -349,7 +350,7 @@ may also be zero-argument callables which create a loss tensor.
 <td>
 Additional keyword arguments for backward compatibility.
 Accepted values:
-inputs - Deprecated, will be automatically inferred.
+  inputs - Deprecated, will be automatically inferred.
 </td>
 </tr>
 </table>
@@ -449,9 +450,10 @@ Creates the variables of the layer (optional, for subclass implementers).
 
 This is a method that implementers of subclasses of `Layer` or `Model` can
 override if they need a state-creation step in-between layer instantiation and
-layer call.
+layer call. It is invoked automatically before the first execution of `call()`.
 
-This is typically used to create the weights of `Layer` subclasses.
+This is typically used to create the weights of `Layer` subclasses (at the
+discretion of the subclass implementer).
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -525,9 +527,9 @@ one per output tensor of the layer).
 
 Computes the output shape of the layer.
 
-If the layer has not been built, this method will call `build` on the layer.
-This assumes that the layer will later be used with inputs that match the input
-shape provided here.
+This method will cause the layer's state to be built, if that has not happened
+before. This requires that the layer will later be used with inputs that match
+the input shape provided here.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -699,6 +701,73 @@ Weights values as a list of NumPy arrays.
 
 </table>
 
+<h3 id="merge_state"><code>merge_state</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>merge_state(
+    metrics
+)
+</code></pre>
+
+Merges the state from one or more metrics.
+
+This method can be used by distributed systems to merge the state computed by
+different metric instances. Typically the state will be stored in the form of
+the metric's weights. For example, a tf.keras.metrics.Mean metric contains a
+list of two weight values: a total and a count. If there were two instances of a
+tf.keras.metrics.Accuracy that each independently aggregated partial state for
+an overall accuracy calculation, these two metric's states could be combined as
+follows:
+
+```
+>>> m1 = tf.keras.metrics.Accuracy()
+>>> _ = m1.update_state([[1], [2]], [[0], [2]])
+```
+
+```
+>>> m2 = tf.keras.metrics.Accuracy()
+>>> _ = m2.update_state([[3], [4]], [[3], [4]])
+```
+
+```
+>>> m2.merge_state([m1])
+>>> m2.result().numpy()
+0.75
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`metrics`
+</td>
+<td>
+an iterable of metrics. The metrics must have compatible state.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`ValueError`
+</td>
+<td>
+If the provided iterable does not contain metrics matching the
+metric's required specifications.
+</td>
+</tr>
+</table>
+
 <h3 id="reset_state"><code>reset_state</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -716,10 +785,23 @@ training.
 <code>result()
 </code></pre>
 
-Computes and returns the metric value tensor.
+Computes and returns the scalar metric value tensor or a dict of scalars.
 
 Result computation is an idempotent operation that simply calculates the metric
 value using the state variables.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A scalar tensor, or a dictionary of scalar tensors.
+</td>
+</tr>
+
+</table>
 
 <h3 id="set_weights"><code>set_weights</code></h3>
 

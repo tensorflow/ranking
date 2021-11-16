@@ -24,10 +24,12 @@ Union of all types that can be converted to a `tf.Tensor` by
     float,
     bool,
     str,
+    bytes,
     complex,
     tuple,
     list,
-    numpy.ndarray
+    numpy.ndarray,
+    numpy.generic
 ]
 </code></pre>
 

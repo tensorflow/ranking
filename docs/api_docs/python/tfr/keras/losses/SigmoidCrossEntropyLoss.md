@@ -37,7 +37,7 @@ loss = -(y_true log(sigmoid(y_pred)) + (1 - y_true) log(1 - sigmoid(y_pred)))
 ```
 
 NOTE: This loss does not support graded relevance labels and should only be used
-with binary relevance labels ($$y \in [0, 1]$$).
+with binary relevance labels ($y \in [0, 1]$).
 
 #### Standalone usage:
 
@@ -90,7 +90,7 @@ this defaults to `SUM_OVER_BATCH_SIZE`. When used with
 `tf.distribute.Strategy`, outside of built-in training loops such as
 `tf.keras` `compile` and `fit`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
 will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training) for
-more details.
+    more details.
 </td>
 </tr><tr>
 <td>

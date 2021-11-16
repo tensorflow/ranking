@@ -1,7 +1,7 @@
-description: Base class for univariate ranking network.
+description: Create 3D attention mask from a 2D tensor mask.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.network.UnivariateRankingNetwork" />
+<meta itemprop="name" content="tfr.keras.layers.SelfAttentionMask" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
@@ -9,82 +9,57 @@ description: Base class for univariate ranking network.
 <meta itemprop="property" content="add_loss"/>
 <meta itemprop="property" content="add_metric"/>
 <meta itemprop="property" content="build"/>
-<meta itemprop="property" content="compute_logits"/>
 <meta itemprop="property" content="compute_mask"/>
 <meta itemprop="property" content="compute_output_shape"/>
 <meta itemprop="property" content="count_params"/>
 <meta itemprop="property" content="from_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
-<meta itemprop="property" content="score"/>
 <meta itemprop="property" content="set_weights"/>
-<meta itemprop="property" content="transform"/>
 <meta itemprop="property" content="with_name_scope"/>
 </div>
 
-# tfr.keras.network.UnivariateRankingNetwork
+# tfr.keras.layers.SelfAttentionMask
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L219-L289">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/layers.py#L366-L402">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Base class for univariate ranking network.
-
-Inherits From: [`RankingNetwork`](../../../tfr/keras/network/RankingNetwork.md)
+Create 3D attention mask from a 2D tensor mask.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.network.UnivariateRankingNetwork(
-    context_feature_columns=None, example_feature_columns=None,
-    name=&#x27;univariate_ranking_network&#x27;, **kwargs
+<code>tfr.keras.layers.SelfAttentionMask(
+    trainable=True, name=None, dtype=None, dynamic=False, **kwargs
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
 
+inputs[0]: from_tensor: 2D or 3D Tensor of shape [batch_size, from_seq_length,
+...]. inputs[1]: to_mask: int32 Tensor of shape [batch_size, to_seq_length].
+
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
-
-<tr>
-<td>
-`context_feature_columns`
-</td>
-<td>
-(dict) context feature names to columns.
-</td>
-</tr><tr>
-<td>
-`example_feature_columns`
-</td>
-<td>
-(dict) example feature names to columns.
-</td>
-</tr><tr>
-<td>
-`name`
-</td>
-<td>
-(string) name of the model.
-</td>
-</tr><tr>
-<td>
-`**kwargs`
-</td>
-<td>
-keyword arguments.
+<tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>
+<tr class="alt">
+<td colspan="2">
+float Tensor of shape [batch_size, from_seq_length, to_seq_length].
 </td>
 </tr>
+
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -104,9 +79,7 @@ casts if implementing your own layer.
 Layers often perform certain internal computations in higher precision when
 `compute_dtype` is float16 or bfloat16 for numeric stability. The output will
 still typically be float16 or bfloat16 in such cases. </td> </tr><tr> <td>
-`context_feature_columns` </td> <td>
-
-</td> </tr><tr> <td> `dtype` </td> <td> The dtype of the layer weights.
+`dtype` </td> <td> The dtype of the layer weights.
 
 This is equivalent to `Layer.dtype_policy.variable_dtype`. Unless mixed
 precision is used, this is the same as `Layer.compute_dtype`, the dtype of the
@@ -115,10 +88,8 @@ policy associated with this layer.
 
 This is an instance of a `tf.keras.mixed_precision.Policy`. </td> </tr><tr> <td>
 `dynamic` </td> <td> Whether the layer is dynamic (eager-only); set in the
-constructor. </td> </tr><tr> <td> `example_feature_columns` </td> <td>
-
-</td> </tr><tr> <td> `input` </td> <td> Retrieves the input tensor(s) of a
-layer.
+constructor. </td> </tr><tr> <td> `input` </td> <td> Retrieves the input
+tensor(s) of a layer.
 
 Only applicable if the layer has exactly one input, i.e. if it is connected to
 one incoming layer. </td> </tr><tr> <td> `input_spec` </td> <td> `InputSpec`
@@ -320,6 +291,7 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -339,7 +311,7 @@ may also be zero-argument callables which create a loss tensor.
 <td>
 Additional keyword arguments for backward compatibility.
 Accepted values:
-inputs - Deprecated, will be automatically inferred.
+  inputs - Deprecated, will be automatically inferred.
 </td>
 </tr>
 </table>
@@ -395,6 +367,7 @@ model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -439,11 +412,13 @@ Creates the variables of the layer (optional, for subclass implementers).
 
 This is a method that implementers of subclasses of `Layer` or `Model` can
 override if they need a state-creation step in-between layer instantiation and
-layer call.
+layer call. It is invoked automatically before the first execution of `call()`.
 
-This is typically used to create the weights of `Layer` subclasses.
+This is typically used to create the weights of `Layer` subclasses (at the
+discretion of the subclass implementer).
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -460,86 +435,6 @@ Instance of `TensorShape`, or list of instances of
 </tr>
 </table>
 
-<h3 id="compute_logits"><code>compute_logits</code></h3>
-
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L252-L289">View
-source</a>
-
-<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>compute_logits(
-    context_features=None, example_features=None, training=None, mask=None
-)
-</code></pre>
-
-Scores context and examples to return a score per document.
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`context_features`
-</td>
-<td>
-(dict) context feature names to 2D tensors of shape
-[batch_size, feature_dims].
-</td>
-</tr><tr>
-<td>
-`example_features`
-</td>
-<td>
-(dict) example feature names to 3D tensors of shape
-[batch_size, list_size, feature_dims].
-</td>
-</tr><tr>
-<td>
-`training`
-</td>
-<td>
-(bool) whether in train or inference mode.
-</td>
-</tr><tr>
-<td>
-`mask`
-</td>
-<td>
-(tf.Tensor) Mask is a tensor of shape [batch_size, list_size], which
-is True for a valid example and False for invalid one. If mask is None,
-all entries are valid.
-</td>
-</tr>
-</table>
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Returns</th></tr>
-<tr class="alt">
-<td colspan="2">
-(tf.Tensor) A score tensor of shape [batch_size, list_size].
-</td>
-</tr>
-
-</table>
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Raises</th></tr>
-
-<tr>
-<td>
-`ValueError`
-</td>
-<td>
-If `scorer` does not return a scalar output.
-</td>
-</tr>
-</table>
-
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -551,6 +446,7 @@ If `scorer` does not return a scalar output.
 Computes an output mask tensor.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -573,6 +469,7 @@ Tensor or list of tensors.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -595,11 +492,12 @@ one per output tensor of the layer).
 
 Computes the output shape of the layer.
 
-If the layer has not been built, this method will call `build` on the layer.
-This assumes that the layer will later be used with inputs that match the input
-shape provided here.
+This method will cause the layer's state to be built, if that has not happened
+before. This requires that the layer will later be used with inputs that match
+the input shape provided here.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -618,6 +516,7 @@ instead of an integer.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -638,6 +537,7 @@ An input shape tuple.
 Count the total number of scalars composing the weights.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -650,6 +550,7 @@ An integer count.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -667,19 +568,21 @@ if the layer isn't yet built
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L198-L216">View
-source</a>
-
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@classmethod</code>
 <code>from_config(
-    config, custom_objects=None
+    config
 )
 </code></pre>
 
-Creates a RankingNetwork layer from its config.
+Creates a layer from its config.
+
+This method is the reverse of `get_config`, capable of instantiating the same
+layer from the config dictionary. It does not handle layer connectivity (handled
+by Network), nor weights (handled by `set_weights`).
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -689,35 +592,26 @@ Creates a RankingNetwork layer from its config.
 `config`
 </td>
 <td>
-(dict) Layer configuration, typically the output of `get_config`.
-</td>
-</tr><tr>
-<td>
-`custom_objects`
-</td>
-<td>
-(dict) Optional dictionary mapping names to custom classes
-or functions to be considered during deserialization.
+A Python dictionary, typically the
+output of get_config.
 </td>
 </tr>
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A RankingNetwork layer.
+A layer instance.
 </td>
 </tr>
 
 </table>
 
 <h3 id="get_config"><code>get_config</code></h3>
-
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L188-L196">View
-source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>get_config()
@@ -737,6 +631,7 @@ time it is called. The callers should make a copy of the returned dict if they
 want to modify it.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -787,69 +682,13 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
 Weights values as a list of NumPy arrays.
-</td>
-</tr>
-
-</table>
-
-<h3 id="score"><code>score</code></h3>
-
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L235-L250">View
-source</a>
-
-<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>@abc.abstractmethod</code>
-<code>score(
-    context_features=None, example_features=None, training=None
-)
-</code></pre>
-
-Univariate scoring of context and one example to generate a score.
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`context_features`
-</td>
-<td>
-(dict) context feature names to 2D tensors of shape
-[batch_size, ...].
-</td>
-</tr><tr>
-<td>
-`example_features`
-</td>
-<td>
-(dict) example feature names to 2D tensors of shape
-[batch_size, ...].
-</td>
-</tr><tr>
-<td>
-`training`
-</td>
-<td>
-(bool) whether in training or inference mode.
-</td>
-</tr>
-</table>
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Returns</th></tr>
-<tr class="alt">
-<td colspan="2">
-(tf.Tensor) A score tensor of shape [batch_size, 1].
 </td>
 </tr>
 
@@ -896,6 +735,7 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -915,6 +755,7 @@ output of `get_weights`).
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -926,77 +767,6 @@ output of `get_weights`).
 <td>
 If the provided weights list does not match the
 layer's specifications.
-</td>
-</tr>
-</table>
-
-<h3 id="transform"><code>transform</code></h3>
-
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/network.py#L118-L141">View
-source</a>
-
-<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>transform(
-    features=None, training=None, mask=None
-)
-</code></pre>
-
-Transforms the features into dense context features and example features.
-
-The user can overwrite this function for custom transformations. Mask is
-provided as an argument so that inherited models can have access to it for
-custom feature transformations, without modifying `call` explicitly.
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`features`
-</td>
-<td>
-(dict) with a mix of context (2D) and example features (3D).
-</td>
-</tr><tr>
-<td>
-`training`
-</td>
-<td>
-(bool) whether in train or inference mode.
-</td>
-</tr><tr>
-<td>
-`mask`
-</td>
-<td>
-(tf.Tensor) Mask is a tensor of shape [batch_size, list_size], which
-is True for a valid example and False for invalid one.
-</td>
-</tr>
-</table>
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`context_features`
-</td>
-<td>
-(dict) context feature names to dense 2D tensors of
-shape [batch_size, feature_dims].
-</td>
-</tr><tr>
-<td>
-`example_features`
-</td>
-<td>
-(dict) example feature names to dense 3D tensors of
-shape [batch_size, list_size, feature_dims].
 </td>
 </tr>
 </table>
@@ -1034,6 +804,7 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1049,6 +820,7 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1071,6 +843,7 @@ The original method wrapped such that it enters the module's name scope.
 Wraps `call`, applying pre- and post-processing steps.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1093,6 +866,7 @@ Keyword arguments to be passed to `self.call`.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1117,6 +891,7 @@ Output tensor(s).
 -   If the layer is not built, the method will call `build`.
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>

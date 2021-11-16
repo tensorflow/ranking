@@ -22,12 +22,20 @@ Utils for tfr.keras.
 
 ## Functions
 
-[`identity(...)`](../../tfr/keras/utils/identity.md)
+[`identity(...)`](../../tfr/keras/utils/identity.md): Identity function that
+returns the input label.
 
-[`inverse(...)`](../../tfr/keras/utils/inverse.md)
+[`inverse(...)`](../../tfr/keras/utils/inverse.md): Computes the inverse of
+input rank.
 
-[`is_greater_equal_1(...)`](../../tfr/keras/utils/is_greater_equal_1.md)
+[`is_greater_equal_1(...)`](../../tfr/keras/utils/is_greater_equal_1.md):
+Computes whether label is greater or equal to 1.
 
-[`log2_inverse(...)`](../../tfr/keras/utils/log2_inverse.md)
+[`log2_inverse(...)`](../../tfr/keras/utils/log2_inverse.md): Computes
+`1./log2(1+x)` element-wise for each label.
 
-[`pow_minus_1(...)`](../../tfr/keras/utils/pow_minus_1.md)
+[`pow_minus_1(...)`](../../tfr/keras/utils/pow_minus_1.md): Computes `2**x - 1`
+element-wise for each label.
+
+[`symmetric_log1p(...)`](../../tfr/keras/utils/symmetric_log1p.md): Computes
+`sign(x) * log(1 + sign(x))`.

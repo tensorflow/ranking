@@ -53,7 +53,7 @@ approxrank(s_i) = 1 + sum_j (1 / (1 + exp(-(s_j - s_i) / temperature)))
 >>> y_pred = [[0.6, 0.8]]
 >>> loss = tfr.keras.losses.ApproxNDCGLoss()
 >>> loss(y_true, y_pred).numpy()
--0.6536734
+-0.655107
 ```
 
 ```
@@ -113,7 +113,7 @@ this defaults to `SUM_OVER_BATCH_SIZE`. When used with
 `tf.distribute.Strategy`, outside of built-in training loops such as
 `tf.keras` `compile` and `fit`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
 will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training) for
-more details.
+    more details.
 </td>
 </tr><tr>
 <td>

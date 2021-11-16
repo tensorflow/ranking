@@ -78,9 +78,9 @@ $$
 \mathcal{L}(\{y\}, \{s\}) = - \log(P(\pi_y | s))
 $$
 
-where $$P(\pi_y | s)$$ is the Plackett-Luce probability of a permutation
-$$\pi_y$$ conditioned on scores $$s$$. Here $$\pi_y$$ represents a permutation
-of items ordered by the relevance labels $$y$$ where ties are broken randomly.
+where $P(\pi_y | s)$ is the Plackett-Luce probability of a permutation $\pi_y$
+conditioned on scores $s$. Here $\pi_y$ represents a permutation of items
+ordered by the relevance labels $y$ where ties are broken randomly.
 
 #### References:
 
