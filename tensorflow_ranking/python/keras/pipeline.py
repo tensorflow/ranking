@@ -1,4 +1,4 @@
-# Copyright 2021 The TensorFlow Ranking Authors.
+# Copyright 2022 The TensorFlow Ranking Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -631,10 +631,10 @@ class ModelFitPipeline(AbstractPipeline):
           raise ValueError("Didn't find the best checkpoint.")
 
 
-def _get_metric(prefix, key, topn=None):
+def _get_metric(prefix, key, topn=None, **kwargs):
   """Helper function to construct a metric."""
   name = "{}{}{}".format(prefix, key, "_%s" % topn if topn else "")
-  return metrics.get(key, name=name, topn=topn)
+  return metrics.get(key, name=name, topn=topn, **kwargs)
 
 
 class SimplePipeline(ModelFitPipeline):
