@@ -951,13 +951,9 @@ class BaseDatasetBuilder(AbstractDatasetBuilder):
             list(self._training_only_example_spec.items())),
         mask_feature_name=self._mask_feature_name,
         reader=self._hparams.dataset_reader,
-        reader_args=None,
         num_epochs=num_epochs,
         shuffle=randomize_input,
         shuffle_buffer_size=1000,
-        shuffle_seed=None,
-        prefetch_buffer_size=10000,
-        reader_num_threads=64,
         sloppy_ordering=True,
         drop_final_batch=False,
         shuffle_examples=False)
