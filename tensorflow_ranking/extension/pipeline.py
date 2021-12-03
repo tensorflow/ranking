@@ -261,16 +261,11 @@ class RankingPipeline(object):
         context_feature_spec=context_feature_spec,
         example_feature_spec=example_feature_spec,
         reader=self._dataset_reader,
-        reader_args=None,
         num_epochs=num_epochs,
         shuffle=randomize_input,
         shuffle_buffer_size=1000,
-        shuffle_seed=None,
-        prefetch_buffer_size=10000,
-        reader_num_threads=64,
         sloppy_ordering=True,
         drop_final_batch=False,
-        num_parser_threads=None,
         size_feature_name=self._size_feature_name)
 
     return dataset.map(self._features_and_labels)
