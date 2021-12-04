@@ -25,8 +25,8 @@ from __future__ import print_function
 
 import abc
 import functools
-import six
 
+import six
 import tensorflow as tf
 
 from google.protobuf import descriptor_pb2 as pb
@@ -924,7 +924,8 @@ def build_ranking_dataset_with_parsing_fn(
     reader_num_threads=tf.data.experimental.AUTOTUNE,
     sloppy_ordering=False,
     drop_final_batch=False,
-    num_parser_threads=tf.data.experimental.AUTOTUNE):
+    num_parser_threads=tf.data.experimental.AUTOTUNE,
+    from_file_list=False):
   """Builds a ranking tf.dataset using the provided `parsing_fn`.
 
   Args:
@@ -960,13 +961,21 @@ def build_ranking_dataset_with_parsing_fn(
       Defaults to `False`. If `True`, the batch_size can be statically inferred.
     num_parser_threads: (int) Optional number of threads to be used with
       dataset.map() when invoking parsing_fn. Defaults to auto-tune.
+    from_file_list: (bool) If `True`, input file_pattern will be taken as a list
+      of filenames, instead of patten or list of patterns.
 
   Returns:
     A dataset of `dict` elements. Each `dict` maps feature keys to
     `Tensor` or `SparseTensor` objects.
   """
-  dataset = tf.data.Dataset.list_files(
-      file_pattern, shuffle=shuffle, seed=shuffle_seed)
+  if from_file_list:
+    if not isinstance(file_pattern, list):
+      raise ValueError("Input file_pattern must be a list of globbed files when"
+                       " from_file_list is set to True.")
+    dataset = tf.data.Dataset.from_tensor_slices(file_pattern)
+  else:
+    dataset = tf.data.Dataset.list_files(
+        file_pattern, shuffle=shuffle, seed=shuffle_seed)
 
   if reader_num_threads == tf.data.experimental.AUTOTUNE:
     dataset = dataset.interleave(

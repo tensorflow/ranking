@@ -1132,9 +1132,10 @@ class RankingDatasetTest(tf.test.TestCase, parameterized.TestCase):
             context_feature_spec=CONTEXT_FEATURE_SPEC,
             example_feature_spec=EXAMPLE_FEATURE_SPEC)
 
-  @parameterized.named_parameters(("with_sloppy_ordering", True),
-                                  ("with_deterministic_ordering", False))
-  def test_build_ranking_dataset(self, sloppy_ordering):
+  @parameterized.named_parameters(("with_sloppy_ordering", True, False),
+                                  ("with_deterministic_ordering", False, False),
+                                  ("from_file_list", False, True))
+  def test_build_ranking_dataset(self, sloppy_ordering, from_file_list):
     with tf.Graph().as_default():
       # Save EIE protos in a sstable file in a temp folder.
       serialized_example_in_examples = [
@@ -1150,6 +1151,9 @@ class RankingDatasetTest(tf.test.TestCase, parameterized.TestCase):
         for serialized_eie in serialized_example_in_examples:
           writer.write(serialized_eie)
 
+      if from_file_list:
+        data_file = [data_file]
+
       batched_dataset = data_lib.build_ranking_dataset(
           file_pattern=data_file,
           data_format=data_lib.EIE,
@@ -1159,7 +1163,8 @@ class RankingDatasetTest(tf.test.TestCase, parameterized.TestCase):
           example_feature_spec=EXAMPLE_FEATURE_SPEC,
           reader=tf.data.TFRecordDataset,
           shuffle=False,
-          sloppy_ordering=sloppy_ordering)
+          sloppy_ordering=sloppy_ordering,
+          from_file_list=from_file_list)
       features = tf.compat.v1.data.make_one_shot_iterator(
           batched_dataset).get_next()
       self.assertAllEqual([2, 1],
