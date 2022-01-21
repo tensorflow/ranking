@@ -889,7 +889,7 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
   >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
   >>> loss = tfr.keras.losses.GumbelApproxNDCGLoss(seed=42, ragged=True)
   >>> loss(y_true, y_pred).numpy()
-  -0.69871885
+  -0.6987189
 
   Usage with the `compile()` API:
 
@@ -1058,7 +1058,7 @@ class SigmoidCrossEntropyLoss(_RankingLoss):
   >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
   >>> loss = tfr.keras.losses.SigmoidCrossEntropyLoss(ragged=True)
   >>> loss(y_true, y_pred).numpy()
-  0.6444636
+  0.64446354
 
   Usage with the `compile()` API:
 
