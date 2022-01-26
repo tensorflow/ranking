@@ -904,6 +904,112 @@ class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
       self.assertAllClose(result, expected)
 
 
+class PairwiseMSELossTest(tf.test.TestCase):
+
+  def test_pairwise_mse_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseMSELoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
+
+      expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                  ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                  ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 6.
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_mse_loss_should_handle_per_list_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      weights = [[1.], [2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseMSELoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
+
+      expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                  ((3. - 1.) - (0. - 0.))**2 + 2 * ((3. - 2.) -
+                                                    (2. - 0.))**2 + 2 *
+                  ((3. - 1.) - (2. - 0.))**2 + 2 * ((2. - 1.) -
+                                                    (0. - 0.))**2) / 9.
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_mse_loss_should_handle_per_example_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      weights = [[1., 1., 2.], [1., 1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseMSELoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
+
+      expected = (2 * ((2. - 3.) - (1. - 0.))**2 + 2 * ((2. - 1.) -
+                                                        (1. - 0.))**2 +
+                  ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                  ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 8.
+
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_mse_loss_should_handle_lambda_weights(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+      lambda_weight = losses_impl.DCGLambdaWeight()
+
+      loss_fn = losses_impl.PairwiseMSELoss(
+          name=None, lambda_weight=lambda_weight)
+      with self.cached_session():
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
+
+      expected = ((3. / 2.) * ((2. - 3.) - (1. - 0.))**2 + (3. / 2.) *
+                  ((2. - 1.) - (1. - 0.))**2 + (3. / 1.) *
+                  ((3. - 2.) - (2. - 0.))**2 + (1. / 1.) *
+                  ((3. - 1.) - (2. - 0.))**2) / ((3. / 2.) + (3. / 2.) +
+                                                 (3. / 1.) + (1. / 1.))
+
+      self.assertAllClose(result, expected)
+
+  def test_pairwise_mse_loss_with_invalid_labels(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., -1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseMSELoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction).eval()
+
+      expected = ((2. - 1.) - (1. - 0.))**2
+      self.assertAlmostEqual(result, expected, places=5)
+
+  def test_pairwise_mse_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[1., 0., 0.], [0., 0., 2.]]
+      mask = [[True, False, True], [True, True, True]]
+      reduction = tf.compat.v1.losses.Reduction.MEAN
+
+      loss_fn = losses_impl.PairwiseMSELoss(name=None)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      expected = (((2. - 1.) - (0. - 1.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                  ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 4.
+      self.assertAllClose(result, expected)
+
+
 class CircleLossTest(tf.test.TestCase):
 
   def test_circle_loss(self):

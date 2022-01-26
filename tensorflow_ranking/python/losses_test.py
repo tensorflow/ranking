@@ -430,6 +430,51 @@ class LossesTest(tf.test.TestCase):
     self._check_make_pairwise_loss(
         ranking_losses.RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS)
 
+  def test_make_pairwise_mse_loss(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 0., 2.]]
+      weights = [[1.], [2.]]
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      with self.cached_session():
+        loss_fn_simple = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.PAIRWISE_MSE_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.MEAN)
+        expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                    ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                    ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
+                                                  (0. - 0.))**2) / 6.
+
+        self.assertAlmostEqual(
+            loss_fn_simple(labels, scores, features).eval(), expected, places=5)
+
+        loss_fn_weighted = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.PAIRWISE_MSE_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.MEAN,
+            weights_feature_name=weights_feature_name)
+        expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                    ((3. - 1.) - (0. - 0.))**2 + 2 * ((3. - 2.) -
+                                                      (2. - 0.))**2 + 2 *
+                    ((3. - 1.) - (2. - 0.))**2 + 2 * ((2. - 1.) -
+                                                      (0. - 0.))**2) / 9.
+        self.assertAlmostEqual(
+            loss_fn_weighted(labels, scores, features).eval(),
+            expected,
+            places=5)
+
+        # Test loss reduction method.
+        # Two reduction methods should return different loss values.
+        loss_fn_1 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.PAIRWISE_MSE_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.SUM)
+        loss_fn_2 = ranking_losses.make_loss_fn(
+            ranking_losses.RankingLossKey.PAIRWISE_MSE_LOSS,
+            reduction=tf.compat.v1.losses.Reduction.MEAN)
+        self.assertNotAlmostEqual(
+            loss_fn_1(labels, scores, features).eval(),
+            loss_fn_2(labels, scores, features).eval())
+
   def test_make_circle_loss(self):
     with tf.Graph().as_default():
       scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
