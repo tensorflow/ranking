@@ -227,6 +227,27 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
   def test_pairwise_soft_zero_one_loss(self):
     self._check_pairwise_loss('soft_zero_one')
 
+  def test_pairwise_mse_loss(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1.], [2.]]
+    loss = losses.PairwiseMSELoss(
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE)
+
+    expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 6.
+    self.assertAlmostEqual(loss(labels, scores).numpy(), expected, places=5)
+
+    # Test weights.
+    expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                ((3. - 1.) - (0. - 0.))**2 + 2 * ((3. - 2.) -
+                                                  (2. - 0.))**2 + 2 *
+                ((3. - 1.) - (2. - 0.))**2 + 2 * ((2. - 1.) -
+                                                  (0. - 0.))**2) / 6.
+    self.assertAlmostEqual(
+        loss(labels, scores, weights).numpy(), expected, places=5)
+
   def test_softmax_loss(self):
     scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]

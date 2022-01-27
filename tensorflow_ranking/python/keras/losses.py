@@ -28,6 +28,7 @@ class RankingLossKey(object):
   PAIRWISE_HINGE_LOSS = 'pairwise_hinge_loss'
   PAIRWISE_LOGISTIC_LOSS = 'pairwise_logistic_loss'
   PAIRWISE_SOFT_ZERO_ONE_LOSS = 'pairwise_soft_zero_one_loss'
+  PAIRWISE_MSE_LOSS = 'pairwise_mse_loss'
   SOFTMAX_LOSS = 'softmax_loss'
   UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
@@ -82,6 +83,7 @@ def get(loss,
       RankingLossKey.PAIRWISE_HINGE_LOSS: PairwiseHingeLoss,
       RankingLossKey.PAIRWISE_LOGISTIC_LOSS: PairwiseLogisticLoss,
       RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS: PairwiseSoftZeroOneLoss,
+      RankingLossKey.PAIRWISE_MSE_LOSS: PairwiseMSELoss,
       RankingLossKey.SOFTMAX_LOSS: SoftmaxLoss,
       RankingLossKey.UNIQUE_SOFTMAX_LOSS: UniqueSoftmaxLoss,
   }
@@ -446,6 +448,74 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
     """
     super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.PairwiseSoftZeroOneLoss(
+        name='{}_impl'.format(name) if name else None,
+        lambda_weight=lambda_weight,
+        temperature=temperature,
+        ragged=ragged)
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class PairwiseMSELoss(_PairwiseLoss):
+  r"""Computes pairwise mean squared error loss between `y_true` and `y_pred`.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = sum_{i \neq j} ((s_i - s_j) - (y_i - y_j))**2
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.PairwiseMSELoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.72
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.PairwiseMSELoss(ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.38333336
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd',
+                loss=tfr.keras.losses.PairwiseMSELoss())
+  ```
+
+  Definition:
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) =
+  \sum_{i \neq j}((s_i - s_j) - (y_i - y_j))**2
+  $$
+  """
+
+  def __init__(self,
+               reduction=tf.losses.Reduction.AUTO,
+               name=None,
+               lambda_weight=None,
+               temperature=1.0,
+               ragged=False):
+    """Pairwise Mean Squared Error loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      lambda_weight: (Optional) A lambdaweight to apply to the loss. Can be one
+        of `tfr.keras.losses.DCGLambdaWeight`,
+        `tfr.keras.losses.NDCGLambdaWeight`, or,
+        `tfr.keras.losses.PrecisionLambdaWeight`.
+      temperature: (Optional) The temperature to use for scaling the logits.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+    """
+    super().__init__(reduction, name, lambda_weight, temperature, ragged)
+    self._loss = losses_impl.PairwiseMSELoss(
         name='{}_impl'.format(name) if name else None,
         lambda_weight=lambda_weight,
         temperature=temperature,
