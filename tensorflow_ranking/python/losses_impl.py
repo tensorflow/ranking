@@ -1323,6 +1323,78 @@ class MeanSquaredLoss(_PointwiseLoss):
     return losses, tf.cast(mask, dtype=tf.float32)
 
 
+class MixtureEMLoss(_ListwiseLoss):
+  """Implements the Mixture EM loss with examination and relevance.
+
+  An Expecatation-Maximization (EM) algorithm is used for estimation and this
+  function.
+  """
+
+  def __init__(self,
+               name,
+               temperature=1.0,
+               alpha=1.0,
+               ragged=False):
+    super().__init__(name, None, temperature, ragged)
+    self._alpha = alpha
+
+  def _compute_model_prob(self, per_list_logodds):
+    """Computes the probability of models in EM.
+
+    Args:
+      per_list_logodds: A `Tensor` with shape [batch_size, 1, model_num].
+
+    Returns:
+      A `Tensor` of probability with shape [batch_size, 1, model_num].
+    """
+    with tf.compat.v1.name_scope(name='compute_model_prob'):
+      return tf.stop_gradient(
+          tf.exp(-self._alpha *
+                 (per_list_logodds -
+                  tf.reduce_min(per_list_logodds, axis=2, keepdims=True))))
+
+  def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
+    """Computes the loss for each element.
+
+    Args:
+      labels: A `Tensor` with shape [batch_size, list_size] representing clicks.
+      logits: A `Tensor` with shape [batch_size, list_size, model_num], where
+        the 3rd-dim is dimension for the models to mix.
+      mask: A `Tensor` of the same shape as labels indicating which entries are
+        valid for computing the loss.
+
+    Returns:
+      A tuple(losses, loss_weights).
+    """
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
+    # The loss in the M step.
+    # shape = [batch_size, list_size, model_num]
+    losses = tf.stack([
+        tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
+            labels=labels, logits=model_logits)
+        for model_logits in tf.unstack(logits, axis=-1)
+    ],
+                      axis=2)
+    losses = tf.where(
+        tf.expand_dims(mask, axis=-1), losses,
+        tf.zeros_like(losses, dtype=tf.float32))
+
+    # The model probability in the E step.
+    losses_no_gradient = tf.stop_gradient(losses)
+    # shape = [batch_size, 1, model_num]
+    per_list_logodds = tf.reduce_sum(losses_no_gradient, axis=1, keepdims=True)
+    model_prob = self._compute_model_prob(per_list_logodds)
+    prob_norm = tf.reduce_sum(model_prob, axis=2, keepdims=True)
+
+    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    nonzero_mask = tf.greater(label_sum, 0.0)
+    return tf.reshape(
+        tf.reduce_sum(losses * model_prob / prob_norm, axis=[1, 2]),
+        [-1, 1]), tf.cast(nonzero_mask, dtype=tf.float32)
+
+
 class ListMLELoss(_ListwiseLoss):
   """Implements ListMLE loss."""
 

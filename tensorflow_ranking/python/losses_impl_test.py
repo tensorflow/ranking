@@ -117,6 +117,11 @@ def _sigmoid_cross_entropy(labels, logits):
       per_position_loss(logit, label) for label, logit in zip(labels, logits))
 
 
+def _logodds_prob(logodds, alpha=1.0):
+  return [[[math.exp(-alpha * (l - min(logodd[0])))
+            for l in logodd[0]]] for logodd in logodds]
+
+
 def _neural_sort(logits, temperature=1.0):
   """Non-tensor version of neural sort."""
   batch_size = len(logits)
@@ -1539,6 +1544,77 @@ class ClickEMLossTest(tf.test.TestCase):
           result,
           _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.])
           + _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
+          places=5)
+
+
+class MixtureEMLossTest(tf.test.TestCase):
+
+  def test_mixture_em_loss(self):
+    with tf.Graph().as_default():
+      loss_fn = losses_impl.MixtureEMLoss(name=None)
+      clicks = [[1., 0, 0, 0]]
+      model_1 = [[3., 3, 4, 100]]
+      model_2 = [[3., 2, 1, 100]]
+      logits = tf.stack([model_1, model_2], axis=2)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+      with self.cached_session():
+        logloss_1 = _sigmoid_cross_entropy(clicks[0], model_1[0])
+        logloss_2 = _sigmoid_cross_entropy(clicks[0], model_2[0])
+        model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
+        self.assertAllClose(
+            loss_fn._compute_model_prob([[[logloss_1, logloss_2]]]),
+            model_probs)
+
+        self.assertAlmostEqual(
+            loss_fn.compute(clicks, logits, None, reduction).eval(),
+            (logloss_1 * model_probs[0][0][0] +
+             logloss_2 * model_probs[0][0][1]) /
+            (model_probs[0][0][0] + model_probs[0][0][1]),
+            places=4)
+
+  def test_mixture_em_loss_should_ignore_invalid_labels(self):
+    with tf.Graph().as_default():
+      clicks = [[1., -1., 0., 0.]]
+      model_1 = [[3., 3, 4, 100]]
+      model_2 = [[3., 2, 1, 100]]
+      logits = tf.stack([model_1, model_2], axis=2)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+      logloss_1 = _sigmoid_cross_entropy([1., 0., 0.], [3., 4., 100.])
+      logloss_2 = _sigmoid_cross_entropy([1., 0., 0.], [3., 1., 100.])
+      model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
+
+      with self.cached_session():
+        loss_fn = losses_impl.MixtureEMLoss(name=None)
+        result = loss_fn.compute(clicks, logits, None, reduction).eval()
+
+      self.assertAlmostEqual(
+          result,
+          (logloss_1 * model_probs[0][0][0] +
+           logloss_2 * model_probs[0][0][1]) /
+          (model_probs[0][0][0] + model_probs[0][0][1]),
+          places=5)
+
+  def test_mixture_em_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      clicks = [[1., 1., 0., 0.]]
+      model_1 = [[3., 3., 4., 100.]]
+      model_2 = [[3., 2., 1., 100.]]
+      mask = [[True, False, True, True]]
+      logits = tf.stack([model_1, model_2], axis=2)
+      reduction = tf.compat.v1.losses.Reduction.SUM
+      logloss_1 = _sigmoid_cross_entropy([1., 0., 0.], [3., 4., 100.])
+      logloss_2 = _sigmoid_cross_entropy([1., 0., 0.], [3., 1., 100.])
+      model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
+
+      with self.cached_session():
+        loss_fn = losses_impl.MixtureEMLoss(name=None)
+        result = loss_fn.compute(clicks, logits, None, reduction, mask).eval()
+
+      self.assertAlmostEqual(
+          result,
+          (logloss_1 * model_probs[0][0][0] +
+           logloss_2 * model_probs[0][0][1]) /
+          (model_probs[0][0][0] + model_probs[0][0][1]),
           places=5)
 
 

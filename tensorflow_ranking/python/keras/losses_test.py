@@ -121,6 +121,11 @@ def _sigmoid_cross_entropy(labels, logits):
       per_position_loss(logit, label) for label, logit in zip(labels, logits))
 
 
+def _logodds_prob(logodds, alpha=1.0):
+  return [[[math.exp(-alpha * (l - min(logodd[0])))
+            for l in logodd[0]]] for logodd in logodds]
+
+
 # Aggregates the per position squared error.
 def _mean_squared_error(logits, labels):
   return sum((logit - label)**2 for label, logit in zip(labels, logits))
@@ -310,6 +315,34 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
         2.0 +
         _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5], rel_logits[0]) *
         5.0,
+        places=4)
+
+  def test_mix_em_loss(self):
+    clicks = [[1., 0, 0, 0]]
+    model_1 = [[3., 3, 4, 100]]
+    model_2 = [[3., 2, 1, 100]]
+    logits = tf.stack([model_1, model_2], axis=2)
+    loss = losses.MixtureEMLoss()
+    logloss_1 = _sigmoid_cross_entropy(clicks[0], model_1[0])
+    logloss_2 = _sigmoid_cross_entropy(clicks[0], model_2[0])
+    model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
+
+    self.assertAlmostEqual(
+        loss(clicks, logits).numpy(),
+        (logloss_1 * model_probs[0][0][0] +
+         logloss_2 * model_probs[0][0][1]) /
+        (model_probs[0][0][0] + model_probs[0][0][1]),
+        places=4)
+
+    loss = losses.MixtureEMLoss(alpha=0.1)
+    logloss_1 = _sigmoid_cross_entropy(clicks[0], model_1[0])
+    logloss_2 = _sigmoid_cross_entropy(clicks[0], model_2[0])
+    model_probs = _logodds_prob([[[logloss_1, logloss_2]]], alpha=0.1)
+    self.assertAlmostEqual(
+        loss(clicks, logits).numpy(),
+        (logloss_1 * model_probs[0][0][0] +
+         logloss_2 * model_probs[0][0][1]) /
+        (model_probs[0][0][0] + model_probs[0][0][1]),
         places=4)
 
   def test_sigmoid_cross_entropy_loss(self):
