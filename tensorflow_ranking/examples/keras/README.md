@@ -91,7 +91,7 @@ method is available.
 softmax_loss_obj = tfr.keras.losses.get(tfr.losses.RankingLossKey.SOFTMAX_LOSS)
 
 # Contains all ranking metrics, including NDCG @ {1, 3, 5, 10}.
-default_metrics = tfr.keras.metrics.get_default_metrics()
+default_metrics = tfr.keras.metrics.default_keras_metrics()
 ```
 
 ## Bring it all together: Create Ranking Model
