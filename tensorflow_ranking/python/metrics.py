@@ -69,6 +69,9 @@ class RankingMetricKey(object):
   # Binary Preference.
   BPREF = 'bpref'
 
+  # Hits. For binary relevance.
+  HITS = 'hits'
+
 
 def compute_mean(metric_key,
                  labels,
@@ -103,6 +106,7 @@ def compute_mean(metric_key,
       RankingMetricKey.MAP: metrics_impl.MeanAveragePrecisionMetric(name, topn),
       RankingMetricKey.ORDERED_PAIR_ACCURACY: metrics_impl.OPAMetric(name),
       RankingMetricKey.BPREF: metrics_impl.BPrefMetric(name, topn),
+      RankingMetricKey.HITS: metrics_impl.HitsMetric(metric_key, topn),
   }
   assert metric_key in metric_dict, ('metric_key %s not supported.' %
                                      metric_key)
@@ -255,6 +259,15 @@ def make_ranking_metric_fn(metric_key,
         name=name,
         **kwargs)
 
+  def _hits_fn(labels, predictions, features):
+    """Returns hits as the metric."""
+    return hits(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name)
+
   metric_fn_dict = {
       RankingMetricKey.ARP: _average_relevance_position_fn,
       RankingMetricKey.MRR: _mean_reciprocal_rank_fn,
@@ -267,6 +280,7 @@ def make_ranking_metric_fn(metric_key,
       RankingMetricKey.ORDERED_PAIR_ACCURACY: _ordered_pair_accuracy_fn,
       RankingMetricKey.ALPHA_DCG: _alpha_discounted_cumulative_gain_fn,
       RankingMetricKey.BPREF: _binary_preference_fn,
+      RankingMetricKey.HITS: _hits_fn,
   }
   assert metric_key in metric_fn_dict, ('metric_key %s not supported.' %
                                         metric_key)
@@ -671,3 +685,32 @@ def eval_metric(metric_fn, **kwargs):
     sess.run(tf.compat.v1.local_variables_initializer())
     sess.run([metric_op, update_op])
     return sess.run(metric_op)
+
+
+def hits(labels,
+         predictions,
+         weights=None,
+         topn=None,
+         name=None):
+  """Computes Hits.
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: An integer cutoff specifying how many examples to consider for this
+      metric. If None, the whole list is considered.
+    name: A string used as the name for this metric.
+
+  Returns:
+    A metric for the weighted hits of the batch.
+  """
+  metric = metrics_impl.HitsMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name, 'hits',
+                               (labels, predictions, weights)):
+    # TODO: Add mask argument for metric.compute() call
+    hits_value, per_list_weights = metric.compute(labels, predictions, weights)
+    return tf.compat.v1.metrics.mean(hits_value, per_list_weights)

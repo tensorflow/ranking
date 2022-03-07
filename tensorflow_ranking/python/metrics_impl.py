@@ -459,6 +459,53 @@ class MRRMetric(_RankingMetric):
     return mrr, per_list_weights
 
 
+class HitsMetric(_RankingMetric):
+  r"""Implements Hits@k metric.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  Hits@k(y, s) = 1.0, if \exists i s.t. y_i >= 1 and rank(s_i) <= k
+  Hits@k(y, s) = 0.0, otherwise.
+  ```
+
+  NOTE: This metric converts graded relevance to binary relevance by setting
+  `y_i = 1` if `y_i >= 1` and `y_i = 0` if `y_i < 1`.
+  NOTE: While `topn` could be left as `None` without raising an error, the Hits
+  metric without `topn` specified would be trivial as it simply measures the
+  percentage of lists with at least 1 relevant item.
+  """
+
+  def __init__(self, name, topn, ragged=False):
+    """Constructor."""
+    super(HitsMetric, self).__init__(ragged=ragged)
+    self._name = name
+    if topn is None:
+      tf.compat.v1.logging.warning(
+          'Hits metric without `topn` specified could be trivial. '
+          'Consider specify `topn` for Hits metric.')
+    self._topn = topn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def _compute_impl(self, labels, predictions, weights, mask):
+    """See `_RankingMetric`."""
+    topn = tf.shape(predictions)[1] if self._topn is None else self._topn
+    sorted_labels, = utils.sort_by_scores(predictions, [labels], topn=topn,
+                                          mask=mask)
+    # Relevance = 1.0 when labels >= 1.0 to accommodate graded relevance.
+    relevance = tf.cast(tf.greater_equal(sorted_labels, 1.0), dtype=tf.float32)
+    # Hits has a shape of [batch_size, 1].
+    hits = tf.reduce_max(input_tensor=relevance, axis=1, keepdims=True)
+    per_list_weights = _per_example_weights_to_per_list_weights(
+        weights=weights,
+        relevance=tf.cast(tf.greater_equal(labels, 1.0), dtype=tf.float32))
+    return hits, per_list_weights
+
+
 class ARPMetric(_RankingMetric):
   """Implements average relevance position (ARP)."""
 

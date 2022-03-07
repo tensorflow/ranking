@@ -200,6 +200,32 @@ class MetricsTest(tf.test.TestCase):
                features), (sum([0., 1. / rel_rank[1], 0.]) / num_queries)),
       ])
 
+  def test_make_hits_fn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      # Note that scores are ranked in descending order.
+      # ranks = [[3, 1, 2], [3, 2, 1]]
+      labels = [[0., 0., 1.], [0., 1., 1.]]
+      # Note that the definition of Hits considers an item relevant
+      # if its label is >= 1.0.
+      weights = [[1., 2., 3.], [4., 5., 6.]]
+      num_queries = len(scores)
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.HITS)
+      m_2 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.HITS, topn=1)
+      m_w = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.HITS, topn=1,
+          weights_feature_name=weights_feature_name)
+
+      self._check_metrics([
+          (m([labels[0]], [scores[0]], features), 1.0),
+          (m_2(labels, scores, features), ((0. + 1.) / num_queries)),
+          (m_w(labels, scores, features),
+           (3. * 0. + (6. + 5.) / 2. * 1.) / (3. + (6. + 5.) / 2.)),
+      ])
+
   def test_make_average_relevance_position_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]

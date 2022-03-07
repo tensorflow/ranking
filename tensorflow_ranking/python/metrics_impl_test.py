@@ -147,6 +147,129 @@ class MRRMetricTest(tf.test.TestCase):
       self.assertAllClose(output_weights, [[(5. + 2.) / 2.], [(2. + 4.) / 2.]])
 
 
+class HitsMetricTest(tf.test.TestCase):
+
+  def test_hits_should_be_single_value(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 1.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[1.]])
+
+  def test_hits_should_be_0_when_no_rel_item(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 0.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=None)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_hits_should_be_0_when_no_rel_item_in_topn(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., 0., 1.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=1)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.]])
+
+  def test_hits_should_handle_topn(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.], [3., 2., 1.], [3., 2., 1.]]
+      labels = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
+
+      metric_top1 = metrics_impl.HitsMetric(name=None, topn=1)
+      metric_top2 = metrics_impl.HitsMetric(name=None, topn=2)
+      metric_top6 = metrics_impl.HitsMetric(name=None, topn=6)
+      output_top1, _ = metric_top1.compute(labels, scores, None)
+      output_top2, _ = metric_top2.compute(labels, scores, None)
+      output_top6, _ = metric_top6.compute(labels, scores, None)
+
+      self.assertAllClose(output_top1, [[1.], [0.], [0.]])
+      self.assertAllClose(output_top2, [[1.], [1.], [0.]])
+      self.assertAllClose(output_top6, [[1.], [1.], [1.]])
+
+  def test_hits_should_ignore_padded_labels(self):
+    with tf.Graph().as_default():
+      scores = [[1., 2., 3.]]
+      labels = [[0., 1., -1.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=1)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[1.]])
+
+  def test_hits_should_ignore_masked_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 2., 3.]]
+      labels = [[0., 1., 0.]]
+      mask = [[True, True, False]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=1)
+      output, _ = metric.compute(labels, scores, None, mask=mask)
+
+      self.assertAllClose(output, [[1.]])
+
+  def test_hits_should_handle_ragged_inputs(self):
+    with tf.Graph().as_default():
+      scores = tf.ragged.constant([[1., 2., 3.], [1., 2.]])
+      labels = tf.ragged.constant([[0., 1., 0.], [0., 1.]])
+
+      metric = metrics_impl.HitsMetric(name=None, topn=1, ragged=True)
+      output, _ = metric.compute(labels, scores)
+
+      self.assertAllClose(output, [[0.], [1.]])
+
+  def test_hits_should_give_a_value_for_each_list_in_batch_inputs(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 1., 1.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=1)
+      output, _ = metric.compute(labels, scores, None)
+
+      self.assertAllClose(output, [[0.], [1.]])
+
+  def test_hits_weights_should_be_average_weight_of_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.]]
+      labels = [[1., 0., 0.], [0., 1., 1.]]
+      weights = [[2., 5., 1.], [1., 2., 3.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=None)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[2.], [(2. + 3.) / 2.]])
+
+  def test_hits_weights_should_be_1_without_rel_items(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 3., 2.]]
+      labels = [[0., 0., 0.], [0., 0., 0.]]
+      weights = [[2., 5., 1.], [1., 1., 0.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=None)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[1.], [1.]])
+
+  def test_hits_weights_should_be_regardless_of_topn(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.], [1., 3., 2.]]
+      labels = [[1., 0., 1.], [0., 1., 1.]]
+      weights = [[2., 0., 5.], [1., 3., 2.]]
+
+      metric = metrics_impl.HitsMetric(name=None, topn=1)
+      _, output_weights = metric.compute(labels, scores, weights)
+
+      self.assertAllClose(output_weights, [[(5. + 2.) / 2.], [(2. + 3.) / 2.]])
+
+
 class ARPMetricTest(tf.test.TestCase):
 
   def test_arp_should_be_single_value(self):

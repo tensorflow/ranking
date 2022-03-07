@@ -168,6 +168,7 @@ class MetricsSerializationTest(tf.test.TestCase, parameterized.TestCase):
       (metrics_lib.RecallMetric(topn=2)),
       (metrics_lib.ARPMetric()),
       (metrics_lib.MRRMetric()),
+      (metrics_lib.HitsMetric()),
       (metrics_lib.MeanAveragePrecisionMetric()),
       (metrics_lib.DCGMetric()),
       (metrics_lib.NDCGMetric()),
@@ -198,6 +199,7 @@ class MetricsSerializationTest(tf.test.TestCase, parameterized.TestCase):
       (metrics_lib.RecallMetric(topn=2, ragged=True)),
       (metrics_lib.ARPMetric(ragged=True)),
       (metrics_lib.MRRMetric(ragged=True)),
+      (metrics_lib.HitsMetric(ragged=True)),
       (metrics_lib.MeanAveragePrecisionMetric(ragged=True)),
       (metrics_lib.DCGMetric(ragged=True)),
       (metrics_lib.NDCGMetric(ragged=True)),
@@ -245,6 +247,9 @@ class MetricsSerializationTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_mean_reciprocal_rank(self):
     self._check_config(metrics_lib.MRRMetric, {'topn': 1})
+
+  def test_hits(self):
+    self._check_config(metrics_lib.HitsMetric, {'topn': 1})
 
   def test_average_relevance_position(self):
     self._check_config(metrics_lib.ARPMetric, {})
@@ -401,6 +406,137 @@ class MetricsTest(tf.test.TestCase):
     metric_ = metrics_lib.MRRMetric(ragged=True)
     metric_.update_state(labels, scores, weights)
     expected_result = sum([1. / 2. * 2., 1., 1. / 2. * 3.]) / (2. + 1. + 3.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_hits(self):
+    scores = [[1., 3., 2.], [1., 2., 3.], [3., 1., 2.]]
+    # Note that scores are ranked in descending order.
+    # ranks = [[3, 1, 2], [3, 2, 1], [1, 3, 2]]
+    labels = [[0., 0., 1.], [0., 1., 2.], [0., 1., 0.]]
+    weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
+    mean_relevant_weights = [
+        weights[0][2], sum(weights[1][1:]) / 2, weights[2][1]
+    ]
+    num_queries = len(scores)
+    self.assertAlmostEqual(num_queries, 3)
+
+    metric_ = metrics_lib.HitsMetric()
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 1.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1)
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 0.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=2)
+    metric_.update_state([labels[0]], [scores[0]])
+    expected_result = 1.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric()
+    metric_.update_state([labels[1]], [scores[1]])
+    expected_result = 1.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1)
+    metric_.update_state([labels[1]], [scores[1]])
+    expected_result = 1.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=2)
+    metric_.update_state([labels[1]], [scores[1]])
+    expected_result = 1.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric()
+    metric_.update_state([labels[2]], [scores[2]])
+    expected_result = 1.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1)
+    metric_.update_state([labels[2]], [scores[2]])
+    expected_result = 0.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=2)
+    metric_.update_state([labels[2]], [scores[2]])
+    expected_result = 0.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=3)
+    metric_.update_state([labels[2]], [scores[2]])
+    expected_result = 1.0
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1)
+    metric_.update_state(labels[:2], scores[:2])
+    expected_result = (0.0 + 1.0) / 2
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1)
+    metric_.update_state(labels[:2], scores[:2], weights[:2])
+    expected_result = (3. * 0.0 + (6. + 5.) / 2. * 1.) / (3. + (6. + 5) / 2.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1)
+    metric_.update_state(labels, scores)
+    expected_result = sum([0.0 + 1.0 + 0.0]) / num_queries
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=2)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1.0 + 1.0 + 0.0]) / num_queries
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=3)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1.0 + 1.0 + 1.0]) / num_queries
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([
+        mean_relevant_weights[0] * 0.0,
+        mean_relevant_weights[1] * 1.0,
+        mean_relevant_weights[2] * 0.0,
+    ]) / sum(mean_relevant_weights)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+  def test_hits_with_ragged_inputs(self):
+    scores = tf.ragged.constant([[1., 2., 0.], [1., 2.], [1., 4., 2., 3.]])
+    labels = tf.ragged.constant([[1., 0., 0.], [0., 2.], [2., 0., 1., 0.]])
+    weights = tf.ragged.constant([[2., 1., 4.], [2., 1.], [2., 1., 4., 8.]])
+
+    metric_ = metrics_lib.HitsMetric(topn=1, ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([0., 1., 0.]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=2, ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1., 1., 0.]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=3, ragged=True)
+    metric_.update_state(labels, scores)
+    expected_result = sum([1., 1., 1.]) / 3.
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=1, ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([0. * 2., 1., 0. * 3.]) / (2. + 1. + 3.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=2, ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([1. * 2., 1., 0. * 3.]) / (2. + 1. + 3.)
+    self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
+
+    metric_ = metrics_lib.HitsMetric(topn=3, ragged=True)
+    metric_.update_state(labels, scores, weights)
+    expected_result = sum([1. * 2., 1., 1. * 3.]) / (2. + 1. + 3.)
     self.assertAlmostEqual(metric_.result().numpy(), expected_result, places=5)
 
   def test_average_relevance_position(self):
