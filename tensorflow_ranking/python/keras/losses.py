@@ -126,6 +126,23 @@ class DCGLambdaWeight(losses_impl.DCGLambdaWeight):
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class NDCGLambdaWeightV2(losses_impl.DCGLambdaWeightV2):
+  """Keras serializable class for NDCG LambdaWeight V2 for topn."""
+
+  def __init__(self, topn=None, gain_fn=None, rank_discount_fn=None, **kwargs):
+    gain_fn = gain_fn or utils.pow_minus_1
+    rank_discount_fn = rank_discount_fn or utils.log2_inverse
+    super().__init__(topn, gain_fn, rank_discount_fn, normalized=True)
+
+  def get_config(self):
+    return {
+        'topn': self._topn,
+        'gain_fn': self._gain_fn,
+        'rank_discount_fn': self._rank_discount_fn,
+    }
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class NDCGLambdaWeight(DCGLambdaWeight):
   """Keras serializable class for NDCG."""
 
@@ -832,8 +849,7 @@ class ApproxMRRLoss(_ListwiseLoss):
     - [A General Approximation Framework for Direct Optimization of Information
        Retrieval Measures, Qin et al, 2008][qin2008]
 
-  [qin2008]:
-  https://www.microsoft.com/en-us/research/publication/a-general-approximation-framework-for-direct-optimization-of-information-retrieval-measures/
+  [qin2008]: https://dl.acm.org/doi/10.1007/s10791-009-9124-x
   """  # pylint: disable=g-line-too-long
 
   def __init__(self,
@@ -908,8 +924,7 @@ class ApproxNDCGLoss(_ListwiseLoss):
     - [Revisiting Approximate Metric Optimization in the Age of Deep Neural
        Networks, Bruch et al, 2019][bruch2019]
 
-  [qin2008]:
-  https://www.microsoft.com/en-us/research/publication/a-general-approximation-framework-for-direct-optimization-of-information-retrieval-measures/
+  [qin2008]: https://dl.acm.org/doi/10.1007/s10791-009-9124-x
   [bruch2019]: https://research.google/pubs/pub48168/
   """
 
