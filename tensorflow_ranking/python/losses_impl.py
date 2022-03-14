@@ -221,7 +221,7 @@ class AbstractDCGLambdaWeight(_LambdaWeight):
       topn: A scalar `Tensor` for the topn cutoff.
 
     Returns:
-      A pairwise weights `Tensor` based on the `rank_discount_fn`.
+     A pairwise weights `Tensor` based on the `rank_discount_fn`.
     """
     raise NotImplementedError('Calling an abstract method.')
 
@@ -304,10 +304,9 @@ class DCGLambdaWeight(AbstractDCGLambdaWeight):
     def _discount_for_relative_rank_diff():
       """Rank-based discount in the LambdaLoss paper."""
       # The LambdaLoss is not well defined when topn is active and topn <
-      # list_size.
-      # The following implementation is based on Equation 18 proposed in
-      # https://research.google/pubs/pub47258/.
-      # TODO: We may need to revisit this later.
+      # list_size. The following implementation is based on Equation 18 proposed
+      # in https://research.google/pubs/pub47258/. Please refer to
+      # `DCGLambdaWeightV2` for a better implemention to handle topn.
       pair_valid_rank = _apply_pairwise_op(tf.logical_or,
                                            tf.less_equal(ranks, topn))
       rank_diff = tf.cast(
@@ -335,6 +334,31 @@ class DCGLambdaWeight(AbstractDCGLambdaWeight):
     pair_discount = (1. - self._smooth_fraction) * u + self._smooth_fraction * v
     pair_mask = _apply_pairwise_op(tf.logical_or, tf.less_equal(ranks, topn))
     return pair_discount * tf.cast(pair_mask, dtype=tf.float32)
+
+
+class DCGLambdaWeightV2(AbstractDCGLambdaWeight):
+  """The V2 version of LambdaWeight for DCG metric.
+
+  V2: Everything is the same as LambdaLoss when topn=None. When topn is
+  activated, for any pair i, j where max(i, j) > topn, we multiply the inverse
+  of 1-1/log(1+max(i,j)) for example.
+  """
+
+  def _pair_rank_discount(self, ranks, topn):
+    """Implements the rank discount for pairs in topn metrics."""
+    rank_diff = tf.cast(
+        tf.abs(_apply_pairwise_op(tf.subtract, ranks)), dtype=tf.float32)
+    max_rank = tf.cast(_apply_pairwise_op(tf.math.maximum, ranks), tf.float32)
+    multiplier = tf.where(
+        tf.greater(max_rank, tf.cast(topn, tf.float32)),
+        1. / (1. - self._rank_discount_fn(max_rank)), 1.)
+    pair_discount = tf.where(
+        tf.greater(rank_diff, 0.),
+        tf.abs(
+            self._rank_discount_fn(rank_diff) -
+            self._rank_discount_fn(rank_diff + 1)) * multiplier,
+        tf.zeros_like(rank_diff))
+    return pair_discount
 
 
 class PrecisionLambdaWeight(_LambdaWeight):

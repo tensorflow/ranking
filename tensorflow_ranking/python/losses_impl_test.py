@@ -429,6 +429,41 @@ class DCGLambdaWeightTest(tf.test.TestCase):
             [[1. / max_dcg / 1., 2. / max_dcg / 2.]])
 
 
+class DCGLambdaWeightV2Test(tf.test.TestCase):
+  """Test cases for DCGLambdaWeightV2."""
+
+  def setUp(self):
+    super(DCGLambdaWeightV2Test, self).setUp()
+    tf.compat.v1.reset_default_graph()
+
+  def test_default(self):
+    """For the weight using rank diff."""
+    with tf.Graph().as_default():
+      labels = [[2.0, 1.0, 0.0]]
+      ranks = [[1, 2, 3]]
+      lambda_weight = losses_impl.DCGLambdaWeightV2()
+      with self.cached_session():
+        self.assertAllClose(
+            lambda_weight.pair_weights(labels, ranks).eval(), [[
+                [0., 1. / 2., 2. * 1. / 6.],
+                [1. / 2., 0., 1. / 2.],
+                [2. * 1. / 6., 1. / 2., 0.],
+            ]])
+
+  def test_topn(self):
+    with tf.Graph().as_default():
+      labels = [[2.0, 1.0, 0.0]]
+      ranks = [[1, 2, 3]]
+      lambda_weight = losses_impl.DCGLambdaWeightV2(topn=1)
+      with self.cached_session():
+        self.assertAllClose(
+            lambda_weight.pair_weights(labels, ranks).eval(), [[
+                [0., 1., 1. / 2.],
+                [1., 0., 3. / 4.],
+                [1. / 2., 3. / 4., 0.],
+            ]])
+
+
 class PrecisionLambdaWeightTest(tf.test.TestCase):
   """Test cases for PrecisionLambdaWeight."""
 
