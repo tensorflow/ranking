@@ -189,7 +189,81 @@ class _LambdaWeight(object, metaclass=abc.ABCMeta):
     return labels
 
 
-class DCGLambdaWeight(_LambdaWeight):
+class AbstractDCGLambdaWeight(_LambdaWeight):
+  """Abstract LambdaWeight for Discounted Cumulative Gain (DCG) metric."""
+
+  def __init__(self,
+               topn=None,
+               gain_fn=lambda label: label,
+               rank_discount_fn=lambda rank: 1. / rank,
+               normalized=False):
+    """Initializer.
+
+    Ranks are 1-based, not 0-based.
+
+    Args:
+      topn: (int) The topn for the DCG metric.
+      gain_fn: (function) Transforms labels.
+      rank_discount_fn: (function) The rank discount function.
+      normalized: (bool) If True, normalize weight by the max DCG.
+    """
+    self._topn = topn
+    self._gain_fn = gain_fn
+    self._rank_discount_fn = rank_discount_fn
+    self._normalized = normalized
+
+  @abc.abstractmethod
+  def _pair_rank_discount(self, ranks, topn):
+    """Computes the rank-based discount for a pair.
+
+    Args:
+      ranks: A 2D `Tensor` for the 1-based ranks.
+      topn: A scalar `Tensor` for the topn cutoff.
+
+    Returns:
+      A pairwise weights `Tensor` based on the `rank_discount_fn`.
+    """
+    raise NotImplementedError('Calling an abstract method.')
+
+  def pair_weights(self, labels, ranks):
+    """See `_LambdaWeight`."""
+    with tf.compat.v1.name_scope(name='dcg_lambda_weight'):
+      _check_tensor_shapes([labels, ranks])
+      valid_pair, labels = _get_valid_pairs_and_clean_labels(labels)
+      gain = self._gain_fn(labels)
+      if self._normalized:
+        gain *= inverse_max_dcg(
+            labels,
+            gain_fn=self._gain_fn,
+            rank_discount_fn=self._rank_discount_fn,
+            topn=self._topn)
+      pair_gain = _apply_pairwise_op(tf.subtract, gain)
+      pair_gain *= tf.cast(valid_pair, dtype=tf.float32)
+
+      list_size = tf.shape(input=labels)[1]
+      topn = self._topn or list_size
+      pair_weight = tf.abs(pair_gain) * self._pair_rank_discount(ranks, topn)
+      return pair_weight
+
+  def individual_weights(self, labels, ranks):
+    """See `_LambdaWeight`."""
+    with tf.compat.v1.name_scope(name='dcg_lambda_weight'):
+      _check_tensor_shapes([labels, ranks])
+      labels = tf.convert_to_tensor(value=labels)
+      labels = tf.compat.v1.where(
+          utils.is_label_valid(labels), labels, tf.zeros_like(labels))
+      gain = self._gain_fn(labels)
+      if self._normalized:
+        gain *= inverse_max_dcg(
+            labels,
+            gain_fn=self._gain_fn,
+            rank_discount_fn=self._rank_discount_fn,
+            topn=self._topn)
+      rank_discount = self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32))
+      return gain * rank_discount
+
+
+class DCGLambdaWeight(AbstractDCGLambdaWeight):
   """LambdaWeight for Discounted Cumulative Gain metric."""
 
   def __init__(self,
@@ -198,7 +272,7 @@ class DCGLambdaWeight(_LambdaWeight):
                rank_discount_fn=lambda rank: 1. / rank,
                normalized=False,
                smooth_fraction=0.):
-    """Constructor.
+    """Initializer.
 
     Ranks are 1-based, not 0-based. Given rank i and j, there are two types of
     pair weights:
@@ -218,89 +292,49 @@ class DCGLambdaWeight(_LambdaWeight):
       smooth_fraction: (float) parameter to control the contribution from
         LambdaMART.
     """
-    self._topn = topn
-    self._gain_fn = gain_fn
-    self._rank_discount_fn = rank_discount_fn
-    self._normalized = normalized
-    assert 0. <= smooth_fraction <= 1., (
-        'smooth_fraction %s should be in range [0, 1].' % smooth_fraction)
+    super().__init__(topn, gain_fn, rank_discount_fn, normalized)
+    if not 0. <= smooth_fraction <= 1.:
+      raise ValueError('smooth_fraction %s should be in range [0, 1].' %
+                       smooth_fraction)
     self._smooth_fraction = smooth_fraction
 
-  def pair_weights(self, labels, ranks):
+  def _pair_rank_discount(self, ranks, topn):
     """See `_LambdaWeight`."""
-    with tf.compat.v1.name_scope(name='dcg_lambda_weight'):
-      _check_tensor_shapes([labels, ranks])
-      valid_pair, labels = _get_valid_pairs_and_clean_labels(labels)
-      gain = self._gain_fn(labels)
-      if self._normalized:
-        gain *= inverse_max_dcg(
-            labels,
-            gain_fn=self._gain_fn,
-            rank_discount_fn=self._rank_discount_fn,
-            topn=self._topn)
-      pair_gain = _apply_pairwise_op(tf.subtract, gain)
-      pair_gain *= tf.cast(valid_pair, dtype=tf.float32)
 
-      list_size = tf.shape(input=labels)[1]
-      topn = self._topn or list_size
+    def _discount_for_relative_rank_diff():
+      """Rank-based discount in the LambdaLoss paper."""
+      # The LambdaLoss is not well defined when topn is active and topn <
+      # list_size.
+      # The following implementation is based on Equation 18 proposed in
+      # https://research.google/pubs/pub47258/.
+      # TODO: We may need to revisit this later.
+      pair_valid_rank = _apply_pairwise_op(tf.logical_or,
+                                           tf.less_equal(ranks, topn))
+      rank_diff = tf.cast(
+          tf.abs(_apply_pairwise_op(tf.subtract, ranks)), dtype=tf.float32)
+      pair_discount = tf.where(
+          tf.logical_and(tf.greater(rank_diff, 0), pair_valid_rank),
+          tf.abs(
+              self._rank_discount_fn(rank_diff) -
+              self._rank_discount_fn(rank_diff + 1)), tf.zeros_like(rank_diff))
+      return pair_discount
 
-      def _discount_for_relative_rank_diff():
-        """Rank-based discount in the LambdaLoss paper."""
-        # The LambdaLoss is not well defined when topn is active and topn <
-        # list_size.
-        # The following implementation is based on Equation 18 proposed in
-        # https://research.google/pubs/pub47258/. We may need to revisit this
-        # later.
-        pair_valid_rank = _apply_pairwise_op(tf.logical_or,
-                                             tf.less_equal(ranks, topn))
-        rank_diff = tf.cast(
-            tf.abs(_apply_pairwise_op(tf.subtract, ranks)), dtype=tf.float32)
-        pair_discount = tf.where(
-            tf.logical_and(tf.greater(rank_diff, 0), pair_valid_rank),
-            tf.abs(
-                self._rank_discount_fn(rank_diff) -
-                self._rank_discount_fn(rank_diff + 1)),
-            tf.zeros_like(rank_diff))
-        return pair_discount
+    def _discount_for_absolute_rank():
+      """Standard discount in the LambdaMART paper."""
+      # When the rank discount is (1 / rank) for example, the discount is
+      # |1 / r_i - 1 / r_j|. When i or j > topn, the discount becomes 0.
+      rank_discount = tf.compat.v1.where(
+          tf.greater(ranks, topn),
+          tf.zeros_like(tf.cast(ranks, dtype=tf.float32)),
+          self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32)))
+      pair_discount = tf.abs(_apply_pairwise_op(tf.subtract, rank_discount))
+      return pair_discount
 
-      def _discount_for_absolute_rank():
-        """Standard discount in the LambdaMART paper."""
-        # When the rank discount is (1 / rank) for example, the discount is
-        # |1 / r_i - 1 / r_j|. When i or j > topn, the discount becomes 0.
-        rank_discount = tf.compat.v1.where(
-            tf.greater(ranks, topn),
-            tf.zeros_like(tf.cast(ranks, dtype=tf.float32)),
-            self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32)))
-        pair_discount = tf.abs(_apply_pairwise_op(tf.subtract, rank_discount))
-        return pair_discount
-
-      u = _discount_for_relative_rank_diff()
-      v = _discount_for_absolute_rank()
-      pair_discount = (1. -
-                       self._smooth_fraction) * u + self._smooth_fraction * v
-      pair_weight = tf.abs(pair_gain) * pair_discount
-      if self._topn is None:
-        return pair_weight
-      pair_mask = _apply_pairwise_op(tf.logical_or,
-                                     tf.less_equal(ranks, self._topn))
-      return pair_weight * tf.cast(pair_mask, dtype=tf.float32)
-
-  def individual_weights(self, labels, ranks):
-    """See `_LambdaWeight`."""
-    with tf.compat.v1.name_scope(name='dcg_lambda_weight'):
-      _check_tensor_shapes([labels, ranks])
-      labels = tf.convert_to_tensor(value=labels)
-      labels = tf.compat.v1.where(
-          utils.is_label_valid(labels), labels, tf.zeros_like(labels))
-      gain = self._gain_fn(labels)
-      if self._normalized:
-        gain *= inverse_max_dcg(
-            labels,
-            gain_fn=self._gain_fn,
-            rank_discount_fn=self._rank_discount_fn,
-            topn=self._topn)
-      rank_discount = self._rank_discount_fn(tf.cast(ranks, dtype=tf.float32))
-      return gain * rank_discount
+    u = _discount_for_relative_rank_diff()
+    v = _discount_for_absolute_rank()
+    pair_discount = (1. - self._smooth_fraction) * u + self._smooth_fraction * v
+    pair_mask = _apply_pairwise_op(tf.logical_or, tf.less_equal(ranks, topn))
+    return pair_discount * tf.cast(pair_mask, dtype=tf.float32)
 
 
 class PrecisionLambdaWeight(_LambdaWeight):
