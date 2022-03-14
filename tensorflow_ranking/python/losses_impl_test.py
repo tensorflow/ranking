@@ -119,7 +119,8 @@ def _sigmoid_cross_entropy(labels, logits):
 
 def _logodds_prob(logodds, alpha=1.0):
   return [[[math.exp(-alpha * (l - min(logodd[0])))
-            for l in logodd[0]]] for logodd in logodds]
+            for l in logodd[0]]]
+          for logodd in logodds]
 
 
 def _neural_sort(logits, temperature=1.0):
@@ -244,30 +245,33 @@ class UtilsTest(tf.test.TestCase):
 
   def test_gumbel_softmax_ragged_sample(self):
     with tf.Graph().as_default():
-      scores = tf.ragged.constant(
-          [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2]])
+      scores = tf.ragged.constant([[1.4, -2.8, -0.4], [0., 1.8, 10.2],
+                                   [1., 1.2]])
       labels = tf.ragged.constant([[0., 0., 1.], [1., 0., 1.], [0., 0.]])
       weights = [[2.], [1.], [1.]]
-      listwise_weights = tf.ragged.constant(
-          [[3., 1., 2.], [1., 1., 1.], [1., 2.]])
+      listwise_weights = tf.ragged.constant([[3., 1., 2.], [1., 1., 1.],
+                                             [1., 2.]])
 
-      sampled_scores = tf.ragged.constant(
-          [[-.291, -1.643, -2.826], [-.0866, -2.924, -3.530],
-           [-12.42, -9.492, -7.939e-5], [-8.859, -6.830, -1.223e-3],
-           [-.8930, -.5266], [-.6650, -.7220]])
+      sampled_scores = tf.ragged.constant([[-.291, -1.643, -2.826],
+                                           [-.0866, -2.924, -3.530],
+                                           [-12.42, -9.492, -7.939e-5],
+                                           [-8.859, -6.830, -1.223e-3],
+                                           [-.8930, -.5266], [-.6650, -.7220]])
 
-      expanded_labels = tf.ragged.constant(
-          [[0., 0., 1.], [0., 0., 1.], [1., 0., 1.], [1., 0., 1.], [0., 0.],
-           [0., 0.]])
+      expanded_labels = tf.ragged.constant([[0., 0., 1.], [0., 0., 1.],
+                                            [1., 0., 1.], [1., 0., 1.],
+                                            [0., 0.], [0., 0.]])
 
       expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
 
-      expanded_listwise_weights = tf.ragged.constant(
-          [[3., 1., 2.], [3., 1., 2.], [1., 1., 1.], [1., 1., 1.], [1., 2.],
-           [1., 2.]])
+      expanded_listwise_weights = tf.ragged.constant([[3., 1.,
+                                                       2.], [3., 1., 2.],
+                                                      [1., 1., 1.],
+                                                      [1., 1., 1.], [1., 2.],
+                                                      [1., 2.]])
 
-      gumbel_sampler = losses_impl.GumbelSampler(sample_size=2, ragged=True,
-                                                 seed=1)
+      gumbel_sampler = losses_impl.GumbelSampler(
+          sample_size=2, ragged=True, seed=1)
       with self.cached_session():
         gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
             labels, scores, weights)
@@ -377,8 +381,7 @@ class DCGLambdaWeightTest(tf.test.TestCase):
       with self.cached_session():
         self.assertAllClose(
             lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1. / 2., 1. / 3.], [1. / 2., 0., 0.],
-              [1. / 3., 0., 0.]]])
+            [[[0., 1. / 2., 1. / 3.], [1. / 2., 0., 0.], [1. / 3., 0., 0.]]])
 
   def test_invalid_labels(self):
     with tf.Graph().as_default():
@@ -539,18 +542,18 @@ class LossesImplTest(tf.test.TestCase, parameterized.TestCase):
       self.assertAllClose(weights, expected_weights)
 
   @parameterized.parameters(
-      (losses_impl.SigmoidCrossEntropyLoss,
-       [[1.313262, 3.048587, 0.126928], [1.313262, -2.951413, 0.]]),
+      (losses_impl.SigmoidCrossEntropyLoss, [[1.313262, 3.048587, 0.126928],
+                                             [1.313262, -2.951413, 0.]]),
       (losses_impl.MeanSquaredLoss, [[1., 9., 1.], [1., 1., 0.]]),
-      (losses_impl.PairwiseHingeLoss,
-       [[[0., 0., 0.], [0., 0., 0.], [0., 2., 0.]],
-        [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]]),
-      (losses_impl.PairwiseLogisticLoss,
-       [[[0., 0., 0.], [0., 0., 0.], [0.313262, 1.313262, 0.]],
-        [[0., 0., 0.], [0.126928, 0., 0.], [0., 0., 0.]]]),
-      (losses_impl.PairwiseSoftZeroOneLoss,
-       [[[0., 0., 0.], [0., 0., 0.], [0.268941, 0.731059, 0.]],
-        [[0., 0., 0.], [0.11920291, 0., 0.], [0., 0., 0.]]]),
+      (losses_impl.PairwiseHingeLoss, [[[0., 0., 0.], [0., 0., 0.], [
+          0., 2., 0.
+      ]], [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]]),
+      (losses_impl.PairwiseLogisticLoss, [[
+          [0., 0., 0.], [0., 0., 0.], [0.313262, 1.313262, 0.]
+      ], [[0., 0., 0.], [0.126928, 0., 0.], [0., 0., 0.]]]),
+      (losses_impl.PairwiseSoftZeroOneLoss, [[
+          [0., 0., 0.], [0., 0., 0.], [0.268941, 0.731059, 0.]
+      ], [[0., 0., 0.], [0.11920291, 0., 0.], [0., 0., 0.]]]),
       (losses_impl.ListMLELoss, [[1.534534], [0.126928]]),
       (losses_impl.UniqueSoftmaxLoss, [[1.407606], [0.380784]]),
       (losses_impl.NeuralSortCrossEntropyLoss, [[1.816267], [0.365334]]),
@@ -574,10 +577,10 @@ class LossesImplTest(tf.test.TestCase, parameterized.TestCase):
       (losses_impl.SigmoidCrossEntropyLoss, [[2., 3., 4.], [1., 1., 0.]]),
       (losses_impl.MeanSquaredLoss, [[2., 3., 4.], [1., 1., 0.]]),
       (losses_impl.PairwiseHingeLoss, [[[2.], [3.], [4.]], [[1.], [1.], [0.]]]),
-      (losses_impl.PairwiseLogisticLoss,
-       [[[2.], [3.], [4.]], [[1.], [1.], [0.]]]),
-      (losses_impl.PairwiseSoftZeroOneLoss,
-       [[[2.], [3.], [4.]], [[1.], [1.], [0.]]]),
+      (losses_impl.PairwiseLogisticLoss, [[[2.], [3.], [4.]], [[1.], [1.], [0.]]
+                                         ]),
+      (losses_impl.PairwiseSoftZeroOneLoss, [[[2.], [3.], [4.]],
+                                             [[1.], [1.], [0.]]]),
       (losses_impl.ListMLELoss, [[4.], [1.]]),
       (losses_impl.SoftmaxLoss, [[4.], [1.]]),
       (losses_impl.UniqueSoftmaxLoss, [[4.], [1.]]),
@@ -608,12 +611,12 @@ class PairwiseLogisticLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=None,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
 
       logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = (logloss(3. - 2.) + logloss(1. - 2.) +
-                  logloss(3. - 1.) + logloss(3. - 2.)) / 4.
+      expected = (logloss(3. - 2.) + logloss(1. - 2.) + logloss(3. - 1.) +
+                  logloss(3. - 2.)) / 4.
       self.assertAllClose(result, expected)
 
   def test_pairwise_logistic_loss_should_handle_per_list_weights(self):
@@ -625,12 +628,12 @@ class PairwiseLogisticLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=weights,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
 
       logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = (1. * (logloss(3. - 2.) + logloss(1. - 2.)) +
-                  2. * (logloss(3. - 2.) + logloss(3. - 1.))) / 6.
+      expected = (1. * (logloss(3. - 2.) + logloss(1. - 2.)) + 2. *
+                  (logloss(3. - 2.) + logloss(3. - 1.))) / 6.
       self.assertAllClose(result, expected)
 
   def test_pairwise_logistic_loss_should_handle_per_example_weights(self):
@@ -642,8 +645,8 @@ class PairwiseLogisticLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=weights,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
 
       logloss = lambda x: math.log(1. + math.exp(-x))
       expected = ((2. * logloss(3. - 2.) + 2. * logloss(1. - 2.)) +
@@ -657,11 +660,11 @@ class PairwiseLogisticLossTest(tf.test.TestCase):
       reduction = tf.compat.v1.losses.Reduction.MEAN
       lambda_weight = losses_impl.DCGLambdaWeight()
 
-      loss_fn = losses_impl.PairwiseLogisticLoss(name=None,
-                                                 lambda_weight=lambda_weight)
+      loss_fn = losses_impl.PairwiseLogisticLoss(
+          name=None, lambda_weight=lambda_weight)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=None,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
 
       logloss = lambda x: math.log(1. + math.exp(-x))
       expected = (((3. / 2.) * logloss(3. - 2.) +
@@ -711,12 +714,12 @@ class PairwiseHingeLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseHingeLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=None,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
 
       hingeloss = lambda x: max(0, 1. - x)
-      expected = (hingeloss(3. - 2.) + hingeloss(1. - 2.) +
-                  hingeloss(3. - 1.) + hingeloss(3. - 2.)) / 4.
+      expected = (hingeloss(3. - 2.) + hingeloss(1. - 2.) + hingeloss(3. - 1.) +
+                  hingeloss(3. - 2.)) / 4.
       self.assertAllClose(result, expected)
 
   def test_pairwise_hinge_loss_should_handle_per_list_weights(self):
@@ -728,12 +731,12 @@ class PairwiseHingeLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseHingeLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=weights,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
 
       hingeloss = lambda x: max(0, 1. - x)
-      expected = (1. * (hingeloss(3. - 2.) + hingeloss(1. - 2.)) +
-                  2. * (hingeloss(3. - 2.) + hingeloss(3. - 1.))) / 6.
+      expected = (1. * (hingeloss(3. - 2.) + hingeloss(1. - 2.)) + 2. *
+                  (hingeloss(3. - 2.) + hingeloss(3. - 1.))) / 6.
       self.assertAllClose(result, expected)
 
   def test_pairwise_hinge_loss_should_handle_per_example_weights(self):
@@ -745,8 +748,8 @@ class PairwiseHingeLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseHingeLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=weights,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
 
       hingeloss = lambda x: max(0, 1. - x)
       expected = ((2. * hingeloss(3. - 2.) + 2. * hingeloss(1. - 2.)) +
@@ -760,11 +763,11 @@ class PairwiseHingeLossTest(tf.test.TestCase):
       reduction = tf.compat.v1.losses.Reduction.MEAN
       lambda_weight = losses_impl.DCGLambdaWeight()
 
-      loss_fn = losses_impl.PairwiseHingeLoss(name=None,
-                                              lambda_weight=lambda_weight)
+      loss_fn = losses_impl.PairwiseHingeLoss(
+          name=None, lambda_weight=lambda_weight)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=None,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
 
       hingeloss = lambda x: max(0, 1. - x)
       expected = (((3. / 2.) * hingeloss(3. - 2.) +
@@ -815,12 +818,12 @@ class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=None,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
 
       softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = (softloss(3. - 2.) + softloss(1. - 2.) +
-                  softloss(3. - 1.) + softloss(3. - 2.)) / 4.
+      expected = (softloss(3. - 2.) + softloss(1. - 2.) + softloss(3. - 1.) +
+                  softloss(3. - 2.)) / 4.
       self.assertAllClose(result, expected)
 
   def test_pairwise_soft_zero_one_loss_should_handle_per_list_weights(self):
@@ -832,12 +835,12 @@ class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=weights,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
 
       softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = (1. * (softloss(3. - 2.) + softloss(1. - 2.)) +
-                  2. * (softloss(3. - 2.) + softloss(3. - 1.))) / 6.
+      expected = (1. * (softloss(3. - 2.) + softloss(1. - 2.)) + 2. *
+                  (softloss(3. - 2.) + softloss(3. - 1.))) / 6.
       self.assertAllClose(result, expected)
 
   def test_pairwise_soft_zero_one_loss_should_handle_per_example_weights(self):
@@ -849,8 +852,8 @@ class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
 
       loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=weights,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=weights, reduction=reduction).eval()
 
       softloss = lambda x: 1 / (1 + math.exp(x))
       expected = ((2. * softloss(3. - 2.) + 2. * softloss(1. - 2.)) +
@@ -864,11 +867,11 @@ class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
       reduction = tf.compat.v1.losses.Reduction.MEAN
       lambda_weight = losses_impl.DCGLambdaWeight()
 
-      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None,
-                                                    lambda_weight=lambda_weight)
+      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(
+          name=None, lambda_weight=lambda_weight)
       with self.cached_session():
-        result = loss_fn.compute(labels, scores, weights=None,
-                                 reduction=reduction).eval()
+        result = loss_fn.compute(
+            labels, scores, weights=None, reduction=reduction).eval()
 
       softloss = lambda x: 1 / (1 + math.exp(x))
       expected = (((3. / 2.) * softloss(3. - 2.) +
@@ -1126,10 +1129,11 @@ class SoftmaxLossTest(tf.test.TestCase):
         loss_fn = losses_impl.SoftmaxLoss(name=None)
         result = loss_fn.compute(labels, scores, None, reduction).eval()
 
-        self.assertAlmostEqual(result,
-                               -(math.log(_softmax(scores[0])[2]) +
-                                 math.log(_softmax(scores[1])[2]) * 2.) / 2.,
-                               places=5)
+        self.assertAlmostEqual(
+            result,
+            -(math.log(_softmax(scores[0])[2]) +
+              math.log(_softmax(scores[1])[2]) * 2.) / 2.,
+            places=5)
 
   def test_softmax_loss_should_handle_per_example_weights(self):
     with tf.Graph().as_default():
@@ -1175,8 +1179,8 @@ class SoftmaxLossTest(tf.test.TestCase):
         lambda_weight = losses_impl.DCGLambdaWeight(
             rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
 
-        loss_fn = losses_impl.SoftmaxLoss(name=None,
-                                          lambda_weight=lambda_weight)
+        loss_fn = losses_impl.SoftmaxLoss(
+            name=None, lambda_weight=lambda_weight)
         result = loss_fn.compute(labels, scores, None, reduction).eval()
 
         self.assertAlmostEqual(
@@ -1301,8 +1305,8 @@ class UniqueSoftmaxLossTest(tf.test.TestCase):
       with self.cached_session():
         result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
 
-      self.assertAlmostEqual(result, -(math.log(_softmax([1, 3, 2])[1])),
-                             places=5)
+      self.assertAlmostEqual(
+          result, -(math.log(_softmax([1, 3, 2])[1])), places=5)
 
 
 class ListMLELossTest(tf.test.TestCase):
@@ -1369,9 +1373,7 @@ class ListMLELossTest(tf.test.TestCase):
       with self.cached_session():
         result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
 
-      self.assertAlmostEqual(result, -(ln(3. / (3 + 1)) +
-                                       ln(1. / 1)),
-                             places=5)
+      self.assertAlmostEqual(result, -(ln(3. / (3 + 1)) + ln(1. / 1)), places=5)
 
 
 class MeanSquaredLossTest(tf.test.TestCase):
@@ -1471,9 +1473,10 @@ class SigmoidCrossEntropyLossTest(tf.test.TestCase):
       with self.cached_session():
         result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
 
-      self.assertAlmostEqual(result, (math.log(1. + math.exp(-2.)) +
-                                      math.log(1. + math.exp(1.))) / 2.,
-                             places=5)
+      self.assertAlmostEqual(
+          result,
+          (math.log(1. + math.exp(-2.)) + math.log(1. + math.exp(1.))) / 2.,
+          places=5)
 
 
 class ClickEMLossTest(tf.test.TestCase):
@@ -1523,8 +1526,8 @@ class ClickEMLossTest(tf.test.TestCase):
 
       self.assertAlmostEqual(
           result,
-          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.])
-          + _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
+          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.]) +
+          _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
           places=5)
 
   def test_click_em_loss_should_handle_mask(self):
@@ -1542,8 +1545,8 @@ class ClickEMLossTest(tf.test.TestCase):
 
       self.assertAlmostEqual(
           result,
-          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.])
-          + _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
+          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.]) +
+          _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
           places=5)
 
 
@@ -1589,9 +1592,8 @@ class MixtureEMLossTest(tf.test.TestCase):
 
       self.assertAlmostEqual(
           result,
-          (logloss_1 * model_probs[0][0][0] +
-           logloss_2 * model_probs[0][0][1]) /
-          (model_probs[0][0][0] + model_probs[0][0][1]),
+          (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1])
+          / (model_probs[0][0][0] + model_probs[0][0][1]),
           places=5)
 
   def test_mixture_em_loss_should_handle_mask(self):
@@ -1612,9 +1614,8 @@ class MixtureEMLossTest(tf.test.TestCase):
 
       self.assertAlmostEqual(
           result,
-          (logloss_1 * model_probs[0][0][0] +
-           logloss_2 * model_probs[0][0][1]) /
-          (model_probs[0][0][0] + model_probs[0][0][1]),
+          (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1])
+          / (model_probs[0][0][0] + model_probs[0][0][1]),
           places=5)
 
 

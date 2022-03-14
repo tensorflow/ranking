@@ -123,7 +123,8 @@ def _sigmoid_cross_entropy(labels, logits):
 
 def _logodds_prob(logodds, alpha=1.0):
   return [[[math.exp(-alpha * (l - min(logodd[0])))
-            for l in logodd[0]]] for logodd in logodds]
+            for l in logodd[0]]]
+          for logodd in logodds]
 
 
 # Aggregates the per position squared error.
@@ -329,8 +330,7 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
 
     self.assertAlmostEqual(
         loss(clicks, logits).numpy(),
-        (logloss_1 * model_probs[0][0][0] +
-         logloss_2 * model_probs[0][0][1]) /
+        (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1]) /
         (model_probs[0][0][0] + model_probs[0][0][1]),
         places=4)
 
@@ -340,8 +340,7 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
     model_probs = _logodds_prob([[[logloss_1, logloss_2]]], alpha=0.1)
     self.assertAlmostEqual(
         loss(clicks, logits).numpy(),
-        (logloss_1 * model_probs[0][0][0] +
-         logloss_2 * model_probs[0][0][1]) /
+        (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1]) /
         (model_probs[0][0][0] + model_probs[0][0][1]),
         places=4)
 
@@ -610,22 +609,18 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
         loss(labels, scores).numpy(), (1. + 1.) / 3., places=5)
 
   @parameterized.parameters(
-      (losses.PairwiseHingeLoss, 4.),
-      (losses.PairwiseLogisticLoss, 2.9397852),
+      (losses.PairwiseHingeLoss, 4.), (losses.PairwiseLogisticLoss, 2.9397852),
       (losses.PairwiseSoftZeroOneLoss, 1.7310586),
-      (losses.SoftmaxLoss, 4.034129),
-      (losses.UniqueSoftmaxLoss, 5.347391),
+      (losses.SoftmaxLoss, 4.034129), (losses.UniqueSoftmaxLoss, 5.347391),
       (losses.SigmoidCrossEntropyLoss, 5.6642923),
-      (losses.MeanSquaredLoss, 20.),
-      (losses.ListMLELoss, 2.8477957),
-      (losses.ApproxNDCGLoss, -1.2618682),
-      (losses.ApproxMRRLoss, -1.0000114),
+      (losses.MeanSquaredLoss, 20.), (losses.ListMLELoss, 2.8477957),
+      (losses.ApproxNDCGLoss, -1.2618682), (losses.ApproxMRRLoss, -1.0000114),
       (losses.GumbelApproxNDCGLoss, -12.72839))
   def test_loss_with_ragged_tensors(self, loss_constructor, expected):
     scores = tf.ragged.constant([[1., 3., 2.], [3., 2.]])
     labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
-    loss = loss_constructor(ragged=True,
-                            reduction=tf.keras.losses.Reduction.SUM)
+    loss = loss_constructor(
+        ragged=True, reduction=tf.keras.losses.Reduction.SUM)
 
     result = loss(labels, scores)
 
@@ -1086,8 +1081,7 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
       (losses.ApproxMRRLoss(lambda_weight=ndcg_lambda_weight)),
       (losses.ApproxNDCGLoss(lambda_weight=ndcg_lambda_weight)),
       (losses.ClickEMLoss(exam_loss_weight=2.0, rel_loss_weight=5.0)),
-      (losses.SigmoidCrossEntropyLoss()),
-      (losses.MeanSquaredLoss()),
+      (losses.SigmoidCrossEntropyLoss()), (losses.MeanSquaredLoss()),
       (losses.GumbelApproxNDCGLoss(seed=1)))
   def test_is_loss_serializable(self, loss):
     serialized = tf.keras.utils.serialize_keras_object(loss)
@@ -1110,10 +1104,8 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
       (losses.PairwiseHingeLoss(ragged=True)),
       (losses.PairwiseLogisticLoss(ragged=True)),
       (losses.PairwiseSoftZeroOneLoss(ragged=True)),
-      (losses.SoftmaxLoss(ragged=True)),
-      (losses.ListMLELoss(ragged=True)),
-      (losses.ApproxMRRLoss(ragged=True)),
-      (losses.ApproxNDCGLoss(ragged=True)),
+      (losses.SoftmaxLoss(ragged=True)), (losses.ListMLELoss(ragged=True)),
+      (losses.ApproxMRRLoss(ragged=True)), (losses.ApproxNDCGLoss(ragged=True)),
       (losses.ClickEMLoss(ragged=True)),
       (losses.SigmoidCrossEntropyLoss(ragged=True)),
       (losses.MeanSquaredLoss(ragged=True)),
@@ -1138,14 +1130,11 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
     self.assertAllClose(original_output, deserialized_output)
 
   @parameterized.parameters(
-      (losses.DCGLambdaWeight()),
-      (losses.DCGLambdaWeight(
+      (losses.DCGLambdaWeight()), (losses.DCGLambdaWeight(
           gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse)),
-      (losses.NDCGLambdaWeight()),
-      (losses.NDCGLambdaWeight(
+      (losses.NDCGLambdaWeight()), (losses.NDCGLambdaWeight(
           gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse)),
-      (losses.PrecisionLambdaWeight()),
-      (losses.PrecisionLambdaWeight(
+      (losses.PrecisionLambdaWeight()), (losses.PrecisionLambdaWeight(
           topn=5, positive_fn=utils.is_greater_equal_1)))
   def test_is_lambda_weight_serializable(self, lambda_weight):
     serialized = tf.keras.utils.serialize_keras_object(lambda_weight)

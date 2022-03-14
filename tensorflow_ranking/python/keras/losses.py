@@ -178,7 +178,9 @@ class _RankingLoss(tf.keras.losses.Loss):
   customized training.
   """
 
-  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
+  def __init__(self,
+               reduction=tf.losses.Reduction.AUTO,
+               name=None,
                ragged=False):
     super().__init__(reduction, name)
     # An instance of loss in `losses_impl`. Overwrite this in subclasses.
@@ -201,9 +203,7 @@ class _RankingLoss(tf.keras.losses.Loss):
 
   def get_config(self):
     config = super().get_config()
-    config.update({
-        'ragged': self._ragged
-    })
+    config.update({'ragged': self._ragged})
     return config
 
 
@@ -624,8 +624,8 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def __call__(self, y_true, y_pred, sample_weight=None):
     """See _RankingLoss."""
-    losses, sample_weight = self._loss.compute_per_list(
-        y_true, y_pred, sample_weight)
+    losses, sample_weight = self._loss.compute_per_list(y_true, y_pred,
+                                                        sample_weight)
     return losses_utils.compute_weighted_loss(
         losses, sample_weight, reduction=self._get_reduction())
 
@@ -832,7 +832,8 @@ class ApproxMRRLoss(_ListwiseLoss):
     - [A General Approximation Framework for Direct Optimization of Information
        Retrieval Measures, Qin et al, 2008][qin2008]
 
-  [qin2008]: https://www.microsoft.com/en-us/research/publication/a-general-approximation-framework-for-direct-optimization-of-information-retrieval-measures/
+  [qin2008]:
+  https://www.microsoft.com/en-us/research/publication/a-general-approximation-framework-for-direct-optimization-of-information-retrieval-measures/
   """  # pylint: disable=g-line-too-long
 
   def __init__(self,
@@ -996,8 +997,8 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
                gumbel_temperature=1.0,
                seed=None,
                ragged=False):
-    super().__init__(reduction, name, lambda_weight, temperature=temperature,
-                     ragged=ragged)
+    super().__init__(
+        reduction, name, lambda_weight, temperature=temperature, ragged=ragged)
     self._sample_size = sample_size
     self._gumbel_temperature = gumbel_temperature
     self._seed = seed
@@ -1219,12 +1220,13 @@ class SigmoidCrossEntropyLoss(_RankingLoss):
   $$
   """
 
-  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
+  def __init__(self,
+               reduction=tf.losses.Reduction.AUTO,
+               name=None,
                ragged=False):
     super().__init__(reduction, name, ragged)
     self._loss = losses_impl.SigmoidCrossEntropyLoss(
-        name='{}_impl'.format(name) if name else None,
-        ragged=ragged)
+        name='{}_impl'.format(name) if name else None, ragged=ragged)
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
@@ -1263,7 +1265,9 @@ class MeanSquaredLoss(_RankingLoss):
   $$
   """
 
-  def __init__(self, reduction=tf.losses.Reduction.AUTO, name=None,
+  def __init__(self,
+               reduction=tf.losses.Reduction.AUTO,
+               name=None,
                ragged=False):
     """Mean squared loss.
 
