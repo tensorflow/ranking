@@ -498,14 +498,14 @@ class PairwiseMSELoss(_PairwiseLoss):
   >>> y_pred = [[0.6, 0.8]]
   >>> loss = tfr.keras.losses.PairwiseMSELoss()
   >>> loss(y_true, y_pred).numpy()
-  0.72
+  1.44
 
   >>> # Using ragged tensors
   >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
   >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
   >>> loss = tfr.keras.losses.PairwiseMSELoss(ragged=True)
   >>> loss(y_true, y_pred).numpy()
-  0.38333336
+  0.7666667
 
   Usage with the `compile()` API:
 

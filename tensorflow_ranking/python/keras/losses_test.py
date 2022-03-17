@@ -242,7 +242,8 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
 
     expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
                 ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
-                ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 6.
+                ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
+                                              (0. - 0.))**2) * 2. / 6.
     self.assertAlmostEqual(loss(labels, scores).numpy(), expected, places=5)
 
     # Test weights.
@@ -250,7 +251,7 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
                 ((3. - 1.) - (0. - 0.))**2 + 2 * ((3. - 2.) -
                                                   (2. - 0.))**2 + 2 *
                 ((3. - 1.) - (2. - 0.))**2 + 2 * ((2. - 1.) -
-                                                  (0. - 0.))**2) / 6.
+                                                  (0. - 0.))**2) * 2. / 6.
     self.assertAlmostEqual(
         loss(labels, scores, weights).numpy(), expected, places=5)
 

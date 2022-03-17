@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implements the losses for TF-Ranking.
-
-The test cases are mainly on losses_test.py.
-"""
+"""Implements the losses for TF-Ranking."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -927,48 +924,43 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
 
 
 class PairwiseMSELoss(_PairwiseLoss):
-  """Implements pairwise MSE loss."""
+  """Implements pairwise MSE loss.
+
+  This loss computes over all pairs, including those with the same labels, but
+  excluding self pairs in the diagonal of the pairwise matrix.
+  """
 
   def _pairwise_loss(self, pairwise_logits):
-    """The loss of pairwise logits."""
-    return tf.math.square(pairwise_logits)
+    # Unused because of overridding `_compute_unreduced_loss_impl`.
+    pass
 
   def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
     if mask is None:
       mask = utils.is_label_valid(labels)
 
+    # Compute loss.
     pairwise_label_diff = _apply_pairwise_op(tf.subtract, labels)
     pairwise_logit_diff = _apply_pairwise_op(tf.subtract, logits)
-    pairwise_mse_diff = pairwise_logit_diff - pairwise_label_diff
+    pairwise_mse_loss = tf.math.square(pairwise_logit_diff -
+                                       pairwise_label_diff)
+    valid_pair = _apply_pairwise_op(tf.logical_and, mask)
 
-    # Compute pairwise_labels_indicator for l_i >= l_j and valid pair.
+    # Compute weights.
+    pairwise_weights = tf.ones_like(pairwise_mse_loss)
     batch_size, list_size = tf.unstack(tf.shape(input=labels))
-    valid_pair = tf.cast(
-        _apply_pairwise_op(tf.logical_and, mask), dtype=tf.float32)
-    pairwise_labels_indicator = tf.cast(
-        tf.greater_equal(pairwise_label_diff, 0), dtype=tf.float32)
-    # Pairs with label_diff = 0 are counted twice and their weight is reduced to
-    # 0.5. This effectively counts only once on all pairs with the same label.
-    pairwise_weights = pairwise_labels_indicator - 0.5 * tf.cast(
-        tf.equal(pairwise_label_diff, 0), dtype=tf.float32)
-    # Exclude cases when i = j.
-    pairwise_weights -= 0.5 * tf.eye(list_size, batch_shape=[batch_size])
-    pairwise_weights *= valid_pair
-
-    ranks = _compute_ranks(logits, mask)
+    # Excluding the self pairs.
+    pairwise_weights -= tf.eye(
+        list_size, batch_shape=[batch_size], dtype=pairwise_weights.dtype)
+    # Including only valid pairs
+    pairwise_weights *= tf.cast(valid_pair, tf.float32)
     if self._lambda_weight is not None:
+      ranks = _compute_ranks(logits, mask)
       pairwise_weights *= self._lambda_weight.pair_weights(labels, ranks)
-      # For LambdaLoss with relative rank difference, the scale of loss becomes
-      # much smaller when applying LambdaWeight. This affects the training can
-      # make the optimal learning rate become much larger. We use a heuristic to
-      # scale it up to the same magnitude as standard pairwise loss.
-      pairwise_weights *= tf.cast(tf.shape(input=labels)[1], dtype=tf.float32)
-
     pairwise_weights = tf.stop_gradient(
         pairwise_weights, name='weights_stop_gradient')
 
-    return self._pairwise_loss(pairwise_mse_diff), pairwise_weights
+    return pairwise_mse_loss, pairwise_weights
 
 
 class _ListwiseLoss(_RankingLoss):

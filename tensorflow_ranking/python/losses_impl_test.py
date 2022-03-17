@@ -982,9 +982,10 @@ class PairwiseMSELossTest(tf.test.TestCase):
         result = loss_fn.compute(
             labels, scores, weights=None, reduction=reduction).eval()
 
-      expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
-                  ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
-                  ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 6.
+      expected = 2 * (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                      ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                      ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
+                                                    (0. - 0.))**2) / (6. + 6.)
       self.assertAllClose(result, expected)
 
   def test_pairwise_mse_loss_should_handle_per_list_weights(self):
@@ -999,11 +1000,11 @@ class PairwiseMSELossTest(tf.test.TestCase):
         result = loss_fn.compute(
             labels, scores, weights=weights, reduction=reduction).eval()
 
-      expected = (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
-                  ((3. - 1.) - (0. - 0.))**2 + 2 * ((3. - 2.) -
-                                                    (2. - 0.))**2 + 2 *
-                  ((3. - 1.) - (2. - 0.))**2 + 2 * ((2. - 1.) -
-                                                    (0. - 0.))**2) / 9.
+      expected = 2 * (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                      ((3. - 1.) - (0. - 0.))**2 + 2 *
+                      ((3. - 2.) - (2. - 0.))**2 + 2 * ((3. - 1.) -
+                                                        (2. - 0.))**2 + 2 *
+                      ((2. - 1.) - (0. - 0.))**2) / (6. + 2. * 6.)
       self.assertAllClose(result, expected)
 
   def test_pairwise_mse_loss_should_handle_per_example_weights(self):
@@ -1017,11 +1018,13 @@ class PairwiseMSELossTest(tf.test.TestCase):
       with self.cached_session():
         result = loss_fn.compute(
             labels, scores, weights=weights, reduction=reduction).eval()
-
-      expected = (2 * ((2. - 3.) - (1. - 0.))**2 + 2 * ((2. - 1.) -
-                                                        (1. - 0.))**2 +
-                  ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
-                  ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 8.
+      # The per-example weights are applied asymmetrically. For example, the
+      # first multiplier 3. is the weights[0][1] + weights[0][2].
+      expected = ((3. * ((2. - 3.) - (1. - 0.))**2 + 3. *
+                   ((2. - 1.) - (1. - 0.))**2 + 2. * ((3. - 1.) -
+                                                      (0. - 0.))**2) + 2. *
+                  (((3. - 2.) - (2. - 0.))**2 + ((3. - 1.) - (2. - 0.))**2 +
+                   ((2. - 1.) - (0. - 0.))**2)) / (8. + 6.)
 
       self.assertAllClose(result, expected)
 
@@ -1070,8 +1073,9 @@ class PairwiseMSELossTest(tf.test.TestCase):
       with self.cached_session():
         result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
 
-      expected = (((2. - 1.) - (0. - 1.))**2 + ((3. - 2.) - (2. - 0.))**2 +
-                  ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) - (0. - 0.))**2) / 4.
+      expected = 2. * (((2. - 1.) - (0. - 1.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                       ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
+                                                     (0. - 0.))**2) / (2. + 6.)
       self.assertAllClose(result, expected)
 
 
