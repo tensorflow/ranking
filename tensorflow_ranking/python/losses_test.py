@@ -1053,10 +1053,11 @@ class LossesTest(tf.test.TestCase):
       labels = [[2.0, 1.0]]
       ranks = [[1, 2]]
       lambda_weight = ranking_losses.create_ndcg_lambda_weight()
+      scale = 2.
       max_dcg = 3.0 / math.log(2.) + 1.0 / math.log(3.)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval() / scale,
             [[[0., 2. * (1. / math.log(2.) - 1. / math.log(3.)) / max_dcg],
               [2. * (1. / math.log(2.) - 1. / math.log(3.)) / max_dcg, 0.]]])
 
@@ -1065,10 +1066,11 @@ class LossesTest(tf.test.TestCase):
       labels = [[1.0, 2.0]]
       ranks = [[1, 2]]
       lambda_weight = ranking_losses.create_reciprocal_rank_lambda_weight()
+      scale = 2.
       max_dcg = 2.5
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
+            lambda_weight.pair_weights(labels, ranks).eval() / scale,
             [[[0., 1. / 2. / max_dcg], [1. / 2. / max_dcg, 0.]]])
 
   def test_create_p_list_mle_lambda_weight(self):

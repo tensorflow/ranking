@@ -249,6 +249,12 @@ class AbstractDCGLambdaWeight(_LambdaWeight):
       list_size = tf.shape(input=labels)[1]
       topn = self._topn or list_size
       pair_weight = tf.abs(pair_gain) * self._pair_rank_discount(ranks, topn)
+
+      # For LambdaLoss with relative rank difference, the scale of loss becomes
+      # much smaller when applying LambdaWeight. This affects the training can
+      # make the optimal learning rate become much larger. We use a heuristic to
+      # scale it up to the same magnitude as standard pairwise loss.
+      pair_weight *= tf.cast(tf.shape(input=labels)[1], dtype=tf.float32)
       return pair_weight
 
   def individual_weights(self, labels, ranks):
@@ -838,11 +844,6 @@ class _PairwiseLoss(_RankingLoss, metaclass=abc.ABCMeta):
     pairwise_weights = pairwise_labels
     if self._lambda_weight is not None:
       pairwise_weights *= self._lambda_weight.pair_weights(labels, ranks)
-      # For LambdaLoss with relative rank difference, the scale of loss becomes
-      # much smaller when applying LambdaWeight. This affects the training can
-      # make the optimal learning rate become much larger. We use a heuristic to
-      # scale it up to the same magnitude as standard pairwise loss.
-      pairwise_weights *= tf.cast(tf.shape(input=labels)[1], dtype=tf.float32)
 
     pairwise_weights = tf.stop_gradient(
         pairwise_weights, name='weights_stop_gradient')

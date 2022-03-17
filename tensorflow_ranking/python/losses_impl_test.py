@@ -371,84 +371,107 @@ class DCGLambdaWeightTest(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
+      scale = 3.
       lambda_weight = losses_impl.DCGLambdaWeight()
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1. / 2., 2. * 1. / 6.], [1. / 2., 0., 1. / 2.],
-              [2. * 1. / 6., 1. / 2., 0.]]])
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
+                [0., 1. / 2., 2. * 1. / 6.],
+                [1. / 2., 0., 1. / 2.],
+                [2. * 1. / 6., 1. / 2., 0.],
+            ]])
 
   def test_smooth_fraction(self):
     """For the weights using absolute rank."""
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
+      scale = 3.
       lambda_weight = losses_impl.DCGLambdaWeight(smooth_fraction=1.0)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1. / 2., 2. * 2. / 3.], [1. / 2., 0., 1. / 6.],
-              [2. * 2. / 3., 1. / 6., 0.]]])
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
+                [0., 1. / 2., 2. * 2. / 3.],
+                [1. / 2., 0., 1. / 6.],
+                [2. * 2. / 3., 1. / 6., 0.],
+            ]])
       lambda_weight = losses_impl.DCGLambdaWeight(topn=1, smooth_fraction=1.0)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1., 2.], [1., 0., 0.], [2., 0., 0.]]])
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
+                [0., 1., 2.],
+                [1., 0., 0.],
+                [2., 0., 0.],
+            ]])
 
   def test_topn(self):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
+      scale = 3.
       lambda_weight = losses_impl.DCGLambdaWeight(topn=1)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1. / 2., 1. / 3.], [1. / 2., 0., 0.], [1. / 3., 0., 0.]]])
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
+                [0., 1. / 2., 1. / 3.],
+                [1. / 2., 0., 0.],
+                [1. / 3., 0., 0.],
+            ]])
 
   def test_invalid_labels(self):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, -1.0]]
       ranks = [[1, 2, 3]]
+      scale = 3.
       lambda_weight = losses_impl.DCGLambdaWeight()
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1. / 2., 0.], [1. / 2., 0., 0.], [0., 0., 0.]]])
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
+                [0., 1. / 2., 0.],
+                [1. / 2., 0., 0.],
+                [0., 0., 0.],
+            ]])
 
   def test_gain_and_discount(self):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0]]
       ranks = [[1, 2]]
+      scale = 2.
       lambda_weight = losses_impl.DCGLambdaWeight(
           gain_fn=lambda x: tf.pow(2., x) - 1.,
           rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 2. * (1. / math.log(2.) - 1. / math.log(3.))],
-              [2. * (1. / math.log(2.) - 1. / math.log(3.)), 0.]]])
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
+                [0., 2. * (1. / math.log(2.) - 1. / math.log(3.))],
+                [2. * (1. / math.log(2.) - 1. / math.log(3.)), 0.],
+            ]])
 
   def test_normalized(self):
     with tf.Graph().as_default():
       labels = [[1.0, 2.0]]
       ranks = [[1, 2]]
-      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
+      scale = 2.
       max_dcg = 2.5
+      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 1. / 2. / max_dcg], [1. / 2. / max_dcg, 0.]]])
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
+                [0., 1. / 2. / max_dcg],
+                [1. / 2. / max_dcg, 0.],
+            ]])
 
   def test_individual_weights(self):
     with tf.Graph().as_default():
       labels = [[1.0, 2.0]]
       ranks = [[1, 2]]
-      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
       max_dcg = 2.5
+      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.individual_weights(labels, ranks).eval(),
-            [[1. / max_dcg / 1., 2. / max_dcg / 2.]])
+            lambda_weight.individual_weights(labels, ranks).eval(), [
+                [1. / max_dcg / 1., 2. / max_dcg / 2.],
+            ])
 
 
 class DCGLambdaWeightV2Test(tf.test.TestCase):
@@ -463,10 +486,11 @@ class DCGLambdaWeightV2Test(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
+      scale = 3.
       lambda_weight = losses_impl.DCGLambdaWeightV2()
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(), [[
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
                 [0., 1. / 2., 2. * 1. / 6.],
                 [1. / 2., 0., 1. / 2.],
                 [2. * 1. / 6., 1. / 2., 0.],
@@ -476,10 +500,11 @@ class DCGLambdaWeightV2Test(tf.test.TestCase):
     with tf.Graph().as_default():
       labels = [[2.0, 1.0, 0.0]]
       ranks = [[1, 2, 3]]
+      scale = 3.
       lambda_weight = losses_impl.DCGLambdaWeightV2(topn=1)
       with self.cached_session():
         self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(), [[
+            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
                 [0., 1., 1. / 2.],
                 [1., 0., 3. / 4.],
                 [1. / 2., 3. / 4., 0.],
