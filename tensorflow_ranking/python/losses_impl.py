@@ -189,6 +189,15 @@ class _LambdaWeight(object, metaclass=abc.ABCMeta):
     return labels
 
 
+class LabelDiffLambdaWeight(_LambdaWeight):
+  """A simple LambdaWeight to compute the pair label difference."""
+
+  def pair_weights(self, labels, ranks):
+    """Returns the absolute label difference for each pair."""
+    del ranks  # Unused.
+    return tf.abs(_apply_pairwise_op(tf.subtract, labels))
+
+
 class AbstractDCGLambdaWeight(_LambdaWeight):
   """Abstract LambdaWeight for Discounted Cumulative Gain (DCG) metric."""
 

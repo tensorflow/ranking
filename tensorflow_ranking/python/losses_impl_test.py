@@ -337,6 +337,28 @@ class UtilsTest(tf.test.TestCase):
         self.assertAllClose(smooth_perm.eval(), permuation_mat, rtol=1e-3)
 
 
+class LabelDiffLambdaWeightTest(tf.test.TestCase):
+  """Test cases for LabelDiffLambdaWeight."""
+
+  def setUp(self):
+    super(LabelDiffLambdaWeightTest, self).setUp()
+    tf.compat.v1.reset_default_graph()
+
+  def test_default(self):
+    """For the weight using rank diff."""
+    with tf.Graph().as_default():
+      labels = [[2.0, 1.0, 0.0]]
+      ranks = [[1, 2, 3]]
+      lambda_weight = losses_impl.LabelDiffLambdaWeight()
+      with self.cached_session():
+        self.assertAllClose(
+            lambda_weight.pair_weights(labels, ranks).eval(), [[
+                [0., 1., 2.],
+                [1., 0., 1.],
+                [2., 1, 0.],
+            ]])
+
+
 class DCGLambdaWeightTest(tf.test.TestCase):
   """Test cases for DCGLambdaWeight."""
 

@@ -100,6 +100,17 @@ def get(loss,
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class LabelDiffLambdaWeight(losses_impl.LabelDiffLambdaWeight):
+  """Keras serializable class for LabelDiffLambdaWeight."""
+
+  def __init__(self, **kwargs):
+    super().__init__()
+
+  def get_config(self):
+    return {}
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class DCGLambdaWeight(losses_impl.DCGLambdaWeight):
   """Keras serializable class for DCG."""
 

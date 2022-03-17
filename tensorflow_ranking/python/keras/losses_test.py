@@ -1140,6 +1140,7 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
     self.assertAllClose(original_output, deserialized_output)
 
   @parameterized.parameters(
+      (losses.LabelDiffLambdaWeight()),
       (losses.DCGLambdaWeight()),
       (losses.DCGLambdaWeight(
           gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse)),
