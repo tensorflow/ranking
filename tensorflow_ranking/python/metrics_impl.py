@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 """Implements the metrics for TF-Ranking.
 
 The test cases are mainly on metrics_test.py.

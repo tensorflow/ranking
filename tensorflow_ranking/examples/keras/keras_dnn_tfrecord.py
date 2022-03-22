@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 r"""Keras Ranking Pipeline example for proto formats stored in TFRecord.
 
 The supported proto formats are listed at ../python/data.py.

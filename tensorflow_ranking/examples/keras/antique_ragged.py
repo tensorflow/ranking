@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python3
 r"""Antique TFR-KPL trainer using ragged tensors.
 
 This file has two ways to construct and train a model. One is using the standard
