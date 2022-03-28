@@ -425,6 +425,53 @@ class MultiRankingHeadTest(tf.test.TestCase):
         self.assertAllClose(loss, 10.)
         self.assertItemsEqual(metrics.keys(), expected_metrics)
 
+  def test_overriding_train_op(self):
+    with tf.Graph().as_default():
+      expected_train_result = b'real_train_op'
+
+      def _train_op_fn(loss):
+        with tf.control_dependencies((tf.compat.v1.assert_near(
+            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss'),)):
+          return tf.constant(expected_train_result)
+
+      def _mock_train_op_fn(loss):
+        with tf.control_dependencies((tf.compat.v1.assert_near(
+            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss'),)):
+          return tf.constant(b'mock_train_op')
+
+      head1 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), train_op_fn=_mock_train_op_fn, name='head1')
+      head2 = ranking_head.create_ranking_head(
+          loss_fn=_make_loss_fn(), train_op_fn=_mock_train_op_fn, name='head2')
+      multi_head = ranking_head.create_multi_ranking_head(
+          [head1, head2], [1.0, 2.0], train_op_fn=_train_op_fn)
+      logits = {
+          'head1': tf.convert_to_tensor(value=[[1., 3.], [1., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
+      }
+      labels = {
+          'head1': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
+          'head2': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
+      }
+      # Create estimator spec.
+      spec = multi_head.create_estimator_spec(
+          features={},
+          mode=tf.estimator.ModeKeys.TRAIN,
+          logits=logits,
+          labels=labels)
+
+      # Assert spec contains expected tensors.
+      self.assertIsNotNone(spec.loss)
+      self.assertIsNotNone(spec.train_op)
+      self.assertIsNone(spec.export_outputs)
+
+      # Assert predictions, loss, and train_op.
+      with self.cached_session() as sess:
+        _initialize_variables(self, spec.scaffold)
+        loss, train_result = sess.run((spec.loss, spec.train_op))
+        self.assertAllClose(loss, 16.)
+        self.assertEqual(expected_train_result, train_result)
+
   def test_train(self):
     with tf.Graph().as_default():
       expected_train_result = b'my_train_op'

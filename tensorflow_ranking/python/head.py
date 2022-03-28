@@ -86,17 +86,24 @@ def create_ranking_head(loss_fn,
       name=name)
 
 
-def create_multi_ranking_head(heads, head_weights=None):
+def create_multi_ranking_head(heads,
+                              head_weights=None,
+                              optimizer=None,
+                              train_op_fn=None):
   """A factory method to create `_MultiRankingHead`.
 
   Args:
     heads: A tuple or list of `_RankingHead`.
     head_weights: A tuple or list of weights.
+    optimizer: If not None, use this optimizer instead of the first head's
+      optimizer.
+    train_op_fn: If not None, use this train_op_fn instead of the first
+      head's train_op_fn.
 
   Returns:
     An instance of `_MultiRankingHead` for multi-task learning.
   """
-  return _MultiRankingHead(heads, head_weights)
+  return _MultiRankingHead(heads, head_weights, optimizer, train_op_fn)
 
 
 class _AbstractRankingHead(object):
@@ -294,12 +301,20 @@ class _MultiRankingHead(_AbstractRankingHead):
     - combines all the losses using weights from all heads.
   """
 
-  def __init__(self, heads, head_weights=None):
+  def __init__(self,
+               heads,
+               head_weights=None,
+               optimizer=None,
+               train_op_fn=None):
     """Constructor.
 
     Args:
       heads: A tuple or list of `_RankingHead`.
       head_weights: A tuple or list of weights.
+      optimizer: If not None, use this optimizer instead of the first head's
+        optimizer.
+      train_op_fn: If not None, use this train_op_fn instead of the first
+        head's train_op_fn.
     """
     if not heads:
       raise ValueError('Must specify heads. Given: {}'.format(heads))
@@ -315,13 +330,17 @@ class _MultiRankingHead(_AbstractRankingHead):
             'All given heads must have name specified. Given: {}'.format(head))
     self._heads = tuple(heads)
     self._head_weights = tuple(head_weights) if head_weights else tuple()
-    # TODO: Figure out a better way to set train_op_fn and optimizer
-    # for _MultiRankingHead.
     # pylint: disable=protected-access
-    tf.compat.v1.logging.info(
-        'Use the train_op_fn and optimizer from the first head.')
-    self._train_op_fn = self._heads[0]._train_op_fn
-    self._optimizer = self._heads[0]._optimizer
+    if train_op_fn is None and optimizer is None:
+      # TODO: Figure out a better way to set train_op_fn and optimizer
+      # for _MultiRankingHead.
+      tf.compat.v1.logging.info(
+          'Use the train_op_fn and optimizer from the first head.')
+      self._train_op_fn = self._heads[0]._train_op_fn
+      self._optimizer = self._heads[0]._optimizer
+    else:
+      self._train_op_fn = train_op_fn
+      self._optimizer = optimizer
     # pylint: enable=protected-access
 
   @property
