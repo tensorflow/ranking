@@ -21,6 +21,7 @@ from __future__ import print_function
 import os
 from absl.testing import parameterized
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from tensorflow_ranking.python import feature
 from tensorflow_ranking.python import head
@@ -43,10 +44,10 @@ class UtilsTest(tf.test.TestCase):
         'num_shuffles_eval': 2,
         'num_shuffles_predict': 3,
     }
-    self.assertEqual(model._get_params(tf.estimator.ModeKeys.TRAIN, params), 1)
-    self.assertEqual(model._get_params(tf.estimator.ModeKeys.EVAL, params), 2)
+    self.assertEqual(model._get_params(tf_estimator.ModeKeys.TRAIN, params), 1)
+    self.assertEqual(model._get_params(tf_estimator.ModeKeys.EVAL, params), 2)
     self.assertEqual(
-        model._get_params(tf.estimator.ModeKeys.PREDICT, params), 3)
+        model._get_params(tf_estimator.ModeKeys.PREDICT, params), 3)
 
   def test_rolling_window_indices(self):
     with tf.Graph().as_default():
@@ -167,7 +168,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
         ranking_model = model._GroupwiseRankingModel(None, group_size=1)
         ranking_model._update_scatter_gather_indices(
             tf.convert_to_tensor(value=[[True, True, False]]),
-            tf.estimator.ModeKeys.TRAIN, None)
+            tf_estimator.ModeKeys.TRAIN, None)
         self.assertEqual(
             ranking_model._feature_gather_indices.get_shape().as_list(),
             [1, 3, 1, 2])
@@ -188,7 +189,7 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
         ranking_model = model._GroupwiseRankingModel(None, group_size=2)
         ranking_model._update_scatter_gather_indices(
             tf.convert_to_tensor(value=[[True, True, True]]),
-            tf.estimator.ModeKeys.PREDICT, None)
+            tf_estimator.ModeKeys.PREDICT, None)
         self.assertEqual(
             ranking_model._feature_gather_indices.get_shape().as_list(),
             [1, 3, 2, 2])
@@ -203,9 +204,9 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllEqual(indices_mask, [[True, True, True]])
 
   @parameterized.named_parameters(
-      ('mode_train', tf.estimator.ModeKeys.TRAIN),
-      ('mode_eval', tf.estimator.ModeKeys.EVAL),
-      ('mode_predict', tf.estimator.ModeKeys.PREDICT))
+      ('mode_train', tf_estimator.ModeKeys.TRAIN),
+      ('mode_eval', tf_estimator.ModeKeys.EVAL),
+      ('mode_predict', tf_estimator.ModeKeys.PREDICT))
   def test_update_scatter_gather_indices(self, mode):
     """Test for group size > 1."""
     params = {
@@ -242,9 +243,9 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
                             [[True, True, False, True, True, False]])
 
   @parameterized.named_parameters(
-      ('mode_train', tf.estimator.ModeKeys.TRAIN),
-      ('mode_eval', tf.estimator.ModeKeys.EVAL),
-      ('mode_predict', tf.estimator.ModeKeys.PREDICT))
+      ('mode_train', tf_estimator.ModeKeys.TRAIN),
+      ('mode_eval', tf_estimator.ModeKeys.EVAL),
+      ('mode_predict', tf_estimator.ModeKeys.PREDICT))
   def test_compute_logits(self, mode):
     group_size = 2
     params = {
@@ -307,9 +308,9 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllEqual(logits, [[8., 9., 7.]])
 
   @parameterized.named_parameters(
-      ('mode_train', tf.estimator.ModeKeys.TRAIN),
-      ('mode_eval', tf.estimator.ModeKeys.EVAL),
-      ('mode_predict', tf.estimator.ModeKeys.PREDICT))
+      ('mode_train', tf_estimator.ModeKeys.TRAIN),
+      ('mode_eval', tf_estimator.ModeKeys.EVAL),
+      ('mode_predict', tf_estimator.ModeKeys.PREDICT))
   def test_compute_logits_multi_task(self, mode):
     group_size = 2
 
@@ -371,7 +372,7 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
                 losses.RankingLossKey.PAIRWISE_HINGE_LOSS,
                 weights_feature_name='weight'),
             optimizer=tf.compat.v1.train.AdagradOptimizer(learning_rate=0.1)))
-    self._estimator = tf.estimator.Estimator(model_fn, self._model_dir)
+    self._estimator = tf_estimator.Estimator(model_fn, self._model_dir)
 
   def tearDown(self):
     if self._model_dir:

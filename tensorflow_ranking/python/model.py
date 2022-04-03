@@ -24,6 +24,7 @@ from __future__ import print_function
 import abc
 import six
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from tensorflow.python.util import function_utils
 
@@ -40,11 +41,11 @@ _NUM_SHUFFLES_PREDICT = 'num_shuffles_predict'
 def _get_params(mode, params):
   """Returns the params defined by the above constants."""
   params = params or {}
-  if mode == tf.estimator.ModeKeys.TRAIN:
+  if mode == tf_estimator.ModeKeys.TRAIN:
     num_shuffles = params.get(_NUM_SHUFFLES_TRAIN, None)
-  elif mode == tf.estimator.ModeKeys.EVAL:
+  elif mode == tf_estimator.ModeKeys.EVAL:
     num_shuffles = params.get(_NUM_SHUFFLES_EVAL, None)
-  elif mode == tf.estimator.ModeKeys.PREDICT:
+  elif mode == tf_estimator.ModeKeys.PREDICT:
     num_shuffles = params.get(_NUM_SHUFFLES_PREDICT, None)
   else:
     raise ValueError('Invalid mode: {}.'.format(mode))
@@ -131,7 +132,7 @@ class _RankingModel(object):
     logits = self._compute_logits_impl(context_features, example_features,
                                        labels, mode, params, config)
 
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf_estimator.ModeKeys.PREDICT:
       return logits
     else:
       features.update(context_features)
@@ -315,7 +316,7 @@ class _GroupwiseRankingModel(_RankingModel):
     if self._group_size == 1:
       shuffle = False
       num_shuffles = None
-    elif mode == tf.estimator.ModeKeys.PREDICT:
+    elif mode == tf_estimator.ModeKeys.PREDICT:
       shuffle = num_shuffles is not None
     else:
       shuffle = True

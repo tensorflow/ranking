@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from tensorflow_ranking.python import head as ranking_head
 from tensorflow_ranking.python import metrics as metrics_lib
@@ -134,7 +135,7 @@ class RankingHeadTest(tf.test.TestCase):
       head = ranking_head.create_ranking_head(loss_fn=_make_loss_fn())
       logits = [[1., 3.], [1., 2.]]
       spec = head.create_estimator_spec(
-          features={}, mode=tf.estimator.ModeKeys.PREDICT, logits=logits)
+          features={}, mode=tf_estimator.ModeKeys.PREDICT, logits=logits)
 
       # Assert spec contains expected tensors.
       self.assertIsNone(spec.loss)
@@ -168,7 +169,7 @@ class RankingHeadTest(tf.test.TestCase):
       # Create estimator spec.
       spec = head.create_estimator_spec(
           features={},
-          mode=tf.estimator.ModeKeys.EVAL,
+          mode=tf_estimator.ModeKeys.EVAL,
           logits=self._default_logits,
           labels=self._default_labels)
 
@@ -201,7 +202,7 @@ class RankingHeadTest(tf.test.TestCase):
       # Create loss.
       training_loss = head.create_loss(
           features={},
-          mode=tf.estimator.ModeKeys.TRAIN,
+          mode=tf_estimator.ModeKeys.TRAIN,
           logits=self._default_logits,
           labels=self._default_labels)
       with self.cached_session():
@@ -224,7 +225,7 @@ class RankingHeadTest(tf.test.TestCase):
       # Create estimator spec.
       spec = head.create_estimator_spec(
           features={},
-          mode=tf.estimator.ModeKeys.TRAIN,
+          mode=tf_estimator.ModeKeys.TRAIN,
           logits=self._default_logits,
           labels=self._default_labels)
 
@@ -262,7 +263,7 @@ class RankingHeadTest(tf.test.TestCase):
       # Create estimator spec.
       spec = head.create_estimator_spec(
           features={},
-          mode=tf.estimator.ModeKeys.TRAIN,
+          mode=tf_estimator.ModeKeys.TRAIN,
           logits=self._default_logits,
           labels=self._default_labels,
           regularization_losses=regularization_losses)
@@ -286,7 +287,7 @@ class RankingHeadTest(tf.test.TestCase):
       # Create estimator spec.
       spec = head.create_estimator_spec(
           features={weights_feature_name: self._default_weights},
-          mode=tf.estimator.ModeKeys.TRAIN,
+          mode=tf_estimator.ModeKeys.TRAIN,
           logits=self._default_logits,
           labels=self._default_labels)
 
@@ -314,7 +315,7 @@ class RankingHeadTest(tf.test.TestCase):
       # Create estimator spec.
       spec = head.create_estimator_spec(
           features={weights_feature_name: weights},
-          mode=tf.estimator.ModeKeys.EVAL,
+          mode=tf_estimator.ModeKeys.EVAL,
           logits=self._default_logits,
           labels=self._default_labels)
 
@@ -348,7 +349,7 @@ class MultiRankingHeadTest(tf.test.TestCase):
           'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
       }
       spec = multi_head.create_estimator_spec(
-          features={}, mode=tf.estimator.ModeKeys.PREDICT, logits=logits)
+          features={}, mode=tf_estimator.ModeKeys.PREDICT, logits=logits)
 
       # Assert spec contains expected tensors.
       self.assertIsNone(spec.loss)
@@ -395,7 +396,7 @@ class MultiRankingHeadTest(tf.test.TestCase):
       }
       spec = multi_head.create_estimator_spec(
           features={},
-          mode=tf.estimator.ModeKeys.EVAL,
+          mode=tf_estimator.ModeKeys.EVAL,
           logits=logits,
           labels=labels)
 
@@ -499,7 +500,7 @@ class MultiRankingHeadTest(tf.test.TestCase):
       # Create estimator spec.
       spec = multi_head.create_estimator_spec(
           features={},
-          mode=tf.estimator.ModeKeys.TRAIN,
+          mode=tf_estimator.ModeKeys.TRAIN,
           logits=logits,
           labels=labels)
 
@@ -539,7 +540,7 @@ class MultiRankingHeadTest(tf.test.TestCase):
       # Create loss.
       training_loss = multi_head._merge_loss(
           features={},
-          mode=tf.estimator.ModeKeys.TRAIN,
+          mode=tf_estimator.ModeKeys.TRAIN,
           logits=logits,
           labels=labels,
           regularization_losses=regularization_losses)

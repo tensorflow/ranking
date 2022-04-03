@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import six
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from tensorflow.python.feature_column import feature_column_lib
 from tensorflow_ranking.python import utils
@@ -77,7 +78,7 @@ def _is_sequence_column_v2(feature_column):
 
 def encode_features(features,
                     feature_columns,
-                    mode=tf.estimator.ModeKeys.TRAIN,
+                    mode=tf_estimator.ModeKeys.TRAIN,
                     scope=None):
   """Returns dense tensors from features using feature columns.
 
@@ -98,7 +99,7 @@ def encode_features(features,
   """
   # Having scope here for backward compatibility.
   del scope
-  trainable = (mode == tf.estimator.ModeKeys.TRAIN)
+  trainable = (mode == tf_estimator.ModeKeys.TRAIN)
   cols_to_tensors = {}
 
   # TODO: Ensure only v2 Feature Columns are used.
@@ -136,7 +137,7 @@ def encode_listwise_features(features,
                              context_feature_columns,
                              example_feature_columns,
                              input_size=None,
-                             mode=tf.estimator.ModeKeys.TRAIN,
+                             mode=tf_estimator.ModeKeys.TRAIN,
                              scope=None):
   """Returns dense tensors from features using feature columns.
 
@@ -224,7 +225,7 @@ def encode_listwise_features(features,
 def encode_pointwise_features(features,
                               context_feature_columns,
                               example_feature_columns,
-                              mode=tf.estimator.ModeKeys.PREDICT,
+                              mode=tf_estimator.ModeKeys.PREDICT,
                               scope=None):
   """Returns dense tensors from pointwise features using feature columns.
 

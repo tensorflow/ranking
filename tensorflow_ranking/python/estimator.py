@@ -25,6 +25,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from tensorflow.python.util import function_utils
 from tensorflow_ranking.python import feature
@@ -277,7 +278,7 @@ class EstimatorBuilder(object):
     if self._transform_function is not None:
       return self._transform_function(features=features, mode=mode)
 
-    if (mode == tf.estimator.ModeKeys.PREDICT and
+    if (mode == tf_estimator.ModeKeys.PREDICT and
         not self._hparams.get("listwise_inference")):
       return feature.encode_pointwise_features(
           features=features,
@@ -372,11 +373,11 @@ class EstimatorBuilder(object):
 
   def make_estimator(self):
     """Returns the built `tf.estimator.Estimator` for the TF-Ranking model."""
-    config = tf.estimator.RunConfig(
+    config = tf_estimator.RunConfig(
         model_dir=self._hparams.get("model_dir"),
         keep_checkpoint_max=self._hparams.get("num_checkpoints"),
         save_checkpoints_secs=self._hparams.get("checkpoint_secs"))
-    return tf.estimator.Estimator(model_fn=self._model_fn(), config=config)
+    return tf_estimator.Estimator(model_fn=self._model_fn(), config=config)
 
 
 def _make_dnn_score_fn(hidden_units,
@@ -431,7 +432,7 @@ def _make_dnn_score_fn(hidden_units,
       # Concat context and example features as input.
       input_layer = tf.concat(context_input + example_input, 1)
 
-    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+    is_training = (mode == tf_estimator.ModeKeys.TRAIN)
     cur_layer = input_layer
     # Construct a deep neural network model.
     with tf.compat.v1.name_scope("dnn_model"):
@@ -605,7 +606,7 @@ def _make_gam_score_fn(context_hidden_units,
                         tf.compat.v1.layers.flatten(context_features[name]))
                        for name in sorted(list(context_feature_names))]
 
-    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+    is_training = (mode == tf_estimator.ModeKeys.TRAIN)
 
     # Construct a tower for each example feature.  Each tower outputs a
     # scalar value as the sub-score.  All sub-scores are
@@ -724,7 +725,7 @@ class GAMEstimatorBuilder(EstimatorBuilder):
       estimator_spec = super(GAMEstimatorBuilder,
                              self)._model_fn()(features, labels, mode, params,
                                                config)
-      if mode == tf.estimator.ModeKeys.PREDICT:
+      if mode == tf_estimator.ModeKeys.PREDICT:
         # Export subscores of each feature.  Find nodes ending with
         # `_SUBSCORE_POSTFIX` and `_SUBWEIGHT_POSTFIX` and create signatures
         # with their corresponding tensors as outputs.  Signatures for example
@@ -738,14 +739,14 @@ class GAMEstimatorBuilder(EstimatorBuilder):
                 tf.compat.v1.get_default_graph().get_tensor_by_name(
                     "{}:0".format(node.name)))
             subscore_signatures[subscore_name] = (
-                tf.estimator.export.RegressionOutput(subscore_tensor))
+                tf_estimator.export.RegressionOutput(subscore_tensor))
           elif node.name.endswith(_SUBWEIGHT_POSTFIX):
             subscore_name = node.name[node.name.rfind("/") + 1:]
             subscore_tensor = (
                 tf.compat.v1.get_default_graph().get_tensor_by_name(
                     "{}:0".format(node.name)))
             subscore_signatures[subscore_name] = (
-                tf.estimator.export.PredictOutput(subscore_tensor))
+                tf_estimator.export.PredictOutput(subscore_tensor))
 
         estimator_spec.export_outputs.update(subscore_signatures)
       return estimator_spec

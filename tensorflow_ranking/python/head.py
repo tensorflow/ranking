@@ -25,6 +25,7 @@ from __future__ import print_function
 import abc
 import six
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 _DEFAULT_SERVING_KEY = tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
 
@@ -231,17 +232,17 @@ class _RankingHead(_AbstractRankingHead):
     logits = tf.convert_to_tensor(value=logits)
     # Predict.
     with tf.compat.v1.name_scope(self._name, 'head'):
-      if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(
+      if mode == tf_estimator.ModeKeys.PREDICT:
+        return tf_estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,
             export_outputs={
                 _DEFAULT_SERVING_KEY:
-                    tf.estimator.export.RegressionOutput(logits),
+                    tf_estimator.export.RegressionOutput(logits),
                 _REGRESS_SERVING_KEY:
-                    tf.estimator.export.RegressionOutput(logits),
+                    tf_estimator.export.RegressionOutput(logits),
                 _PREDICT_SERVING_KEY:
-                    tf.estimator.export.PredictOutput(logits),
+                    tf_estimator.export.PredictOutput(logits),
             })
 
       training_loss = self.create_loss(
@@ -253,22 +254,22 @@ class _RankingHead(_AbstractRankingHead):
         regularized_training_loss = training_loss
 
       # Eval.
-      if mode == tf.estimator.ModeKeys.EVAL:
+      if mode == tf_estimator.ModeKeys.EVAL:
         eval_metric_ops = {
             name:
             metric_fn(labels=labels, predictions=logits, features=features)
             for name, metric_fn in six.iteritems(self._eval_metric_fns)
         }
         eval_metric_ops.update(self._labels_and_logits_metrics(labels, logits))
-        return tf.estimator.EstimatorSpec(
+        return tf_estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,
             loss=regularized_training_loss,
             eval_metric_ops=eval_metric_ops)
 
       # Train.
-      if mode == tf.estimator.ModeKeys.TRAIN:
-        return tf.estimator.EstimatorSpec(
+      if mode == tf_estimator.ModeKeys.TRAIN:
+        return tf_estimator.EstimatorSpec(
             mode=mode,
             loss=regularized_training_loss,
             train_op=_get_train_op(regularized_training_loss, self._train_op_fn,
@@ -403,11 +404,11 @@ class _MultiRankingHead(_AbstractRankingHead):
         export_outputs[key] = v
         # Collect predict serving key for merged_predict_outputs
         if (k == _PREDICT_SERVING_KEY and
-            isinstance(v, tf.estimator.export.PredictOutput)):
+            isinstance(v, tf_estimator.export.PredictOutput)):
           for kp, vp in six.iteritems(v.outputs):
             merged_predict_outputs['{}/{}'.format(head.name, kp)] = vp
     export_outputs[_PREDICT_SERVING_KEY] = (
-        tf.estimator.export.PredictOutput(merged_predict_outputs))
+        tf_estimator.export.PredictOutput(merged_predict_outputs))
     return export_outputs
 
   def _merge_loss(self,
@@ -476,9 +477,9 @@ class _MultiRankingHead(_AbstractRankingHead):
                 logits=logits[head.name],
                 labels=labels[head.name] if labels else None))
       # Predict.
-      if mode == tf.estimator.ModeKeys.PREDICT:
+      if mode == tf_estimator.ModeKeys.PREDICT:
         export_outputs = self._merge_predict_export_outputs(all_estimator_spec)
-        return tf.estimator.EstimatorSpec(
+        return tf_estimator.EstimatorSpec(
             mode=mode, predictions=logits, export_outputs=export_outputs)
 
       # Compute the merged loss and eval metrics.
@@ -487,15 +488,15 @@ class _MultiRankingHead(_AbstractRankingHead):
       eval_metric_ops = self._merge_metrics(all_estimator_spec)
 
       # Eval.
-      if mode == tf.estimator.ModeKeys.EVAL:
-        return tf.estimator.EstimatorSpec(
+      if mode == tf_estimator.ModeKeys.EVAL:
+        return tf_estimator.EstimatorSpec(
             mode=mode,
             predictions=logits,
             loss=loss,
             eval_metric_ops=eval_metric_ops)
       # Train.
-      if mode == tf.estimator.ModeKeys.TRAIN:
-        return tf.estimator.EstimatorSpec(
+      if mode == tf_estimator.ModeKeys.TRAIN:
+        return tf_estimator.EstimatorSpec(
             mode=mode,
             loss=loss,
             train_op=_get_train_op(loss, self._train_op_fn, self._optimizer),

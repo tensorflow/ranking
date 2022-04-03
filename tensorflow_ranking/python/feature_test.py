@@ -21,6 +21,7 @@ from __future__ import print_function
 from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from google.protobuf import text_format
 from tensorflow.python.feature_column import feature_column_lib as feature_column
@@ -154,7 +155,7 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
       cols_to_tensors = feature_lib.encode_features(
           input_features,
           feature_columns.values(),
-          mode=tf.estimator.ModeKeys.EVAL)
+          mode=tf_estimator.ModeKeys.EVAL)
 
       embedding_lookup_a = cols_to_tensors[feature_columns["aaa"]]
       embedding_lookup_b = cols_to_tensors[feature_columns["bbb"]]
@@ -226,7 +227,7 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
       cols_to_tensors = feature_lib.encode_features(
           input_features,
           [seq_embed_column, seq_numeric_column],
-          mode=tf.estimator.ModeKeys.EVAL)
+          mode=tf_estimator.ModeKeys.EVAL)
       actual_seq_embed = cols_to_tensors[seq_embed_column]
       actual_seq_nums = cols_to_tensors[seq_numeric_column]
 

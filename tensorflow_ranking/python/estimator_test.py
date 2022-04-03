@@ -23,6 +23,7 @@ import os
 from absl.testing import parameterized
 import six
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from google.protobuf import text_format
 from tensorflow_ranking.python import data
@@ -241,7 +242,7 @@ class EstimatorBuilderTest(tf.test.TestCase):
             "f3": tf.ones([10, 10, 1], dtype=tf.float32) * 3.0,
             "c1": tf.ones([10, 1], dtype=tf.float32),
             "c2": tf.ones([10, 1], dtype=tf.float32) * 2.0,
-        }, tf.estimator.ModeKeys.TRAIN)
+        }, tf_estimator.ModeKeys.TRAIN)
     # `c1` is the only context feature defined in `_context_feature_columns()`.
     self.assertCountEqual(context.keys(), ["c1"])
 
@@ -265,7 +266,7 @@ class EstimatorBuilderTest(tf.test.TestCase):
             "f3": tf.ones([10, 1], dtype=tf.float32) * 3.0,
             "c1": tf.ones([10, 1], dtype=tf.float32),
             "c2": tf.ones([10, 1], dtype=tf.float32) * 2.0,
-        }, tf.estimator.ModeKeys.PREDICT)
+        }, tf_estimator.ModeKeys.PREDICT)
 
     # After transformation, we get 2D context tensor and 3D example tensor.
     self.assertAllEqual(tf.ones(shape=[10, 1]), context["c1"])
@@ -287,7 +288,7 @@ class EstimatorBuilderTest(tf.test.TestCase):
             "f3": tf.ones([10, 10, 1], dtype=tf.float32) * 3.0,
             "c1": tf.ones([10, 1], dtype=tf.float32),
             "c2": tf.ones([10, 1], dtype=tf.float32) * 2.0,
-        }, tf.estimator.ModeKeys.PREDICT)
+        }, tf_estimator.ModeKeys.PREDICT)
     # `c1` is the only context feature defined in `_context_feature_columns()`.
     self.assertCountEqual(context.keys(), ["c1"])
 
@@ -313,7 +314,7 @@ class EstimatorBuilderTest(tf.test.TestCase):
             "f3": tf.ones([10, 10, 1], dtype=tf.float32) * 3.0,
             "c1": tf.ones([10, 1], dtype=tf.float32),
             "c2": tf.ones([10, 1], dtype=tf.float32) * 2.0,
-        }, tf.estimator.ModeKeys.TRAIN)
+        }, tf_estimator.ModeKeys.TRAIN)
 
     self.assertCountEqual(context.keys(), ["c1"])
     self.assertCountEqual(example.keys(), ["f1", "f2", "f3"])
@@ -327,7 +328,7 @@ class EstimatorBuilderTest(tf.test.TestCase):
     logits = estimator._group_score_fn(
         {"c1": tf.ones([10, 1], dtype=tf.float32)},
         {"f1": tf.ones([10, 1, 1], dtype=tf.float32)},
-        tf.estimator.ModeKeys.TRAIN, None, None)
+        tf_estimator.ModeKeys.TRAIN, None, None)
 
     self.assertAllEqual(logits, tf.ones([10, 1], dtype=tf.float32))
 
@@ -387,10 +388,10 @@ class DNNEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         use_batch_norm=False,
         model_dir=None,
         listwise_inference=listwise_inference)
-    train_spec = tf.estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
-    eval_spec = tf.estimator.EvalSpec(
+    train_spec = tf_estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
+    eval_spec = tf_estimator.EvalSpec(
         name="eval", input_fn=_inner_input_fn, steps=10)
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 class GAMEstimatorTest(tf.test.TestCase, parameterized.TestCase):
@@ -414,10 +415,10 @@ class GAMEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         loss="softmax_loss",
         use_batch_norm=False,
         model_dir=None)
-    train_spec = tf.estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
-    eval_spec = tf.estimator.EvalSpec(
+    train_spec = tf_estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
+    eval_spec = tf_estimator.EvalSpec(
         name="eval", input_fn=_inner_input_fn, steps=10)
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 if __name__ == "__main__":

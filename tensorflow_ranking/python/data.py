@@ -28,6 +28,7 @@ import functools
 
 import six
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from google.protobuf import descriptor_pb2 as pb
 from tensorflow_ranking.python import utils
@@ -1092,7 +1093,7 @@ def build_ranking_serving_input_receiver_fn_with_parsing_fn(
         name="input_ranking_tensor")
     receiver_tensors = {receiver_name: serialized}
     features = parsing_fn(serialized)
-    return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
+    return tf_estimator.export.ServingInputReceiver(features, receiver_tensors)
 
   return _serving_input_receiver_fn
 

@@ -169,6 +169,7 @@ py_library(
     deps = [
         ":losses",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -187,6 +188,7 @@ py_test(
         ":losses",
         ":metrics",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -197,6 +199,7 @@ py_library(
     deps = [
         ":utils",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -224,6 +227,7 @@ py_library(
     deps = [
         ":utils",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -241,6 +245,7 @@ py_test(
         ":feature",
         # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -252,6 +257,7 @@ py_library(
         ":feature",
         ":utils",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -272,6 +278,7 @@ py_test(
         ":model",
         # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -286,6 +293,7 @@ py_library(
         ":metrics",
         ":model",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
     ],
 )
 
@@ -303,6 +311,7 @@ py_test(
         ":data",
         ":estimator",
         ":feature",
+        # py/tensorflow:tensorflow_estimator dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
