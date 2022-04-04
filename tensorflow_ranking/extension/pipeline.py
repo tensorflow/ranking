@@ -25,6 +25,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
+from tensorflow.compat.v1 import estimator as tf_compat_v1_estimator
 
 from tensorflow_ranking.python import data as tfr_data
 
@@ -204,7 +206,7 @@ class RankingPipeline(object):
       raise ValueError("The `estimator` cannot be empty!")
 
     if not isinstance(
-        estimator, (tf.estimator.Estimator, tf.compat.v1.estimator.Estimator)):
+        estimator, (tf_estimator.Estimator, tf_compat_v1_estimator.Estimator)):
       raise ValueError(
           "The argument estimator needs to be of type tf.estimator.Estimator, "
           "not %s." % type(estimator))
@@ -326,7 +328,7 @@ class RankingPipeline(object):
       feature_spec = {}
       feature_spec.update(example_feature_spec)
       feature_spec.update(context_feature_spec)
-      return tf.estimator.export.build_parsing_serving_input_receiver_fn(
+      return tf_estimator.export.build_parsing_serving_input_receiver_fn(
           feature_spec)
 
   def _export_strategies(self, event_file_pattern, assets_extra=None):
@@ -342,7 +344,7 @@ class RankingPipeline(object):
     """
     export_strategies = []
 
-    latest_exporter = tf.estimator.LatestExporter(
+    latest_exporter = tf_estimator.LatestExporter(
         "latest_model", serving_input_receiver_fn=self._make_serving_input_fn(),
         assets_extra=assets_extra)
     export_strategies.append(latest_exporter)
@@ -350,7 +352,7 @@ class RankingPipeline(object):
     # In case of not specifying the `best_exporter_metric`, uses the default
     # BestExporter by the loss value.
     if self._best_exporter_metric is None:
-      best_exporter = tf.estimator.BestExporter(
+      best_exporter = tf_estimator.BestExporter(
           name="best_model_by_loss",
           serving_input_receiver_fn=self._make_serving_input_fn(),
           event_file_pattern=event_file_pattern,
@@ -372,7 +374,7 @@ class RankingPipeline(object):
 
       return is_current_the_best
 
-    best_exporter = tf.estimator.BestExporter(
+    best_exporter = tf_estimator.BestExporter(
         name="best_model_by_metric",
         serving_input_receiver_fn=self._make_serving_input_fn(),
         event_file_pattern=event_file_pattern,
@@ -396,15 +398,15 @@ class RankingPipeline(object):
         list_size=eval_list_size,
         randomize_input=False)
 
-    train_spec = tf.estimator.TrainSpec(
+    train_spec = tf_estimator.TrainSpec(
         input_fn=train_input_fn, max_steps=self._hparams.get("num_train_steps"))
-    eval_on_train_spec = tf.estimator.EvalSpec(
+    eval_on_train_spec = tf_estimator.EvalSpec(
         name="on_train",
         input_fn=train_input_fn,
         steps=self._hparams.get("num_eval_steps"),
         throttle_secs=5)
 
-    eval_on_eval_spec = tf.estimator.EvalSpec(
+    eval_on_eval_spec = tf_estimator.EvalSpec(
         name="on_eval",
         input_fn=eval_input_fn,
         steps=self._hparams.get("num_eval_steps"),
@@ -421,4 +423,4 @@ class RankingPipeline(object):
       raise ValueError("The non local training is not supported now!")
 
     train_spec, eval_spec, _ = self._train_eval_specs()
-    tf.estimator.train_and_evaluate(self._estimator, train_spec, eval_spec)
+    tf_estimator.train_and_evaluate(self._estimator, train_spec, eval_spec)

@@ -43,6 +43,7 @@ Notes:
 from absl import flags
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_ranking as tfr
 
 flags.DEFINE_enum(
@@ -189,7 +190,7 @@ def make_serving_input_fn():
     feature_spec = {}
     feature_spec.update(example_feature_spec)
     feature_spec.update(context_feature_spec)
-    return tf.estimator.export.build_parsing_serving_input_receiver_fn(
+    return tf_estimator.export.build_parsing_serving_input_receiver_fn(
         feature_spec)
   else:
     raise ValueError("FLAGS.group_size should be 1, but is {} when "
@@ -202,7 +203,7 @@ def make_transform_fn():
 
   def _transform_fn(features, mode):
     """Defines transform_fn."""
-    if mode == tf.estimator.ModeKeys.PREDICT and not FLAGS.listwise_inference:
+    if mode == tf_estimator.ModeKeys.PREDICT and not FLAGS.listwise_inference:
       # We expect tf.Example as input during serving. In this case, group_size
       # must be set to 1.
       if FLAGS.group_size != 1:
@@ -227,7 +228,7 @@ def make_transform_fn():
 
       # Document interaction attention layer.
       if FLAGS.use_document_interaction:
-        training = (mode == tf.estimator.ModeKeys.TRAIN)
+        training = (mode == tf_estimator.ModeKeys.TRAIN)
         concat_tensor = tfr.keras.layers.ConcatFeatures()(
             inputs=(context_features, example_features, mask))
         din_layer = tfr.keras.layers.DocumentInteractionAttention(
@@ -269,7 +270,7 @@ def make_score_fn():
                                   tf.reduce_max(input_tensor=input_layer))
       tf.compat.v1.summary.scalar("input_min",
                                   tf.reduce_min(input_tensor=input_layer))
-    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+    is_training = (mode == tf_estimator.ModeKeys.TRAIN)
     cur_layer = input_layer
     cur_layer = tf.compat.v1.layers.batch_normalization(
         cur_layer, training=is_training, momentum=0.99)
@@ -335,22 +336,22 @@ def train_and_eval():
       eval_metric_fns=eval_metric_fns(),
       train_op_fn=_train_op_fn)
 
-  estimator = tf.estimator.Estimator(
+  estimator = tf_estimator.Estimator(
       model_fn=tfr.model.make_groupwise_ranking_fn(
           group_score_fn=make_score_fn(),
           group_size=FLAGS.group_size,
           transform_fn=make_transform_fn(),
           ranking_head=ranking_head),
       model_dir=FLAGS.model_dir,
-      config=tf.estimator.RunConfig(save_checkpoints_steps=1000))
+      config=tf_estimator.RunConfig(save_checkpoints_steps=1000))
 
-  train_spec = tf.estimator.TrainSpec(
+  train_spec = tf_estimator.TrainSpec(
       input_fn=train_input_fn, max_steps=FLAGS.num_train_steps)
 
-  exporters = tf.estimator.LatestExporter(
+  exporters = tf_estimator.LatestExporter(
       "saved_model_exporter", serving_input_receiver_fn=make_serving_input_fn())
 
-  eval_spec = tf.estimator.EvalSpec(
+  eval_spec = tf_estimator.EvalSpec(
       name="eval",
       input_fn=eval_input_fn,
       steps=1,
@@ -359,7 +360,7 @@ def train_and_eval():
       throttle_secs=15)
 
   # Train and validate.
-  tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+  tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 def main(_):

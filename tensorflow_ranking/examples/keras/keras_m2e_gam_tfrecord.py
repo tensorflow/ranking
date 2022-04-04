@@ -38,6 +38,7 @@ Notes:
 from absl import flags
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_ranking as tfr
 
 
@@ -103,7 +104,7 @@ def get_keras_estimator():
       FLAGS.loss, reduction=tf.compat.v2.losses.Reduction.SUM_OVER_BATCH_SIZE)
   metrics = tfr.keras.metrics.default_keras_metrics()
   optimizer = tf.keras.optimizers.Adagrad(learning_rate=FLAGS.learning_rate)
-  config = tf.estimator.RunConfig(
+  config = tf_estimator.RunConfig(
       model_dir=FLAGS.model_dir,
       keep_checkpoint_max=FLAGS.num_checkpoints,
       save_checkpoints_secs=FLAGS.checkpoint_secs)

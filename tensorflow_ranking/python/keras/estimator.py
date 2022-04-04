@@ -15,6 +15,7 @@
 """Adaptor between keras models and estimator."""
 
 import tensorflow as tf
+from tensorflow.compat.v1 import estimator as tf_estimator
 
 from tensorflow.python.util import function_utils
 from tensorflow_ranking.python import utils
@@ -80,10 +81,10 @@ def model_to_estimator(model,
     # Hence, ranker, losses, metrics and optimizer are cloned inside this
     # function.
     ranker = tf.keras.models.clone_model(model, clone_function=_clone_fn)
-    training = (mode == tf.compat.v1.estimator.ModeKeys.TRAIN)
+    training = (mode == tf_estimator.ModeKeys.TRAIN)
 
     weights = None
-    if weights_feature_name and mode != tf.compat.v1.estimator.ModeKeys.PREDICT:
+    if weights_feature_name and mode != tf_estimator.ModeKeys.PREDICT:
       if weights_feature_name not in features:
         raise ValueError(
             "weights_feature '{0}' can not be found in 'features'.".format(
@@ -98,21 +99,21 @@ def model_to_estimator(model,
                        "but got {}".format(serving_default))
 
     if serving_default == "regress":
-      default_export_output = tf.compat.v1.estimator.export.RegressionOutput(
+      default_export_output = tf_estimator.export.RegressionOutput(
           logits)
     else:
-      default_export_output = tf.compat.v1.estimator.export.PredictOutput(
+      default_export_output = tf_estimator.export.PredictOutput(
           logits)
     export_outputs = {
         _DEFAULT_SERVING_KEY: default_export_output,
         _REGRESS_SERVING_KEY:
-            tf.compat.v1.estimator.export.RegressionOutput(logits),
+            tf_estimator.export.RegressionOutput(logits),
         _PREDICT_SERVING_KEY:
-            tf.compat.v1.estimator.export.PredictOutput(logits)
+            tf_estimator.export.PredictOutput(logits)
     }
 
-    if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
-      return tf.compat.v1.estimator.EstimatorSpec(mode=mode, predictions=logits,
+    if mode == tf_estimator.ModeKeys.PREDICT:
+      return tf_estimator.EstimatorSpec(mode=mode, predictions=logits,
                                                   export_outputs=export_outputs)
 
     loss = _clone_fn(model.loss)
@@ -143,7 +144,7 @@ def model_to_estimator(model,
           loss=total_loss, params=ranker.trainable_variables)[0]
       train_op = tf.group(minimize_op, *update_ops)
 
-    return tf.compat.v1.estimator.EstimatorSpec(
+    return tf_estimator.EstimatorSpec(
         mode=mode,
         predictions=logits,
         loss=total_loss,
@@ -151,7 +152,7 @@ def model_to_estimator(model,
         eval_metric_ops=eval_metric_ops,
         export_outputs=export_outputs)
 
-  return tf.compat.v1.estimator.Estimator(
+  return tf_estimator.Estimator(
       model_fn=_model_fn,
       config=config,
       model_dir=model_dir,

@@ -71,6 +71,7 @@ from absl import flags
 import numpy as np
 import six
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_ranking as tfr
 
 flags.DEFINE_string("train_path", None, "Input file path used for training.")
@@ -110,7 +111,7 @@ def _use_multi_head():
   return FLAGS.secondary_loss is not None
 
 
-class IteratorInitializerHook(tf.estimator.SessionRunHook):
+class IteratorInitializerHook(tf_estimator.SessionRunHook):
   """Hook to initialize data iterator after session is created."""
 
   def __init__(self):
@@ -273,7 +274,7 @@ def make_serving_input_fn():
   """Returns serving input fn to receive tf.Example."""
   feature_spec = tf.feature_column.make_parse_example_spec(
       example_feature_columns().values())
-  return tf.estimator.export.build_parsing_serving_input_receiver_fn(
+  return tf_estimator.export.build_parsing_serving_input_receiver_fn(
       feature_spec)
 
 
@@ -282,7 +283,7 @@ def make_transform_fn():
 
   def _transform_fn(features, mode):
     """Defines transform_fn."""
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf_estimator.ModeKeys.PREDICT:
       # We expect tf.Example as input during serving. In this case, group_size
       # must be set to 1.
       if FLAGS.group_size != 1:
@@ -328,7 +329,7 @@ def make_score_fn():
       tf.compat.v1.summary.scalar("input_min",
                                   tf.reduce_min(input_tensor=input_layer))
 
-    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+    is_training = (mode == tf_estimator.ModeKeys.TRAIN)
     cur_layer = tf.compat.v1.layers.batch_normalization(
         input_layer, training=is_training)
     for i, layer_width in enumerate(int(d) for d in FLAGS.hidden_layer_dims):
@@ -412,32 +413,32 @@ def train_and_eval():
         eval_metric_fns=get_eval_metric_fns(),
         train_op_fn=_train_op_fn)
 
-  estimator = tf.estimator.Estimator(
+  estimator = tf_estimator.Estimator(
       model_fn=tfr.model.make_groupwise_ranking_fn(
           group_score_fn=make_score_fn(),
           group_size=FLAGS.group_size,
           transform_fn=make_transform_fn(),
           ranking_head=ranking_head),
-      config=tf.estimator.RunConfig(
+      config=tf_estimator.RunConfig(
           FLAGS.output_dir, save_checkpoints_steps=1000))
 
-  train_spec = tf.estimator.TrainSpec(
+  train_spec = tf_estimator.TrainSpec(
       input_fn=train_input_fn,
       hooks=[train_hook],
       max_steps=FLAGS.num_train_steps)
   # Export model to accept tf.Example when group_size = 1.
   if FLAGS.group_size == 1:
-    vali_spec = tf.estimator.EvalSpec(
+    vali_spec = tf_estimator.EvalSpec(
         input_fn=vali_input_fn,
         hooks=[vali_hook],
         steps=1,
-        exporters=tf.estimator.LatestExporter(
+        exporters=tf_estimator.LatestExporter(
             "latest_exporter",
             serving_input_receiver_fn=make_serving_input_fn()),
         start_delay_secs=0,
         throttle_secs=30)
   else:
-    vali_spec = tf.estimator.EvalSpec(
+    vali_spec = tf_estimator.EvalSpec(
         input_fn=vali_input_fn,
         hooks=[vali_hook],
         steps=1,
@@ -445,7 +446,7 @@ def train_and_eval():
         throttle_secs=30)
 
   # Train and validate
-  tf.estimator.train_and_evaluate(estimator, train_spec, vali_spec)
+  tf_estimator.train_and_evaluate(estimator, train_spec, vali_spec)
 
   # Evaluate on the test data.
   estimator.evaluate(input_fn=test_input_fn, hooks=[test_hook])

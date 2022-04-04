@@ -18,6 +18,8 @@ import os
 from absl.testing import parameterized
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
+from tensorflow.compat.v1 import estimator as tf_compat_v1_estimator
 
 from google.protobuf import text_format
 from tensorflow_ranking.python import data
@@ -176,7 +178,7 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         reduction=tf.compat.v2.losses.Reduction.SUM_OVER_BATCH_SIZE)
     self._eval_metrics = metrics.default_keras_metrics()
     self._optimizer = tf.keras.optimizers.Adagrad(learning_rate=0.1)
-    self._config = tf.estimator.RunConfig(
+    self._config = tf_estimator.RunConfig(
         keep_checkpoint_max=2, save_checkpoints_secs=2)
 
     self._data_file = os.path.join(tf.compat.v1.test.get_temp_dir(),
@@ -248,16 +250,16 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         size_feature_name=_SIZE)
     estimator = estimator_lib.model_to_estimator(
         model=keras_model, config=self._config, custom_objects=None)
-    self.assertIsInstance(estimator, tf.compat.v1.estimator.Estimator)
+    self.assertIsInstance(estimator, tf_compat_v1_estimator.Estimator)
 
     # Train and export model.
-    train_spec = tf.estimator.TrainSpec(
+    train_spec = tf_estimator.TrainSpec(
         input_fn=self._make_input_fn(), max_steps=1)
-    eval_spec = tf.estimator.EvalSpec(
+    eval_spec = tf_estimator.EvalSpec(
         name='eval', input_fn=self._make_input_fn(), steps=10)
 
     with self.assertRaises(AttributeError):
-      tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+      tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
   @parameterized.named_parameters(
       ('without_weights', None, 'predict'),
@@ -276,16 +278,16 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         weights_feature_name=weights_feature_name,
         custom_objects=self._custom_objects,
         serving_default=serving_default)
-    self.assertIsInstance(estimator, tf.compat.v1.estimator.Estimator)
+    self.assertIsInstance(estimator, tf_compat_v1_estimator.Estimator)
 
     # Train and export model.
-    train_spec = tf.estimator.TrainSpec(
+    train_spec = tf_estimator.TrainSpec(
         input_fn=self._make_input_fn(weights_feature_name), max_steps=1)
-    eval_spec = tf.estimator.EvalSpec(
+    eval_spec = tf_estimator.EvalSpec(
         name='eval',
         input_fn=self._make_input_fn(weights_feature_name),
         steps=10)
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
     context_feature_spec = tf.feature_column.make_parse_example_spec(
         self._context_feature_columns.values())
@@ -309,7 +311,7 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
               context_feature_spec=context_feature_spec,
               example_feature_spec=example_feature_spec,
               size_feature_name=_SIZE)
-          return tf.estimator.export.ServingInputReceiver(features,
+          return tf_estimator.export.ServingInputReceiver(features,
                                                           receiver_tensors)
         return pointwise_serving_fn
 
@@ -338,16 +340,16 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         config=self._config,
         weights_feature_name='weights',
         custom_objects=self._custom_objects)
-    self.assertIsInstance(estimator, tf.compat.v1.estimator.Estimator)
+    self.assertIsInstance(estimator, tf_compat_v1_estimator.Estimator)
 
     # Train and export model.
-    train_spec = tf.estimator.TrainSpec(
+    train_spec = tf_estimator.TrainSpec(
         input_fn=self._make_input_fn(), max_steps=1)
-    eval_spec = tf.estimator.EvalSpec(
+    eval_spec = tf_estimator.EvalSpec(
         name='eval', input_fn=self._make_input_fn(), steps=10)
 
     with self.assertRaises(ValueError):
-      tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+      tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 if __name__ == '__main__':

@@ -26,6 +26,8 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_compat_v1_estimator dep,
+        # py/tensorflow:tensorflow_estimator dep,
         "//tensorflow_ranking/python:data",
     ],
 )
@@ -45,6 +47,7 @@ py_test(
     deps = [
         ":pipeline",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
         "//tensorflow_ranking",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],

@@ -16,6 +16,7 @@ py_library(
     deps = [
         # py/absl/flags dep,
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_estimator dep,
         "//tensorflow_ranking",
         "//tensorflow_ranking/extension:pipeline",
     ],

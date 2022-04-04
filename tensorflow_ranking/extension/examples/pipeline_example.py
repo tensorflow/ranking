@@ -49,6 +49,7 @@ Notes:
 from absl import flags
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_ranking as tfr
 
 flags.DEFINE_string("train_input_pattern", "",
@@ -133,7 +134,7 @@ def scoring_function(context_features, example_features, mode):
     ]
     input_layer = tf.concat(context_input + example_input, 1)
 
-  is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+  is_training = (mode == tf_estimator.ModeKeys.TRAIN)
   cur_layer = input_layer
   cur_layer = tf.compat.v1.layers.batch_normalization(
       cur_layer, training=is_training, momentum=0.99)

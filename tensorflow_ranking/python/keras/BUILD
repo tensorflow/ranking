@@ -60,6 +60,7 @@ py_library(
     deps = [
         ":metrics",
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_compat_v1_estimator dep,
         "//tensorflow_ranking/python:utils",
     ],
 )
@@ -82,6 +83,8 @@ py_test(
         ":network",
         # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
+        # py/tensorflow:tensorflow_compat_v1_estimator dep,
+        # py/tensorflow:tensorflow_estimator dep,
         "//tensorflow_ranking/python:data",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],

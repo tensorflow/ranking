@@ -21,6 +21,7 @@ from __future__ import print_function
 import os
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_ranking as tfr
 
 from google.protobuf import text_format
@@ -193,7 +194,7 @@ class RankingPipelineTest(tf.test.TestCase):
 
   def test_estimator(self):
     pip = self._create_pipeline()
-    self.assertIsInstance(pip._estimator, tf.estimator.Estimator)
+    self.assertIsInstance(pip._estimator, tf_estimator.Estimator)
 
   def test_train_and_eval(self):
 
@@ -281,7 +282,7 @@ class RankingPipelineClient(object):
       ])
       input_layer = tf.concat(input_features, 1)
 
-    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+    is_training = (mode == tf_estimator.ModeKeys.TRAIN)
     cur_layer = tf.compat.v1.layers.batch_normalization(
         input_layer, training=is_training)
 

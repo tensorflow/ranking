@@ -68,6 +68,7 @@ Notes:
 from absl import flags
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 from tensorflow.python.estimator.canned import optimizers
 import tensorflow_ranking as tfr
 
@@ -144,7 +145,7 @@ def transform_function(features, mode):
       mode=mode,
       scope="transform_layer")
 
-  training = (mode == tf.estimator.ModeKeys.TRAIN)
+  training = (mode == tf_estimator.ModeKeys.TRAIN)
   concat_tensor = tfr.keras.layers.ConcatFeatures()(
       inputs=(context_features, example_features, mask))
   din_layer = tfr.keras.layers.DocumentInteractionAttention(
@@ -171,7 +172,7 @@ def scoring_function(context_features, example_features, mode):
     context_input = tf.compat.v1.layers.flatten(
         example_features["document_interaction_network_embedding"])
 
-  is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+  is_training = (mode == tf_estimator.ModeKeys.TRAIN)
   cur_layer = tf.compat.v1.layers.batch_normalization(
       input_layer, training=is_training, momentum=FLAGS.batch_norm_moment)
   cur_layer = tf.keras.layers.GaussianNoise(FLAGS.input_noise_stddev)(

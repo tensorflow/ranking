@@ -43,6 +43,7 @@ Notes:
 from absl import flags
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_ranking as tfr
 
 flags.DEFINE_enum(
@@ -202,7 +203,7 @@ def get_estimator():
       FLAGS.loss, reduction=tf.compat.v2.losses.Reduction.SUM_OVER_BATCH_SIZE)
   metrics = tfr.keras.metrics.default_keras_metrics()
   optimizer = tf.keras.optimizers.Adagrad(learning_rate=FLAGS.learning_rate)
-  config = tf.estimator.RunConfig(save_checkpoints_steps=1000)
+  config = tf_estimator.RunConfig(save_checkpoints_steps=1000)
   ranker = tfr.keras.model.create_keras_model(
       network=network,
       loss=loss,
@@ -225,11 +226,11 @@ def train_and_eval():
       FLAGS.eval_path, FLAGS.batch_size, randomize_input=False, num_epochs=1)
 
   estimator = get_estimator()
-  train_spec = tf.estimator.TrainSpec(
+  train_spec = tf_estimator.TrainSpec(
       input_fn=train_input_fn, max_steps=FLAGS.num_train_steps)
-  exporters = tf.estimator.LatestExporter(
+  exporters = tf_estimator.LatestExporter(
       "saved_model_exporter", serving_input_receiver_fn=make_serving_input_fn())
-  eval_spec = tf.estimator.EvalSpec(
+  eval_spec = tf_estimator.EvalSpec(
       name="eval",
       input_fn=eval_input_fn,
       steps=1,
@@ -238,7 +239,7 @@ def train_and_eval():
       throttle_secs=15)
 
   # Train and validate.
-  tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+  tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
 def main(_):
