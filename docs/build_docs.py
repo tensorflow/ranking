@@ -21,6 +21,7 @@ python build_docs.py --output_dir=/tmp/tfr_api
 """
 
 import os
+import sys
 
 from absl import app
 from absl import flags
@@ -30,10 +31,22 @@ from tensorflow_docs.api_generator import public_api
 
 import tensorflow_ranking as tfr
 
+# pylint: disable=g-import-not-at-top
+try:
+  import tensorflow_models
+except ImportError:
+  import subprocess
+  subprocess.check_call(
+      [sys.executable, '-m', 'pip', 'install', '-U', 'tf-models-official'])
+  import tensorflow_models
+  del tensorflow_models
+
+import tensorflow_ranking.extension.premade  # pylint: disable=unused-import
+# pylint: enable=g-import-not-at-top
+
 # Hide these from the documentation. Nobody should be accessing things through
-# `tfr.python.*` and `tfr.extension.*`
+# `tfr.python.*`.
 del tfr.python
-del tfr.extension
 
 # `losses_impl` and `metrics_impl` are not available under tfr namespace, see
 # `dir(tfr)` for available APIs. These must be removed from the documentation.

@@ -11,6 +11,9 @@ py_binary(
         # py/absl:app dep,
         # py/absl/flags dep,
         # py/tensorflow_docs/api_generator:generate_lib dep,
-        # py/tensorflow_ranking dep,
+        # py/tensorflow_docs/api_generator:public_api dep,
+        # py/tensorflow_models dep,
+        "//tensorflow_ranking",
+        "//tensorflow_ranking/extension/premade",
     ],
 )

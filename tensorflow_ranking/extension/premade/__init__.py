@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""TensorFlow Ranking Premade Orbit Task Module."""
+"""TensorFlow Ranking Premade Orbit Task Module.
+
+Note: First - These APIs require These APS require the
+`tensorflow_models`package. You can install it with `pip install
+tf-models-official`. Second - Nothing under
+`tensorflow_ranking.extension.premade` is imported by default. To use
+these APIs import `premade` in your code:
+`import tensorflow_ranking.extension.premade`.
+"""
 
 from tensorflow_ranking.extension.premade.tfrbert_task import *  # pylint: disable=wildcard-import,line-too-long
