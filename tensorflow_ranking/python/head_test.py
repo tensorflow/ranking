@@ -457,7 +457,7 @@ class MultiRankingHeadTest(tf.test.TestCase):
       # Create estimator spec.
       spec = multi_head.create_estimator_spec(
           features={},
-          mode=tf.estimator.ModeKeys.TRAIN,
+          mode=tf_estimator.ModeKeys.TRAIN,
           logits=logits,
           labels=labels)
 
