@@ -19,6 +19,8 @@ upper_tabs:
         path: /ranking/overview
       - title: Install
         path: /ranking/install
+      - title: Ranking pipeline
+        path: /ranking/ranking_pipeline
       - heading: Tutorials
       - title: Quickstart
         path: /ranking/tutorials/quickstart
