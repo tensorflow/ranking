@@ -26,6 +26,8 @@ upper_tabs:
         path: /ranking/tutorials/quickstart
       - title: Distributed ranking
         path: /ranking/tutorials/ranking_dnn_distributed
+      - title: Passage ranking using TFR-BERT
+        path: /ranking/tutorials/tfr_bert
 
     - name: API
       skip_translation: true
