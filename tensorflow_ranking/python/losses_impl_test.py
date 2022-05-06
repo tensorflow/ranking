@@ -1565,6 +1565,94 @@ class SigmoidCrossEntropyLossTest(tf.test.TestCase):
           places=5)
 
 
+class OrdinalLossTest(tf.test.TestCase):
+
+  def test_ordinal_loss(self):
+    with tf.Graph().as_default():
+      scores = [[[1., 2.], [3., 2.], [2., 3.]],
+                [[1., 3.], [2., 2.], [3., 2.]],
+                [[1., 1.], [2., 1.], [3., 3.]]]
+      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            (_sigmoid_cross_entropy([0., 0., 1.], [1., 3., 2.]) +
+             _sigmoid_cross_entropy([0., 0., 0.], [2., 2., 3.]) +
+             _sigmoid_cross_entropy([0., 1., 1.], [1., 2., 3.]) +
+             _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
+             _sigmoid_cross_entropy([0., 0., 0.], [1., 2., 3.]) +
+             _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            (_sigmoid_cross_entropy([0., 0., 1.], [1., 3., 2.]) * 2. +
+             _sigmoid_cross_entropy([0., 0., 0.], [2., 2., 3.]) * 2. +
+             _sigmoid_cross_entropy([0., 1., 1.], [1., 2., 3.]) +
+             _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
+             _sigmoid_cross_entropy([0., 0., 0.], [1., 2., 3.]) +
+             _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
+            places=5)
+
+  def test_ordinal_loss_with_single_score(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
+      weights = [[2.], [1.], [1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+      with self.cached_session():
+        loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            (_sigmoid_cross_entropy(labels[0], scores[0]) +
+             _sigmoid_cross_entropy([0., 0., 0.], scores[0]) +
+             _sigmoid_cross_entropy([0., 1., 1.], scores[1]) +
+             _sigmoid_cross_entropy([0., 0., 1.], scores[1]) +
+             _sigmoid_cross_entropy(labels[2], scores[2]) * 2.) / 9.,
+            places=5)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, weights, reduction).eval(),
+            (_sigmoid_cross_entropy(labels[0], scores[0]) * 2. +
+             _sigmoid_cross_entropy([0., 0., 0.], scores[0]) * 2. +
+             _sigmoid_cross_entropy([0., 1., 1.], scores[1]) +
+             _sigmoid_cross_entropy([0., 0., 1.], scores[1]) +
+             _sigmoid_cross_entropy(labels[2], scores[2]) * 2.) / 9.,
+            places=5)
+
+  def test_ordinal_loss_with_invalid_labels(self):
+    with tf.Graph().as_default():
+      scores = [[1., 3., 2.]]
+      labels = [[0., -1., 1.]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      with self.cached_session():
+        loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+        self.assertAlmostEqual(
+            loss_fn.compute(labels, scores, None, reduction).eval(),
+            (_sigmoid_cross_entropy([0., 1.], [1., 2.]) +
+             _sigmoid_cross_entropy([0., 0.], [1., 2.])) / 2.,
+            places=5)
+
+  def test_ordinal_loss_should_handle_mask(self):
+    with tf.Graph().as_default():
+      scores = [[1., 2., 3., 2.]]
+      labels = [[0., 1., 1., 0.]]
+      mask = [[True, False, True, True]]
+      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+      loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+      with self.cached_session():
+        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+
+      self.assertAlmostEqual(
+          result,
+          (_sigmoid_cross_entropy([0., 1., 0.], [1., 3., 2.]) +
+           _sigmoid_cross_entropy([0., 0., 0.], [1., 3., 2.])) / 3.,
+          places=5)
+
+
 class ClickEMLossTest(tf.test.TestCase):
 
   def test_click_em_loss(self):

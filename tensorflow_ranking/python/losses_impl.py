@@ -1757,3 +1757,64 @@ def gumbel_neural_sort(logits,
                              [batch_size, sample_size, list_size, list_size])
 
     return smooth_perm
+
+
+class OrdinalLoss(_PointwiseLoss):
+  """Implements ordinal loss."""
+
+  def __init__(self, name, ordinal_size, temperature=1.0, ragged=False):
+    """Initializer.
+
+    Args:
+      name: A string used as the name for this loss.
+      ordinal_size: A integer number of ordinal levels of labels.
+      temperature: A float number to modify the logits=logits/temperature.
+      ragged: A boolean indicating whether the input tensors are ragged.
+    """
+    super().__init__(name, None, temperature, ragged)
+    self._ordinal_size = ordinal_size
+
+  def _labels_to_ordinals(self, labels, mask):
+    """Helper function to transform input labels to ordinal values.
+
+    Args:
+      labels: A Tensor of shape [batch_size, list_size].
+      mask: A Tensor of shape [batch_size, list_size].
+
+    Returns:
+      ordinals, shape [batch_size, list_size, ordinal_size]
+    """
+    one_to_n = tf.range(1, self._ordinal_size + 1, dtype=tf.float32)
+    unsqueezed = tf.repeat(
+        tf.expand_dims(labels, axis=2), self._ordinal_size, axis=-1)
+    return tf.where(
+        tf.expand_dims(mask, axis=-1), tf.cast(unsqueezed >= one_to_n,
+                                               tf.float32),
+        tf.expand_dims(labels, axis=-1))
+
+  def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
+    """See `_RankingLoss`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    if logits.shape.rank == 2:
+      logits = tf.repeat(tf.expand_dims(logits, -1), self._ordinal_size, -1)
+    elif logits.shape[-1] != self._ordinal_size:
+      if logits.shape[-1] == 1:
+        logits = tf.repeat(logits, self._ordinal_size, -1)
+      else:
+        raise ValueError(
+            'The last dimension of logits must be either 1 or number of ordinal'
+            f' levels {self._ordinal_size}, when the dimension number is '
+            f'greater than 2, actual dim is {logits.shape[-1]}. rank is '
+            f'{tf.rank(logits)}.')
+    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
+    logits = tf.where(
+        tf.expand_dims(mask, -1), logits, tf.zeros_like(logits))
+    ordinals = self._labels_to_ordinals(labels, mask)
+    losses = tf.where(
+        tf.expand_dims(mask, -1),
+        tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
+            labels=ordinals,
+            logits=logits),
+        tf.zeros_like(ordinals))
+    return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
