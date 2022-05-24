@@ -804,7 +804,7 @@ class GAMLayer(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
-class BilinearInteractionLayer(tf.keras.layers.Layer):
+class Bilinear(tf.keras.layers.Layer):
   """A Keras Layer makes bilinear interaction of two vectors.
 
   This Keras Layer implements the bilinear interaction of two vectors of
