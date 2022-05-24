@@ -355,5 +355,22 @@ class SelfAttentionMaskTest(tf.test.TestCase):
         self_attention_mask)
 
 
+class BilinearInteractionLayerTest(tf.test.TestCase):
+
+  def test_serialization(self):
+    # Check save and restore config.
+    layer = layers.BilinearInteractionLayer(10, 2)
+    serialized = tf.keras.layers.serialize(layer)
+    loaded = tf.keras.layers.deserialize(serialized)
+    self.assertAllEqual(loaded.get_config(), layer.get_config())
+
+  def test_call(self):
+    vector_1 = tf.constant([[1, 1], [1, 0]], dtype=tf.float32)
+    vector_2 = tf.constant([[0, 1], [0, 0]], dtype=tf.float32)
+    self.assertAllClose(
+        layers.BilinearInteractionLayer(2, 1)((vector_1, vector_2)),
+        [[0.30040634], [0.6592536]])
+
+
 if __name__ == '__main__':
   tf.test.main()
