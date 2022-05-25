@@ -196,16 +196,19 @@ class UtilsTest(tf.test.TestCase):
     self.assertAllClose(ndcg, ndcg_perm)
 
   def test_gumbel_softmax_sample(self):
-    tf.random.set_seed(None)
+    tf.random.set_seed(1)
     scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
     labels = [[0., 0., 1.], [1., 0., 1.], [0., 0., -1.]]
     labels_3d = [[[0., 0.], [0., 1.], [1., 0.]], [[1., 1.], [0., 0.], [0., 1.]],
                  [[0., 0.], [0., 0.], [-1., -1.]]]
     weights = [[2.], [1.], [1.]]
 
-    sampled_scores = [[-.291, -1.643, -2.826], [-.0866, -2.924, -3.530],
-                      [-12.42, -9.492, -7.939e-5], [-8.859, -6.830, -1.223e-3],
-                      [-.8930, -.5266, -45.80183], [-.6650, -.7220, -45.94149]]
+    sampled_scores = [[-1.7508768e-1, -4.6947412, -1.887345],
+                      [-3.6629683e-1, -3.4472363, -1.2914587],
+                      [-7.654705, -8.3514204, -7.1014347e-4],
+                      [-10.080214, -8.7212124, -2.0500139e-4],
+                      [-2.0658800e-1, -1.678545, -46.035358],
+                      [-2.3852456e-1, -1.550176, -46.028168]]
 
     expanded_labels = [[0., 0., 1.], [0., 0., 1.], [1., 0., 1.], [1., 0., 1.],
                        [0., 0., -1.], [0., 0., -1.]]
@@ -226,25 +229,26 @@ class UtilsTest(tf.test.TestCase):
     self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
     self.assertAllEqual(gbl_weights, expanded_weights)
 
-    tf.random.set_seed(None)
+    tf.random.set_seed(1)
     gbl_labels_3d, gbl_scores, _ = gumbel_sampler.sample(
         labels_3d, scores, weights)
     self.assertAllEqual(gbl_labels_3d, expanded_labels_3d)
     self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
 
   def test_gumbel_softmax_ragged_sample(self):
-    tf.random.set_seed(None)
+    tf.random.set_seed(1)
     scores = tf.ragged.constant([[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2]])
     labels = tf.ragged.constant([[0., 0., 1.], [1., 0., 1.], [0., 0.]])
     weights = [[2.], [1.], [1.]]
     listwise_weights = tf.ragged.constant([[3., 1., 2.], [1., 1., 1.], [1.,
                                                                         2.]])
 
-    sampled_scores = tf.ragged.constant([[-.291, -1.643, -2.826],
-                                         [-.0866, -2.924, -3.530],
-                                         [-12.42, -9.492, -7.939e-5],
-                                         [-8.859, -6.830, -1.223e-3],
-                                         [-.8930, -.5266], [-.6650, -.7220]])
+    sampled_scores = tf.ragged.constant(
+        [[-1.7508768e-1, -4.6947412, -1.887345],
+         [-3.6629683e-1, -3.4472363, -1.2914587],
+         [-7.654705, -8.3514204, -7.1014347e-4],
+         [-10.080214, -8.7212124, -2.0500139e-4], [-2.0658800e-1, -1.678545],
+         [-2.3852456e-1, -1.550176]])
 
     expanded_labels = tf.ragged.constant([[0., 0., 1.], [0., 0., 1.],
                                           [1., 0., 1.], [1., 0., 1.], [0., 0.],
@@ -264,7 +268,7 @@ class UtilsTest(tf.test.TestCase):
     self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
     self.assertAllEqual(gbl_weights, expanded_weights)
 
-    tf.random.set_seed(None)
+    tf.random.set_seed(1)
     gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
         labels, scores, listwise_weights)
     self.assertAllEqual(gbl_labels, expanded_labels)
