@@ -162,435 +162,359 @@ def _mean_squared_error(logits, labels):
 class UtilsTest(tf.test.TestCase):
 
   def test_approx_ranks(self):
-    with tf.Graph().as_default():
-      logits = [[100., 300., 200., 0.], [400., 200., 150., 300.]]
-      target_ranks = [[3., 1., 2., 4.], [1., 3., 4., 2.]]
+    logits = [[100., 300., 200., 0.], [400., 200., 150., 300.]]
+    target_ranks = [[3., 1., 2., 4.], [1., 3., 4., 2.]]
 
-      approx_ranks = losses_impl.approx_ranks(logits)
-      with tf.compat.v1.Session() as sess:
-        approx_ranks = sess.run(approx_ranks)
-        self.assertAllClose(approx_ranks, target_ranks)
+    approx_ranks = losses_impl.approx_ranks(logits)
+    self.assertAllClose(approx_ranks, target_ranks)
 
   def test_inverse_max_dcg(self):
-    with tf.Graph().as_default():
-      labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
-      target = [[0.04297], [0.033139], [0.]]
-      target_1 = [[0.04621], [0.04621], [0.]]
+    labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
+    target = [[0.04297], [0.033139], [0.]]
+    target_1 = [[0.04621], [0.04621], [0.]]
 
-      inverse_max_dcg = losses_impl.inverse_max_dcg(labels)
-      inverse_max_dcg_1 = losses_impl.inverse_max_dcg(labels, topn=1)
-      with tf.compat.v1.Session() as sess:
-        inverse_max_dcg = sess.run(inverse_max_dcg)
-        self.assertAllClose(inverse_max_dcg, target)
-        inverse_max_dcg_1 = sess.run(inverse_max_dcg_1)
-        self.assertAllClose(inverse_max_dcg_1, target_1)
+    inverse_max_dcg = losses_impl.inverse_max_dcg(labels)
+    inverse_max_dcg_1 = losses_impl.inverse_max_dcg(labels, topn=1)
+    self.assertAllClose(inverse_max_dcg, target)
+    self.assertAllClose(inverse_max_dcg_1, target_1)
 
   def test_ndcg(self):
-    with tf.Graph().as_default():
-      labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
-      ranks = [[1, 2, 3, 4], [1, 3, 4, 2], [1, 2, 3, 4]]
-      perm_mat = [[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
-                  [[1, 0, 0, 0], [0, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0]],
-                  [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]]
-      ndcg_ = [[0.679685], [0.95176], [0.]]
-      ndcg_rank = [[0.679685], [1.], [0.]]
-      ndcg_perm = [[0.679685], [1.], [0.]]
+    labels = [[1., 4., 1., 0.], [4., 2., 0., 3.], [0., 0., 0., 0.]]
+    ranks = [[1, 2, 3, 4], [1, 3, 4, 2], [1, 2, 3, 4]]
+    perm_mat = [[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+                [[1, 0, 0, 0], [0, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0]],
+                [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]]
+    ndcg_ = [[0.679685], [0.95176], [0.]]
+    ndcg_rank = [[0.679685], [1.], [0.]]
+    ndcg_perm = [[0.679685], [1.], [0.]]
 
-      with tf.compat.v1.Session() as sess:
-        ndcg = sess.run(losses_impl.ndcg(labels))
-        self.assertAllClose(ndcg, ndcg_)
-        ndcg = sess.run(losses_impl.ndcg(labels, ranks))
-        self.assertAllClose(ndcg, ndcg_rank)
-        ndcg = sess.run(losses_impl.ndcg(labels, perm_mat=perm_mat))
-        self.assertAllClose(ndcg, ndcg_perm)
+    ndcg = losses_impl.ndcg(labels)
+    self.assertAllClose(ndcg, ndcg_)
+    ndcg = losses_impl.ndcg(labels, ranks)
+    self.assertAllClose(ndcg, ndcg_rank)
+    ndcg = losses_impl.ndcg(labels, perm_mat=perm_mat)
+    self.assertAllClose(ndcg, ndcg_perm)
 
   def test_gumbel_softmax_sample(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      labels = [[0., 0., 1.], [1., 0., 1.], [0., 0., -1.]]
-      labels_3d = [[[0., 0.], [0., 1.], [1., 0.]], [[1., 1.], [0., 0.],
-                                                    [0., 1.]],
-                   [[0., 0.], [0., 0.], [-1., -1.]]]
-      weights = [[2.], [1.], [1.]]
+    tf.random.set_seed(None)
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    labels = [[0., 0., 1.], [1., 0., 1.], [0., 0., -1.]]
+    labels_3d = [[[0., 0.], [0., 1.], [1., 0.]], [[1., 1.], [0., 0.], [0., 1.]],
+                 [[0., 0.], [0., 0.], [-1., -1.]]]
+    weights = [[2.], [1.], [1.]]
 
-      sampled_scores = [[-.291, -1.643, -2.826], [-.0866, -2.924, -3.530],
-                        [-12.42, -9.492,
-                         -7.939e-5], [-8.859, -6.830, -1.223e-3],
-                        [-.8930, -.5266, -45.80183],
-                        [-.6650, -.7220, -45.94149]]
+    sampled_scores = [[-.291, -1.643, -2.826], [-.0866, -2.924, -3.530],
+                      [-12.42, -9.492, -7.939e-5], [-8.859, -6.830, -1.223e-3],
+                      [-.8930, -.5266, -45.80183], [-.6650, -.7220, -45.94149]]
 
-      expanded_labels = [[0., 0., 1.], [0., 0., 1.], [1., 0., 1.], [1., 0., 1.],
-                         [0., 0., -1.], [0., 0., -1.]]
+    expanded_labels = [[0., 0., 1.], [0., 0., 1.], [1., 0., 1.], [1., 0., 1.],
+                       [0., 0., -1.], [0., 0., -1.]]
 
-      expanded_labels_3d = [[[0., 0.], [0., 1.], [1., 0.]],
-                            [[0., 0.], [0., 1.], [1., 0.]],
-                            [[1., 1.], [0., 0.], [0., 1.]],
-                            [[1., 1.], [0., 0.], [0., 1.]],
-                            [[0., 0.], [0., 0.], [-1., -1.]],
-                            [[0., 0.], [0., 0.], [-1., -1.]]]
+    expanded_labels_3d = [[[0., 0.], [0., 1.], [1., 0.]],
+                          [[0., 0.], [0., 1.], [1., 0.]],
+                          [[1., 1.], [0., 0.], [0., 1.]],
+                          [[1., 1.], [0., 0.], [0., 1.]],
+                          [[0., 0.], [0., 0.], [-1., -1.]],
+                          [[0., 0.], [0., 0.], [-1., -1.]]]
 
-      expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
+    expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
 
-      gumbel_sampler = losses_impl.GumbelSampler(sample_size=2, seed=1)
-      with self.cached_session():
-        gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
-            labels, scores, weights)
-        self.assertAllEqual(gbl_labels.eval(), expanded_labels)
-        self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
-        self.assertAllEqual(gbl_weights.eval(), expanded_weights)
-        gbl_labels_3d, gbl_scores, _ = gumbel_sampler.sample(
-            labels_3d, scores, weights)
-        self.assertAllEqual(gbl_labels_3d.eval(), expanded_labels_3d)
-        self.assertAllClose(gbl_scores.eval(), sampled_scores, rtol=1e-3)
+    gumbel_sampler = losses_impl.GumbelSampler(sample_size=2, seed=1)
+    gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
+        labels, scores, weights)
+    self.assertAllEqual(gbl_labels, expanded_labels)
+    self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
+    self.assertAllEqual(gbl_weights, expanded_weights)
+
+    tf.random.set_seed(None)
+    gbl_labels_3d, gbl_scores, _ = gumbel_sampler.sample(
+        labels_3d, scores, weights)
+    self.assertAllEqual(gbl_labels_3d, expanded_labels_3d)
+    self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
 
   def test_gumbel_softmax_ragged_sample(self):
-    with tf.Graph().as_default():
-      scores = tf.ragged.constant([[1.4, -2.8, -0.4], [0., 1.8, 10.2],
-                                   [1., 1.2]])
-      labels = tf.ragged.constant([[0., 0., 1.], [1., 0., 1.], [0., 0.]])
-      weights = [[2.], [1.], [1.]]
-      listwise_weights = tf.ragged.constant([[3., 1., 2.], [1., 1., 1.],
-                                             [1., 2.]])
+    tf.random.set_seed(None)
+    scores = tf.ragged.constant([[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2]])
+    labels = tf.ragged.constant([[0., 0., 1.], [1., 0., 1.], [0., 0.]])
+    weights = [[2.], [1.], [1.]]
+    listwise_weights = tf.ragged.constant([[3., 1., 2.], [1., 1., 1.], [1.,
+                                                                        2.]])
 
-      sampled_scores = tf.ragged.constant([[-.291, -1.643, -2.826],
-                                           [-.0866, -2.924, -3.530],
-                                           [-12.42, -9.492, -7.939e-5],
-                                           [-8.859, -6.830, -1.223e-3],
-                                           [-.8930, -.5266], [-.6650, -.7220]])
+    sampled_scores = tf.ragged.constant([[-.291, -1.643, -2.826],
+                                         [-.0866, -2.924, -3.530],
+                                         [-12.42, -9.492, -7.939e-5],
+                                         [-8.859, -6.830, -1.223e-3],
+                                         [-.8930, -.5266], [-.6650, -.7220]])
 
-      expanded_labels = tf.ragged.constant([[0., 0., 1.], [0., 0., 1.],
-                                            [1., 0., 1.], [1., 0., 1.],
-                                            [0., 0.], [0., 0.]])
+    expanded_labels = tf.ragged.constant([[0., 0., 1.], [0., 0., 1.],
+                                          [1., 0., 1.], [1., 0., 1.], [0., 0.],
+                                          [0., 0.]])
 
-      expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
+    expanded_weights = [[2.], [2.], [1.], [1.], [1.], [1.]]
 
-      expanded_listwise_weights = tf.ragged.constant([[3., 1.,
-                                                       2.], [3., 1., 2.],
-                                                      [1., 1., 1.],
-                                                      [1., 1., 1.], [1., 2.],
-                                                      [1., 2.]])
+    expanded_listwise_weights = tf.ragged.constant([[3., 1., 2.], [3., 1., 2.],
+                                                    [1., 1., 1.], [1., 1., 1.],
+                                                    [1., 2.], [1., 2.]])
 
-      gumbel_sampler = losses_impl.GumbelSampler(
-          sample_size=2, ragged=True, seed=1)
-      with self.cached_session():
-        gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
-            labels, scores, weights)
-        self.assertAllEqual(gbl_labels, expanded_labels)
-        self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
-        self.assertAllEqual(gbl_weights, expanded_weights)
+    gumbel_sampler = losses_impl.GumbelSampler(
+        sample_size=2, ragged=True, seed=1)
+    gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
+        labels, scores, weights)
+    self.assertAllEqual(gbl_labels, expanded_labels)
+    self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
+    self.assertAllEqual(gbl_weights, expanded_weights)
 
-        gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
-            labels, scores, listwise_weights)
-        self.assertAllEqual(gbl_labels, expanded_labels)
-        self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
-        self.assertAllEqual(gbl_weights, expanded_listwise_weights)
+    tf.random.set_seed(None)
+    gbl_labels, gbl_scores, gbl_weights = gumbel_sampler.sample(
+        labels, scores, listwise_weights)
+    self.assertAllEqual(gbl_labels, expanded_labels)
+    self.assertAllClose(gbl_scores, sampled_scores, rtol=1e-3)
+    self.assertAllEqual(gbl_weights, expanded_listwise_weights)
 
   def test_neural_sort(self):
-    with tf.Graph().as_default():
-      scores = [[140., -280., -40.], [0., 180., 1020.], [100., 120., -320.]]
+    scores = [[140., -280., -40.], [0., 180., 1020.], [100., 120., -320.]]
 
-      permuation_mat = [[[1, 0, 0], [0, 0, 1], [0, 1, 0]],
-                        [[0, 0, 1], [0, 1, 0], [1, 0, 0]],
-                        [[0, 1, 0], [1, 0, 0], [0, 0, 1]]]
+    permuation_mat = [[[1, 0, 0], [0, 0, 1], [0, 1, 0]],
+                      [[0, 0, 1], [0, 1, 0], [1, 0, 0]],
+                      [[0, 1, 0], [1, 0, 0], [0, 0, 1]]]
 
-      with self.cached_session():
-        smooth_perm = losses_impl.neural_sort(scores)
-        self.assertAllClose(smooth_perm.eval(), permuation_mat, rtol=1e-3)
+    smooth_perm = losses_impl.neural_sort(scores)
+    self.assertAllClose(smooth_perm, permuation_mat, rtol=1e-3)
 
   def test_neural_sort_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[3.0, 1.0, -1.0, 1000.0, 5.0, 2.0]]
-      mask = [[True, True, True, False, False, True]]
-      # Permutation matrix with two masked items sharing the last position.
-      permutation_mat = [[[0.72140, 0.01321, 0.00000, 0., 0., 0.26539],
-                          [0.21183, 0.21183, 0.00053, 0., 0., 0.57581],
-                          [0.01204, 0.65723, 0.08895, 0., 0., 0.24178],
-                          [0.00004, 0.11849, 0.87557, 0., 0., 0.0059],
-                          [0., 0., 0., 0.5, 0.5, 0.],
-                          [0., 0., 0., 0.5, 0.5, 0.]]]
+    scores = [[3.0, 1.0, -1.0, 1000.0, 5.0, 2.0]]
+    mask = [[True, True, True, False, False, True]]
+    # Permutation matrix with two masked items sharing the last position.
+    permutation_mat = [[[0.72140, 0.01321, 0.00000, 0., 0., 0.26539],
+                        [0.21183, 0.21183, 0.00053, 0., 0., 0.57581],
+                        [0.01204, 0.65723, 0.08895, 0., 0., 0.24178],
+                        [0.00004, 0.11849, 0.87557, 0., 0., 0.0059],
+                        [0., 0., 0., 0.5, 0.5, 0.], [0., 0., 0., 0.5, 0.5, 0.]]]
 
-      with self.cached_session():
-        smooth_perm = losses_impl.neural_sort(scores, mask=mask)
-        self.assertAllClose(smooth_perm.eval(), permutation_mat, atol=1e-4)
+    smooth_perm = losses_impl.neural_sort(scores, mask=mask)
+    self.assertAllClose(smooth_perm, permutation_mat, atol=1e-4)
 
   def test_gumbel_neural_sort(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
 
-      # sampled_scores = [[[-.291, -1.643, -2.826],
-      #                    [-.0866, -2.924, -3.530]],
-      #                   [[-12.42, -9.492, -7.939e-5],
-      #                    [-8.859, -6.830, -1.223e-3]],
-      #                   [[-.8930, -.5266, -45.80183],
-      #                    [-.6650, -.7220, -45.94149]]]
+    # sampled_scores = [[[-.291, -1.643, -2.826],
+    #                    [-.0866, -2.924, -3.530]],
+    #                   [[-12.42, -9.492, -7.939e-5],
+    #                    [-8.859, -6.830, -1.223e-3]],
+    #                   [[-.8930, -.5266, -45.80183],
+    #                    [-.6650, -.7220, -45.94149]]]
 
-      permuation_mat = [[[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-                         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]],
-                        [[[0, 0, 1], [0, 1, 0], [1, 0, 0]],
-                         [[0, 0, 1], [0, 1, 0], [1, 0, 0]]],
-                        [[[0, 1, 0], [1, 0, 0], [0, 0, 1]],
-                         [[1, 0, 0], [0, 1, 0], [0, 0, 1]]]]
+    permuation_mat = [[[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                       [[1, 0, 0], [0, 1, 0], [0, 0, 1]]],
+                      [[[0, 0, 1], [0, 1, 0], [1, 0, 0]],
+                       [[0, 0, 1], [0, 1, 0], [1, 0, 0]]],
+                      [[[0, 1, 0], [1, 0, 0], [0, 0, 1]],
+                       [[1, 0, 0], [0, 1, 0], [0, 0, 1]]]]
 
-      with self.cached_session():
-        smooth_perm = losses_impl.gumbel_neural_sort(
-            scores, sample_size=2, temperature=0.001, seed=1)
-        self.assertAllClose(smooth_perm.eval(), permuation_mat, rtol=1e-3)
+    smooth_perm = losses_impl.gumbel_neural_sort(
+        scores, sample_size=2, temperature=0.001, seed=1)
+    self.assertAllClose(smooth_perm, permuation_mat, rtol=1e-3)
 
 
 class LabelDiffLambdaWeightTest(tf.test.TestCase):
   """Test cases for LabelDiffLambdaWeight."""
 
-  def setUp(self):
-    super(LabelDiffLambdaWeightTest, self).setUp()
-    tf.compat.v1.reset_default_graph()
-
   def test_default(self):
     """For the weight using rank diff."""
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, 0.0]]
-      ranks = [[1, 2, 3]]
-      lambda_weight = losses_impl.LabelDiffLambdaWeight()
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(), [[
-                [0., 1., 2.],
-                [1., 0., 1.],
-                [2., 1, 0.],
-            ]])
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    lambda_weight = losses_impl.LabelDiffLambdaWeight()
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks), [[
+            [0., 1., 2.],
+            [1., 0., 1.],
+            [2., 1, 0.],
+        ]])
 
 
 class DCGLambdaWeightTest(tf.test.TestCase):
   """Test cases for DCGLambdaWeight."""
 
-  def setUp(self):
-    super(DCGLambdaWeightTest, self).setUp()
-    tf.compat.v1.reset_default_graph()
-
   def test_default(self):
     """For the weight using rank diff."""
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, 0.0]]
-      ranks = [[1, 2, 3]]
-      scale = 3.
-      lambda_weight = losses_impl.DCGLambdaWeight()
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1. / 2., 2. * 1. / 6.],
-                [1. / 2., 0., 1. / 2.],
-                [2. * 1. / 6., 1. / 2., 0.],
-            ]])
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.
+    lambda_weight = losses_impl.DCGLambdaWeight()
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1. / 2., 2. * 1. / 6.],
+            [1. / 2., 0., 1. / 2.],
+            [2. * 1. / 6., 1. / 2., 0.],
+        ]])
 
   def test_smooth_fraction(self):
     """For the weights using absolute rank."""
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, 0.0]]
-      ranks = [[1, 2, 3]]
-      scale = 3.
-      lambda_weight = losses_impl.DCGLambdaWeight(smooth_fraction=1.0)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1. / 2., 2. * 2. / 3.],
-                [1. / 2., 0., 1. / 6.],
-                [2. * 2. / 3., 1. / 6., 0.],
-            ]])
-      lambda_weight = losses_impl.DCGLambdaWeight(topn=1, smooth_fraction=1.0)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1., 2.],
-                [1., 0., 0.],
-                [2., 0., 0.],
-            ]])
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.
+    lambda_weight = losses_impl.DCGLambdaWeight(smooth_fraction=1.0)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1. / 2., 2. * 2. / 3.],
+            [1. / 2., 0., 1. / 6.],
+            [2. * 2. / 3., 1. / 6., 0.],
+        ]])
+
+    lambda_weight = losses_impl.DCGLambdaWeight(topn=1, smooth_fraction=1.0)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1., 2.],
+            [1., 0., 0.],
+            [2., 0., 0.],
+        ]])
 
   def test_topn(self):
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, 0.0]]
-      ranks = [[1, 2, 3]]
-      scale = 3.
-      lambda_weight = losses_impl.DCGLambdaWeight(topn=1)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1. / 2., 1. / 3.],
-                [1. / 2., 0., 0.],
-                [1. / 3., 0., 0.],
-            ]])
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.
+    lambda_weight = losses_impl.DCGLambdaWeight(topn=1)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1. / 2., 1. / 3.],
+            [1. / 2., 0., 0.],
+            [1. / 3., 0., 0.],
+        ]])
 
   def test_invalid_labels(self):
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, -1.0]]
-      ranks = [[1, 2, 3]]
-      scale = 3.
-      lambda_weight = losses_impl.DCGLambdaWeight()
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1. / 2., 0.],
-                [1. / 2., 0., 0.],
-                [0., 0., 0.],
-            ]])
+    labels = [[2.0, 1.0, -1.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.
+    lambda_weight = losses_impl.DCGLambdaWeight()
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1. / 2., 0.],
+            [1. / 2., 0., 0.],
+            [0., 0., 0.],
+        ]])
 
   def test_gain_and_discount(self):
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0]]
-      ranks = [[1, 2]]
-      scale = 2.
-      lambda_weight = losses_impl.DCGLambdaWeight(
-          gain_fn=lambda x: tf.pow(2., x) - 1.,
-          rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 2. * (1. / math.log(2.) - 1. / math.log(3.))],
-                [2. * (1. / math.log(2.) - 1. / math.log(3.)), 0.],
-            ]])
+    labels = [[2.0, 1.0]]
+    ranks = [[1, 2]]
+    scale = 2.
+    lambda_weight = losses_impl.DCGLambdaWeight(
+        gain_fn=lambda x: tf.pow(2., x) - 1.,
+        rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 2. * (1. / math.log(2.) - 1. / math.log(3.))],
+            [2. * (1. / math.log(2.) - 1. / math.log(3.)), 0.],
+        ]])
 
   def test_normalized(self):
-    with tf.Graph().as_default():
-      labels = [[1.0, 2.0]]
-      ranks = [[1, 2]]
-      scale = 2.
-      max_dcg = 2.5
-      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1. / 2. / max_dcg],
-                [1. / 2. / max_dcg, 0.],
-            ]])
+    labels = [[1.0, 2.0]]
+    ranks = [[1, 2]]
+    scale = 2.
+    max_dcg = 2.5
+    lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1. / 2. / max_dcg],
+            [1. / 2. / max_dcg, 0.],
+        ]])
 
   def test_individual_weights(self):
-    with tf.Graph().as_default():
-      labels = [[1.0, 2.0]]
-      ranks = [[1, 2]]
-      max_dcg = 2.5
-      lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.individual_weights(labels, ranks).eval(), [
-                [1. / max_dcg / 1., 2. / max_dcg / 2.],
-            ])
+    labels = [[1.0, 2.0]]
+    ranks = [[1, 2]]
+    max_dcg = 2.5
+    lambda_weight = losses_impl.DCGLambdaWeight(normalized=True)
+    self.assertAllClose(
+        lambda_weight.individual_weights(labels, ranks), [
+            [1. / max_dcg / 1., 2. / max_dcg / 2.],
+        ])
 
 
 class DCGLambdaWeightV2Test(tf.test.TestCase):
   """Test cases for DCGLambdaWeightV2."""
 
-  def setUp(self):
-    super(DCGLambdaWeightV2Test, self).setUp()
-    tf.compat.v1.reset_default_graph()
-
   def test_default(self):
     """For the weight using rank diff."""
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, 0.0]]
-      ranks = [[1, 2, 3]]
-      scale = 3.
-      lambda_weight = losses_impl.DCGLambdaWeightV2()
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1. / 2., 2. * 1. / 6.],
-                [1. / 2., 0., 1. / 2.],
-                [2. * 1. / 6., 1. / 2., 0.],
-            ]])
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.
+    lambda_weight = losses_impl.DCGLambdaWeightV2()
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1. / 2., 2. * 1. / 6.],
+            [1. / 2., 0., 1. / 2.],
+            [2. * 1. / 6., 1. / 2., 0.],
+        ]])
 
   def test_topn(self):
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, 0.0]]
-      ranks = [[1, 2, 3]]
-      scale = 3.
-      lambda_weight = losses_impl.DCGLambdaWeightV2(topn=1)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval() / scale, [[
-                [0., 1., 1. / 2.],
-                [1., 0., 3. / 4.],
-                [1. / 2., 3. / 4., 0.],
-            ]])
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.
+    lambda_weight = losses_impl.DCGLambdaWeightV2(topn=1)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale, [[
+            [0., 1., 1. / 2.],
+            [1., 0., 3. / 4.],
+            [1. / 2., 3. / 4., 0.],
+        ]])
 
 
 class PrecisionLambdaWeightTest(tf.test.TestCase):
   """Test cases for PrecisionLambdaWeight."""
 
-  def setUp(self):
-    super(PrecisionLambdaWeightTest, self).setUp()
-    tf.compat.v1.reset_default_graph()
-
   def test_default(self):
-    with tf.Graph().as_default():
-      labels = [[2.0, 1.0, 0.0]]
-      ranks = [[1, 2, 3]]
-      lambda_weight = losses_impl.PrecisionLambdaWeight(topn=5)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]])
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    lambda_weight = losses_impl.PrecisionLambdaWeight(topn=5)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks),
+        [[[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]])
 
-      lambda_weight = losses_impl.PrecisionLambdaWeight(topn=1)
-      with self.cached_session():
-        self.assertAllClose(
-            lambda_weight.pair_weights(labels, ranks).eval(),
-            [[[0., 0., 1.], [0., 0., 0.], [1., 0., 0.]]])
+    lambda_weight = losses_impl.PrecisionLambdaWeight(topn=1)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks),
+        [[[0., 0., 1.], [0., 0., 0.], [1., 0., 0.]]])
 
 
 class LossesImplTest(tf.test.TestCase, parameterized.TestCase):
 
-  def setUp(self):
-    super(LossesImplTest, self).setUp()
-    tf.compat.v1.reset_default_graph()
-
   def test_pointwise_compute_per_list(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
 
-      with self.cached_session():
-        # SigmoidCrossEntropyLoss is chosen as an arbitrary pointwise loss to
-        # test the `compute_per_list` behavior.
-        loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
+    # SigmoidCrossEntropyLoss is chosen as an arbitrary pointwise loss to
+    # test the `compute_per_list` behavior.
+    loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
+    losses, weights = loss_fn.compute_per_list(labels, scores, per_item_weights)
 
-      self.assertAllClose(losses, [1.3644443, 0.16292572])
-      self.assertAllClose(weights, [2. + 3. + 4., 1. + 1. + 1.])
+    self.assertAllClose(losses, [1.3644443, 0.16292572])
+    self.assertAllClose(weights, [2. + 3. + 4., 1. + 1. + 1.])
 
   def test_pairwise_compute_per_list(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
 
-      with self.cached_session():
-        # PairwiseHingeLoss is chosen as an arbitrary pairwise loss to test the
-        # `compute_per_list` behavior.
-        loss_fn = losses_impl.PairwiseHingeLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
+    # PairwiseHingeLoss is chosen as an arbitrary pairwise loss to test the
+    # `compute_per_list` behavior.
+    loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+    losses, weights = loss_fn.compute_per_list(labels, scores, per_item_weights)
 
-      self.assertAllClose(losses, [1., 0.])
-      self.assertAllClose(weights, [4. + 4., 1. + 1.])
+    self.assertAllClose(losses, [1., 0.])
+    self.assertAllClose(weights, [4. + 4., 1. + 1.])
 
   def test_listwise_compute_per_list(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
 
-      with self.cached_session():
-        # ApproxNDCGLoss is chosen as an arbitrary listwise loss to test the
-        # `compute_per_list` behavior.
-        loss_fn = losses_impl.ApproxNDCGLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
+    # ApproxNDCGLoss is chosen as an arbitrary listwise loss to test the
+    # `compute_per_list` behavior.
+    loss_fn = losses_impl.ApproxNDCGLoss(name=None)
+    losses, weights = loss_fn.compute_per_list(labels, scores, per_item_weights)
 
-      self.assertAllClose(losses, [-0.63093, -0.796248])
-      self.assertAllClose(weights, [4., 1.])
+    self.assertAllClose(losses, [-0.63093, -0.796248])
+    self.assertAllClose(weights, [4., 1.])
 
   @parameterized.parameters(
       (losses_impl.SigmoidCrossEntropyLoss, [1.3644443, -0.8190755], [9., 2.]),
@@ -608,20 +532,16 @@ class LossesImplTest(tf.test.TestCase, parameterized.TestCase):
   def test_compute_per_list_with_ragged_tensors(self, loss_constructor,
                                                 expected_losses,
                                                 expected_weights):
-    with tf.Graph().as_default():
-      scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
-      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
-      per_item_weights = tf.ragged.constant([[2., 3., 4.], [1., 1.]])
+    scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
+    labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
+    per_item_weights = tf.ragged.constant([[2., 3., 4.], [1., 1.]])
 
-      with self.cached_session():
-        tf.random.set_seed(42)
-        loss_fn = loss_constructor(name=None, ragged=True)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
+    tf.random.set_seed(42)
+    loss_fn = loss_constructor(name=None, ragged=True)
+    losses, weights = loss_fn.compute_per_list(labels, scores, per_item_weights)
 
-      self.assertAllClose(losses, expected_losses)
-      self.assertAllClose(weights, expected_weights)
+    self.assertAllClose(losses, expected_losses)
+    self.assertAllClose(weights, expected_weights)
 
   @parameterized.parameters(
       (losses_impl.SigmoidCrossEntropyLoss, [[1.313262, 3.048587, 0.126928],
@@ -644,16 +564,14 @@ class LossesImplTest(tf.test.TestCase, parameterized.TestCase):
       (losses_impl.ApproxMRRLoss, [[-0.5], [-0.893493]]))
   def test_compute_unreduced_loss_with_ragged_tensors(self, loss_constructor,
                                                       expected_weighted_losses):
-    with tf.Graph().as_default():
-      scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
-      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
+    scores = tf.ragged.constant([[1., 3., 2.], [1., 3.]])
+    labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
 
-      with self.cached_session():
-        loss_fn = loss_constructor(name=None, ragged=True)
-        losses, weights = loss_fn.compute_unreduced_loss(labels, scores)
-        weighted_losses = tf.multiply(losses, weights).eval()
+    loss_fn = loss_constructor(name=None, ragged=True)
+    losses, weights = loss_fn.compute_unreduced_loss(labels, scores)
+    weighted_losses = tf.multiply(losses, weights)
 
-      self.assertAllClose(weighted_losses, expected_weighted_losses)
+    self.assertAllClose(weighted_losses, expected_weighted_losses)
 
   @parameterized.parameters(
       (losses_impl.SigmoidCrossEntropyLoss, [[2., 3., 4.], [1., 1., 0.]]),
@@ -672,1319 +590,1148 @@ class LossesImplTest(tf.test.TestCase, parameterized.TestCase):
       (losses_impl.ApproxMRRLoss, [[4.], [1.]]))
   def test_normalize_weights_with_ragged_tensors(self, loss_constructor,
                                                  expected_weights):
-    with tf.Graph().as_default():
-      labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
-      per_item_weights = tf.ragged.constant([[2., 3., 4.], [1., 1.]])
+    labels = tf.ragged.constant([[0., 0., 1.], [0., 2.]])
+    per_item_weights = tf.ragged.constant([[2., 3., 4.], [1., 1.]])
 
-      with self.cached_session():
-        loss_fn = loss_constructor(name=None, ragged=True)
-        weights = loss_fn.normalize_weights(labels, per_item_weights).eval()
+    loss_fn = loss_constructor(name=None, ragged=True)
+    weights = loss_fn.normalize_weights(labels, per_item_weights)
 
-      self.assertAllClose(weights, expected_weights)
+    self.assertAllClose(weights, expected_weights)
 
 
 class PairwiseLogisticLossTest(tf.test.TestCase):
 
   def test_pairwise_logistic_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = (logloss(3. - 2.) + logloss(1. - 2.) + logloss(3. - 1.) +
-                  logloss(3. - 2.)) / 4.
-      self.assertAllClose(result, expected)
+    logloss = lambda x: math.log(1. + math.exp(-x))
+    expected = (logloss(3. - 2.) + logloss(1. - 2.) + logloss(3. - 1.) +
+                logloss(3. - 2.)) / 4.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_logistic_loss_should_handle_per_list_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1.], [2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1.], [2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = (1. * (logloss(3. - 2.) + logloss(1. - 2.)) + 2. *
-                  (logloss(3. - 2.) + logloss(3. - 1.))) / 6.
-      self.assertAllClose(result, expected)
+    logloss = lambda x: math.log(1. + math.exp(-x))
+    expected = (1. * (logloss(3. - 2.) + logloss(1. - 2.)) + 2. *
+                (logloss(3. - 2.) + logloss(3. - 1.))) / 6.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_logistic_loss_should_handle_per_example_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1., 1., 2.], [1., 1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1., 1., 2.], [1., 1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = ((2. * logloss(3. - 2.) + 2. * logloss(1. - 2.)) +
-                  (logloss(3. - 1.) + logloss(3. - 2.))) / 6.
-      self.assertAllClose(result, expected)
+    logloss = lambda x: math.log(1. + math.exp(-x))
+    expected = ((2. * logloss(3. - 2.) + 2. * logloss(1. - 2.)) +
+                (logloss(3. - 1.) + logloss(3. - 2.))) / 6.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_logistic_loss_should_handle_lambda_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
-      lambda_weight = losses_impl.DCGLambdaWeight()
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
+    lambda_weight = losses_impl.DCGLambdaWeight()
 
-      loss_fn = losses_impl.PairwiseLogisticLoss(
-          name=None, lambda_weight=lambda_weight)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseLogisticLoss(
+        name=None, lambda_weight=lambda_weight)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = (((3. / 2.) * logloss(3. - 2.) +
-                   (3. / 2.) * logloss(1. - 2.)) +
-                  ((1. / 1.) * logloss(3. - 1.) +
-                   (3. / 1.) * logloss(3. - 2.))) / ((3. / 2.) + (3. / 2.) +
-                                                     (1. / 1.) + (3. / 1.))
-      self.assertAllClose(result, expected)
+    logloss = lambda x: math.log(1. + math.exp(-x))
+    expected = (((3. / 2.) * logloss(3. - 2.) + (3. / 2.) * logloss(1. - 2.)) +
+                ((1. / 1.) * logloss(3. - 1.) +
+                 (3. / 1.) * logloss(3. - 2.))) / ((3. / 2.) + (3. / 2.) +
+                                                   (1. / 1.) + (3. / 1.))
+    self.assertAllClose(result, expected)
 
   def test_pairwise_logistic_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
 
-      logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = logloss(2. - 1.)
-      self.assertAlmostEqual(result, expected, places=5)
+    logloss = lambda x: math.log(1. + math.exp(-x))
+    expected = logloss(2. - 1.)
+    self.assertAlmostEqual(result, expected, places=5)
 
   def test_pairwise_logistic_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[1., 0., 0.], [0., 0., 2.]]
-      mask = [[True, False, True], [True, True, True]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[1., 0., 0.], [0., 0., 2.]]
+    mask = [[True, False, True], [True, True, True]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.PairwiseLogisticLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask)
 
-      logloss = lambda x: math.log(1. + math.exp(-x))
-      expected = (logloss(1. - 2.) + logloss(3. - 1.) + logloss(3. - 2.)) / 3.
-      self.assertAllClose(result, expected)
+    logloss = lambda x: math.log(1. + math.exp(-x))
+    expected = (logloss(1. - 2.) + logloss(3. - 1.) + logloss(3. - 2.)) / 3.
+    self.assertAllClose(result, expected)
 
 
 class PairwiseHingeLossTest(tf.test.TestCase):
 
   def test_pairwise_hinge_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      hingeloss = lambda x: max(0, 1. - x)
-      expected = (hingeloss(3. - 2.) + hingeloss(1. - 2.) + hingeloss(3. - 1.) +
-                  hingeloss(3. - 2.)) / 4.
-      self.assertAllClose(result, expected)
+    hingeloss = lambda x: max(0, 1. - x)
+    expected = (hingeloss(3. - 2.) + hingeloss(1. - 2.) + hingeloss(3. - 1.) +
+                hingeloss(3. - 2.)) / 4.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_hinge_loss_should_handle_per_list_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1.], [2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1.], [2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      hingeloss = lambda x: max(0, 1. - x)
-      expected = (1. * (hingeloss(3. - 2.) + hingeloss(1. - 2.)) + 2. *
-                  (hingeloss(3. - 2.) + hingeloss(3. - 1.))) / 6.
-      self.assertAllClose(result, expected)
+    hingeloss = lambda x: max(0, 1. - x)
+    expected = (1. * (hingeloss(3. - 2.) + hingeloss(1. - 2.)) + 2. *
+                (hingeloss(3. - 2.) + hingeloss(3. - 1.))) / 6.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_hinge_loss_should_handle_per_example_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1., 1., 2.], [1., 1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1., 1., 2.], [1., 1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      hingeloss = lambda x: max(0, 1. - x)
-      expected = ((2. * hingeloss(3. - 2.) + 2. * hingeloss(1. - 2.)) +
-                  (hingeloss(3. - 1.) + hingeloss(3. - 2.))) / 6.
-      self.assertAllClose(result, expected)
+    hingeloss = lambda x: max(0, 1. - x)
+    expected = ((2. * hingeloss(3. - 2.) + 2. * hingeloss(1. - 2.)) +
+                (hingeloss(3. - 1.) + hingeloss(3. - 2.))) / 6.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_hinge_loss_should_handle_lambda_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
-      lambda_weight = losses_impl.DCGLambdaWeight()
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
+    lambda_weight = losses_impl.DCGLambdaWeight()
 
-      loss_fn = losses_impl.PairwiseHingeLoss(
-          name=None, lambda_weight=lambda_weight)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseHingeLoss(
+        name=None, lambda_weight=lambda_weight)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      hingeloss = lambda x: max(0, 1. - x)
-      expected = (((3. / 2.) * hingeloss(3. - 2.) +
-                   (3. / 2.) * hingeloss(1. - 2.)) +
-                  ((1. / 1.) * hingeloss(3. - 1.) +
-                   (3. / 1.) * hingeloss(3. - 2.))) / ((3. / 2.) + (3. / 2.) +
-                                                       (1. / 1.) + (3. / 1.))
-      self.assertAllClose(result, expected)
+    hingeloss = lambda x: max(0, 1. - x)
+    expected = (((3. / 2.) * hingeloss(3. - 2.) +
+                 (3. / 2.) * hingeloss(1. - 2.)) +
+                ((1. / 1.) * hingeloss(3. - 1.) +
+                 (3. / 1.) * hingeloss(3. - 2.))) / ((3. / 2.) + (3. / 2.) +
+                                                     (1. / 1.) + (3. / 1.))
+    self.assertAllClose(result, expected)
 
   def test_pairwise_hinge_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
 
-      hingeloss = lambda x: max(0, 1. - x)
-      expected = hingeloss(2. - 1.)
-      self.assertAlmostEqual(result, expected, places=5)
+    hingeloss = lambda x: max(0, 1. - x)
+    expected = hingeloss(2. - 1.)
+    self.assertAlmostEqual(result, expected, places=5)
 
   def test_pairwise_hinge_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[1., 0., 0.], [0., 0., 2.]]
-      mask = [[True, False, True], [True, True, True]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[1., 0., 0.], [0., 0., 2.]]
+    mask = [[True, False, True], [True, True, True]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseHingeLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.PairwiseHingeLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask)
 
-      hingeloss = lambda x: max(0, 1. - x)
-      expected = (hingeloss(1. - 2.) + hingeloss(3. - 1.) +
-                  hingeloss(3. - 2.)) / 3.
-      self.assertAllClose(result, expected)
+    hingeloss = lambda x: max(0, 1. - x)
+    expected = (hingeloss(1. - 2.) + hingeloss(3. - 1.) +
+                hingeloss(3. - 2.)) / 3.
+    self.assertAllClose(result, expected)
 
 
 class PairwiseSoftZeroOneLossTest(tf.test.TestCase):
 
   def test_pairwise_soft_zero_one_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = (softloss(3. - 2.) + softloss(1. - 2.) + softloss(3. - 1.) +
-                  softloss(3. - 2.)) / 4.
-      self.assertAllClose(result, expected)
+    softloss = lambda x: 1 / (1 + math.exp(x))
+    expected = (softloss(3. - 2.) + softloss(1. - 2.) + softloss(3. - 1.) +
+                softloss(3. - 2.)) / 4.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_soft_zero_one_loss_should_handle_per_list_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1.], [2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1.], [2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = (1. * (softloss(3. - 2.) + softloss(1. - 2.)) + 2. *
-                  (softloss(3. - 2.) + softloss(3. - 1.))) / 6.
-      self.assertAllClose(result, expected)
+    softloss = lambda x: 1 / (1 + math.exp(x))
+    expected = (1. * (softloss(3. - 2.) + softloss(1. - 2.)) + 2. *
+                (softloss(3. - 2.) + softloss(3. - 1.))) / 6.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_soft_zero_one_loss_should_handle_per_example_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1., 1., 2.], [1., 1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1., 1., 2.], [1., 1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = ((2. * softloss(3. - 2.) + 2. * softloss(1. - 2.)) +
-                  (softloss(3. - 1.) + softloss(3. - 2.))) / 6.
-      self.assertAllClose(result, expected)
+    softloss = lambda x: 1 / (1 + math.exp(x))
+    expected = ((2. * softloss(3. - 2.) + 2. * softloss(1. - 2.)) +
+                (softloss(3. - 1.) + softloss(3. - 2.))) / 6.
+    self.assertAllClose(result, expected)
 
   def test_pairwise_soft_zero_one_loss_should_handle_lambda_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
-      lambda_weight = losses_impl.DCGLambdaWeight()
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
+    lambda_weight = losses_impl.DCGLambdaWeight()
 
-      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(
-          name=None, lambda_weight=lambda_weight)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseSoftZeroOneLoss(
+        name=None, lambda_weight=lambda_weight)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = (((3. / 2.) * softloss(3. - 2.) +
-                   (3. / 2.) * softloss(1. - 2.)) +
-                  ((1. / 1.) * softloss(3. - 1.) +
-                   (3. / 1.) * softloss(3. - 2.))) / ((3. / 2.) + (3. / 2.) +
-                                                      (1. / 1.) + (3. / 1.))
-      self.assertAllClose(result, expected)
+    softloss = lambda x: 1 / (1 + math.exp(x))
+    expected = (((3. / 2.) * softloss(3. - 2.) +
+                 (3. / 2.) * softloss(1. - 2.)) +
+                ((1. / 1.) * softloss(3. - 1.) +
+                 (3. / 1.) * softloss(3. - 2.))) / ((3. / 2.) + (3. / 2.) +
+                                                    (1. / 1.) + (3. / 1.))
+    self.assertAllClose(result, expected)
 
   def test_pairwise_soft_zero_one_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
 
-      softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = softloss(2. - 1.)
-      self.assertAlmostEqual(result, expected, places=5)
+    softloss = lambda x: 1 / (1 + math.exp(x))
+    expected = softloss(2. - 1.)
+    self.assertAlmostEqual(result, expected, places=5)
 
   def test_pairwise_soft_zero_one_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[1., 0., 0.], [0., 0., 2.]]
-      mask = [[True, False, True], [True, True, True]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[1., 0., 0.], [0., 0., 2.]]
+    mask = [[True, False, True], [True, True, True]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.PairwiseSoftZeroOneLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask)
 
-      softloss = lambda x: 1 / (1 + math.exp(x))
-      expected = (softloss(1. - 2.) + softloss(3. - 1.) +
-                  softloss(3. - 2.)) / 3.
-      self.assertAllClose(result, expected)
+    softloss = lambda x: 1 / (1 + math.exp(x))
+    expected = (softloss(1. - 2.) + softloss(3. - 1.) + softloss(3. - 2.)) / 3.
+    self.assertAllClose(result, expected)
 
 
 class PairwiseMSELossTest(tf.test.TestCase):
 
   def test_pairwise_mse_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseMSELoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseMSELoss(name=None)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      expected = 2 * (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
-                      ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
-                      ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
-                                                    (0. - 0.))**2) / (6. + 6.)
-      self.assertAllClose(result, expected)
+    expected = 2 * (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                    ((3. - 1.) - (0. - 0.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                    ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
+                                                  (0. - 0.))**2) / (6. + 6.)
+    self.assertAllClose(result, expected)
 
   def test_pairwise_mse_loss_should_handle_per_list_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1.], [2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1.], [2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseMSELoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseMSELoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      expected = 2 * (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
-                      ((3. - 1.) - (0. - 0.))**2 + 2 *
-                      ((3. - 2.) - (2. - 0.))**2 + 2 * ((3. - 1.) -
-                                                        (2. - 0.))**2 + 2 *
-                      ((2. - 1.) - (0. - 0.))**2) / (6. + 2. * 6.)
-      self.assertAllClose(result, expected)
+    expected = 2 * (((2. - 3.) - (1. - 0.))**2 + ((2. - 1.) - (1. - 0.))**2 +
+                    ((3. - 1.) - (0. - 0.))**2 + 2 *
+                    ((3. - 2.) - (2. - 0.))**2 + 2 * ((3. - 1.) -
+                                                      (2. - 0.))**2 + 2 *
+                    ((2. - 1.) - (0. - 0.))**2) / (6. + 2. * 6.)
+    self.assertAllClose(result, expected)
 
   def test_pairwise_mse_loss_should_handle_per_example_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      weights = [[1., 1., 2.], [1., 1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    weights = [[1., 1., 2.], [1., 1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseMSELoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
-      # The per-example weights are applied asymmetrically. For example, the
-      # first multiplier 3. is the weights[0][1] + weights[0][2].
-      expected = ((3. * ((2. - 3.) - (1. - 0.))**2 + 3. *
-                   ((2. - 1.) - (1. - 0.))**2 + 2. * ((3. - 1.) -
-                                                      (0. - 0.))**2) + 2. *
-                  (((3. - 2.) - (2. - 0.))**2 + ((3. - 1.) - (2. - 0.))**2 +
-                   ((2. - 1.) - (0. - 0.))**2)) / (8. + 6.)
+    loss_fn = losses_impl.PairwiseMSELoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
+    # The per-example weights are applied asymmetrically. For example, the
+    # first multiplier 3. is the weights[0][1] + weights[0][2].
+    expected = ((3. * ((2. - 3.) - (1. - 0.))**2 + 3. *
+                 ((2. - 1.) - (1. - 0.))**2 + 2. * ((3. - 1.) -
+                                                    (0. - 0.))**2) + 2. *
+                (((3. - 2.) - (2. - 0.))**2 + ((3. - 1.) - (2. - 0.))**2 +
+                 ((2. - 1.) - (0. - 0.))**2)) / (8. + 6.)
 
-      self.assertAllClose(result, expected)
+    self.assertAllClose(result, expected)
 
   def test_pairwise_mse_loss_should_handle_lambda_weights(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
-      lambda_weight = losses_impl.DCGLambdaWeight()
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
+    lambda_weight = losses_impl.DCGLambdaWeight()
 
-      loss_fn = losses_impl.PairwiseMSELoss(
-          name=None, lambda_weight=lambda_weight)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.PairwiseMSELoss(
+        name=None, lambda_weight=lambda_weight)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      expected = ((3. / 2.) * ((2. - 3.) - (1. - 0.))**2 + (3. / 2.) *
-                  ((2. - 1.) - (1. - 0.))**2 + (3. / 1.) *
-                  ((3. - 2.) - (2. - 0.))**2 + (1. / 1.) *
-                  ((3. - 1.) - (2. - 0.))**2) / ((3. / 2.) + (3. / 2.) +
-                                                 (3. / 1.) + (1. / 1.))
+    expected = ((3. / 2.) * ((2. - 3.) - (1. - 0.))**2 + (3. / 2.) *
+                ((2. - 1.) - (1. - 0.))**2 + (3. / 1.) *
+                ((3. - 2.) - (2. - 0.))**2 + (1. / 1.) *
+                ((3. - 1.) - (2. - 0.))**2) / ((3. / 2.) + (3. / 2.) +
+                                               (3. / 1.) + (1. / 1.))
 
-      self.assertAllClose(result, expected)
+    self.assertAllClose(result, expected)
 
   def test_pairwise_mse_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseMSELoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.PairwiseMSELoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
 
-      expected = ((2. - 1.) - (1. - 0.))**2
-      self.assertAlmostEqual(result, expected, places=5)
+    expected = ((2. - 1.) - (1. - 0.))**2
+    self.assertAlmostEqual(result, expected, places=5)
 
   def test_pairwise_mse_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[1., 0., 0.], [0., 0., 2.]]
-      mask = [[True, False, True], [True, True, True]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[1., 0., 0.], [0., 0., 2.]]
+    mask = [[True, False, True], [True, True, True]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.PairwiseMSELoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.PairwiseMSELoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask)
 
-      expected = 2. * (((2. - 1.) - (0. - 1.))**2 + ((3. - 2.) - (2. - 0.))**2 +
-                       ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
-                                                     (0. - 0.))**2) / (2. + 6.)
-      self.assertAllClose(result, expected)
+    expected = 2. * (((2. - 1.) - (0. - 1.))**2 + ((3. - 2.) - (2. - 0.))**2 +
+                     ((3. - 1.) - (2. - 0.))**2 + ((2. - 1.) -
+                                                   (0. - 0.))**2) / (2. + 6.)
+    self.assertAllClose(result, expected)
 
 
 class CircleLossTest(tf.test.TestCase):
 
   def test_circle_loss(self):
-    with tf.Graph().as_default():
-      scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
-      labels = [[0., 0., 1.], [0., 1., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
+    labels = [[0., 0., 1.], [0., 1., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.CircleLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.CircleLoss(name=None)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      loss_0, _, _ = _circle_loss(labels[0], scores[0])
-      loss_1, _, _ = _circle_loss(labels[1], scores[1])
-      expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
-      self.assertAllClose(result, expected)
+    loss_0, _, _ = _circle_loss(labels[0], scores[0])
+    loss_1, _, _ = _circle_loss(labels[1], scores[1])
+    expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
+    self.assertAllClose(result, expected)
 
   def test_circle_loss_should_handle_per_list_weights(self):
-    with tf.Graph().as_default():
-      scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
-      labels = [[0., 0., 1.], [0., 1., 2.]]
-      weights = [[1.], [2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
+    labels = [[0., 0., 1.], [0., 1., 2.]]
+    weights = [[1.], [2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.CircleLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.CircleLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      loss_0, _, _ = _circle_loss(labels[0], scores[0])
-      loss_1, _, _ = _circle_loss(labels[1], scores[1])
-      expected = (math.log1p(loss_0) * 1. + math.log1p(loss_1) * 2.) / 3.
-      self.assertAllClose(result, expected)
+    loss_0, _, _ = _circle_loss(labels[0], scores[0])
+    loss_1, _, _ = _circle_loss(labels[1], scores[1])
+    expected = (math.log1p(loss_0) * 1. + math.log1p(loss_1) * 2.) / 3.
+    self.assertAllClose(result, expected)
 
   def test_circle_loss_should_handle_per_example_weights(self):
-    with tf.Graph().as_default():
-      scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
-      labels = [[0., 0., 1.], [0., 1., 2.]]
-      weights = [[1., 1., 2.], [1., 1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
+    labels = [[0., 0., 1.], [0., 1., 2.]]
+    weights = [[1., 1., 2.], [1., 1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.CircleLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=weights, reduction=reduction).eval()
+    loss_fn = losses_impl.CircleLoss(name=None)
+    result = loss_fn.compute(
+        labels, scores, weights=weights, reduction=reduction)
 
-      loss_0, _, _ = _circle_loss(labels[0], scores[0])
-      loss_1, _, _ = _circle_loss(labels[1], scores[1])
-      expected = (math.log1p(loss_0) * 2. + math.log1p(loss_1) * 1.) / 3.
-      self.assertAllClose(result, expected)
+    loss_0, _, _ = _circle_loss(labels[0], scores[0])
+    loss_1, _, _ = _circle_loss(labels[1], scores[1])
+    expected = (math.log1p(loss_0) * 2. + math.log1p(loss_1) * 1.) / 3.
+    self.assertAllClose(result, expected)
 
   def test_circle_loss_should_handle_parameters(self):
-    with tf.Graph().as_default():
-      scores = [[.1, .3, .2], [.1, .2, .3]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[.1, .3, .2], [.1, .2, .3]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.CircleLoss(name=None, gamma=4., margin=0.1)
-      with self.cached_session():
-        result = loss_fn.compute(
-            labels, scores, weights=None, reduction=reduction).eval()
+    loss_fn = losses_impl.CircleLoss(name=None, gamma=4., margin=0.1)
+    result = loss_fn.compute(labels, scores, weights=None, reduction=reduction)
 
-      loss_0, _, _ = _circle_loss(labels[0], scores[0], gamma=4., margin=0.1)
-      loss_1, _, _ = _circle_loss(labels[1], scores[1], gamma=4., margin=0.1)
-      expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
-      self.assertAllClose(result, expected)
+    loss_0, _, _ = _circle_loss(labels[0], scores[0], gamma=4., margin=0.1)
+    loss_1, _, _ = _circle_loss(labels[1], scores[1], gamma=4., margin=0.1)
+    expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
+    self.assertAllClose(result, expected)
 
   def test_circle_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[.1, .3, .2]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[.1, .3, .2]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.CircleLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.CircleLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction)
 
-      loss_0, _, _ = _circle_loss([0., 1.], [.1, .2])
-      expected = math.log1p(loss_0)
-      self.assertAllClose(result, expected)
+    loss_0, _, _ = _circle_loss([0., 1.], [.1, .2])
+    expected = math.log1p(loss_0)
+    self.assertAllClose(result, expected)
 
   def test_circle_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[.1, .3, .2], [.1, .2, .3]]
-      labels = [[1., 0., 0.], [0., 0., 2.]]
-      mask = [[True, False, True], [True, True, True]]
-      reduction = tf.compat.v1.losses.Reduction.MEAN
+    scores = [[.1, .3, .2], [.1, .2, .3]]
+    labels = [[1., 0., 0.], [0., 0., 2.]]
+    mask = [[True, False, True], [True, True, True]]
+    reduction = tf.compat.v1.losses.Reduction.MEAN
 
-      loss_fn = losses_impl.CircleLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.CircleLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask)
 
-      loss_0, _, _ = _circle_loss([1., 0.], [.1, .2])
-      loss_1, _, _ = _circle_loss(labels[1], scores[1])
-      expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
-      self.assertAllClose(result, expected)
+    loss_0, _, _ = _circle_loss([1., 0.], [.1, .2])
+    loss_1, _, _ = _circle_loss(labels[1], scores[1])
+    expected = (math.log1p(loss_0) + math.log1p(loss_1)) / 2
+    self.assertAllClose(result, expected)
 
 
 class SoftmaxLossTest(tf.test.TestCase):
 
   def test_softmax_loss(self):
-    with tf.Graph().as_default():
-      with self.cached_session():
-        scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-        labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-        reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-        loss_fn = losses_impl.SoftmaxLoss(name=None)
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
 
-        self.assertAlmostEqual(
-            result,
-            -(math.log(_softmax(scores[0])[2]) +
-              math.log(_softmax(scores[1])[2]) * 2.) / 2.,
-            places=5)
+    self.assertAlmostEqual(
+        result,
+        -(math.log(_softmax(scores[0])[2]) +
+          math.log(_softmax(scores[1])[2]) * 2.) / 2.,
+        places=5)
 
   def test_softmax_loss_should_handle_per_example_weights(self):
-    with tf.Graph().as_default():
-      with self.cached_session():
-        scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-        labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-        example_weights = [[1., 1., 1.], [1., 1., 3.], [1., 0., 1.]]
-        reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+    example_weights = [[1., 1., 1.], [1., 1., 3.], [1., 0., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-        loss_fn = losses_impl.SoftmaxLoss(name=None)
-        result = loss_fn.compute(labels, scores, example_weights,
-                                 reduction).eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    result = loss_fn.compute(labels, scores, example_weights, reduction).numpy()
 
-        self.assertAlmostEqual(
-            result,
-            -(math.log(_softmax(scores[0])[2]) * 1. +
-              math.log(_softmax(scores[1])[2]) * 2. * 3.) / 2.,
-            places=5)
+    self.assertAlmostEqual(
+        result,
+        -(math.log(_softmax(scores[0])[2]) * 1. +
+          math.log(_softmax(scores[1])[2]) * 2. * 3.) / 2.,
+        places=5)
 
   def test_softmax_loss_should_handle_per_list_weights(self):
-    with tf.Graph().as_default():
-      with self.cached_session():
-        scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-        labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-        list_weights = [[2.], [1.], [1.]]
-        reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+    list_weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-        loss_fn = losses_impl.SoftmaxLoss(name=None)
-        result = loss_fn.compute(labels, scores, list_weights, reduction).eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    result = loss_fn.compute(labels, scores, list_weights, reduction).numpy()
 
-        self.assertAlmostEqual(
-            result,
-            -(math.log(_softmax(scores[0])[2]) * 2. +
-              math.log(_softmax(scores[1])[2]) * 2. * 1.) / 2.,
-            places=5)
+    self.assertAlmostEqual(
+        result,
+        -(math.log(_softmax(scores[0])[2]) * 2. +
+          math.log(_softmax(scores[1])[2]) * 2. * 1.) / 2.,
+        places=5)
 
   def test_softmax_loss_should_support_lambda_weights(self):
-    with tf.Graph().as_default():
-      with self.cached_session():
-        scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-        labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-        reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-        lambda_weight = losses_impl.DCGLambdaWeight(
-            rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
+    scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    lambda_weight = losses_impl.DCGLambdaWeight(
+        rank_discount_fn=lambda r: 1. / tf.math.log1p(r))
 
-        loss_fn = losses_impl.SoftmaxLoss(
-            name=None, lambda_weight=lambda_weight)
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None, lambda_weight=lambda_weight)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
 
-        self.assertAlmostEqual(
-            result,
-            -(math.log(_softmax(scores[0])[2]) / math.log(1. + 2.) +
-              math.log(_softmax(scores[1])[2]) * 2. / math.log(1. + 1.)) / 2.,
-            places=5)
+    self.assertAlmostEqual(
+        result,
+        -(math.log(_softmax(scores[0])[2]) / math.log(1. + 2.) +
+          math.log(_softmax(scores[1])[2]) * 2. / math.log(1. + 1.)) / 2.,
+        places=5)
 
   def test_softmax_compute_per_list(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
 
-      with self.cached_session():
-        loss_fn = losses_impl.SoftmaxLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    losses, weights = loss_fn.compute_per_list(labels, scores, per_item_weights)
 
-      self.assertAllClose(losses, [1.407606, 0.407606])
-      self.assertAllClose(weights, [4., 2.])
+    self.assertAllClose(losses, [1.407606, 0.407606])
+    self.assertAllClose(weights, [4., 2.])
 
   def test_softmax_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      with self.cached_session():
-        loss_fn = losses_impl.SoftmaxLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -(math.log(_softmax([1, 2])[1])),
-            places=5)
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -(math.log(_softmax([1, 2])[1])),
+        places=5)
 
   def test_softmax_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 2., 3.]]
-      labels = [[0., 1., 1.]]
-      mask = [[True, False, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 2., 3.]]
+    labels = [[0., 1., 1.]]
+    mask = [[True, False, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.SoftmaxLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(result, -(math.log(_softmax([1, 3])[1])), places=5)
+    self.assertAlmostEqual(result, -(math.log(_softmax([1, 3])[1])), places=5)
 
   def test_softmax_loss_should_handle_padded_labels_when_labels_are_zero(self):
-    with tf.Graph().as_default():
-      loss_fn = losses_impl.SoftmaxLoss(name=None)
-      with self.cached_session():
-        scores_padded = [[0., 0.]]
-        labels_padded = [[0., -1.]]
-        result_padded = loss_fn.compute_unreduced_loss(labels_padded,
-                                                       scores_padded)[0].eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    scores_padded = [[0., 0.]]
+    labels_padded = [[0., -1.]]
+    result_padded = loss_fn.compute_unreduced_loss(labels_padded,
+                                                   scores_padded)[0]
 
-        scores = [[0.]]
-        labels = [[0.]]
-        result = loss_fn.compute_unreduced_loss(labels, scores)[0].eval()
+    scores = [[0.]]
+    labels = [[0.]]
+    result = loss_fn.compute_unreduced_loss(labels, scores)[0]
 
-      self.assertAllClose(result_padded, result)
+    self.assertAllClose(result_padded, result)
 
   def test_softmax_loss_should_handle_fully_padded_labels(self):
-    with tf.Graph().as_default():
-      loss_fn = losses_impl.SoftmaxLoss(name=None)
-      with self.cached_session():
-        scores = [[0., 0.]]
-        labels = [[-1., -1.]]
-        result = loss_fn.compute_unreduced_loss(labels, scores)[0].eval()
+    loss_fn = losses_impl.SoftmaxLoss(name=None)
+    scores = [[0., 0.]]
+    labels = [[-1., -1.]]
+    result = loss_fn.compute_unreduced_loss(labels, scores)[0]
 
-      self.assertAlmostEqual(result[0], 0.0)
+    self.assertAlmostEqual(result[0], 0.0)
 
 
 class UniqueSoftmaxLossTest(tf.test.TestCase):
 
   def test_unique_softmax_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -(math.log(_softmax(scores[0])[2]) +
-              math.log(_softmax(scores[1][:2])[1]) +
-              math.log(_softmax(scores[1])[2]) * 3.) / 3.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(math.log(_softmax(scores[0])[2]) * 2. +
-              math.log(_softmax(scores[1][:2])[1]) * 1. +
-              math.log(_softmax(scores[1])[2]) * 3. * 1.) / 2.,
-            places=5)
+    scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -(math.log(_softmax(scores[0])[2]) + math.log(
+            _softmax(scores[1][:2])[1]) + math.log(_softmax(scores[1])[2]) * 3.)
+        / 3.,
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        -(math.log(_softmax(scores[0])[2]) * 2. +
+          math.log(_softmax(scores[1][:2])[1]) * 1. +
+          math.log(_softmax(scores[1])[2]) * 3. * 1.) / 2.,
+        places=5)
 
   def test_unique_softmax_compute_per_list(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 0., 2.]]
-      per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 0., 2.]]
+    per_item_weights = [[2., 3., 4.], [1., 1., 1.]]
 
-      with self.cached_session():
-        loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
-        losses, weights = loss_fn.compute_per_list(labels, scores,
-                                                   per_item_weights)
-        losses, weights = losses.eval(), weights.eval()
+    loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
+    losses, weights = loss_fn.compute_per_list(labels, scores, per_item_weights)
 
-      self.assertAllClose(losses, [1.407606, 1.222818])
-      self.assertAllClose(weights, [4., 1.])
+    self.assertAllClose(losses, [1.407606, 1.222818])
+    self.assertAllClose(weights, [4., 1.])
 
   def test_unique_softmax_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 2., 3., 2.]]
-      labels = [[0., 1., 1., 0.]]
-      mask = [[True, False, True, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 2., 3., 2.]]
+    labels = [[0., 1., 1., 0.]]
+    mask = [[True, False, True, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.UniqueSoftmaxLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(
-          result, -(math.log(_softmax([1, 3, 2])[1])), places=5)
+    self.assertAlmostEqual(
+        result, -(math.log(_softmax([1, 3, 2])[1])), places=5)
 
 
 class ListMLELossTest(tf.test.TestCase):
 
   def test_list_mle_loss(self):
-    with tf.Graph().as_default():
-      scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
-      labels = [[0., 2., 1.], [1., 0., 2.]]
-      weights = [[2.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.ListMLELoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) +
-              (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(2 * (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) + 1 *
-              (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
-            places=5)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    weights = [[2.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.ListMLELoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) +
+          (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        -(2 * (ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1)) + 1 *
+          (ln(3. / (3 + 2 + 1)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
 
   def test_list_mle_loss_tie(self):
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      scores = [[0., ln(2), ln(3)]]
-      labels = [[0., 0., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.ListMLELoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))),
-            places=5)
+    tf.random.set_seed(1)
+    scores = [[0., ln(2), ln(3)]]
+    labels = [[0., 0., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.ListMLELoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((ln(3. / (3 + 2 + 1)) + ln(2. / (2 + 1)) + ln(1. / 1))),
+        places=5)
 
   def test_list_mle_loss_lambda_weight(self):
-    with tf.Graph().as_default():
-      scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
-      labels = [[0., 2., 1.], [1., 0., 2.]]
-      lw = losses_impl.ListMLELambdaWeight(
-          rank_discount_fn=lambda rank: tf.pow(2., 3 - rank) - 1.)
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.ListMLELoss(name=None, lambda_weight=lw)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((3 * ln(3. / (3 + 2 + 1)) + 1 * ln(2. /
-                                                 (2 + 1)) + 0 * ln(1. / 1)) +
-              (3 * ln(3. / (3 + 2 + 1)) + 1 * ln(1. /
-                                                 (1 + 2)) + 0 * ln(2. / 2))) /
-            2,
-            places=5)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    lw = losses_impl.ListMLELambdaWeight(
+        rank_discount_fn=lambda rank: tf.pow(2., 3 - rank) - 1.)
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.ListMLELoss(name=None, lambda_weight=lw)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((3 * ln(3. / (3 + 2 + 1)) + 1 * ln(2. / (2 + 1)) + 0 * ln(1. / 1)) +
+          (3 * ln(3. / (3 + 2 + 1)) + 1 * ln(1. / (1 + 2)) + 0 * ln(2. / 2))) /
+        2,
+        places=5)
 
   def test_list_mle_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      scores = [[0., ln(2), ln(3)]]
-      labels = [[0., 0., 1.]]
-      mask = [[True, False, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    tf.random.set_seed(1)
+    scores = [[0., ln(2), ln(3)]]
+    labels = [[0., 0., 1.]]
+    mask = [[True, False, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.ListMLELoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.ListMLELoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(result, -(ln(3. / (3 + 1)) + ln(1. / 1)), places=5)
+    self.assertAlmostEqual(result, -(ln(3. / (3 + 1)) + ln(1. / 1)), places=5)
 
 
 class MeanSquaredLossTest(tf.test.TestCase):
 
   def test_mean_squared_loss(self):
-    with tf.Graph().as_default():
-      scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
-      labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.MeanSquaredLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_mean_squared_error(labels[0], scores[0]) +
-             _mean_squared_error(labels[1], scores[1]) +
-             _mean_squared_error(labels[2], scores[2])) / 9.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            (_mean_squared_error(labels[0], scores[0]) * 2.0 +
-             _mean_squared_error(labels[1], scores[1]) +
-             _mean_squared_error(labels[2], scores[2])) / 9.,
-            places=5)
+    scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
+    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.MeanSquaredLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (_mean_squared_error(labels[0], scores[0]) + _mean_squared_error(
+            labels[1], scores[1]) + _mean_squared_error(labels[2], scores[2])) /
+        9.,
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        (_mean_squared_error(labels[0], scores[0]) * 2.0 + _mean_squared_error(
+            labels[1], scores[1]) + _mean_squared_error(labels[2], scores[2])) /
+        9.,
+        places=5)
 
   def test_mean_squared_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      with self.cached_session():
-        loss_fn = losses_impl.MeanSquaredLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (1. + 1.) / 2,
-            places=5)
+    loss_fn = losses_impl.MeanSquaredLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(), (1. + 1.) / 2,
+        places=5)
 
   def test_mean_squared_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., 1., 1.]]
-      mask = [[True, False, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., 1., 1.]]
+    mask = [[True, False, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.MeanSquaredLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.MeanSquaredLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(result, (1. + 1.) / 2, places=5)
+    self.assertAlmostEqual(result, (1. + 1.) / 2, places=5)
 
 
 class SigmoidCrossEntropyLossTest(tf.test.TestCase):
 
   def test_sigmoid_cross_entropy_loss(self):
-    with tf.Graph().as_default():
-      scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
-      labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_sigmoid_cross_entropy(labels[0], scores[0]) +
-             _sigmoid_cross_entropy(labels[1], scores[1]) +
-             _sigmoid_cross_entropy(labels[2], scores[2])) / 9.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            (_sigmoid_cross_entropy(labels[0], scores[0]) * 2.0 +
-             _sigmoid_cross_entropy(labels[1], scores[1]) +
-             _sigmoid_cross_entropy(labels[2], scores[2])) / 9.,
-            places=5)
+    scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5], [0.2, 0.3, 0.5]]
+    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (_sigmoid_cross_entropy(labels[0], scores[0]) +
+         _sigmoid_cross_entropy(labels[1], scores[1]) +
+         _sigmoid_cross_entropy(labels[2], scores[2])) / 9.,
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        (_sigmoid_cross_entropy(labels[0], scores[0]) * 2.0 +
+         _sigmoid_cross_entropy(labels[1], scores[1]) +
+         _sigmoid_cross_entropy(labels[2], scores[2])) / 9.,
+        places=5)
 
   def test_sigmoid_cross_entropy_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      with self.cached_session():
-        loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (math.log(1. + math.exp(-2.)) + math.log(1. + math.exp(1))) / 2,
-            places=5)
+    loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (math.log(1. + math.exp(-2.)) + math.log(1. + math.exp(1))) / 2,
+        places=5)
 
   def test_sigmoid_cross_entropy_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., 1., 1.]]
-      mask = [[True, False, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., 1., 1.]]
+    mask = [[True, False, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.SigmoidCrossEntropyLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(
-          result,
-          (math.log(1. + math.exp(-2.)) + math.log(1. + math.exp(1.))) / 2.,
-          places=5)
+    self.assertAlmostEqual(
+        result,
+        (math.log(1. + math.exp(-2.)) + math.log(1. + math.exp(1.))) / 2.,
+        places=5)
 
 
 class OrdinalLossTest(tf.test.TestCase):
 
   def test_ordinal_loss(self):
-    with tf.Graph().as_default():
-      scores = [[[1., 2.], [3., 2.], [2., 3.]],
-                [[1., 3.], [2., 2.], [3., 2.]],
-                [[1., 1.], [2., 1.], [3., 3.]]]
-      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_sigmoid_cross_entropy([0., 0., 1.], [1., 3., 2.]) +
-             _sigmoid_cross_entropy([0., 0., 0.], [2., 2., 3.]) +
-             _sigmoid_cross_entropy([0., 1., 1.], [1., 2., 3.]) +
-             _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
-             _sigmoid_cross_entropy([0., 0., 0.], [1., 2., 3.]) +
-             _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            (_sigmoid_cross_entropy([0., 0., 1.], [1., 3., 2.]) * 2. +
-             _sigmoid_cross_entropy([0., 0., 0.], [2., 2., 3.]) * 2. +
-             _sigmoid_cross_entropy([0., 1., 1.], [1., 2., 3.]) +
-             _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
-             _sigmoid_cross_entropy([0., 0., 0.], [1., 2., 3.]) +
-             _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
-            places=5)
+    scores = [[[1., 2.], [3., 2.], [2., 3.]], [[1., 3.], [2., 2.], [3., 2.]],
+              [[1., 1.], [2., 1.], [3., 3.]]]
+    labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (_sigmoid_cross_entropy([0., 0., 1.], [1., 3., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [2., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 1., 1.], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        (_sigmoid_cross_entropy([0., 0., 1.], [1., 3., 2.]) * 2. +
+         _sigmoid_cross_entropy([0., 0., 0.], [2., 2., 3.]) * 2. +
+         _sigmoid_cross_entropy([0., 1., 1.], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
+        places=5)
 
   def test_ordinal_loss_with_single_score(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-      labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
-      with self.cached_session():
-        loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_sigmoid_cross_entropy(labels[0], scores[0]) +
-             _sigmoid_cross_entropy([0., 0., 0.], scores[0]) +
-             _sigmoid_cross_entropy([0., 1., 1.], scores[1]) +
-             _sigmoid_cross_entropy([0., 0., 1.], scores[1]) +
-             _sigmoid_cross_entropy(labels[2], scores[2]) * 2.) / 9.,
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            (_sigmoid_cross_entropy(labels[0], scores[0]) * 2. +
-             _sigmoid_cross_entropy([0., 0., 0.], scores[0]) * 2. +
-             _sigmoid_cross_entropy([0., 1., 1.], scores[1]) +
-             _sigmoid_cross_entropy([0., 0., 1.], scores[1]) +
-             _sigmoid_cross_entropy(labels[2], scores[2]) * 2.) / 9.,
-            places=5)
+    scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+    labels = [[0., 0., 1.], [0., 1., 2.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (_sigmoid_cross_entropy(labels[0], scores[0]) +
+         _sigmoid_cross_entropy([0., 0., 0.], scores[0]) +
+         _sigmoid_cross_entropy([0., 1., 1.], scores[1]) +
+         _sigmoid_cross_entropy([0., 0., 1.], scores[1]) +
+         _sigmoid_cross_entropy(labels[2], scores[2]) * 2.) / 9.,
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        (_sigmoid_cross_entropy(labels[0], scores[0]) * 2. +
+         _sigmoid_cross_entropy([0., 0., 0.], scores[0]) * 2. +
+         _sigmoid_cross_entropy([0., 1., 1.], scores[1]) +
+         _sigmoid_cross_entropy([0., 0., 1.], scores[1]) +
+         _sigmoid_cross_entropy(labels[2], scores[2]) * 2.) / 9.,
+        places=5)
 
   def test_ordinal_loss_with_invalid_labels(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      with self.cached_session():
-        loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_sigmoid_cross_entropy([0., 1.], [1., 2.]) +
-             _sigmoid_cross_entropy([0., 0.], [1., 2.])) / 2.,
-            places=5)
+    loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (_sigmoid_cross_entropy([0., 1.], [1., 2.]) +
+         _sigmoid_cross_entropy([0., 0.], [1., 2.])) / 2.,
+        places=5)
 
   def test_ordinal_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 2., 3., 2.]]
-      labels = [[0., 1., 1., 0.]]
-      mask = [[True, False, True, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 2., 3., 2.]]
+    labels = [[0., 1., 1., 0.]]
+    mask = [[True, False, True, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(
-          result,
-          (_sigmoid_cross_entropy([0., 1., 0.], [1., 3., 2.]) +
-           _sigmoid_cross_entropy([0., 0., 0.], [1., 3., 2.])) / 3.,
-          places=5)
+    self.assertAlmostEqual(
+        result,
+        (_sigmoid_cross_entropy([0., 1., 0.], [1., 3., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 3., 2.])) / 3.,
+        places=5)
 
 
 class ClickEMLossTest(tf.test.TestCase):
 
   def test_click_em_loss(self):
-    with tf.Graph().as_default():
-      loss_fn = losses_impl.ClickEMLoss(name=None)
-      loss_fn_weighted = losses_impl.ClickEMLoss(
-          name='weighted', exam_loss_weight=2.0, rel_loss_weight=5.0)
-      clicks = [[1., 0, 0, 0]]
-      exam_logits = [[3., 3, 4, 100]]
-      rel_logits = [[3., 2, 1, 100]]
-      logits = tf.stack([exam_logits, rel_logits], axis=2)
-      reduction = tf.compat.v1.losses.Reduction.SUM
-      with self.cached_session():
-        exam_given_clicks, rel_given_clicks = loss_fn._compute_latent_prob(
-            clicks, exam_logits, rel_logits)
-        self.assertAllClose(exam_given_clicks, [[1., 0.705384, 0.93624, 0.5]])
-        self.assertAllClose(rel_given_clicks, [[1., 0.259496, 0.046613, 0.5]])
+    loss_fn = losses_impl.ClickEMLoss(name=None)
+    loss_fn_weighted = losses_impl.ClickEMLoss(
+        name='weighted', exam_loss_weight=2.0, rel_loss_weight=5.0)
+    clicks = [[1., 0, 0, 0]]
+    exam_logits = [[3., 3, 4, 100]]
+    rel_logits = [[3., 2, 1, 100]]
+    logits = tf.stack([exam_logits, rel_logits], axis=2)
+    reduction = tf.compat.v1.losses.Reduction.SUM
+    exam_given_clicks, rel_given_clicks = loss_fn._compute_latent_prob(
+        clicks, exam_logits, rel_logits)
+    self.assertAllClose(exam_given_clicks, [[1., 0.705384, 0.93624, 0.5]])
+    self.assertAllClose(rel_given_clicks, [[1., 0.259496, 0.046613, 0.5]])
 
-        self.assertAlmostEqual(
-            loss_fn.compute(clicks, logits, None, reduction).eval(),
-            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
-            + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
-                                     rel_logits[0]),
-            places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(clicks, logits, None, reduction).numpy(),
+        _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0]) +
+        _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5], rel_logits[0]),
+        places=5)
 
-        # Test the loss weights.
-        self.assertAlmostEqual(
-            loss_fn_weighted.compute(clicks, logits, None, reduction).eval(),
-            _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0])
-            * 2.0 + _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5],
-                                           rel_logits[0]) * 5.0,
-            places=4)
+    # Test the loss weights.
+    self.assertAlmostEqual(
+        loss_fn_weighted.compute(clicks, logits, None, reduction).numpy(),
+        _sigmoid_cross_entropy([1., 0.705384, 0.93624, 0.5], exam_logits[0]) *
+        2.0 +
+        _sigmoid_cross_entropy([1., 0.259496, 0.046613, 0.5], rel_logits[0]) *
+        5.0,
+        places=4)
 
   def test_click_em_loss_should_ignore_invalid_labels(self):
-    with tf.Graph().as_default():
-      clicks = [[1., -1., 0., 0.]]
-      exam_logits = [[3., 3, 4, 100]]
-      rel_logits = [[3., 2, 1, 100]]
-      logits = tf.stack([exam_logits, rel_logits], axis=2)
-      reduction = tf.compat.v1.losses.Reduction.SUM
+    clicks = [[1., -1., 0., 0.]]
+    exam_logits = [[3., 3, 4, 100]]
+    rel_logits = [[3., 2, 1, 100]]
+    logits = tf.stack([exam_logits, rel_logits], axis=2)
+    reduction = tf.compat.v1.losses.Reduction.SUM
 
-      with self.cached_session():
-        loss_fn = losses_impl.ClickEMLoss(name=None)
-        result = loss_fn.compute(clicks, logits, None, reduction).eval()
+    loss_fn = losses_impl.ClickEMLoss(name=None)
+    result = loss_fn.compute(clicks, logits, None, reduction).numpy()
 
-      self.assertAlmostEqual(
-          result,
-          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.]) +
-          _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
-          places=5)
+    self.assertAlmostEqual(
+        result,
+        _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.]) +
+        _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
+        places=5)
 
   def test_click_em_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      clicks = [[1., 1., 0., 0.]]
-      exam_logits = [[3., 3., 4., 100.]]
-      rel_logits = [[3., 2., 1., 100.]]
-      mask = [[True, False, True, True]]
-      logits = tf.stack([exam_logits, rel_logits], axis=2)
-      reduction = tf.compat.v1.losses.Reduction.SUM
+    clicks = [[1., 1., 0., 0.]]
+    exam_logits = [[3., 3., 4., 100.]]
+    rel_logits = [[3., 2., 1., 100.]]
+    mask = [[True, False, True, True]]
+    logits = tf.stack([exam_logits, rel_logits], axis=2)
+    reduction = tf.compat.v1.losses.Reduction.SUM
 
-      with self.cached_session():
-        loss_fn = losses_impl.ClickEMLoss(name=None)
-        result = loss_fn.compute(clicks, logits, None, reduction, mask).eval()
+    loss_fn = losses_impl.ClickEMLoss(name=None)
+    result = loss_fn.compute(clicks, logits, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(
-          result,
-          _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.]) +
-          _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
-          places=5)
+    self.assertAlmostEqual(
+        result,
+        _sigmoid_cross_entropy([1., 0.93624, 0.5], [3., 4., 100.]) +
+        _sigmoid_cross_entropy([1., 0.046613, 0.5], [3., 1., 100.]),
+        places=5)
 
 
 class MixtureEMLossTest(tf.test.TestCase):
 
   def test_mixture_em_loss(self):
-    with tf.Graph().as_default():
-      loss_fn = losses_impl.MixtureEMLoss(name=None)
-      clicks = [[1., 0, 0, 0]]
-      model_1 = [[3., 3, 4, 100]]
-      model_2 = [[3., 2, 1, 100]]
-      logits = tf.stack([model_1, model_2], axis=2)
-      reduction = tf.compat.v1.losses.Reduction.SUM
-      with self.cached_session():
-        logloss_1 = _sigmoid_cross_entropy(clicks[0], model_1[0])
-        logloss_2 = _sigmoid_cross_entropy(clicks[0], model_2[0])
-        model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
-        self.assertAllClose(
-            loss_fn._compute_model_prob([[[logloss_1, logloss_2]]]),
-            model_probs)
+    loss_fn = losses_impl.MixtureEMLoss(name=None)
+    clicks = [[1., 0, 0, 0]]
+    model_1 = [[3., 3, 4, 100]]
+    model_2 = [[3., 2, 1, 100]]
+    logits = tf.stack([model_1, model_2], axis=2)
+    reduction = tf.compat.v1.losses.Reduction.SUM
+    logloss_1 = _sigmoid_cross_entropy(clicks[0], model_1[0])
+    logloss_2 = _sigmoid_cross_entropy(clicks[0], model_2[0])
+    model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
+    self.assertAllClose(
+        loss_fn._compute_model_prob([[[logloss_1, logloss_2]]]), model_probs)
 
-        self.assertAlmostEqual(
-            loss_fn.compute(clicks, logits, None, reduction).eval(),
-            (logloss_1 * model_probs[0][0][0] +
-             logloss_2 * model_probs[0][0][1]) /
-            (model_probs[0][0][0] + model_probs[0][0][1]),
-            places=4)
+    self.assertAlmostEqual(
+        loss_fn.compute(clicks, logits, None, reduction).numpy(),
+        (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1]) /
+        (model_probs[0][0][0] + model_probs[0][0][1]),
+        places=4)
 
   def test_mixture_em_loss_should_ignore_invalid_labels(self):
-    with tf.Graph().as_default():
-      clicks = [[1., -1., 0., 0.]]
-      model_1 = [[3., 3, 4, 100]]
-      model_2 = [[3., 2, 1, 100]]
-      logits = tf.stack([model_1, model_2], axis=2)
-      reduction = tf.compat.v1.losses.Reduction.SUM
-      logloss_1 = _sigmoid_cross_entropy([1., 0., 0.], [3., 4., 100.])
-      logloss_2 = _sigmoid_cross_entropy([1., 0., 0.], [3., 1., 100.])
-      model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
+    clicks = [[1., -1., 0., 0.]]
+    model_1 = [[3., 3, 4, 100]]
+    model_2 = [[3., 2, 1, 100]]
+    logits = tf.stack([model_1, model_2], axis=2)
+    reduction = tf.compat.v1.losses.Reduction.SUM
+    logloss_1 = _sigmoid_cross_entropy([1., 0., 0.], [3., 4., 100.])
+    logloss_2 = _sigmoid_cross_entropy([1., 0., 0.], [3., 1., 100.])
+    model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
 
-      with self.cached_session():
-        loss_fn = losses_impl.MixtureEMLoss(name=None)
-        result = loss_fn.compute(clicks, logits, None, reduction).eval()
+    loss_fn = losses_impl.MixtureEMLoss(name=None)
+    result = loss_fn.compute(clicks, logits, None, reduction).numpy()
 
-      self.assertAlmostEqual(
-          result,
-          (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1])
-          / (model_probs[0][0][0] + model_probs[0][0][1]),
-          places=5)
+    self.assertAlmostEqual(
+        result,
+        (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1]) /
+        (model_probs[0][0][0] + model_probs[0][0][1]),
+        places=5)
 
   def test_mixture_em_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      clicks = [[1., 1., 0., 0.]]
-      model_1 = [[3., 3., 4., 100.]]
-      model_2 = [[3., 2., 1., 100.]]
-      mask = [[True, False, True, True]]
-      logits = tf.stack([model_1, model_2], axis=2)
-      reduction = tf.compat.v1.losses.Reduction.SUM
-      logloss_1 = _sigmoid_cross_entropy([1., 0., 0.], [3., 4., 100.])
-      logloss_2 = _sigmoid_cross_entropy([1., 0., 0.], [3., 1., 100.])
-      model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
+    clicks = [[1., 1., 0., 0.]]
+    model_1 = [[3., 3., 4., 100.]]
+    model_2 = [[3., 2., 1., 100.]]
+    mask = [[True, False, True, True]]
+    logits = tf.stack([model_1, model_2], axis=2)
+    reduction = tf.compat.v1.losses.Reduction.SUM
+    logloss_1 = _sigmoid_cross_entropy([1., 0., 0.], [3., 4., 100.])
+    logloss_2 = _sigmoid_cross_entropy([1., 0., 0.], [3., 1., 100.])
+    model_probs = _logodds_prob([[[logloss_1, logloss_2]]])
 
-      with self.cached_session():
-        loss_fn = losses_impl.MixtureEMLoss(name=None)
-        result = loss_fn.compute(clicks, logits, None, reduction, mask).eval()
+    loss_fn = losses_impl.MixtureEMLoss(name=None)
+    result = loss_fn.compute(clicks, logits, None, reduction, mask).numpy()
 
-      self.assertAlmostEqual(
-          result,
-          (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1])
-          / (model_probs[0][0][0] + model_probs[0][0][1]),
-          places=5)
+    self.assertAlmostEqual(
+        result,
+        (logloss_1 * model_probs[0][0][0] + logloss_2 * model_probs[0][0][1]) /
+        (model_probs[0][0][0] + model_probs[0][0][1]),
+        places=5)
 
 
 class ApproxNDCGLossTest(tf.test.TestCase):
 
   def test_approx_ndcg_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      # ranks= [[1,    3,    2],   [2,  1,   3],    [2,  1,    3]]
-      labels = [[0., 2., 1.], [1., 0., -1.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-      norm_weights = []
-      for weight, label in zip(example_weights, labels):
-        sum_label = sum(max(0, l) for l in label)
-        norm_weights.append(
-            sum(w * max(0, l) for w, l in zip(weight, label)) /
-            sum_label if sum_label else 0)
-      reduction = tf.compat.v1.losses.Reduction.SUM
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    # ranks= [[1,    3,    2],   [2,  1,   3],    [2,  1,    3]]
+    labels = [[0., 2., 1.], [1., 0., -1.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    example_weights = [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
+    norm_weights = []
+    for weight, label in zip(example_weights, labels):
+      sum_label = sum(max(0, l) for l in label)
+      norm_weights.append(
+          sum(w * max(0, l) for w, l in zip(weight, label)) /
+          sum_label if sum_label else 0)
+    reduction = tf.compat.v1.losses.Reduction.SUM
 
-      with self.cached_session():
-        loss_fn = losses_impl.ApproxNDCGLoss(name=None, temperature=0.1)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + ln(2) *
-              (1 / ln(3))),
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(2 * (1 / (3 / ln(2) + 1 / ln(3))) *
-              (3 / ln(4) + 1 / ln(3)) + 1 * ln(2) * (1 / ln(3))),
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, example_weights, reduction).eval(),
-            -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
-              (3 / ln(4) + 1 / ln(3)) + norm_weights[1] * ln(2) * (1 / ln(3))),
-            places=5)
+    loss_fn = losses_impl.ApproxNDCGLoss(name=None, temperature=0.1)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + ln(2) *
+          (1 / ln(3))),
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction),
+        -(2 * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + 1 * ln(2) * (1 / ln(3))),
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, example_weights, reduction).numpy(),
+        -(norm_weights[0] * (1 / (3 / ln(2) + 1 / ln(3))) *
+          (3 / ln(4) + 1 / ln(3)) + norm_weights[1] * ln(2) * (1 / ln(3))),
+        places=5)
 
   def test_approx_ndcg_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., 0., 1.]]
-      mask = [[True, False, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., 0., 1.]]
+    mask = [[True, False, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.ApproxNDCGLoss(name=None, temperature=1.)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.ApproxNDCGLoss(name=None, temperature=1.)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      approxrank = 1. + 1. / (1. + math.exp(-(1. - 2.)))
-      dcg = 1. / math.log(1. + approxrank)
-      inv_max_dcg = math.log(1. + 1.)
-      ndcg = dcg * inv_max_dcg
-      self.assertAlmostEqual(result, -ndcg, places=5)
+    approxrank = 1. + 1. / (1. + math.exp(-(1. - 2.)))
+    dcg = 1. / math.log(1. + approxrank)
+    inv_max_dcg = math.log(1. + 1.)
+    ndcg = dcg * inv_max_dcg
+    self.assertAlmostEqual(result, -ndcg, places=5)
 
 
 class ApproxMRRLossTest(tf.test.TestCase):
 
   def test_approx_mrr_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      labels = [[0., 0., 1.], [1., 0., 1.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    labels = [[0., 0., 1.], [1., 0., 1.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM
 
-      with self.cached_session():
-        loss_fn = losses_impl.ApproxMRRLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((1 / 2.) + 1 / 2. * (1 / 3. + 1 / 1.)),
-            places=5)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)),
-            places=5)
+    loss_fn = losses_impl.ApproxMRRLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((1 / 2.) + 1 / 2. * (1 / 3. + 1 / 1.)),
+        places=5)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)),
+        places=5)
 
   def test_approx_mrr_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., 0., 1.]]
-      mask = [[True, False, True]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., 0., 1.]]
+    mask = [[True, False, True]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.ApproxMRRLoss(name=None, temperature=1.)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.ApproxMRRLoss(name=None, temperature=1.)
+    result = loss_fn.compute(labels, scores, None, reduction, mask)
 
-      approxrank = 1. + 1. / (1. + math.exp(-(1. - 2.)))
-      self.assertAlmostEqual(result, -1. / approxrank, places=5)
+    approxrank = 1. + 1. / (1. + math.exp(-(1. - 2.)))
+    self.assertAlmostEqual(result, -1. / approxrank, places=5)
 
 
 class NeuralSortCrossEntropyLossTest(tf.test.TestCase):
 
   def test_neural_sort_cross_entropy_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      scores_valid = [[1.4, -2.8, -0.4], [0., 1.8, -1000.], [1., 1.2, -3.2]]
-      labels_valid = [[0., 2., 1.], [1., 0., -1000.], [0., 0., 0.]]
-      p_scores = _neural_sort(scores_valid)
-      p_labels = _neural_sort(labels_valid)
-      reduction = tf.compat.v1.losses.Reduction.SUM
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    scores_valid = [[1.4, -2.8, -0.4], [0., 1.8, -1000.], [1., 1.2, -3.2]]
+    labels_valid = [[0., 2., 1.], [1., 0., -1000.], [0., 0., 0.]]
+    p_scores = _neural_sort(scores_valid)
+    p_labels = _neural_sort(labels_valid)
+    reduction = tf.compat.v1.losses.Reduction.SUM
 
-      with self.cached_session():
-        loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            (_softmax_cross_entropy(p_labels[0], p_scores[0]) / 3. +
-             _softmax_cross_entropy(p_labels[1][0:2], p_scores[1][0:2]) / 2.),
-            places=4)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            (_softmax_cross_entropy(p_labels[0], p_scores[0]) * 2.0 / 3. +
-             _softmax_cross_entropy(p_labels[1][0:2], p_scores[1][0:2]) / 2.),
-            places=4)
+    loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (_softmax_cross_entropy(p_labels[0], p_scores[0]) / 3. +
+         _softmax_cross_entropy(p_labels[1][0:2], p_scores[1][0:2]) / 2.),
+        places=4)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        (_softmax_cross_entropy(p_labels[0], p_scores[0]) * 2.0 / 3. +
+         _softmax_cross_entropy(p_labels[1][0:2], p_scores[1][0:2]) / 2.),
+        places=4)
 
   def test_neural_sort_cross_entropy_loss_should_ignore_invalid_items(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
+    loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
 
-      p_scores = _neural_sort([[1., 2.]])
-      p_labels = _neural_sort([[0., 1.]])
-      expected = _softmax_cross_entropy(p_labels[0], p_scores[0]) / 2.
-      self.assertAlmostEqual(result, expected, places=5)
+    p_scores = _neural_sort([[1., 2.]])
+    p_labels = _neural_sort([[0., 1.]])
+    expected = _softmax_cross_entropy(p_labels[0], p_scores[0]) / 2.
+    self.assertAlmostEqual(result, expected, places=5)
 
   def test_neural_sort_cross_entropy_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[2., 4., 3., 3., -1e10]]
-      labels = [[0., 0., 1., 0., 1.]]
-      mask = [[True, False, True, False, False]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[2., 4., 3., 3., -1e10]]
+    labels = [[0., 0., 1., 0., 1.]]
+    mask = [[True, False, True, False, False]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
+    loss_fn = losses_impl.NeuralSortCrossEntropyLoss(name=None)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
 
-      p_scores = _neural_sort([[2., 3.]])
-      p_labels = _neural_sort([[0., 1.]])
-      expected = _softmax_cross_entropy(p_labels[0], p_scores[0]) / 2.
-      self.assertAlmostEqual(result, expected, places=5)
+    p_scores = _neural_sort([[2., 3.]])
+    p_labels = _neural_sort([[0., 1.]])
+    expected = _softmax_cross_entropy(p_labels[0], p_scores[0]) / 2.
+    self.assertAlmostEqual(result, expected, places=5)
 
 
 class NeuralSortNDCGLossTest(tf.test.TestCase):
 
   def test_neural_sort_ndcg_loss(self):
-    with tf.Graph().as_default():
-      scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
-      labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
-      weights = [[2.], [1.], [1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM
+    scores = [[1.4, -2.8, -0.4], [0., 1.8, 10.2], [1., 1.2, -3.2]]
+    labels = [[0., 2., 1.], [1., 0., -3.], [0., 0., 0.]]
+    weights = [[2.], [1.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM
 
-      with self.cached_session():
-        loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, None, reduction).eval(),
-            -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) +
-              (1 / (1 / ln(2))) * (1 / ln(3))),
-            places=4)
-        self.assertAlmostEqual(
-            loss_fn.compute(labels, scores, weights, reduction).eval(),
-            -(2 * (1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + 1 *
-              (1 / (1 / ln(2))) * (1 / ln(3))),
-            places=4)
+    loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) +
+          (1 / (1 / ln(2))) * (1 / ln(3))),
+        places=4)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        -(2 * (1 / (3 / ln(2) + 1 / ln(3))) * (3 / ln(4) + 1 / ln(3)) + 1 *
+          (1 / (1 / ln(2))) * (1 / ln(3))),
+        places=4)
 
   def test_neural_sort_ndcg_loss_should_ignore_invalid_items(self):
-    with tf.Graph().as_default():
-      scores = [[1., 3., 2.]]
-      labels = [[0., -1., 1.]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction).eval()
-      self.assertAlmostEqual(result, -1., places=4)
+    loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
+    result = loss_fn.compute(labels, scores, None, reduction).numpy()
+    self.assertAlmostEqual(result, -1., places=4)
 
   def test_neural_sort_ndcg_loss_should_handle_mask(self):
-    with tf.Graph().as_default():
-      scores = [[2., 4., 3., -5., 1000.0]]
-      labels = [[0., 0., 1., 0., 1.]]
-      mask = [[True, False, True, False, False]]
-      reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    scores = [[2., 4., 3., -5., 1000.0]]
+    labels = [[0., 0., 1., 0., 1.]]
+    mask = [[True, False, True, False, False]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
 
-      loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
-      with self.cached_session():
-        result = loss_fn.compute(labels, scores, None, reduction, mask).eval()
-      self.assertAlmostEqual(result, -1., places=4)
+    loss_fn = losses_impl.NeuralSortNDCGLoss(name=None, temperature=0.1)
+    result = loss_fn.compute(labels, scores, None, reduction, mask).numpy()
+    self.assertAlmostEqual(result, -1., places=4)
 
 
 if __name__ == '__main__':
-  tf.compat.v1.enable_v2_behavior()
   tf.test.main()
