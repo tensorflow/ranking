@@ -50,73 +50,66 @@ class UtilsTest(tf.test.TestCase):
         model._get_params(tf_estimator.ModeKeys.PREDICT, params), 3)
 
   def test_rolling_window_indices(self):
-    with tf.Graph().as_default():
-      with tf.compat.v1.Session() as sess:
-        # All valid.
-        indices, mask = sess.run(model._rolling_window_indices(3, 2, [3]))
-        self.assertAllEqual(indices, [[[0, 1], [1, 2], [2, 0]]])
-        self.assertAllEqual(mask, [[True, True, True]])
-        # One invalid.
-        indices, mask = sess.run(model._rolling_window_indices(3, 2, [2]))
-        self.assertAllEqual(indices, [[[0, 1], [1, 0], [0, 1]]])
-        self.assertAllEqual(mask, [[True, True, False]])
-        # All invalid.
-        indices, mask = sess.run(model._rolling_window_indices(3, 2, [0]))
-        self.assertAllEqual(indices, [[[0, 0], [0, 0], [0, 0]]])
-        self.assertAllEqual(mask, [[False, False, False]])
-        # size < rw_size.
-        indices, mask = sess.run(model._rolling_window_indices(2, 3, [2]))
-        self.assertAllEqual(indices, [[[0, 1, 0], [1, 0, 1]]])
-        self.assertAllEqual(mask, [[True, True]])
-        # batch_size = 2
-        indices, mask = sess.run(model._rolling_window_indices(3, 2, [3, 2]))
-        self.assertAllEqual(
-            indices, [[[0, 1], [1, 2], [2, 0]], [[0, 1], [1, 0], [0, 1]]])
-        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+    # All valid.
+    indices, mask = model._rolling_window_indices(3, 2, [3])
+    self.assertAllEqual(indices, [[[0, 1], [1, 2], [2, 0]]])
+    self.assertAllEqual(mask, [[True, True, True]])
+    # One invalid.
+    indices, mask = model._rolling_window_indices(3, 2, [2])
+    self.assertAllEqual(indices, [[[0, 1], [1, 0], [0, 1]]])
+    self.assertAllEqual(mask, [[True, True, False]])
+    # All invalid.
+    indices, mask = model._rolling_window_indices(3, 2, [0])
+    self.assertAllEqual(indices, [[[0, 0], [0, 0], [0, 0]]])
+    self.assertAllEqual(mask, [[False, False, False]])
+    # size < rw_size.
+    indices, mask = model._rolling_window_indices(2, 3, [2])
+    self.assertAllEqual(indices, [[[0, 1, 0], [1, 0, 1]]])
+    self.assertAllEqual(mask, [[True, True]])
+    # batch_size = 2
+    indices, mask = model._rolling_window_indices(3, 2, [3, 2])
+    self.assertAllEqual(indices,
+                        [[[0, 1], [1, 2], [2, 0]], [[0, 1], [1, 0], [0, 1]]])
+    self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
   def test_form_group_indices_nd(self):
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      # batch_size, list_size = 2, 3.
-      is_valid = [[True, True, True], [True, True, False]]
-      indices, mask = model._form_group_indices_nd(
-          is_valid, group_size=2, shuffle=True, seed=87124)
+    tf.random.set_seed(1)
+    # batch_size, list_size = 2, 3.
+    is_valid = [[True, True, True], [True, True, False]]
+    indices, mask = model._form_group_indices_nd(
+        is_valid, group_size=2, shuffle=True, seed=87124)
 
-      with tf.compat.v1.Session() as sess:
-        indices, mask = sess.run([indices, mask])
-        # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
-        self.assertAllEqual(
-            indices,
-            [  # batch_size = 2.
-                [  # num_groups = 3.
-                    [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
-                ],
-                [  # num_groups = 3.
-                    [[1, 1], [1, 0]], [[1, 0], [1, 1]], [[1, 1], [1, 0]]
-                ]
-            ])
-        # shape = [2, 3] = [batch_size, num_groups]
-        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+    # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
+    self.assertAllEqual(
+        indices,
+        [  # batch_size = 2.
+            [  # num_groups = 3.
+                [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
+            ],
+            [  # num_groups = 3.
+                [[1, 1], [1, 0]], [[1, 0], [1, 1]], [[1, 1], [1, 0]]
+            ]
+        ])
+    # shape = [2, 3] = [batch_size, num_groups]
+    self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
-      # Disable shuffling.
-      indices, mask = model._form_group_indices_nd(
-          is_valid, group_size=2, shuffle=False)
+    # Disable shuffling.
+    indices, mask = model._form_group_indices_nd(
+        is_valid, group_size=2, shuffle=False)
 
-      with tf.compat.v1.Session() as sess:
-        indices, mask = sess.run([indices, mask])
-        # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
-        self.assertAllEqual(
-            indices,
-            [  # batch_size = 2.
-                [  # num_groups = 3.
-                    [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
-                ],
-                [  # num_groups = 3.
-                    [[1, 0], [1, 1]], [[1, 1], [1, 0]], [[1, 0], [1, 1]]
-                ]
-            ])
-        # shape = [2, 3] = [batch_size, num_groups]
-        self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
+    # shape = [2, 3, 2, 2] = [batch_size, num_groups , group_size, 2].
+    self.assertAllEqual(
+        indices,
+        [  # batch_size = 2.
+            [  # num_groups = 3.
+                [[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]
+            ],
+            [  # num_groups = 3.
+                [[1, 0], [1, 1]], [[1, 1], [1, 0]], [[1, 0], [1, 1]]
+            ]
+        ])
+    # shape = [2, 3] = [batch_size, num_groups]
+    self.assertAllEqual(mask, [[True, True, True], [True, True, False]])
 
 
 def _save_variables_to_ckpt(model_dir):
@@ -162,46 +155,34 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_update_scatter_gather_indices_groupsize_1(self):
     """Test for group size = 1."""
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      with tf.compat.v1.Session() as sess:
-        ranking_model = model._GroupwiseRankingModel(None, group_size=1)
-        ranking_model._update_scatter_gather_indices(
-            tf.convert_to_tensor(value=[[True, True, False]]),
-            tf_estimator.ModeKeys.TRAIN, None)
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 3, 1, 2])
-        self.assertEqual(ranking_model._indices_mask.get_shape().as_list(),
-                         [1, 3])
-        feature_gather_indices, indices_mask = sess.run([
-            ranking_model._feature_gather_indices, ranking_model._indices_mask
-        ])
-        self.assertAllEqual(feature_gather_indices,
-                            [[[[0, 0]], [[0, 1]], [[0, 0]]]])
-        self.assertAllEqual(indices_mask, [[True, True, False]])
+    tf.random.set_seed(1)
+    ranking_model = model._GroupwiseRankingModel(None, group_size=1)
+    ranking_model._update_scatter_gather_indices(
+        tf.convert_to_tensor(value=[[True, True, False]]),
+        tf_estimator.ModeKeys.TRAIN, None)
+    self.assertEqual(
+        ranking_model._feature_gather_indices.get_shape().as_list(),
+        [1, 3, 1, 2])
+    self.assertEqual(ranking_model._indices_mask.get_shape().as_list(), [1, 3])
+    self.assertAllEqual(ranking_model._feature_gather_indices,
+                        [[[[0, 0]], [[0, 1]], [[0, 0]]]])
+    self.assertAllEqual(ranking_model._indices_mask, [[True, True, False]])
 
   def test_update_scatter_gather_indices_predict_no_shuffle(self):
     """Test for group size > 1 and mode = PREDICT."""
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      with tf.compat.v1.Session() as sess:
-        ranking_model = model._GroupwiseRankingModel(None, group_size=2)
-        ranking_model._update_scatter_gather_indices(
-            tf.convert_to_tensor(value=[[True, True, True]]),
-            tf_estimator.ModeKeys.PREDICT, None)
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 3, 2, 2])
-        self.assertEqual(ranking_model._indices_mask.get_shape().as_list(),
-                         [1, 3])
-        feature_gather_indices, indices_mask = sess.run([
-            ranking_model._feature_gather_indices, ranking_model._indices_mask
-        ])
-        self.assertAllEqual(
-            feature_gather_indices,
-            [[[[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]]])
-        self.assertAllEqual(indices_mask, [[True, True, True]])
+    tf.random.set_seed(1)
+    ranking_model = model._GroupwiseRankingModel(None, group_size=2)
+    ranking_model._update_scatter_gather_indices(
+        tf.convert_to_tensor(value=[[True, True, True]]),
+        tf_estimator.ModeKeys.PREDICT, None)
+    self.assertEqual(
+        ranking_model._feature_gather_indices.get_shape().as_list(),
+        [1, 3, 2, 2])
+    self.assertEqual(ranking_model._indices_mask.get_shape().as_list(), [1, 3])
+    self.assertAllEqual(
+        ranking_model._feature_gather_indices,
+        [[[[0, 0], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 0]]]])
+    self.assertAllEqual(ranking_model._indices_mask, [[True, True, True]])
 
   @parameterized.named_parameters(
       ('mode_train', tf_estimator.ModeKeys.TRAIN),
@@ -214,33 +195,26 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
         'num_shuffles_eval': 2,
         'num_shuffles_predict': 2,
     }
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(2)
-      with tf.compat.v1.Session() as sess:
-        ranking_model = model._GroupwiseRankingModel(None, group_size=2)
-        ranking_model._update_scatter_gather_indices(
-            tf.convert_to_tensor(value=[[True, True, False]]), mode, params)
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 6, 2, 2])
-        self.assertEqual(ranking_model._indices_mask.get_shape().as_list(),
-                         [1, 6])
-        feature_gather_indices, indices_mask = sess.run([
-            ranking_model._feature_gather_indices, ranking_model._indices_mask
-        ])
-
-        self.assertAllEqual(
-            feature_gather_indices,
-            [[
-                [[0, 0], [0, 1]],
-                [[0, 1], [0, 0]],
-                [[0, 0], [0, 1]],  # shuffle 1.
-                [[0, 1], [0, 0]],
-                [[0, 0], [0, 1]],
-                [[0, 1], [0, 0]],  # shuffle 2.
-            ]])
-        self.assertAllEqual(indices_mask,
-                            [[True, True, False, True, True, False]])
+    tf.random.set_seed(2)
+    ranking_model = model._GroupwiseRankingModel(None, group_size=2)
+    ranking_model._update_scatter_gather_indices(
+        tf.convert_to_tensor(value=[[True, True, False]]), mode, params)
+    self.assertEqual(
+        ranking_model._feature_gather_indices.get_shape().as_list(),
+        [1, 6, 2, 2])
+    self.assertEqual(ranking_model._indices_mask.get_shape().as_list(), [1, 6])
+    self.assertAllEqual(
+        ranking_model._feature_gather_indices,
+        [[
+            [[0, 0], [0, 1]],
+            [[0, 1], [0, 0]],
+            [[0, 0], [0, 1]],  # shuffle 1.
+            [[0, 1], [0, 0]],
+            [[0, 0], [0, 1]],
+            [[0, 1], [0, 0]],  # shuffle 2.
+        ]])
+    self.assertAllEqual(ranking_model._indices_mask,
+                        [[True, True, False, True, True, False]])
 
   @parameterized.named_parameters(
       ('mode_train', tf_estimator.ModeKeys.TRAIN),
@@ -264,48 +238,43 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
       # Add the shape of the logits to differentiate number of shuffles.
       return logits + tf.cast(tf.shape(input=logits)[0], tf.float32)
 
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      with tf.compat.v1.Session() as sess:
-        ranking_model = model._GroupwiseRankingModel(
-            _dummy_score_fn,
-            group_size=group_size,
-            transform_fn=feature.make_identity_transform_fn(['context']),
-        )
+    tf.random.set_seed(1)
+    ranking_model = model._GroupwiseRankingModel(
+        _dummy_score_fn,
+        group_size=group_size,
+        transform_fn=feature.make_identity_transform_fn(['context']),
+    )
 
-        # batch_size = 1, list_size = 3, is_valid = [True, True, False]
-        features = {
-            'context': [[1.]],
-            'example_f1': [[[1.], [2.], [3.]]],
-        }
-        labels = [[1., 0, -1]]
-        # No params.
-        logits = sess.run(
-            ranking_model.compute_logits(features, labels, mode, None, None))
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 3, 2, 2])
-        self.assertAllEqual(logits, [[5., 6., 0.]])
-        # Trigger params.
-        logits = sess.run(
-            ranking_model.compute_logits(features, labels, mode, params, None))
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 6, 2, 2])
-        self.assertAllEqual(logits, [[8., 9., 0.]])
+    # batch_size = 1, list_size = 3, is_valid = [True, True, False]
+    features = {
+        'context': [[1.]],
+        'example_f1': [[[1.], [2.], [3.]]],
+    }
+    labels = [[1., 0, -1]]
+    # No params.
+    logits = ranking_model.compute_logits(features, labels, mode, None, None)
+    self.assertEqual(
+        ranking_model._feature_gather_indices.get_shape().as_list(),
+        [1, 3, 2, 2])
+    self.assertAllEqual(logits, [[5., 6., 0.]])
+    # Trigger params.
+    logits = ranking_model.compute_logits(features, labels, mode, params, None)
+    self.assertEqual(
+        ranking_model._feature_gather_indices.get_shape().as_list(),
+        [1, 6, 2, 2])
+    self.assertAllEqual(logits, [[8., 9., 0.]])
 
-        # batch_size = 1, list_size = 3, is_valid = [True, True, True]
-        features = {
-            'context': [[1.]],
-            'example_f1': [[[1.], [2.], [0.]]],
-        }
-        labels = [[1., 0, 1]]
-        logits = sess.run(
-            ranking_model.compute_logits(features, labels, mode, params, None))
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 6, 2, 2])
-        self.assertAllEqual(logits, [[8., 9., 7.]])
+    # batch_size = 1, list_size = 3, is_valid = [True, True, True]
+    features = {
+        'context': [[1.]],
+        'example_f1': [[[1.], [2.], [0.]]],
+    }
+    labels = [[1., 0, 1]]
+    logits = ranking_model.compute_logits(features, labels, mode, params, None)
+    self.assertEqual(
+        ranking_model._feature_gather_indices.get_shape().as_list(),
+        [1, 6, 2, 2])
+    self.assertAllEqual(logits, [[8., 9., 7.]])
 
   @parameterized.named_parameters(
       ('mode_train', tf_estimator.ModeKeys.TRAIN),
@@ -328,31 +297,28 @@ class GroupwiseRankingModelTest(tf.test.TestCase, parameterized.TestCase):
           'task2': logits + tf.cast(tf.shape(input=logits)[0], tf.float32) + 1,
       }
 
-    with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(1)
-      with tf.compat.v1.Session() as sess:
-        ranking_model = model._GroupwiseRankingModel(
-            _multi_task_score_fn,
-            group_size=group_size,
-            transform_fn=feature.make_identity_transform_fn(['context']),
-        )
+    tf.random.set_seed(1)
+    ranking_model = model._GroupwiseRankingModel(
+        _multi_task_score_fn,
+        group_size=group_size,
+        transform_fn=feature.make_identity_transform_fn(['context']),
+    )
 
-        # batch_size = 1, list_size = 3, is_valid = [True, True, False]
-        features = {
-            'context': [[1.]],
-            'example_f1': [[[1.], [2.], [3.]]],
-        }
-        labels = {
-            'task1': [[1., 0, -1]],
-            'task2': [[0., 1, -1]],
-        }
-        logits = sess.run(
-            ranking_model.compute_logits(features, labels, mode, None, None))
-        self.assertEqual(
-            ranking_model._feature_gather_indices.get_shape().as_list(),
-            [1, 3, 2, 2])
-        self.assertAllEqual(logits['task1'], [[5., 6., 0.]])
-        self.assertAllEqual(logits['task2'], [[6., 7., 0.]])
+    # batch_size = 1, list_size = 3, is_valid = [True, True, False]
+    features = {
+        'context': [[1.]],
+        'example_f1': [[[1.], [2.], [3.]]],
+    }
+    labels = {
+        'task1': [[1., 0, -1]],
+        'task2': [[0., 1, -1]],
+    }
+    logits = ranking_model.compute_logits(features, labels, mode, None, None)
+    self.assertEqual(
+        ranking_model._feature_gather_indices.get_shape().as_list(),
+        [1, 3, 2, 2])
+    self.assertAllEqual(logits['task1'], [[5., 6., 0.]])
+    self.assertAllEqual(logits['task2'], [[6., 7., 0.]])
 
 
 class GroupwiseRankingEstimatorTest(tf.test.TestCase):
@@ -360,8 +326,7 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
 
   def setUp(self):
     super(GroupwiseRankingEstimatorTest, self).setUp()
-    tf.compat.v1.reset_default_graph()
-    self._model_dir = tf.compat.v1.test.get_temp_dir()
+    self._model_dir = self.get_temp_dir()
     tf.io.gfile.makedirs(self._model_dir)
     model_fn = model.make_groupwise_ranking_fn(
         _group_score_fn,
@@ -375,6 +340,7 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
     self._estimator = tf_estimator.Estimator(model_fn, self._model_dir)
 
   def tearDown(self):
+    super(GroupwiseRankingEstimatorTest, self).tearDown()
     if self._model_dir:
       tf.io.gfile.rmtree(self._model_dir)
     self._model_dir = None
@@ -407,7 +373,7 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
   def _initialize_checkpoint(self):
     """Initialize the model checkpoint with constant values."""
     with tf.Graph().as_default():
-      tf.compat.v1.set_random_seed(23)
+      tf.random.set_seed(23)
       tf.Variable([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]], name=WEIGHTS_NAME)
       tf.Variable([1.0, 1.0], name=BIAS_NAME)
       tf.Variable(100, name=tf.compat.v1.GraphKeys.GLOBAL_STEP, dtype=tf.int64)
@@ -503,5 +469,4 @@ class GroupwiseRankingEstimatorTest(tf.test.TestCase):
 
 
 if __name__ == '__main__':
-  tf.compat.v1.enable_v2_behavior()
   tf.test.main()
