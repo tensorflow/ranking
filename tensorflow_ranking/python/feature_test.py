@@ -74,7 +74,7 @@ def _create_input_fn():
     # Create the dataset.
     dataset = tf.data.Dataset.from_tensor_slices(features_tensor).batch(2)
 
-    return tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
+    return next(iter(dataset))
 
   return my_input_fn
 
@@ -82,24 +82,20 @@ def _create_input_fn():
 class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_make_identity_transform_fn(self):
-    with tf.Graph().as_default():
-      features = {
-          "context":  # Input size: (batch_size=2, num_features=2).
-              tf.convert_to_tensor(value=[[1.0, 1.0], [1.0, 1.0]]),
-          "per_example":
-              tf.convert_to_tensor(value=[[[10.0]], [[10.0]]]),
-      }
-      with tf.compat.v1.Session() as sess:
-        transform_fn = feature_lib.make_identity_transform_fn(["context"])
-        context_features, per_example_features = sess.run(
-            transform_fn(features, 1))
-        self.assertCountEqual(["context"], context_features)
-        self.assertAllEqual([[1.0, 1.0], [1.0, 1.0]],
-                            context_features["context"])
+    features = {
+        "context":  # Input size: (batch_size=2, num_features=2).
+            tf.convert_to_tensor(value=[[1.0, 1.0], [1.0, 1.0]]),
+        "per_example":
+            tf.convert_to_tensor(value=[[[10.0]], [[10.0]]]),
+    }
+    transform_fn = feature_lib.make_identity_transform_fn(["context"])
+    context_features, per_example_features = transform_fn(features, 1)
+    self.assertCountEqual(["context"], context_features)
+    self.assertAllEqual([[1.0, 1.0], [1.0, 1.0]], context_features["context"])
 
-        self.assertCountEqual(["per_example"], per_example_features)
-        self.assertAllEqual([[[10.0]], [[10.0]]],
-                            per_example_features["per_example"])
+    self.assertCountEqual(["per_example"], per_example_features)
+    self.assertAllEqual([[[10.0]], [[10.0]]],
+                        per_example_features["per_example"])
 
   def test_encode_features(self):
     with tf.Graph().as_default():
@@ -243,224 +239,196 @@ class FeatureLibTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllEqual(expected_seq_nums, actual_seq_nums)
 
   def test_encode_listwise_features(self):
-    with tf.Graph().as_default():
-      # Batch size = 2, list_size = 2.
-      features = {
-          "query_length":
-              tf.convert_to_tensor(value=[[1], [2]]),
-          "utility":
-              tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
-          "unigrams":
-              tf.SparseTensor(
-                  indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
-                  values=["ranking", "regression", "classification", "ordinal"],
-                  dense_shape=[2, 2, 1])
-      }
-      context_feature_columns = {
-          "query_length":
-              feature_column.numeric_column(
-                  "query_length", shape=(1,), default_value=0, dtype=tf.int64)
-      }
-      example_feature_columns = {
-          "utility":
-              feature_column.numeric_column(
-                  "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
-          "unigrams":
-              feature_column.embedding_column(
-                  feature_column.categorical_column_with_vocabulary_list(
-                      "unigrams",
-                      vocabulary_list=[
-                          "ranking", "regression", "classification", "ordinal"
-                      ]),
-                  dimension=10)
-      }
+    # Batch size = 2, list_size = 2.
+    features = {
+        "query_length":
+            tf.convert_to_tensor(value=[[1], [2]]),
+        "utility":
+            tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
+        "unigrams":
+            tf.SparseTensor(
+                indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
+                values=["ranking", "regression", "classification", "ordinal"],
+                dense_shape=[2, 2, 1])
+    }
+    context_feature_columns = {
+        "query_length":
+            feature_column.numeric_column(
+                "query_length", shape=(1,), default_value=0, dtype=tf.int64)
+    }
+    example_feature_columns = {
+        "utility":
+            feature_column.numeric_column(
+                "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
+        "unigrams":
+            feature_column.embedding_column(
+                feature_column.categorical_column_with_vocabulary_list(
+                    "unigrams",
+                    vocabulary_list=[
+                        "ranking", "regression", "classification", "ordinal"
+                    ]),
+                dimension=10)
+    }
 
-      with self.assertRaisesRegexp(
-          ValueError,
-          r"2nd dimension of tensor must be equal to input size: 3, "
-          "but found .*"):
-        feature_lib.encode_listwise_features(
-            features,
-            input_size=3,
-            context_feature_columns=context_feature_columns,
-            example_feature_columns=example_feature_columns)
-
-      context_features, example_features = feature_lib.encode_listwise_features(
+    with self.assertRaisesRegex(
+        ValueError, r"2nd dimension of tensor must be equal to input size: 3, "
+        "but found .*"):
+      feature_lib.encode_listwise_features(
           features,
-          input_size=2,
+          input_size=3,
           context_feature_columns=context_feature_columns,
           example_feature_columns=example_feature_columns)
-      self.assertAllEqual(["query_length"], sorted(context_features))
-      self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
-      self.assertAllEqual([2, 2, 10],
-                          example_features["unigrams"].get_shape().as_list())
-      with tf.compat.v1.Session() as sess:
-        sess.run(tf.compat.v1.global_variables_initializer())
-        sess.run(tf.compat.v1.tables_initializer())
-        context_features, example_features = sess.run(
-            [context_features, example_features])
-        self.assertAllEqual([[1], [2]], context_features["query_length"])
-        self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
-                            example_features["utility"])
+
+    context_features, example_features = feature_lib.encode_listwise_features(
+        features,
+        input_size=2,
+        context_feature_columns=context_feature_columns,
+        example_feature_columns=example_feature_columns)
+    self.assertAllEqual(["query_length"], sorted(context_features))
+    self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
+    self.assertAllEqual([2, 2, 10],
+                        example_features["unigrams"].get_shape().as_list())
+    self.assertAllEqual([[1], [2]], context_features["query_length"])
+    self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
+                        example_features["utility"])
 
   def test_encode_listwise_features_infer_input_size(self):
-    with tf.Graph().as_default():
-      # Batch size = 2, list_size = 2.
-      features = {
-          "query_length":
-              tf.convert_to_tensor(value=[[1], [2]]),
-          "utility":
-              tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
-          "unigrams":
-              tf.SparseTensor(
-                  indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
-                  values=["ranking", "regression", "classification", "ordinal"],
-                  dense_shape=[2, 2, 1])
-      }
-      context_feature_columns = {
-          "query_length":
-              feature_column.numeric_column(
-                  "query_length", shape=(1,), default_value=0, dtype=tf.int64)
-      }
-      example_feature_columns = {
-          "utility":
-              feature_column.numeric_column(
-                  "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
-          "unigrams":
-              feature_column.embedding_column(
-                  feature_column.categorical_column_with_vocabulary_list(
-                      "unigrams",
-                      vocabulary_list=[
-                          "ranking", "regression", "classification", "ordinal"
-                      ]),
-                  dimension=10)
-      }
+    # Batch size = 2, list_size = 2.
+    features = {
+        "query_length":
+            tf.convert_to_tensor(value=[[1], [2]]),
+        "utility":
+            tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
+        "unigrams":
+            tf.SparseTensor(
+                indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
+                values=["ranking", "regression", "classification", "ordinal"],
+                dense_shape=[2, 2, 1])
+    }
+    context_feature_columns = {
+        "query_length":
+            feature_column.numeric_column(
+                "query_length", shape=(1,), default_value=0, dtype=tf.int64)
+    }
+    example_feature_columns = {
+        "utility":
+            feature_column.numeric_column(
+                "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
+        "unigrams":
+            feature_column.embedding_column(
+                feature_column.categorical_column_with_vocabulary_list(
+                    "unigrams",
+                    vocabulary_list=[
+                        "ranking", "regression", "classification", "ordinal"
+                    ]),
+                dimension=10)
+    }
 
-      context_features, example_features = feature_lib.encode_listwise_features(
-          features,
-          context_feature_columns=context_feature_columns,
-          example_feature_columns=example_feature_columns)
-      self.assertAllEqual(["query_length"], sorted(context_features))
-      self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
-      self.assertAllEqual([2, 2, 10],
-                          example_features["unigrams"].get_shape().as_list())
-      with tf.compat.v1.Session() as sess:
-        sess.run(tf.compat.v1.global_variables_initializer())
-        sess.run(tf.compat.v1.tables_initializer())
-        context_features, example_features = sess.run(
-            [context_features, example_features])
-        self.assertAllEqual([[1], [2]], context_features["query_length"])
-        self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
-                            example_features["utility"])
+    context_features, example_features = feature_lib.encode_listwise_features(
+        features,
+        context_feature_columns=context_feature_columns,
+        example_feature_columns=example_feature_columns)
+    self.assertAllEqual(["query_length"], sorted(context_features))
+    self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
+    self.assertAllEqual([2, 2, 10],
+                        example_features["unigrams"].get_shape().as_list())
+    self.assertAllEqual([[1], [2]], context_features["query_length"])
+    self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
+                        example_features["utility"])
 
   def test_encode_listwise_features_renaming(self):
     """Tests for using different names in feature columns vs features."""
-    with tf.Graph().as_default():
-      # Batch size = 2, list_size = 2.
-      features = {
-          "query_length":
-              tf.convert_to_tensor(value=[[1], [2]]),
-          "utility":
-              tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
-          "unigrams":
-              tf.SparseTensor(
-                  indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
-                  values=["ranking", "regression", "classification", "ordinal"],
-                  dense_shape=[2, 2, 1])
-      }
-      context_feature_columns = {
-          "query_length":
-              feature_column.numeric_column(
-                  "query_length", shape=(1,), default_value=0, dtype=tf.int64)
-      }
-      example_feature_columns = {
-          "utility_renamed":
-              feature_column.numeric_column(
-                  "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
-          "unigrams_renamed":
-              feature_column.embedding_column(
-                  feature_column.categorical_column_with_vocabulary_list(
-                      "unigrams",
-                      vocabulary_list=[
-                          "ranking", "regression", "classification", "ordinal"
-                      ]),
-                  dimension=10)
-      }
+    # Batch size = 2, list_size = 2.
+    features = {
+        "query_length":
+            tf.convert_to_tensor(value=[[1], [2]]),
+        "utility":
+            tf.convert_to_tensor(value=[[[1.0], [0.0]], [[0.0], [1.0]]]),
+        "unigrams":
+            tf.SparseTensor(
+                indices=[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
+                values=["ranking", "regression", "classification", "ordinal"],
+                dense_shape=[2, 2, 1])
+    }
+    context_feature_columns = {
+        "query_length":
+            feature_column.numeric_column(
+                "query_length", shape=(1,), default_value=0, dtype=tf.int64)
+    }
+    example_feature_columns = {
+        "utility_renamed":
+            feature_column.numeric_column(
+                "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
+        "unigrams_renamed":
+            feature_column.embedding_column(
+                feature_column.categorical_column_with_vocabulary_list(
+                    "unigrams",
+                    vocabulary_list=[
+                        "ranking", "regression", "classification", "ordinal"
+                    ]),
+                dimension=10)
+    }
 
-      context_features, example_features = feature_lib.encode_listwise_features(
-          features,
-          input_size=2,
-          context_feature_columns=context_feature_columns,
-          example_feature_columns=example_feature_columns)
-      self.assertAllEqual(["query_length"], sorted(context_features))
-      self.assertAllEqual(["unigrams_renamed", "utility_renamed"],
-                          sorted(example_features))
-      self.assertAllEqual(
-          [2, 2, 10],
-          example_features["unigrams_renamed"].get_shape().as_list())
-      with tf.compat.v1.Session() as sess:
-        sess.run(tf.compat.v1.global_variables_initializer())
-        sess.run(tf.compat.v1.tables_initializer())
-        context_features, example_features = sess.run(
-            [context_features, example_features])
-        self.assertAllEqual([[1], [2]], context_features["query_length"])
-        self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
-                            example_features["utility_renamed"])
+    context_features, example_features = feature_lib.encode_listwise_features(
+        features,
+        input_size=2,
+        context_feature_columns=context_feature_columns,
+        example_feature_columns=example_feature_columns)
+    self.assertAllEqual(["query_length"], sorted(context_features))
+    self.assertAllEqual(["unigrams_renamed", "utility_renamed"],
+                        sorted(example_features))
+    self.assertAllEqual(
+        [2, 2, 10], example_features["unigrams_renamed"].get_shape().as_list())
+    self.assertAllEqual([[1], [2]], context_features["query_length"])
+    self.assertAllEqual([[[1.0], [0.0]], [[0.0], [1.0]]],
+                        example_features["utility_renamed"])
 
   def test_encode_pointwise_features(self):
-    with tf.Graph().as_default():
-      # Batch size = 2, tf.Example input format.
-      features = {
-          "query_length":
-              tf.convert_to_tensor(value=[[1], [1]]
-                                  ),  # Repeated context feature.
-          "utility":
-              tf.convert_to_tensor(value=[[1.0], [0.0]]),
-          "unigrams":
-              tf.SparseTensor(
-                  indices=[[0, 0], [1, 0]],
-                  values=["ranking", "regression"],
-                  dense_shape=[2, 1])
-      }
-      context_feature_columns = {
-          "query_length":
-              tf.feature_column.numeric_column(
-                  "query_length", shape=(1,), default_value=0, dtype=tf.int64)
-      }
-      example_feature_columns = {
-          "utility":
-              tf.feature_column.numeric_column(
-                  "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
-          "unigrams":
-              tf.feature_column.embedding_column(
-                  feature_column.categorical_column_with_vocabulary_list(
-                      "unigrams",
-                      vocabulary_list=[
-                          "ranking", "regression", "classification", "ordinal"
-                      ]),
-                  dimension=10)
-      }
+    # Batch size = 2, tf.Example input format.
+    features = {
+        "query_length":
+            tf.convert_to_tensor(value=[[1], [1]]),  # Repeated context feature.
+        "utility":
+            tf.convert_to_tensor(value=[[1.0], [0.0]]),
+        "unigrams":
+            tf.SparseTensor(
+                indices=[[0, 0], [1, 0]],
+                values=["ranking", "regression"],
+                dense_shape=[2, 1])
+    }
+    context_feature_columns = {
+        "query_length":
+            tf.feature_column.numeric_column(
+                "query_length", shape=(1,), default_value=0, dtype=tf.int64)
+    }
+    example_feature_columns = {
+        "utility":
+            tf.feature_column.numeric_column(
+                "utility", shape=(1,), default_value=0.0, dtype=tf.float32),
+        "unigrams":
+            tf.feature_column.embedding_column(
+                feature_column.categorical_column_with_vocabulary_list(
+                    "unigrams",
+                    vocabulary_list=[
+                        "ranking", "regression", "classification", "ordinal"
+                    ]),
+                dimension=10)
+    }
 
-      (context_features,
-       example_features) = feature_lib.encode_pointwise_features(
-           features,
-           context_feature_columns=context_feature_columns,
-           example_feature_columns=example_feature_columns)
-      self.assertAllEqual(["query_length"], sorted(context_features))
-      self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
-      # Unigrams dense tensor has shape: [batch_size=2, list_size=1, dim=10].
-      self.assertAllEqual([2, 1, 10],
-                          example_features["unigrams"].get_shape().as_list())
-      with tf.compat.v1.Session() as sess:
-        sess.run(tf.compat.v1.global_variables_initializer())
-        sess.run(tf.compat.v1.tables_initializer())
-        context_features, example_features = sess.run(
-            [context_features, example_features])
-        self.assertAllEqual([[1], [1]], context_features["query_length"])
-        # Utility tensor has shape: [batch_size=2, list_size=1, 1].
-        self.assertAllEqual([[[1.0]], [[0.0]]], example_features["utility"])
+    (context_features,
+     example_features) = feature_lib.encode_pointwise_features(
+         features,
+         context_feature_columns=context_feature_columns,
+         example_feature_columns=example_feature_columns)
+    self.assertAllEqual(["query_length"], sorted(context_features))
+    self.assertAllEqual(["unigrams", "utility"], sorted(example_features))
+    # Unigrams dense tensor has shape: [batch_size=2, list_size=1, dim=10].
+    self.assertAllEqual([2, 1, 10],
+                        example_features["unigrams"].get_shape().as_list())
+    self.assertAllEqual([[1], [1]], context_features["query_length"])
+    # Utility tensor has shape: [batch_size=2, list_size=1, 1].
+    self.assertAllEqual([[[1.0]], [[0.0]]], example_features["utility"])
 
 
 if __name__ == "__main__":
-  tf.compat.v1.enable_v2_behavior()
   tf.test.main()

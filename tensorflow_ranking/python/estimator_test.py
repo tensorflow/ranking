@@ -414,7 +414,8 @@ class GAMEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         learning_rate=0.05,
         loss="softmax_loss",
         use_batch_norm=False,
-        model_dir=None)
+        model_dir=None,
+        listwise_inference=listwise_inference)
     train_spec = tf_estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
     eval_spec = tf_estimator.EvalSpec(
         name="eval", input_fn=_inner_input_fn, steps=10)

@@ -244,6 +244,7 @@ py_test(
     deps = [
         ":feature",
         # py/absl/testing:parameterized dep,
+        # py/numpy dep,
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
     ],
@@ -311,7 +312,10 @@ py_test(
         ":data",
         ":estimator",
         ":feature",
+        # py/absl/testing:parameterized dep,
+        # py/six dep,
         # py/tensorflow:tensorflow_estimator dep,
+        # py/tensorflow:tensorflow_no_contrib dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
 )
