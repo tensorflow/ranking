@@ -67,17 +67,17 @@ class UtilTest(tf.test.TestCase):
       loss = tf.abs(tf.reduce_sum(input_tensor=logits - labels))
 
       def _train_op_fn(loss):
-        with tf.control_dependencies((tf.compat.v1.assert_near(
-            tf.cast(loss, dtype=tf.float32), 1.0, name='assert_loss'),)):
-          return tf.constant(b'train_op_fn')
+        tf.debugging.assert_near(
+            tf.cast(loss, dtype=tf.float32), 1.0, name='assert_loss')
+        return tf.constant(b'train_op_fn')
 
       class _Optimizer(object):
 
         def minimize(self, loss, global_step):
           del global_step
-          with tf.control_dependencies((tf.compat.v1.assert_equal(
-              tf.cast(loss, dtype=tf.float32), 1.0, name='assert_loss'),)):
-            return tf.constant(b'optimizer')
+          tf.debugging.assert_near(
+              tf.cast(loss, dtype=tf.float32), 1.0, name='assert_loss')
+          return tf.constant(b'optimizer')
 
       train_op = ranking_head._get_train_op(loss, _train_op_fn, None)
       self.assertIsNotNone(train_op)
@@ -91,10 +91,10 @@ class UtilTest(tf.test.TestCase):
         train_result = sess.run(train_op)
         self.assertEqual(b'optimizer', train_result)
 
-      with self.assertRaisesRegexp(
+      with self.assertRaisesRegex(
           ValueError, r'train_op_fn and optimizer cannot both be set.'):
         ranking_head._get_train_op(loss, _train_op_fn, _Optimizer())
-      with self.assertRaisesRegexp(
+      with self.assertRaisesRegex(
           ValueError, r'train_op_fn and optimizer cannot both be None.'):
         ranking_head._get_train_op(loss, None, None)
 
@@ -197,28 +197,25 @@ class RankingHeadTest(tf.test.TestCase):
         self.assertItemsEqual(expected_metrics, metrics.keys())
 
   def test_train_create_loss(self):
-    with tf.Graph().as_default():
-      head = ranking_head.create_ranking_head(loss_fn=_make_loss_fn())
-      # Create loss.
-      training_loss = head.create_loss(
-          features={},
-          mode=tf_estimator.ModeKeys.TRAIN,
-          logits=self._default_logits,
-          labels=self._default_labels)
-      with self.cached_session():
-        _initialize_variables(self, tf.compat.v1.train.Scaffold())
-        self.assertAllClose(self._default_loss, training_loss.eval())
+    head = ranking_head.create_ranking_head(loss_fn=_make_loss_fn())
+    # Create loss.
+    training_loss = head.create_loss(
+        features={},
+        mode=tf_estimator.ModeKeys.TRAIN,
+        logits=self._default_logits,
+        labels=self._default_labels)
+    self.assertAllClose(self._default_loss, training_loss)
 
   def test_train(self):
     with tf.Graph().as_default():
       expected_train_result = b'my_train_op'
 
       def _train_op_fn(loss):
-        with tf.control_dependencies((tf.compat.v1.assert_near(
+        tf.debugging.assert_near(
             tf.cast(self._default_loss, dtype=tf.float32),
             tf.cast(loss, dtype=tf.float32),
-            name='assert_loss'),)):
-          return tf.constant(expected_train_result)
+            name='assert_loss')
+        return tf.constant(expected_train_result)
 
       head = ranking_head.create_ranking_head(
           loss_fn=_make_loss_fn(), train_op_fn=_train_op_fn)
@@ -251,11 +248,11 @@ class RankingHeadTest(tf.test.TestCase):
       expected_loss = expected_regularization_loss + self._default_loss
 
       def _train_op_fn(loss):
-        with tf.control_dependencies((tf.compat.v1.assert_equal(
+        tf.debugging.assert_near(
             tf.cast(expected_loss, dtype=tf.float32),
             tf.cast(loss, dtype=tf.float32),
-            name='assert_loss'),)):
-          return tf.constant(expected_train_result)
+            name='assert_loss')
+        return tf.constant(expected_train_result)
 
       head = ranking_head.create_ranking_head(
           loss_fn=_make_loss_fn(), train_op_fn=_train_op_fn)
@@ -431,14 +428,14 @@ class MultiRankingHeadTest(tf.test.TestCase):
       expected_train_result = b'real_train_op'
 
       def _train_op_fn(loss):
-        with tf.control_dependencies((tf.compat.v1.assert_near(
-            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss'),)):
-          return tf.constant(expected_train_result)
+        tf.debugging.assert_near(
+            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss')
+        return tf.constant(expected_train_result)
 
       def _mock_train_op_fn(loss):
-        with tf.control_dependencies((tf.compat.v1.assert_near(
-            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss'),)):
-          return tf.constant(b'mock_train_op')
+        tf.debugging.assert_near(
+            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss')
+        return tf.constant(b'mock_train_op')
 
       head1 = ranking_head.create_ranking_head(
           loss_fn=_make_loss_fn(), train_op_fn=_mock_train_op_fn, name='head1')
@@ -478,9 +475,9 @@ class MultiRankingHeadTest(tf.test.TestCase):
       expected_train_result = b'my_train_op'
 
       def _train_op_fn(loss):
-        with tf.control_dependencies((tf.compat.v1.assert_near(
-            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss'),)):
-          return tf.constant(expected_train_result)
+        tf.debugging.assert_near(
+            tf.cast(loss, dtype=tf.float32), 16., name='assert_loss')
+        return tf.constant(expected_train_result)
 
       head1 = ranking_head.create_ranking_head(
           loss_fn=_make_loss_fn(), train_op_fn=_train_op_fn, name='head1')
@@ -519,36 +516,32 @@ class MultiRankingHeadTest(tf.test.TestCase):
 
   def test_merge_loss(self):
     """Tests for merging losses from multi-head and regularization loss."""
-    with tf.Graph().as_default():
-      head1 = ranking_head.create_ranking_head(
-          loss_fn=_make_loss_fn(), name='head1')
-      head2 = ranking_head.create_ranking_head(
-          loss_fn=_make_loss_fn(), name='head2')
-      multi_head = ranking_head.create_multi_ranking_head([head1, head2],
-                                                          [1.0, 2.0])
-      logits = {
-          'head1': tf.convert_to_tensor(value=[[1., 3.], [1., 2.]]),
-          'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
-      }
-      labels = {
-          'head1': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
-          'head2': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
-      }
-      regularization_losses = [1.5, 0.5]
-      expected_loss = 1. * 4. + 2. * 6. + 1.5 + 0.5
+    head1 = ranking_head.create_ranking_head(
+        loss_fn=_make_loss_fn(), name='head1')
+    head2 = ranking_head.create_ranking_head(
+        loss_fn=_make_loss_fn(), name='head2')
+    multi_head = ranking_head.create_multi_ranking_head([head1, head2],
+                                                        [1.0, 2.0])
+    logits = {
+        'head1': tf.convert_to_tensor(value=[[1., 3.], [1., 2.]]),
+        'head2': tf.convert_to_tensor(value=[[2., 3.], [2., 2.]]),
+    }
+    labels = {
+        'head1': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
+        'head2': tf.convert_to_tensor(value=[[0., 1.], [0., 2.]]),
+    }
+    regularization_losses = [1.5, 0.5]
+    expected_loss = 1. * 4. + 2. * 6. + 1.5 + 0.5
 
-      # Create loss.
-      training_loss = multi_head._merge_loss(
-          features={},
-          mode=tf_estimator.ModeKeys.TRAIN,
-          logits=logits,
-          labels=labels,
-          regularization_losses=regularization_losses)
-      with self.cached_session():
-        _initialize_variables(self, tf.compat.v1.train.Scaffold())
-        self.assertAllClose(training_loss.eval(), expected_loss)
+    # Create loss.
+    training_loss = multi_head._merge_loss(
+        features={},
+        mode=tf_estimator.ModeKeys.TRAIN,
+        logits=logits,
+        labels=labels,
+        regularization_losses=regularization_losses)
+    self.assertAllClose(training_loss, expected_loss)
 
 
 if __name__ == '__main__':
-  tf.compat.v1.enable_v2_behavior()
   tf.test.main()

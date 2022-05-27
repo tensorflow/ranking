@@ -185,7 +185,6 @@ py_test(
     ],
     deps = [
         ":head",
-        ":losses",
         ":metrics",
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
