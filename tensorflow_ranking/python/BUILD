@@ -158,6 +158,7 @@ py_test(
     ],
     deps = [
         ":losses",
+        ":losses_impl",
         # py/tensorflow dep,
     ],
 )
