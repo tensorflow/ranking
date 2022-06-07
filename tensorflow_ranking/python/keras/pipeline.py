@@ -289,6 +289,11 @@ class PipelineHparams:
       distributed training.
     automatic_reduce_lr: A boolean to indicate whether to use
       `ReduceLROnPlateau` callback.
+    early_stopping_patience: Number of epochs with no improvement after which
+      training will be stopped.
+    early_stopping_min_delta: Minimum change in the monitored quantity to
+      qualify as an improvement, i.e. an absolute change of less than
+      early_stopping_min_delta, will count as no improvement.
     use_weighted_metrics: A boolean to indicate whether to use weighted metrics.
     export_best_model: A boolean to indicate whether to export the best model
       evaluated by the `best_exporter_metric` on the validation data.
@@ -315,6 +320,8 @@ class PipelineHparams:
   loss_weights: Optional[Union[float, Dict[str, float]]] = None
   steps_per_execution: int = 10
   automatic_reduce_lr: bool = False
+  early_stopping_patience: int = 0
+  early_stopping_min_delta: float = 0.0
   use_weighted_metrics: bool = False
   export_best_model: bool = False
   best_exporter_metric_higher_better: bool = False
@@ -507,6 +514,19 @@ class ModelFitPipeline(AbstractPipeline):
           tf.keras.callbacks.ReduceLROnPlateau(
               monitor="val_loss",
               min_delta=0.01 * self._hparams.learning_rate,
+          ))
+
+    if self._hparams.early_stopping_patience:
+      best_export_metric = self._hparams.best_exporter_metric
+      if best_export_metric != "loss":
+        best_export_metric = "metric/" + best_export_metric
+      callbacks.append(
+          tf.keras.callbacks.EarlyStopping(
+              monitor="val_" + best_export_metric,
+              min_delta=self._hparams.early_stopping_min_delta,
+              patience=self._hparams.early_stopping_patience,
+              mode=("max" if self._hparams.best_exporter_metric_higher_better
+                    else "min"),
           ))
 
     return callbacks
