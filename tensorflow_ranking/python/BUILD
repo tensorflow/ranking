@@ -198,6 +198,7 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         ":utils",
+        # py/six dep,
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
     ],
@@ -257,6 +258,7 @@ py_library(
     deps = [
         ":feature",
         ":utils",
+        # py/six dep,
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
     ],

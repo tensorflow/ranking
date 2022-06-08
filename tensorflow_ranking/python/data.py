@@ -626,7 +626,7 @@ class _SequenceExampleParser(_RankingDataParser):
           tf.tile(
               tf.range(tf.shape(input=tensor)[1]), [tf.shape(input=tensor)[0]]),
           tf.shape(input=tensor))
-      tensor = tf.compat.v1.where(
+      tensor = tf.where(
           tf.less(rank, tf.cast(size, tf.int32)), tensor,
           tf.fill(tf.shape(input=tensor), tf.cast(v, tensor.dtype)))
       examples[k] = tensor

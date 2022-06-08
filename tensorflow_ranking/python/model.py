@@ -194,7 +194,7 @@ def _rolling_window_indices(size, rw_size, num_valid_entries):
         tf.reduce_min(input_tensor=batch_rw_indices, axis=2),
         tf.reshape(num_valid_entries, [-1, 1]))
     # Mod the indices to the range of num_valid_entries.
-    num_valid_entries = tf.compat.v1.where(
+    num_valid_entries = tf.where(
         tf.less(num_valid_entries, 1), tf.ones_like(num_valid_entries),
         num_valid_entries)
     batch_rw_indices = tf.math.mod(batch_rw_indices,
@@ -401,8 +401,8 @@ class _GroupwiseRankingModel(_RankingModel):
           task_scores = tf.reshape(
               task_scores,
               tf.shape(input=self._score_scatter_indices)[0:3])
-          task_scores = tf.compat.v1.where(scores_mask, task_scores,
-                                           tf.zeros_like(task_scores))
+          task_scores = tf.where(scores_mask, task_scores,
+                                 tf.zeros_like(task_scores))
           # Scatter scores from [batch_size, num_groups, group_size] to
           # [batch_size, list_size].
           task_logits = tf.scatter_nd(self._score_scatter_indices, task_scores,

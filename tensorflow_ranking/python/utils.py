@@ -224,7 +224,7 @@ def organize_valid_indices(is_valid, shuffle=True, seed=None):
           tf.ones_like(is_valid, tf.float32) * tf.reverse(
               tf.cast(tf.range(output_shape[1]), dtype=tf.float32), [-1]))
 
-    rand = tf.compat.v1.where(is_valid, values, tf.ones(output_shape) * -1e-6)
+    rand = tf.where(is_valid, values, tf.ones(output_shape) * -1e-6)
     # shape(indices) = [batch_size, list_size]
     indices = tf.argsort(rand, direction='DESCENDING', stable=True)
     return _to_nd_indices(indices)
@@ -293,7 +293,7 @@ def _circular_indices(size, num_valid_entries):
     num_valid_entries = tf.reshape(num_valid_entries, [-1, 1])
     batch_indices_mask = tf.less(batch_indices, num_valid_entries)
     # Use mod to make the indices to the ranges of valid entries.
-    num_valid_entries = tf.compat.v1.where(
+    num_valid_entries = tf.where(
         tf.less(num_valid_entries, 1), tf.ones_like(num_valid_entries),
         num_valid_entries)
     batch_indices = tf.math.mod(batch_indices, num_valid_entries)
@@ -388,8 +388,8 @@ def de_noise(counts, noise, ratio=0.9):
   noise.get_shape().assert_is_compatible_with(counts.get_shape())
 
   with tf.compat.v1.name_scope(name='de_noise'):
-    counts_nonneg = tf.compat.v1.assert_greater_equal(counts, 0.)
-    noise_pos = tf.compat.v1.assert_greater(noise, 0.)
+    counts_nonneg = tf.debugging.assert_greater_equal(counts, 0.)
+    noise_pos = tf.debugging.assert_greater(noise, 0.)
     with tf.control_dependencies([counts_nonneg, noise_pos]):
       # Normalize noise to be a simplex per row.
       noise = noise / tf.reduce_sum(noise, axis=1, keepdims=True)
