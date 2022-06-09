@@ -1737,5 +1737,63 @@ class NeuralSortNDCGLossTest(tf.test.TestCase):
     self.assertAlmostEqual(result, -1., places=4)
 
 
+class CoupledRankDistilLossTest(tf.test.TestCase):
+
+  def test_coupled_rank_distil_loss(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    # sampled_teacher_scores = [[-5.128768   -5.8270807  -0.00891006]]
+    # [[-4.3828382  -4.4031367  -0.02503967]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.CoupledRankDistilLoss(name=None, sample_size=1)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rank_distil_loss_with_weights(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    # sampled_teacher_scores = [[-5.128768   -5.8270807  -0.00891006]]
+    # [[-4.3828382  -4.4031367  -0.02503967]]
+    weights = [[2.], [1.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.CoupledRankDistilLoss(name=None, sample_size=1)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, weights, reduction).numpy(),
+        -(2 * (ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) + 1 *
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rank_distil_loss_tie(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(2), ln(3)]]
+    labels = [[0., 0., 1.]]
+    # sampled_teacher_scores = [[-5.1262169e+00 -7.8245292e+00 -6.3590105e-03]].
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.CoupledRankDistilLoss(name=None, sample_size=1)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))),
+        places=5)
+
+  def test_coupled_rank_distil_loss_should_ignore_invalid_items(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 1., -1.], [1., 0., 2.]]
+    # sampled_teacher_scores = [[-5.128768   -5.8270807  -0.00891006]]
+    # [[-4.3828382  -4.4031367  -0.02503967]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.CoupledRankDistilLoss(
+        name=None, sample_size=1, topk=2)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((ln(1. / (1 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)))) / 2,
+        places=5)
+
 if __name__ == '__main__':
   tf.test.main()

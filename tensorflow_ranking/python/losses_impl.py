@@ -1818,3 +1818,120 @@ class OrdinalLoss(_PointwiseLoss):
             logits=logits),
         tf.zeros_like(ordinals))
     return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
+
+
+class CoupledRankDistilLoss(_ListwiseLoss):
+  r"""Implements Coupled-RankDistil loss.
+
+  The Coupled-RankDistil loss ([Reddi et al, 2021][reddi2021]) is the
+  cross-entropy between k-Plackett's probability of logits (student) and labels
+  (teacher).
+
+  The k-Plackett's probability model is defined as:
+  $$
+  \mathcal{P}_k(\pi|s) = \frac{1}{(N-k)!} \\
+  \frac{\prod_{i=1}^k exp(s_{\pi(i)})}{\sum_{j=k}^N log(exp(s_{\pi(i)}))}.
+  $$
+
+  The Coupled-RankDistil loss is defined as:
+  $$
+  \mathcal{L}(y, s) = -\sum_{\pi} \mathcal{P}_k(\pi|y) log\mathcal{P}(\pi|s) \\
+  =  \mathcal{E}_{\pi \sim \matcal{P}(.|y)} [-\log \mathcal{P}(\pi|s)]
+  $$
+
+    References:
+    - [RankDistil: Knowledge Distillation for Ranking, Reddi et al,
+       2021][reddi2021]
+
+  [reddi2021]: https://research.google/pubs/pub50695/
+  """
+
+  def __init__(self,
+               name,
+               sample_size,
+               topk=None,
+               temperature=1.,
+               ragged=False):
+    """Initializer.
+
+    Args:
+      name: A string used as the name for this loss.
+      sample_size: Number of permutations to sample from teacher scores.
+      topk: top-k entries over which order is matched. A penalty is applied over
+        non top-k items.
+      temperature: A float number to modify the logits=logits/temperature.
+      ragged: A boolean indicating whether the input tensors are ragged.
+    """
+    super().__init__(name, None, temperature, ragged)
+    self._sample_size = sample_size
+    self._topk = topk
+
+  def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
+    """See `_RankingLoss`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    labels = tf.where(mask, labels, tf.zeros_like(labels))
+    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
+
+    teacher_scores = tf.where(mask, labels,
+                              tf.math.log(_EPSILON) * tf.ones_like(labels))
+
+    student_scores = tf.where(mask, logits,
+                              tf.math.log(_EPSILON) * tf.ones_like(logits))
+
+    # Sample teacher scores.
+    # [batch_size, list_size] -> [batch_size, sample_size, list_size].
+    sampled_teacher_scores = tf.expand_dims(teacher_scores, 1)
+    sampled_teacher_scores = tf.repeat(
+        sampled_teacher_scores, [self._sample_size], axis=1)
+
+    batch_size, list_size = tf.unstack(tf.shape(input=labels))
+    sampled_teacher_scores += _sample_gumbel(
+        [batch_size, self._sample_size, list_size], seed=37)
+    sampled_teacher_scores = tf.math.log(
+        tf.nn.softmax(sampled_teacher_scores) + _EPSILON)
+
+    # Expand student scores.
+    # [batch_size, list_size] -> [batch_size, sample_size, list_size].
+    expanded_student_scores = tf.expand_dims(student_scores, 1)
+    expanded_student_scores = tf.repeat(
+        expanded_student_scores, [self._sample_size], axis=1)
+
+    # Sort teacher scores and student scores to obtain top-k student scores
+    # whose order is based on teacher scores.
+    sorted_student_scores = utils.sort_by_scores(
+        utils.reshape_first_ndims(sampled_teacher_scores, 2,
+                                  [batch_size * self._sample_size]),
+        [
+            utils.reshape_first_ndims(expanded_student_scores, 2,
+                                      [batch_size * self._sample_size])
+        ],
+        shuffle_ties=True,
+        seed=37)[0]
+    sorted_student_scores = utils.reshape_first_ndims(
+        sorted_student_scores, 1, [batch_size, self._sample_size])
+    topk = self._topk or list_size
+    topk_student_scores = sorted_student_scores[:, :, :topk]
+    topk_cumsum = tf.math.cumulative_logsumexp(topk_student_scores, axis=2)
+
+    # logsumexp over all student scores.
+    logsumexp_list = tf.math.reduce_logsumexp(
+        student_scores, axis=1, keepdims=True)
+    logsumexp_list = tf.expand_dims(logsumexp_list, axis=1)
+
+    # For \pi from teacher scores, compute top-k Plackett's probability as:
+    # \prod_{i=1}^k exp(s_{\pi(i)}) / \sum_{j=k}^N log(exp(s_{\pi(i)})).
+    logprob = logsumexp_list + tf.math.log(1.0 + tf.exp(topk_student_scores -
+                                                        logsumexp_list) -
+                                           tf.exp(topk_cumsum - logsumexp_list))
+    logprob -= topk_student_scores
+    # Compute negative log-likelihood over top-k Plackett-Luce scores.
+    # [batch_size, sample_size, topk] -> [batch_size, sample_size].
+    pl_loss = tf.reduce_sum(logprob, axis=2)
+
+    # Compute RankDistil loss as a mean over samples.
+    # [batch_size, sample_size] -> [batch_size, 1].
+    nll = tf.reduce_mean(pl_loss, axis=1, keepdims=True)
+
+    return nll, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
