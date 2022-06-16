@@ -269,23 +269,10 @@ class DocumentInteractionAttentionLayerTest(tf.test.TestCase):
 class GAMLayerTest(tf.test.TestCase):
 
   def test_serialization(self):
-    tf.random.set_seed(1)
-    example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
-    context_inputs = tf.constant([[1, 2], [0, 1], [-1, 1]], dtype=tf.float32)
     layer = layers.GAMLayer(3, [3, 2, 1], 2, [3, 2, 1], activation=tf.nn.relu)
     serialized = tf.keras.layers.serialize(layer)
     loaded = tf.keras.layers.deserialize(serialized)
     self.assertAllEqual(loaded.get_config(), layer.get_config())
-
-    outputs, _, _ = layer(([example_inputs, example_inputs, example_inputs
-                           ], [context_inputs, context_inputs]),
-                          training=False)
-    self.assertAllClose([[-0.338468], [0.], [-0.340799]], outputs.numpy())
-
-    outputs, _, _ = loaded(([example_inputs, example_inputs, example_inputs
-                            ], [context_inputs, context_inputs]),
-                           training=False)
-    self.assertAllClose([[-0.016473], [0.], [-0.002832]], outputs.numpy())
 
   def test_gam_layer_call(self):
     example_inputs = tf.constant([[1], [0], [-1]], dtype=tf.float32)
@@ -367,9 +354,8 @@ class BilinearTest(tf.test.TestCase):
   def test_call(self):
     vector_1 = tf.constant([[1, 1], [1, 0]], dtype=tf.float32)
     vector_2 = tf.constant([[0, 1], [0, 0]], dtype=tf.float32)
-    self.assertAllClose(
-        layers.Bilinear(2, 1)((vector_1, vector_2)),
-        [[0.30040634], [0.6592536]])
+    outputs = layers.Bilinear(2, 1)((vector_1, vector_2))
+    self.assertAllEqual([2, 1], outputs.get_shape().as_list())
 
 
 if __name__ == '__main__':

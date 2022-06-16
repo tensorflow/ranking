@@ -371,8 +371,8 @@ class PreprocessorTest(tf.test.TestCase):
         mask=[[True, True, True]],
     )
     self.assertAllClose(example_features["feature_1"].numpy(), [[1., 2., -1.]])
-    self.assertAllClose(context_features["context_1"].numpy(),
-                        [[0.01018536, -0.01101774, 0.01906492, 0.02206106]])
+    self.assertAllClose(context_features["context_1"].get_shape().as_list(),
+                        [1, 4])
 
 
 class DummyMultiTaskScorer(model_lib.UnivariateScorer):
