@@ -1796,17 +1796,12 @@ class OrdinalLoss(_PointwiseLoss):
     """See `_RankingLoss`."""
     if mask is None:
       mask = utils.is_label_valid(labels)
-    if logits.shape.rank == 2:
-      logits = tf.repeat(tf.expand_dims(logits, -1), self._ordinal_size, -1)
+    if logits.shape.rank != 3:
+      raise ValueError('Predictions for ordinal loss must have rank 3.')
     elif logits.shape[-1] != self._ordinal_size:
-      if logits.shape[-1] == 1:
-        logits = tf.repeat(logits, self._ordinal_size, -1)
-      else:
-        raise ValueError(
-            'The last dimension of logits must be either 1 or number of ordinal'
-            f' levels {self._ordinal_size}, when the dimension number is '
-            f'greater than 2, actual dim is {logits.shape[-1]}. rank is '
-            f'{tf.rank(logits)}.')
+      raise ValueError(
+          'The last dimension of logits must be the number of ordinal levels '
+          f'{self._ordinal_size}, the actual dimension is {logits.shape[-1]}.')
     labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
     logits = tf.where(
         tf.expand_dims(mask, -1), logits, tf.zeros_like(logits))
