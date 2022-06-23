@@ -15,6 +15,7 @@
 """Tests for utils.py."""
 
 import tensorflow.compat.v2 as tf
+
 from tensorflow_ranking.python.keras import utils
 
 

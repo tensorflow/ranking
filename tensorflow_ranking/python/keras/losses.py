@@ -14,6 +14,8 @@
 
 """Keras losses in TF-Ranking."""
 
+from typing import Optional
+
 import tensorflow.compat.v2 as tf
 
 from tensorflow.python.keras.utils import losses_utils
@@ -39,11 +41,11 @@ class RankingLossKey(object):
   # TODO: Add support for circle loss and neural sort losses.
 
 
-def get(loss,
-        reduction=tf.losses.Reduction.AUTO,
-        lambda_weight=None,
-        name=None,
-        **kwargs):
+def get(loss: str,
+        reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+        lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+        name: Optional[str] = None,
+        **kwargs) -> tf.keras.losses.Loss:
   """Factory method to get a ranking loss class.
 
   Args:
@@ -114,11 +116,11 @@ class DCGLambdaWeight(losses_impl.DCGLambdaWeight):
   """Keras serializable class for DCG."""
 
   def __init__(self,
-               topn=None,
-               gain_fn=None,
-               rank_discount_fn=None,
-               normalized=False,
-               smooth_fraction=0.,
+               topn: Optional[int] = None,
+               gain_fn: Optional[utils.GainFunction] = None,
+               rank_discount_fn: Optional[utils.RankDiscountFunction] = None,
+               normalized: bool = False,
+               smooth_fraction: float = 0.,
                **kwargs):
     gain_fn = gain_fn or utils.identity
     rank_discount_fn = rank_discount_fn or utils.inverse
@@ -139,7 +141,11 @@ class DCGLambdaWeight(losses_impl.DCGLambdaWeight):
 class NDCGLambdaWeightV2(losses_impl.DCGLambdaWeightV2):
   """Keras serializable class for NDCG LambdaWeight V2 for topn."""
 
-  def __init__(self, topn=None, gain_fn=None, rank_discount_fn=None, **kwargs):
+  def __init__(self,
+               topn: Optional[int] = None,
+               gain_fn: Optional[utils.GainFunction] = None,
+               rank_discount_fn: Optional[utils.RankDiscountFunction] = None,
+               **kwargs):
     gain_fn = gain_fn or utils.pow_minus_1
     rank_discount_fn = rank_discount_fn or utils.log2_inverse
     super().__init__(topn, gain_fn, rank_discount_fn, normalized=True)
@@ -157,10 +163,10 @@ class NDCGLambdaWeight(DCGLambdaWeight):
   """Keras serializable class for NDCG."""
 
   def __init__(self,
-               topn=None,
-               gain_fn=None,
-               rank_discount_fn=None,
-               smooth_fraction=0.,
+               topn: Optional[int] = None,
+               gain_fn: Optional[utils.GainFunction] = None,
+               rank_discount_fn: Optional[utils.RankDiscountFunction] = None,
+               smooth_fraction: float = 0.,
                **kwargs):
     super().__init__(
         topn,
@@ -174,7 +180,10 @@ class NDCGLambdaWeight(DCGLambdaWeight):
 class PrecisionLambdaWeight(losses_impl.PrecisionLambdaWeight):
   """Keras serializable class for Precision."""
 
-  def __init__(self, topn=None, positive_fn=None, **kwargs):
+  def __init__(self,
+               topn: Optional[int] = None,
+               positive_fn: Optional[utils.PositiveFunction] = None,
+               **kwargs):
     positive_fn = positive_fn or utils.is_greater_equal_1
     super().__init__(topn, positive_fn)
 
@@ -188,7 +197,9 @@ class PrecisionLambdaWeight(losses_impl.PrecisionLambdaWeight):
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
 class ListMLELambdaWeight(losses_impl.ListMLELambdaWeight):
 
-  def __init__(self, rank_discount_fn, **kwargs):
+  def __init__(self,
+               rank_discount_fn: Optional[utils.RankDiscountFunction] = None,
+               **kwargs):
     super().__init__(rank_discount_fn)
 
   def get_config(self):
@@ -206,22 +217,26 @@ class _RankingLoss(tf.keras.losses.Loss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               ragged: bool = False):
     super().__init__(reduction, name)
     # An instance of loss in `losses_impl`. Overwrite this in subclasses.
     self._loss = None
     self._ragged = ragged
 
-  def __call__(self, y_true, y_pred, sample_weight=None):
+  def __call__(self,
+               y_true: utils.TensorLike,
+               y_pred: utils.TensorLike,
+               sample_weight: Optional[utils.TensorLike] = None) -> tf.Tensor:
     """See tf.keras.losses.Loss."""
     if self._loss is None:
       raise ValueError('self._loss is not defined. Please use a subclass.')
     sample_weight = self._loss.normalize_weights(y_true, sample_weight)
     return super().__call__(y_true, y_pred, sample_weight)
 
-  def call(self, y_true, y_pred):
+  def call(self, y_true: utils.TensorLike,
+           y_pred: utils.TensorLike) -> tf.Tensor:
     """See tf.keras.losses.Loss."""
     y_pred = self._loss.get_logits(y_pred)
     losses, weights = self._loss.compute_unreduced_loss(
@@ -238,11 +253,11 @@ class _PairwiseLoss(_RankingLoss):
   """Base class for pairwise ranking losses."""
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False,
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False,
                **kwargs):
     super().__init__(reduction, name, ragged)
     self._lambda_weight = lambda_weight
@@ -267,7 +282,8 @@ class _PairwiseLoss(_RankingLoss):
     })
     return cls(**config)
 
-  def call(self, y_true, y_pred):
+  def call(self, y_true: utils.TensorLike,
+           y_pred: utils.TensorLike) -> tf.Tensor:
     """See _RankingLoss."""
     losses, weights = self._loss.compute_unreduced_loss(
         labels=y_true, logits=y_pred)
@@ -319,11 +335,11 @@ class PairwiseHingeLoss(_PairwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False):
     """Pairwise hinge loss.
 
     Args:
@@ -386,11 +402,11 @@ class PairwiseLogisticLoss(_PairwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False):
     """Pairwise logistic loss.
 
     Args:
@@ -454,11 +470,11 @@ class PairwiseSoftZeroOneLoss(_PairwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False):
     """Pairwise soft zero one loss.
 
     Args:
@@ -522,11 +538,11 @@ class PairwiseMSELoss(_PairwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False):
     """Pairwise Mean Squared Error loss.
 
     Args:
@@ -553,11 +569,11 @@ class _ListwiseLoss(_RankingLoss):
   """Base class for listwise ranking losses."""
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False,
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False,
                **kwargs):
     super().__init__(reduction, name, ragged)
     self._lambda_weight = lambda_weight
@@ -623,11 +639,11 @@ class SoftmaxLoss(_ListwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False):
     """Softmax cross-entropy loss.
 
     Args:
@@ -649,7 +665,10 @@ class SoftmaxLoss(_ListwiseLoss):
         temperature=temperature,
         ragged=ragged)
 
-  def __call__(self, y_true, y_pred, sample_weight=None):
+  def __call__(self,
+               y_true: utils.TensorLike,
+               y_pred: utils.TensorLike,
+               sample_weight: Optional[utils.TensorLike] = None) -> tf.Tensor:
     """See _RankingLoss."""
     losses, sample_weight = self._loss.compute_per_list(y_true, y_pred,
                                                         sample_weight)
@@ -707,11 +726,11 @@ class UniqueSoftmaxLoss(_ListwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False):
     super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.UniqueSoftmaxLoss(
         name='{}_impl'.format(name) if name else None,
@@ -777,11 +796,11 @@ class ListMLELoss(_ListwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               ragged: bool = False):
     """ListMLE loss.
 
     Args:
@@ -863,11 +882,11 @@ class ApproxMRRLoss(_ListwiseLoss):
   """  # pylint: disable=g-line-too-long
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=0.1,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 0.1,
+               ragged: bool = False):
     super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.ApproxMRRLoss(
         name='{}_impl'.format(name) if name else None,
@@ -939,11 +958,11 @@ class ApproxNDCGLoss(_ListwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=0.1,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 0.1,
+               ragged: bool = False):
     super().__init__(reduction, name, lambda_weight, temperature, ragged)
     self._loss = losses_impl.ApproxNDCGLoss(
         name='{}_impl'.format(name) if name else None,
@@ -1014,14 +1033,14 @@ class GumbelApproxNDCGLoss(ApproxNDCGLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=0.1,
-               sample_size=8,
-               gumbel_temperature=1.0,
-               seed=None,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 0.1,
+               sample_size: int = 8,
+               gumbel_temperature: float = 1.0,
+               seed: Optional[int] = None,
+               ragged: bool = False):
     super().__init__(
         reduction, name, lambda_weight, temperature=temperature, ragged=ragged)
     self._sample_size = sample_size
@@ -1096,11 +1115,11 @@ class ClickEMLoss(_RankingLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               exam_loss_weight=1.0,
-               rel_loss_weight=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               exam_loss_weight: float = 1.0,
+               rel_loss_weight: float = 1.0,
+               ragged: bool = False):
     """Click EM loss.
 
     Args:
@@ -1167,12 +1186,12 @@ class MixtureEMLoss(_ListwiseLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               lambda_weight=None,
-               temperature=1.0,
-               alpha=1.0,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               temperature: float = 1.0,
+               alpha: float = 1.0,
+               ragged: bool = False):
     """Mixture EM loss.
 
     Args:
@@ -1246,9 +1265,9 @@ class SigmoidCrossEntropyLoss(_RankingLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               ragged: bool = False):
     super().__init__(reduction, name, ragged)
     self._loss = losses_impl.SigmoidCrossEntropyLoss(
         name='{}_impl'.format(name) if name else None, ragged=ragged)
@@ -1291,9 +1310,9 @@ class MeanSquaredLoss(_RankingLoss):
   """
 
   def __init__(self,
-               reduction=tf.losses.Reduction.AUTO,
-               name=None,
-               ragged=False):
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               ragged: bool = False):
     """Mean squared loss.
 
     Args:

@@ -156,6 +156,8 @@ class _LambdaWeight(object, metaclass=abc.ABCMeta):
   to be instantiated by concrete lambda weight models. The instance is used
   together with standard loss such as logistic loss and softmax loss.
   """
+  # TODO: Define a public version of `_LambdaWeight` for typing
+  # annotations.
 
   @abc.abstractmethod
   def pair_weights(self, labels, ranks):

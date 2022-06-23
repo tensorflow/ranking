@@ -14,14 +14,21 @@
 
 """Utils for tfr.keras."""
 
+from typing import Any, Callable, Union
+
 import tensorflow.compat.v2 as tf
+
+TensorLike = Union[tf.Tensor, Any]
+GainFunction = Callable[[TensorLike], tf.Tensor]
+RankDiscountFunction = Callable[[TensorLike], tf.Tensor]
+PositiveFunction = Callable[[TensorLike], tf.Tensor]
 
 
 # The following functions are used to transform labels and ranks for losses and
 # metrics computation. User customized functions can be defined similarly by
 # following the same annotations.
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
-def identity(label):
+def identity(label: TensorLike) -> tf.Tensor:
   """Identity function that returns the input label.
 
   Args:
@@ -35,7 +42,7 @@ def identity(label):
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
-def inverse(rank):
+def inverse(rank: TensorLike) -> tf.Tensor:
   """Computes the inverse of input rank.
 
   Args:
@@ -49,7 +56,7 @@ def inverse(rank):
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
-def pow_minus_1(label):
+def pow_minus_1(label: TensorLike) -> tf.Tensor:
   """Computes `2**x - 1` element-wise for each label.
 
   Can be used to define `gain_fn` for `tfr.keras.metrics.NDCGMetric`.
@@ -65,7 +72,7 @@ def pow_minus_1(label):
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
-def log2_inverse(rank):
+def log2_inverse(rank: TensorLike) -> tf.Tensor:
   """Computes `1./log2(1+x)` element-wise for each label.
 
   Can be used to define `rank_discount_fn` for `tfr.keras.metrics.NDCGMetric`.
@@ -81,7 +88,7 @@ def log2_inverse(rank):
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
-def is_greater_equal_1(label):
+def is_greater_equal_1(label: TensorLike) -> tf.Tensor:
   """Computes whether label is greater or equal to 1.
 
   Args:
@@ -95,7 +102,7 @@ def is_greater_equal_1(label):
 
 
 @tf.keras.utils.register_keras_serializable(package="tensorflow_ranking")
-def symmetric_log1p(t):
+def symmetric_log1p(t: TensorLike) -> tf.Tensor:
   """Computes `sign(x) * log(1 + sign(x))`.
 
   Args:
@@ -106,4 +113,3 @@ def symmetric_log1p(t):
     A `Tensor` that has each input element transformed as `x` to `I(x > 1)`.
   """
   return tf.math.log1p(t * tf.sign(t)) * tf.sign(t)
-

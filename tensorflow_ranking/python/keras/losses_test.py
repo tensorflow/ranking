@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+from typing import List, Optional, Sequence, Tuple
 
 from absl.testing import parameterized
 import tensorflow.compat.v2 as tf
@@ -31,13 +32,19 @@ def ln(x):
   return math.log(x)
 
 
-def normalize_weights(weights, labels):
+def normalize_weights(weights: Sequence[float],
+                      labels: Sequence[float]) -> float:
   sum_label = sum(max(0, l) for l in labels)
   return sum(w * max(0, l)
              for w, l in zip(weights, labels)) / sum_label if sum_label else 0
 
 
-def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
+def _pairwise_loss(
+    labels: Sequence[float],
+    scores: Sequence[float],
+    weights: Sequence[float],
+    loss_form: str,
+    rank_discount_form: Optional[str] = None) -> Tuple[float, float]:
   """Returns the pairwise loss given the loss form.
 
   Args:
@@ -93,7 +100,7 @@ def _pairwise_loss(labels, scores, weights, loss_form, rank_discount_form=None):
   return loss, count
 
 
-def _batch_aggregation(batch_loss_list):
+def _batch_aggregation(batch_loss_list: Sequence[Tuple[float, float]]) -> float:
   """Returns the aggregated loss."""
   loss_sum = 0.
   weight_sum = 0.
@@ -103,7 +110,7 @@ def _batch_aggregation(batch_loss_list):
   return loss_sum / weight_sum
 
 
-def _softmax(values):
+def _softmax(values: Sequence[float]) -> List[float]:
   """Returns the softmax of `values`."""
   total = sum(math.exp(v) for v in values)
   return [math.exp(v) / total for v in values]
@@ -111,7 +118,8 @@ def _softmax(values):
 
 # Based on nn.sigmoid_cross_entropy_with_logits for x=logit and z=label the
 # cross entropy is max(x, 0) - x * z + log(1 + exp(-abs(x))).
-def _sigmoid_cross_entropy(labels, logits):
+def _sigmoid_cross_entropy(labels: Sequence[float],
+                           logits: Sequence[float]) -> float:
 
   def per_position_loss(logit, label):
     return max(logit, 0) - logit * label + ln(1 + math.exp(-abs(logit)))
@@ -120,20 +128,22 @@ def _sigmoid_cross_entropy(labels, logits):
       per_position_loss(logit, label) for label, logit in zip(labels, logits))
 
 
-def _logodds_prob(logodds, alpha=1.0):
+def _logodds_prob(logodds: Sequence[Sequence[Sequence[float]]],
+                  alpha: float = 1.0) -> List[List[List[float]]]:
   return [[[math.exp(-alpha * (l - min(logodd[0])))
             for l in logodd[0]]]
           for logodd in logodds]
 
 
 # Aggregates the per position squared error.
-def _mean_squared_error(logits, labels):
+def _mean_squared_error(logits: Sequence[float],
+                        labels: Sequence[float]) -> float:
   return sum((logit - label)**2 for label, logit in zip(labels, logits))
 
 
 class LossesTest(parameterized.TestCase, tf.test.TestCase):
 
-  def _check_pairwise_loss(self, loss_form):
+  def _check_pairwise_loss(self, loss_form: str):
     """Helper function to test `loss_fn`."""
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 0., 2.]]
@@ -634,7 +644,7 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
 
 class GetLossesTest(tf.test.TestCase):
 
-  def _check_pairwise_loss(self, loss_form):
+  def _check_pairwise_loss(self, loss_form: str):
     """Helper function to test `loss_fn`."""
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 0., 2.]]
