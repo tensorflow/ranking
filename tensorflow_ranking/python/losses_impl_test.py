@@ -1168,6 +1168,27 @@ class SoftmaxLossTest(tf.test.TestCase):
     self.assertAlmostEqual(result[0], 0.0)
 
 
+class PolyOneSoftmaxLossTest(tf.test.TestCase):
+
+  def test_poly_one_softmax_loss(self):
+    with tf.Graph().as_default():
+      with self.cached_session():
+        scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
+        labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+        reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+
+        loss_fn = losses_impl.PolyOneSoftmaxLoss(name=None, epsilon=3)
+        result = loss_fn.compute(labels, scores, None, reduction).eval()
+
+        self.assertAlmostEqual(
+            result,
+            -((math.log(_softmax(scores[0])[2]) - 3 *
+               (1 - _softmax(scores[0])[2])) +
+              (math.log(_softmax(scores[1])[2]) - 3 *
+               (1 - _softmax(scores[1])[2])) * 2.) / 2.,
+            places=5)
+
+
 class UniqueSoftmaxLossTest(tf.test.TestCase):
 
   def test_unique_softmax_loss(self):

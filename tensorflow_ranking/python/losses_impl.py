@@ -1161,6 +1161,56 @@ class SoftmaxLoss(_ListwiseLoss):
     return self._compute_unreduced_loss_impl(labels, logits, mask)
 
 
+class PolyOneSoftmaxLoss(SoftmaxLoss):
+  """Implements poly1 softmax loss."""
+
+  def __init__(self,
+               name,
+               lambda_weight=None,
+               epsilon=1.0,
+               temperature=1.0,
+               ragged=False):
+    """Constructor.
+
+    Args:
+      name: A string used as the name for this loss.
+      lambda_weight: A `_LambdaWeight` object.
+      epsilon: A float number for contribution of the first polynomial.
+      temperature: A float number to modify the logits=logits/temperature.
+      ragged: A boolean indicating whether the input tensors are ragged.
+    """
+    super().__init__(
+        name,
+        lambda_weight=lambda_weight,
+        temperature=temperature,
+        ragged=ragged)
+    self._epsilon = epsilon
+
+  def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
+    """See `_RankingLoss`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    label_sum = tf.reduce_sum(input_tensor=labels, axis=1, keepdims=True)
+    # Padding for rows with label_sum = 0.
+    nonzero_mask = tf.greater(tf.reshape(label_sum, [-1]), 0.0)
+    padded_labels = tf.compat.v1.where(nonzero_mask, labels,
+                                       _EPSILON * tf.ones_like(labels))
+    padded_labels = tf.compat.v1.where(mask, padded_labels,
+                                       tf.zeros_like(padded_labels))
+    padded_label_sum = tf.reduce_sum(
+        input_tensor=padded_labels, axis=1, keepdims=True)
+    labels_for_softmax = tf.math.divide_no_nan(padded_labels, padded_label_sum)
+    logits_for_softmax = logits
+    # Padded labels have 0 weights in label_sum.
+    weights_for_softmax = tf.reshape(label_sum, [-1])
+    pt = tf.reduce_sum(
+        labels_for_softmax * tf.nn.softmax(logits_for_softmax), axis=-1)
+    ce = tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(
+        labels_for_softmax, logits_for_softmax)
+    losses = ce + self._epsilon * (1 - pt)
+    return losses, weights_for_softmax
+
+
 class UniqueSoftmaxLoss(_ListwiseLoss):
   """Implements unique rating softmax loss."""
 

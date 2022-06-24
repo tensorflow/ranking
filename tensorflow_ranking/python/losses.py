@@ -37,6 +37,7 @@ class RankingLossKey(object):
   PAIRWISE_MSE_LOSS = 'pairwise_mse_loss'
   CIRCLE_LOSS = 'circle_loss'
   SOFTMAX_LOSS = 'softmax_loss'
+  POLY_ONE_SOFTMAX_LOSS = 'poly_one_softmax_loss'
   UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
@@ -101,7 +102,6 @@ def make_loss_fn(loss_keys,
   if loss_weights:
     if len(loss_keys) != len(loss_weights):
       raise ValueError('loss_keys and loss_weights must have the same size.')
-
   params = params or {}
   gumbel_params = gumbel_params or {}
   gumbel_sampler = losses_impl.GumbelSampler(**gumbel_params)
@@ -165,6 +165,8 @@ def make_loss_fn(loss_keys,
             (_circle_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.SOFTMAX_LOSS:
             (_softmax_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.POLY_ONE_SOFTMAX_LOSS:
+            (_poly_one_softmax_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.UNIQUE_SOFTMAX_LOSS:
             (_unique_softmax_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
@@ -241,6 +243,8 @@ def make_loss_metric_fn(loss_key,
           losses_impl.CircleLoss(name),
       RankingLossKey.SOFTMAX_LOSS:
           losses_impl.SoftmaxLoss(name, lambda_weight=lambda_weight),
+      RankingLossKey.POLY_ONE_SOFTMAX_LOSS:
+          losses_impl.PolyOneSoftmaxLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.UNIQUE_SOFTMAX_LOSS:
           losses_impl.UniqueSoftmaxLoss(name, lambda_weight=lambda_weight),
       RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
@@ -537,6 +541,43 @@ def _softmax_loss(
   """
   loss = losses_impl.SoftmaxLoss(name, lambda_weight)
   with tf.compat.v1.name_scope(loss.name, 'softmax_loss',
+                               (labels, logits, weights)):
+    return loss.compute(labels, logits, weights, reduction)
+
+
+def _poly_one_softmax_loss(
+    labels,
+    logits,
+    weights=None,
+    lambda_weight=None,
+    epsilon=1.0,
+    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+    name=None):
+  """Computes the poly1 softmax cross entropy for a list.
+
+  This is the loss originally proposed by Leng et al.
+  ["PolyLoss: A Polynomial Expansion Perspective of Classification Loss
+  Functions". ICLR 2022].
+
+  Args:
+    labels: A `Tensor` of the same shape as `logits` representing graded
+      relevance.
+    logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+      ranking score of the corresponding item.
+    weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+      weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+      weights.
+    lambda_weight: A `DCGLambdaWeight` instance.
+    epsilon: A scalar, controlling contribution of the first polynomial.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
+    name: A string used as the name for this loss.
+
+  Returns:
+    An op for the poly1 softmax cross entropy as a loss.
+  """
+  loss = losses_impl.PolyOneSoftmaxLoss(name, lambda_weight, epsilon)
+  with tf.compat.v1.name_scope(loss.name, 'poly_one_softmax_loss',
                                (labels, logits, weights)):
     return loss.compute(labels, logits, weights, reduction)
 
