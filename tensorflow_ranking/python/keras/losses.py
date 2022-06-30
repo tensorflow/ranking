@@ -34,6 +34,7 @@ class RankingLossKey(object):
   UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
+  ORDINAL_LOSS = 'ordinal_loss'
   LIST_MLE_LOSS = 'list_mle_loss'
   APPROX_NDCG_LOSS = 'approx_ndcg_loss'
   APPROX_MRR_LOSS = 'approx_mrr_loss'
@@ -74,6 +75,7 @@ def get(loss: str,
   key_to_cls = {
       RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS: SigmoidCrossEntropyLoss,
       RankingLossKey.MEAN_SQUARED_LOSS: MeanSquaredLoss,
+      RankingLossKey.ORDINAL_LOSS: OrdinalLoss,
       RankingLossKey.APPROX_NDCG_LOSS: ApproxNDCGLoss,
       RankingLossKey.APPROX_MRR_LOSS: ApproxMRRLoss,
       RankingLossKey.GUMBEL_APPROX_NDCG_LOSS: GumbelApproxNDCGLoss,
@@ -1325,3 +1327,57 @@ class MeanSquaredLoss(_RankingLoss):
     super().__init__(reduction, name, ragged)
     self._loss = losses_impl.MeanSquaredLoss(
         name='{}_impl'.format(name) if name else None, ragged=ragged)
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class OrdinalLoss(_RankingLoss):
+  r"""Computes the Ordinal loss between `y_true` and `y_pred`.
+
+  In ordinal loss, y_pred is a 3D tensor with the last dimension equals to
+  ordinal_size.
+  ```
+  loss = -\sum_i=0^ordinal_size-1 I_{y_true > i} log(sigmoid(y_pred[i])) +
+      I_{y_true <= i} log(1-sigmoid(y_pred[i]))
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[[0.6, 0.2], [0.8, 0.3]]]
+  >>> loss = tfr.keras.losses.OrdinalLoss(ordinal_size=2)
+  >>> loss(y_true, y_pred).numpy()
+  1.6305413
+
+  # >>> # Using ragged tensors
+  # >>> y_true = tf.ragged.constant([[2., 1.], [0.]])
+  # >>> y_pred = tf.ragged.constant([[[0.6, 0.2], [0.8, 0.3]], [[0., -0.2]]])
+  # >>> loss = tfr.keras.losses.OrdinalLoss(ordinal_size=2)
+  # >>> loss(y_true, y_pred).numpy()
+  # 1.3507895
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd',
+                loss=tfr.keras.losses.OrdinalLoss(ordinal_size=2))
+  ```
+
+  Definition:
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) = - \sum_i\sum_{j=0}^{m-1} I_{y_i > j}
+      \log(\text{sigmoid}(s_{i,j})) + I_{y_i \leq j}
+      \log(1 - \text{sigmoid}(s_{i,j}))
+  $$
+  """
+
+  def __init__(self,
+               reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+               name: Optional[str] = None,
+               ragged: bool = False,
+               ordinal_size: int = 1):
+    super().__init__(reduction, name, ragged)
+    self._loss = losses_impl.OrdinalLoss(
+        name='{}_impl'.format(name) if name else None,
+        ordinal_size=ordinal_size,
+        ragged=ragged)
