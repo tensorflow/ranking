@@ -30,6 +30,25 @@ from tensorflow_ranking.python import utils
 _EPSILON = 1e-10
 
 
+def _safe_default_gain_fn(labels):
+  """Calculates safe gain functions for NDCG.
+
+  In applications such as distillation, the labels could have extreme values
+  that might result in numerical error when using the original gain function.
+  This should only be applied to NDCG related losses, but not DCG ones. It
+  should be applied on both the numerator and the denominator of NDCG.
+
+  Args:
+    labels: A `Tensor` with shape [batch_size, list_size], representing graded
+      relevance.
+  Returns:
+    A `tensor` of safe gain function values of shape [batch_size, list_size].
+  """
+  max_labels = tf.reduce_max(labels, axis=-1, keepdims=True)
+  gains = tf.pow(2., labels - max_labels) - tf.pow(2., -max_labels)
+  return gains
+
+
 def _check_tensor_shapes(tensors):
   """Checks the tensor shapes to be compatible."""
   for tensor in tensors:
@@ -138,12 +157,12 @@ def ndcg(labels, ranks=None, perm_mat=None):
     list_size = tf.shape(labels)[1]
     ranks = tf.range(list_size) + 1
   discounts = 1. / tf.math.log1p(tf.cast(ranks, dtype=tf.float32))
-  gains = tf.pow(2., tf.cast(labels, dtype=tf.float32)) - 1.
+  gains = _safe_default_gain_fn(tf.cast(labels, dtype=tf.float32))
   if perm_mat is not None:
     gains = tf.reduce_sum(
         input_tensor=perm_mat * tf.expand_dims(gains, 1), axis=-1)
   dcg = tf.reduce_sum(input_tensor=gains * discounts, axis=-1, keepdims=True)
-  normalized_dcg = dcg * inverse_max_dcg(labels)
+  normalized_dcg = dcg * inverse_max_dcg(labels, gain_fn=_safe_default_gain_fn)
 
   return normalized_dcg
 
