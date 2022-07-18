@@ -1886,6 +1886,163 @@ class OrdinalLoss(_PointwiseLoss):
     return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
 
 
+class SimpleOrdinalLoss(_PointwiseLoss):
+  """Implements ordinal loss."""
+
+  # TODO: check if num_classes and ordinal_size=num_classes-1 makes
+  # more sense.
+  def __init__(self, name, ordinal_size, temperature=1.0, ragged=False):
+    """Initializer.
+
+    Args:
+      name: A string used as the name for this loss.
+      ordinal_size: A integer, number of ordinal classes minus 1. To use
+        this loss, ordinal_size must be greater than 0.
+      temperature: A float number to modify the logits=logits/temperature.
+      ragged: A boolean indicating whether the input tensors are ragged.
+    """
+    super().__init__(name, None, temperature, ragged)
+    self._ordinal_size = ordinal_size
+
+  # TODO: support 2D ordinal boundaries.
+  def _prepare_and_validate_params(self, labels, logits, weights, mask):
+    """Prepares and validates input parameters.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A tuple of a `Tensor` with shape [batch_size, list_size],
+        corresponding to the ranking score of the corresponding item, and a
+        `Tensor` with shape [ordinal_size], corresponding to the ordinal
+        boundary theta_1 and deltas of boundaries, so that the ordinal
+        boundaries are (-infty, logits[1][0], logits[1][0] + softplus(
+            logits[1][1]), ..., logits[1][0] + softplus(logits[1][-1]), infty).
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+      mask: A `Tensor` of the same shape as logits indicating which entries are
+        valid for computing the loss.
+
+    Returns:
+      A tuple (labels, logits, weights, mask) of `tf.Tensor` objects that are
+      ready to be used in the loss.
+    """
+    logits, ord_theta_delta = logits
+    if self._ragged:
+      labels, logits, weights, mask = utils.ragged_to_dense(
+          labels, logits, weights)
+
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+
+    if weights is None:
+      weights = 1.0
+
+    labels = tf.convert_to_tensor(labels)
+    logits = tf.convert_to_tensor(logits)
+    ord_theta_delta = tf.convert_to_tensor(ord_theta_delta)
+    weights = tf.convert_to_tensor(weights)
+    mask = tf.convert_to_tensor(mask)
+
+    return labels, (logits, ord_theta_delta), weights, mask
+
+  def _labels_to_ordinal_binary(self, labels, mask):
+    """Helper function to transform input labels to ordinal binary.
+
+    1 if label_i = l, 0 otherwise. i index the item, l gives the label.
+
+    Args:
+      labels: A Tensor of shape [batch_size, list_size].
+      mask: A Tensor of shape [batch_size, list_size].
+
+    Returns:
+      ordinals, shape [batch_size, list_size, ordinal_size]
+    """
+    one_to_n = tf.range(self._ordinal_size + 1, dtype=tf.float32)
+    unsqueezed = tf.repeat(
+        tf.expand_dims(labels, axis=2), self._ordinal_size + 1, axis=-1)
+    # Identity of y_i = l
+    return tf.where(
+        tf.expand_dims(mask, axis=-1), tf.cast(unsqueezed == one_to_n,
+                                               tf.float32),
+        tf.zeros_like(unsqueezed))
+
+  def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
+    """See `_RankingLoss`."""
+    if mask is None:
+      mask = utils.is_label_valid(labels)
+    logits, ord_theta_delta = logits
+    if logits.shape.rank != 2:
+      raise ValueError(
+          'logits must have rank 2 of shape [batch_size, list_size].')
+    if ord_theta_delta.shape[0] != self._ordinal_size:
+      raise ValueError(
+          'ordinal boundaries must have the same shape as the ordinal_size of '
+          'the loss: shape of the ordinal boundaries is '
+          f'{ord_theta_delta.shape} vs ordinal size {self._ordinal_size}.')
+    labels = tf.where(mask, labels, tf.zeros_like(labels))
+    # dim = [batch_size, list_size, -1]
+    logits = tf.expand_dims(tf.where(mask, logits, tf.zeros_like(logits)), -1)
+    # dim = [batch_size, list_size, ordinal_size+1].
+    ordinals = self._labels_to_ordinal_binary(labels, mask)
+    # dim = [batch_size, list_size, ordinal_size]
+    ord_boundaries = tf.ones_like(logits) * tf.expand_dims(tf.expand_dims(
+        tf.cumsum(
+            tf.concat([
+                tf.slice(ord_theta_delta, [0], [1]),
+                tf.nn.softplus(
+                    tf.slice(ord_theta_delta, [1], [self._ordinal_size - 1]))
+            ],
+                      axis=0),
+            axis=0),
+        axis=0), axis=0)
+    probs = tf.sigmoid(ord_boundaries - logits)
+    # dim = [batch_size, list_size, ordinal_size+1]
+    probs_diff = tf.concat([probs, tf.ones_like(logits)], axis=-1) - tf.concat(
+        [tf.zeros_like(logits), probs], axis=-1)
+    losses = -ordinals * tf.math.log(probs_diff)
+    return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
+
+  def compute(self, labels, logits, weights, reduction, mask=None):
+    """Computes the reduced loss for tf.estimator (not tf.keras).
+
+    Note that this function is not compatible with keras.
+
+    Args:
+      labels: A `Tensor` of the same shape as `logits` representing graded
+        relevance.
+      logits: A tuple of a `Tensor` with shape [batch_size, list_size],
+        corresponding to the ranking score of the corresponding item, and a
+        `Tensor` with shape [ordinal_size], corresponding to the ordinal
+        boundary theta_1 and the deltas of the boundaries, so that the ordinal
+        boundaries are (-infty, logits[1][0], logits[1][0] + softplus(
+            logits[1][1]), ..., logits[1][0] + softplus(logits[1][-1]), infty).
+      weights: A scalar, a `Tensor` with shape [batch_size, 1] for list-wise
+        weights, or a `Tensor` with shape [batch_size, list_size] for item-wise
+        weights.
+      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+        reduce training loss over batch.
+      mask: A `Tensor` of the same shape as logits indicating which entries are
+        valid for computing the loss.
+
+    Returns:
+      Reduced loss for training and eval.
+    """
+    if not isinstance(logits, tuple) or len(logits) != 2:
+      raise ValueError('ordinal boundaries should also be predicted by the '
+                       'model to use simple ordinal loss.')
+    logits, ord_theta_delta = logits
+    logits = self.get_logits(logits)
+    if not tf.is_tensor(ord_theta_delta):
+      ord_theta_delta = tf.convert_to_tensor(value=ord_theta_delta)
+    losses, loss_weights = self._compute_unreduced_loss_impl(
+        labels, (logits, ord_theta_delta), mask)
+    weights = tf.multiply(
+        self._normalize_weights_impl(labels, weights), loss_weights)
+    return tf.compat.v1.losses.compute_weighted_loss(
+        losses, weights, reduction=reduction)
+
+
 class CoupledRankDistilLoss(_ListwiseLoss):
   r"""Implements Coupled-RankDistil loss.
 

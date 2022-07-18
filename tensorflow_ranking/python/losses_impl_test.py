@@ -1437,6 +1437,27 @@ class OrdinalLossTest(tf.test.TestCase):
         places=5)
 
 
+class SimpleOrdinalLossTest(tf.test.TestCase):
+
+  def test_simple_ordinal_loss(self):
+    scores = [[1., 3., 2.]]
+    labels = [[0., 1., 2.]]
+    ord_boundaries = [0., 1.]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    prob = lambda x: 1. / (1. + math.exp(-x))
+    softplus = lambda x: math.log(1. + math.exp(x))
+    expected = (-math.log(prob(0. - 1.)) - math.log(
+        prob(softplus(1.) - 3.) - prob(0. - 3.)) - math.log(
+            1. - prob(softplus(1.) - 2.))) / 3.
+
+    loss_fn = losses_impl.SimpleOrdinalLoss(name=None, ordinal_size=2)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, (scores, ord_boundaries), None,
+                        reduction).numpy(),
+        expected,
+        places=5)
+
+
 class ClickEMLossTest(tf.test.TestCase):
 
   def test_click_em_loss(self):
