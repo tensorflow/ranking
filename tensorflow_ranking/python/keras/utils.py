@@ -14,11 +14,11 @@
 
 """Utils for tfr.keras."""
 
-from typing import Any, Callable, Union
+from typing import Callable
 
-import tensorflow.compat.v2 as tf
+import tensorflow as tf
 
-TensorLike = Union[tf.Tensor, Any]
+TensorLike = tf.types.experimental.TensorLike
 GainFunction = Callable[[TensorLike], tf.Tensor]
 RankDiscountFunction = Callable[[TensorLike], tf.Tensor]
 PositiveFunction = Callable[[TensorLike], tf.Tensor]

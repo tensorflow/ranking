@@ -14,15 +14,19 @@
 
 """Utility functions for ranking library."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from typing import Callable, Dict
 
 import tensorflow as tf
 
 _PADDING_LABEL = -1.
 _PADDING_PREDICTION = -1e6
 _PADDING_WEIGHT = 0.
+
+
+TensorLike = tf.types.experimental.TensorLike
+TransformationFunction = Callable[[TensorLike], tf.Tensor]
+LossFunction = Callable[[TensorLike, TensorLike, Dict[str, TensorLike]],
+                        tf.Tensor]
 
 
 def _to_nd_indices(indices):
