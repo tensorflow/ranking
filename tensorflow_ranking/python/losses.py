@@ -18,9 +18,7 @@ The losses here are used to learn TF ranking models. It works with listwise
 Tensors only.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 import tensorflow as tf
 
@@ -51,106 +49,59 @@ class RankingLossKey(object):
   GUMBEL_NEURAL_SORT_NDCG_LOSS = 'gumbel_neural_sort_ndcg_loss'
 
 
-def make_loss_fn(loss_keys,
-                 loss_weights=None,
-                 weights_feature_name=None,
-                 lambda_weight=None,
-                 reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
-                 name=None,
-                 params=None,
-                 gumbel_params=None):
-  """Makes a loss function using a single loss or multiple losses.
+class _LossFunctionMaker(object):
+  """The loss function maker."""
 
-  Args:
-    loss_keys: A string or list of strings representing loss keys defined in
-      `RankingLossKey`. Listed loss functions will be combined in a weighted
-      manner, with weights specified by `loss_weights`. If `loss_weights` is
-      None, default weight of 1 will be used.
-    loss_weights: List of weights, same length as `loss_keys`. Used when merging
-      losses to calculate the weighted sum of losses. If `None`, all losses are
-      weighted equally with weight being 1.
-    weights_feature_name: A string specifying the name of the weights feature in
-      `features` dict.
-    lambda_weight: A `_LambdaWeight` object created by factory methods like
-      `create_ndcg_lambda_weight()`.
-    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
-      reduce training loss over batch.
-    name: A string used as the name for this loss.
-    params: A string-keyed dictionary that contains any other loss-specific
-      arguments.
-    gumbel_params: A string-keyed dictionary that contains other
-      `gumbel_softmax_sample` arguments.
-
-  Returns:
-    A function _loss_fn(). See `_loss_fn()` for its signature.
-
-  Raises:
-    ValueError: If `reduction` is invalid.
-    ValueError: If `loss_keys` is None or empty.
-    ValueError: If `loss_keys` and `loss_weights` have different sizes.
-  """
-  if (reduction not in tf.compat.v1.losses.Reduction.all() or
-      reduction == tf.compat.v1.losses.Reduction.NONE):
-    raise ValueError('Invalid reduction: {}'.format(reduction))
-
-  if not loss_keys:
-    raise ValueError('loss_keys cannot be None or empty.')
-
-  if not isinstance(loss_keys, list):
-    loss_keys = [loss_keys]
-
-  if loss_weights:
-    if len(loss_keys) != len(loss_weights):
-      raise ValueError('loss_keys and loss_weights must have the same size.')
-  params = params or {}
-  gumbel_params = gumbel_params or {}
-  gumbel_sampler = losses_impl.GumbelSampler(**gumbel_params)
-
-  def _loss_fn(labels, logits, features):
-    """Computes a single loss or weighted combination of losses.
+  def __init__(
+      self,
+      loss_keys: Union[str, Sequence[str]],
+      loss_weights: Optional[Sequence[Union[float, int]]] = None,
+      weights_feature_name: Optional[str] = None,
+      lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+      reduction: tf.compat.v1.losses.Reduction = tf.compat.v1.losses.Reduction
+      .SUM_BY_NONZERO_WEIGHTS,
+      name: Optional[str] = None,
+      params: Optional[Mapping[str, Any]] = None,
+      gumbel_params: Optional[Mapping[str, Any]] = None,
+  ):
+    """Initializes a loss function maker.
 
     Args:
-      labels: A `Tensor` of the same shape as `logits` representing relevance.
-      logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
-        ranking score of the corresponding item.
-      features: Dict of Tensors of shape [batch_size, list_size, ...] for
-        per-example features and shape [batch_size, ...] for non-example context
-        features.
-
-    Returns:
-      An op for a single loss or weighted combination of multiple losses.
-
-    Raises:
-      ValueError: If `loss_keys` is invalid.
+      loss_keys: A string or list of strings representing loss keys defined in
+        `RankingLossKey`. Listed loss functions will be combined in a weighted
+        manner, with weights specified by `loss_weights`. If `loss_weights` is
+        None, default weight of 1 will be used.
+      loss_weights: List of weights, same length as `loss_keys`. Used when
+        merging losses to calculate the weighted sum of losses. If `None`, all
+        losses are weighted equally with weight being 1.
+      weights_feature_name: A string specifying the name of the weights feature
+        in `features` dict.
+      lambda_weight: A `_LambdaWeight` object created by factory methods like
+        `create_ndcg_lambda_weight()`.
+      reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+        reduce training loss over batch.
+      name: A string used as the name for this loss.
+      params: A string-keyed dictionary that contains any other loss-specific
+        arguments.
+      gumbel_params: A string-keyed dictionary that contains other
+        `gumbel_softmax_sample` arguments.
     """
-    weights = None
-    if weights_feature_name:
-      weights = tf.convert_to_tensor(value=features[weights_feature_name])
-      # Convert weights to a 2-D Tensor.
-      weights = utils.reshape_to_2d(weights)
 
-    gbl_labels, gbl_logits, gbl_weights = gumbel_sampler.sample(
-        labels, logits, weights=weights)
+    self.loss_keys = loss_keys
+    self.loss_weights = loss_weights
+    self.weights_feature_name = weights_feature_name
+    self.lambda_weight = lambda_weight
+    self.reduction = reduction
+    self.name = name
+    self.params = params or {}
+    self.gumbel_params = gumbel_params or {}
 
-    loss_kwargs = {
-        'labels': labels,
-        'logits': logits,
-        'weights': weights,
-        'reduction': reduction,
-        'name': name,
-    }
-    gbl_loss_kwargs = {
-        'labels': gbl_labels,
-        'logits': gbl_logits,
-        'weights': gbl_weights,
-        'reduction': reduction,
-        'name': name,
-    }
-    loss_kwargs.update(params)
-    gbl_loss_kwargs.update(params)
-
-    loss_kwargs_with_lambda_weight = loss_kwargs.copy()
-    loss_kwargs_with_lambda_weight['lambda_weight'] = lambda_weight
+  def build_key_loss_fn_mapping(
+      self, loss_kwargs: Mapping[str, Any],
+      loss_kwargs_with_lambda_weight: Mapping[str, Any],
+      gbl_loss_kwargs: Mapping[str, Any]
+  ) -> Dict[str, Tuple[Callable[..., tf.Tensor], Dict[str, Any]]]:
+    """Builds the mapping from loss keys to loss functions."""
 
     key_to_fn = {
         RankingLossKey.PAIRWISE_HINGE_LOSS:
@@ -188,25 +139,152 @@ def make_loss_fn(loss_keys,
             (_neural_sort_ndcg_loss, gbl_loss_kwargs),
     }
 
-    # Obtain the list of loss ops.
-    loss_ops = []
-    for loss_key in loss_keys:
-      if loss_key not in key_to_fn:
-        raise ValueError('Invalid loss_key: {}.'.format(loss_key))
-      loss_fn, kwargs = key_to_fn[loss_key]
-      loss_ops.append(loss_fn(**kwargs))
+    return key_to_fn
 
-    # Compute weighted combination of losses.
-    if loss_weights:
-      weighted_losses = []
-      for loss_op, loss_weight in zip(loss_ops, loss_weights):
-        weighted_losses.append(tf.multiply(loss_op, loss_weight))
-    else:
-      weighted_losses = loss_ops
+  def make(self) -> utils.LossFunction:
+    """Makes the loss function.
 
-    return tf.add_n(weighted_losses)
+    Returns:
+      A function _loss_fn(). See `_loss_fn()` for its signature.
 
-  return _loss_fn
+    Raises:
+      ValueError: If `reduction` is invalid.
+      ValueError: If `loss_keys` is None or empty.
+      ValueError: If `loss_keys` and `loss_weights` have different sizes.
+    """
+
+    if (self.reduction not in tf.compat.v1.losses.Reduction.all() or
+        self.reduction == tf.compat.v1.losses.Reduction.NONE):
+      raise ValueError(f'Invalid reduction: {self.reduction}')
+
+    if not self.loss_keys:
+      raise ValueError('loss_keys cannot be None or empty.')
+
+    if not isinstance(self.loss_keys, list):
+      self.loss_keys = [self.loss_keys]
+
+    if self.loss_weights:
+      if len(self.loss_keys) != len(self.loss_weights):
+        raise ValueError('loss_keys and loss_weights must have the same size.')
+
+    gumbel_sampler = losses_impl.GumbelSampler(**self.gumbel_params)
+
+    def _loss_fn(labels, logits, features):
+      """Computes a single loss or weighted combination of losses.
+
+      Args:
+        labels: A `Tensor` of the same shape as `logits` representing relevance.
+        logits: A `Tensor` with shape [batch_size, list_size]. Each value is the
+          ranking score of the corresponding item.
+        features: Dict of Tensors of shape [batch_size, list_size, ...] for
+          per-example features and shape [batch_size, ...] for non-example
+          context features.
+
+      Returns:
+        An op for a single loss or weighted combination of multiple losses.
+
+      Raises:
+        ValueError: If `loss_keys` is invalid.
+      """
+      weights = None
+      if self.weights_feature_name:
+        weights = tf.convert_to_tensor(
+            value=features[self.weights_feature_name])
+        # Convert weights to a 2-D Tensor.
+        weights = utils.reshape_to_2d(weights)
+
+      gbl_labels, gbl_logits, gbl_weights = gumbel_sampler.sample(
+          labels, logits, weights=weights)
+
+      loss_kwargs = {
+          'labels': labels,
+          'logits': logits,
+          'weights': weights,
+          'reduction': self.reduction,
+          'name': self.name,
+      }
+      gbl_loss_kwargs = {
+          'labels': gbl_labels,
+          'logits': gbl_logits,
+          'weights': gbl_weights,
+          'reduction': self.reduction,
+          'name': self.name,
+      }
+      loss_kwargs.update(self.params)
+      gbl_loss_kwargs.update(self.params)
+
+      loss_kwargs_with_lambda_weight = loss_kwargs.copy()
+      loss_kwargs_with_lambda_weight['lambda_weight'] = self.lambda_weight
+
+      key_to_fn = self.build_key_loss_fn_mapping(
+          loss_kwargs, loss_kwargs_with_lambda_weight, gbl_loss_kwargs)
+
+      # Obtain the list of loss ops.
+      loss_ops = []
+      for loss_key in self.loss_keys:
+        if loss_key not in key_to_fn:
+          raise ValueError(f'Invalid loss_key: {loss_key}.')
+        loss_fn, kwargs = key_to_fn[loss_key]
+        loss_ops.append(loss_fn(**kwargs))
+
+      # Compute weighted combination of losses.
+      if self.loss_weights:
+        weighted_losses = []
+        for loss_op, loss_weight in zip(loss_ops, self.loss_weights):
+          weighted_losses.append(tf.multiply(loss_op, loss_weight))
+      else:
+        weighted_losses = loss_ops
+
+      return tf.add_n(weighted_losses)
+
+    return _loss_fn
+
+
+def make_loss_fn(
+    loss_keys: Union[str, Sequence[str]],
+    loss_weights: Optional[Sequence[Union[float, int]]] = None,
+    weights_feature_name: Optional[str] = None,
+    lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+    reduction: tf.compat.v1.losses.Reduction = tf.compat.v1.losses.Reduction
+    .SUM_BY_NONZERO_WEIGHTS,
+    name: Optional[str] = None,
+    params: Optional[Mapping[str, Any]] = None,
+    gumbel_params: Optional[Mapping[str, Any]] = None,
+) -> utils.LossFunction:
+  """Makes a loss function using a single loss or multiple losses.
+
+  Args:
+    loss_keys: A string or list of strings representing loss keys defined in
+      `RankingLossKey`. Listed loss functions will be combined in a weighted
+      manner, with weights specified by `loss_weights`. If `loss_weights` is
+      None, default weight of 1 will be used.
+    loss_weights: List of weights, same length as `loss_keys`. Used when merging
+      losses to calculate the weighted sum of losses. If `None`, all losses are
+      weighted equally with weight being 1.
+    weights_feature_name: A string specifying the name of the weights feature in
+      `features` dict.
+    lambda_weight: A `_LambdaWeight` object created by factory methods like
+      `create_ndcg_lambda_weight()`.
+    reduction: One of `tf.losses.Reduction` except `NONE`. Describes how to
+      reduce training loss over batch.
+    name: A string used as the name for this loss.
+    params: A string-keyed dictionary that contains any other loss-specific
+      arguments.
+    gumbel_params: A string-keyed dictionary that contains other
+      `gumbel_softmax_sample` arguments.
+
+  Returns:
+    A function _loss_fn(). See `_loss_fn()` for its signature.
+
+  Raises:
+    ValueError: If `reduction` is invalid.
+    ValueError: If `loss_keys` is None or empty.
+    ValueError: If `loss_keys` and `loss_weights` have different sizes.
+  """
+
+  return _LossFunctionMaker(loss_keys, loss_weights, weights_feature_name,
+                            lambda_weight, reduction, name, params,
+                            gumbel_params).make()
 
 
 def make_loss_metric_fn(loss_key,
@@ -283,7 +361,7 @@ def make_loss_metric_fn(loss_key,
     weights = _get_weights(features)
     loss = metric_dict.get(loss_key, None)
     if loss is None:
-      raise ValueError('loss_key {} not supported.'.format(loss_key))
+      raise ValueError(f'loss_key {loss_key} not supported.')
     return loss.eval_metric(labels, predictions, weights)
 
   return metric_fn
