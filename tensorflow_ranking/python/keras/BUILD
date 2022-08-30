@@ -186,7 +186,7 @@ py_library(
     srcs_version = "PY3",
     deps = [
         ":utils",
-        # py/tensorflow dep,
+        # py/tensorflow:tensorflow_no_contrib dep,
         "//tensorflow_ranking/python:losses_impl",
     ],
 )

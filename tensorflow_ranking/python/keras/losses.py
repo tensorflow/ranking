@@ -14,7 +14,7 @@
 
 """Keras losses in TF-Ranking."""
 
-from typing import Optional
+from typing import List, Optional
 
 import tensorflow.compat.v2 as tf
 
@@ -40,6 +40,10 @@ class RankingLossKey(object):
   APPROX_MRR_LOSS = 'approx_mrr_loss'
   GUMBEL_APPROX_NDCG_LOSS = 'gumbel_approx_ndcg_loss'
   # TODO: Add support for circle loss and neural sort losses.
+
+  @classmethod
+  def all_keys(cls) -> List[str]:
+    return [v for k, v in vars(cls).items() if k.isupper()]
 
 
 def get(loss: str,

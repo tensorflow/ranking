@@ -18,7 +18,7 @@ The losses here are used to learn TF ranking models. It works with listwise
 Tensors only.
 """
 
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import tensorflow as tf
 
@@ -47,6 +47,10 @@ class RankingLossKey(object):
   GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS = 'gumbel_neural_sort_cross_entropy_loss'
   NEURAL_SORT_NDCG_LOSS = 'neural_sort_ndcg_loss'
   GUMBEL_NEURAL_SORT_NDCG_LOSS = 'gumbel_neural_sort_ndcg_loss'
+
+  @classmethod
+  def all_keys(cls) -> List[str]:
+    return [v for k, v in vars(cls).items() if k.isupper()]
 
 
 class _LossFunctionMaker(object):
@@ -96,7 +100,7 @@ class _LossFunctionMaker(object):
     self.params = params or {}
     self.gumbel_params = gumbel_params or {}
 
-  def build_key_loss_fn_mapping(
+  def build_key_to_loss_fn_mapping(
       self, loss_kwargs: Mapping[str, Any],
       loss_kwargs_with_lambda_weight: Mapping[str, Any],
       gbl_loss_kwargs: Mapping[str, Any]
@@ -216,7 +220,7 @@ class _LossFunctionMaker(object):
       loss_kwargs_with_lambda_weight = loss_kwargs.copy()
       loss_kwargs_with_lambda_weight['lambda_weight'] = self.lambda_weight
 
-      key_to_fn = self.build_key_loss_fn_mapping(
+      key_to_fn = self.build_key_to_loss_fn_mapping(
           loss_kwargs, loss_kwargs_with_lambda_weight, gbl_loss_kwargs)
 
       # Obtain the list of loss ops.
