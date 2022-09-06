@@ -706,9 +706,9 @@ class SimplePipeline(ModelFitPipeline):
 
   def build_loss(self) -> tf.keras.losses.Loss:
     """See `AbstractPipeline`."""
-    if isinstance(self._hparams.loss, dict):
+    if not isinstance(self._hparams.loss, str):
       raise TypeError("In the simple pipeline, losses are expected to be "
-                      "specified in a str instead of a dict.")
+                      "specified in a str.")
     return losses.get(
         loss=self._hparams.loss, reduction=self._hparams.loss_reduction)
 
@@ -792,9 +792,9 @@ class MultiTaskPipeline(ModelFitPipeline):
   def build_loss(self) -> Dict[str, tf.keras.losses.Loss]:
     """See `AbstractPipeline`."""
     reduction = self._hparams.loss_reduction
-    if isinstance(self._hparams.loss, str):
+    if not isinstance(self._hparams.loss, dict):
       raise TypeError("In the multi-task pipeline, losses are expected to be "
-                      "specified in a dict instead of a str.")
+                      "specified in a dict.")
     return {
         task_name: losses.get(loss=loss_name, reduction=reduction)
         for task_name, loss_name in self._hparams.loss.items()
@@ -822,6 +822,69 @@ class MultiTaskPipeline(ModelFitPipeline):
       ]
 
     return {task_name: eval_metrics() for task_name in self._hparams.loss}
+
+
+class MultiObjectivePipeline(SimplePipeline):
+  """Pipeline for multi-objective training.
+
+  This handles a sequence of multi-objective losses and works with
+  `SimpleDatasetBuilder`. This can also work with `MultiLabelDatasetBuilder`.
+  In this case, the same loss, as well as all metrics, will be applied to all
+  labels and their predictions uniformly.
+
+  Use subclassing to customize the losses and metrics.
+
+  Example usage:
+
+  ```python
+  context_feature_spec = {}
+  example_feature_spec = {
+      "example_feature_1": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  mask_feature_name = "list_mask"
+  label_spec = {
+      "utility": tf.io.FixedLenFeature(
+          shape=(1,), dtype=tf.float32, default_value=0.0)
+  }
+  dataset_hparams = DatasetHparams(
+      train_input_pattern="train.dat",
+      valid_input_pattern="valid.dat",
+      train_batch_size=128,
+      valid_batch_size=128)
+  pipeline_hparams = pipeline.PipelineHparams(
+      model_dir="model/",
+      num_epochs=2,
+      steps_per_epoch=5,
+      validation_steps=2,
+      learning_rate=0.01,
+      loss=("softmax_loss", "sigmoid_cross_entropy_loss"),
+      loss_weights=(1., 2.))
+  model_builder = SimpleModelBuilder(
+      context_feature_spec, example_feature_spec, mask_feature_name)
+  dataset_builder = SimpleDatasetBuilder(
+      context_feature_spec,
+      example_feature_spec,
+      mask_feature_name,
+      label_spec,
+      dataset_hparams)
+  pipeline = MultiObjectivePipeline(
+      model_builder, dataset_builder, pipeline_hparams)
+  pipeline.train_and_validate(verbose=1)
+  ```
+  """
+
+  def build_loss(self) -> List[tf.keras.losses.Loss]:
+    """See `AbstractPipeline`."""
+    reduction = self._hparams.loss_reduction
+    if not isinstance(self._hparams.loss, (list, tuple)):
+      raise TypeError(
+          "In the multi-objective pipeline, losses are expected to be "
+          "specified in a sequence.")
+    return [
+        losses.get(loss=loss_name, reduction=reduction)
+        for loss_name in self._hparams.loss
+    ]
 
 
 class NullDatasetBuilder(AbstractDatasetBuilder):

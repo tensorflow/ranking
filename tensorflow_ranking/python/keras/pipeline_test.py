@@ -134,10 +134,20 @@ class DummyMultiTaskScorer(model_lib.UnivariateScorer):
 
 class PipelineTest(tf.test.TestCase, parameterized.TestCase):
 
-  @parameterized.named_parameters(
-      ("Local", None), ("Mirrored", "MirroredStrategy"),
-      ("MultiWorker", "MultiWorkerMirroredStrategy"))
-  def test_pipeline_with_feature_specs(self, strategy):
+  @parameterized.product(
+      strategy=(
+          None,
+          "MirroredStrategy",
+          "MultiWorkerMirroredStrategy",
+      ),
+      loss_key=(
+          "sigmoid_cross_entropy_loss",
+          "mean_squared_loss",
+          "softmax_loss",
+          ("sigmoid_cross_entropy_loss", "softmax_loss"),
+          ("mean_squared_loss", "softmax_loss"),
+      ))
+  def test_pipeline_with_feature_specs(self, strategy, loss_key):
     data_dir = self.create_tempdir()
     data_file = os.path.join(data_dir, "elwc.tfrecord")
     if tf.io.gfile.exists(data_file):
@@ -163,7 +173,7 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
         steps_per_epoch=5,
         validation_steps=2,
         learning_rate=0.01,
-        loss="softmax_loss",
+        loss=loss_key,
         export_best_model=True,
         automatic_reduce_lr=True,
         strategy=strategy)
@@ -194,14 +204,18 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
         name="test_model",
     )
 
-    ranking_pipeline = pipeline.SimplePipeline(
+    pipeline_builder = pipeline.SimplePipeline if isinstance(
+        loss_key, str) else pipeline.MultiObjectivePipeline
+
+    ranking_pipeline = pipeline_builder(
         model_builder,
         dataset_builder=pipeline.SimpleDatasetBuilder(
             context_feature_spec,
             example_feature_spec,
             _MASK,
             label_spec,
-            dataset_hparams),
+            dataset_hparams,
+        ),
         hparams=pipeline_hparams)
 
     ranking_pipeline.train_and_validate(verbose=1)
