@@ -202,7 +202,8 @@ def get_estimator():
   loss = tfr.keras.losses.get(
       FLAGS.loss, reduction=tf.compat.v2.losses.Reduction.SUM_OVER_BATCH_SIZE)
   metrics = tfr.keras.metrics.default_keras_metrics()
-  optimizer = tf.keras.optimizers.Adagrad(learning_rate=FLAGS.learning_rate)
+  optimizer = tf.keras.optimizers.legacy.Adagrad(
+      learning_rate=FLAGS.learning_rate)
   config = tf_estimator.RunConfig(save_checkpoints_steps=1000)
   ranker = tfr.keras.model.create_keras_model(
       network=network,

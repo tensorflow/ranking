@@ -103,7 +103,8 @@ def get_keras_estimator():
   loss = tfr.keras.losses.get(
       FLAGS.loss, reduction=tf.compat.v2.losses.Reduction.SUM_OVER_BATCH_SIZE)
   metrics = tfr.keras.metrics.default_keras_metrics()
-  optimizer = tf.keras.optimizers.Adagrad(learning_rate=FLAGS.learning_rate)
+  optimizer = tf.keras.optimizers.legacy.Adagrad(
+      learning_rate=FLAGS.learning_rate)
   config = tf_estimator.RunConfig(
       model_dir=FLAGS.model_dir,
       keep_checkpoint_max=FLAGS.num_checkpoints,

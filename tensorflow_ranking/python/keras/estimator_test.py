@@ -177,7 +177,7 @@ class KerasModelToEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         losses.RankingLossKey.SOFTMAX_LOSS,
         reduction=tf.compat.v2.losses.Reduction.SUM_OVER_BATCH_SIZE)
     self._eval_metrics = metrics.default_keras_metrics()
-    self._optimizer = tf.keras.optimizers.Adagrad(learning_rate=0.1)
+    self._optimizer = tf.keras.optimizers.legacy.Adagrad(learning_rate=0.1)
     self._config = tf_estimator.RunConfig(
         keep_checkpoint_max=2, save_checkpoints_secs=2)
 
