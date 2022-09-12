@@ -1,7 +1,7 @@
 # Description:
 #  Tools for building the TensorFlow Ranking pip package.
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 COMMON_PIP_DEPS = [
     "//tensorflow_ranking",
