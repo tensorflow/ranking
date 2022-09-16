@@ -321,6 +321,8 @@ def make_loss_metric_fn(loss_key,
       RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
           losses_impl.PairwiseSoftZeroOneLoss(
               name, lambda_weight=lambda_weight),
+      RankingLossKey.PAIRWISE_MSE_LOSS:
+          losses_impl.PairwiseMSELoss(name, lambda_weight=lambda_weight),
       RankingLossKey.CIRCLE_LOSS:
           losses_impl.CircleLoss(name),
       RankingLossKey.SOFTMAX_LOSS:
