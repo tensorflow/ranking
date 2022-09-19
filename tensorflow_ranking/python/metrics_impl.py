@@ -655,9 +655,10 @@ class NDCGMetric(_RankingMetric):
         predictions, [labels, weights], topn=topn, mask=mask)
     dcg = _discounted_cumulative_gain(sorted_labels, sorted_weights,
                                       self._gain_fn, self._rank_discount_fn)
-    # Sorting over the weighted labels to get ideal ranking.
+    # Sorting over the weighted gains to get ideal ranking.
+    weighted_gains = weights * self._gain_fn(tf.cast(labels, dtype=tf.float32))
     ideal_sorted_labels, ideal_sorted_weights = utils.sort_by_scores(
-        weights * labels, [labels, weights], topn=topn, mask=mask)
+        weighted_gains, [labels, weights], topn=topn, mask=mask)
     ideal_dcg = _discounted_cumulative_gain(ideal_sorted_labels,
                                             ideal_sorted_weights, self._gain_fn,
                                             self._rank_discount_fn)

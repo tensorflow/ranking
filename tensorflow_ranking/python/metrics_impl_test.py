@@ -813,6 +813,20 @@ class NDCGMetricTest(tf.test.TestCase):
         [[((1. + 5.) * 3. + (0. + 5.) * 7. + (2. + 5.) * 9.) /
           ((1. + 5.) + (0. + 5.) + (2. + 5.))]])
 
+  def test_ndcg_with_weights(self):
+    scores = [[1., 2., 3.]]
+    labels = [[1., 2., 3.]]
+    weights = [[4., 1., 1.]]
+
+    metric = metrics_impl.NDCGMetric(name=None, topn=None)
+    output, _ = metric.compute(labels, scores, weights)
+
+    self.assertAllClose(output,
+                        [[((2**3. - 1.) / log2p1(1) + (2**2. - 1.) / log2p1(2) +
+                           (2**1. - 1.) / log2p1(3) * 4.) /
+                          ((2**3. - 1.) / log2p1(1) + (2**2. - 1.) / log2p1(3) +
+                           (2**1. - 1.) / log2p1(2) * 4.)]])
+
 
 class DCGMetricTest(tf.test.TestCase):
 
