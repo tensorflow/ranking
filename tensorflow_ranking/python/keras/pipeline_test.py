@@ -141,10 +141,8 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
           "MultiWorkerMirroredStrategy",
       ),
       loss_key=(
-          "sigmoid_cross_entropy_loss",
           "mean_squared_loss",
           "softmax_loss",
-          ("sigmoid_cross_entropy_loss", "softmax_loss"),
           ("mean_squared_loss", "softmax_loss"),
       ))
   def test_pipeline_with_feature_specs(self, strategy, loss_key):
