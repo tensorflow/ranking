@@ -1069,32 +1069,36 @@ class SoftmaxLossTest(tf.test.TestCase):
 
   def test_softmax_loss_should_handle_per_example_weights(self):
     scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
-    example_weights = [[1., 1., 1.], [1., 1., 3.], [1., 0., 1.]]
+    labels = [[0., 0., 1.], [1., 1., 2.], [0., 0., 0.]]
+    example_weights = [[1., 1., 1.], [1., 2., 3.], [1., 0., 1.]]
     reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    probs = [_softmax(s) for s in scores]
 
     loss_fn = losses_impl.SoftmaxLoss(name=None)
     result = loss_fn.compute(labels, scores, example_weights, reduction).numpy()
 
     self.assertAlmostEqual(
         result,
-        -(math.log(_softmax(scores[0])[2]) * 1. +
-          math.log(_softmax(scores[1])[2]) * 2. * 3.) / 2.,
+        -(math.log(probs[0][2]) * 1. + math.log(probs[1][0]) * 1. * 1. +
+          math.log(probs[1][1]) * 1. * 2. + math.log(probs[1][2]) * 2. * 3.) /
+        2.,
         places=5)
 
   def test_softmax_loss_should_handle_per_list_weights(self):
     scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
-    labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
+    labels = [[1., 2., 1.], [0., 0., 2.], [0., 0., 0.]]
     list_weights = [[2.], [1.], [1.]]
     reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    probs = [_softmax(s) for s in scores]
 
     loss_fn = losses_impl.SoftmaxLoss(name=None)
     result = loss_fn.compute(labels, scores, list_weights, reduction).numpy()
 
     self.assertAlmostEqual(
         result,
-        -(math.log(_softmax(scores[0])[2]) * 2. +
-          math.log(_softmax(scores[1])[2]) * 2. * 1.) / 2.,
+        -(math.log(probs[0][0]) * 1. * 2. + math.log(probs[0][1]) * 2. * 2. +
+          math.log(probs[0][2]) * 1. * 2. + math.log(probs[1][2]) * 2. * 1.) /
+        2.,
         places=5)
 
   def test_softmax_loss_should_support_lambda_weights(self):
