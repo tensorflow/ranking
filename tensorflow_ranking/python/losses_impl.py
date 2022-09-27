@@ -1146,6 +1146,8 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def compute(self, labels, logits, weights, reduction, mask=None):
     """See `_RankingLoss`."""
+    labels, logits, weights, mask = self._prepare_and_validate_params(
+        labels, logits, weights, mask)
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights, mask)
     losses, weights = self._compute_unreduced_loss_impl(labels, logits, mask)
@@ -1154,6 +1156,8 @@ class SoftmaxLoss(_ListwiseLoss):
 
   def eval_metric(self, labels, logits, weights, mask=None):
     """See `_RankingLoss`."""
+    labels, logits, weights, mask = self._prepare_and_validate_params(
+        labels, logits, weights, mask)
     logits = self.get_logits(logits)
     labels, logits = self.precompute(labels, logits, weights, mask)
     losses, weights = self._compute_unreduced_loss_impl(labels, logits, mask)
