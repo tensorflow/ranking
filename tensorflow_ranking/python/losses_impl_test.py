@@ -1440,6 +1440,33 @@ class OrdinalLossTest(tf.test.TestCase):
          _sigmoid_cross_entropy([0., 0., 0.], [1., 3., 2.])) / 3.,
         places=5)
 
+  def test_ordinal_loss_with_fraction_label(self):
+    scores = [[[1., 2.], [3., 2.], [2., 3.]], [[1., 3.], [2., 2.], [3., 2.]],
+              [[1., 1.], [2., 1.], [3., 3.]]]
+    labels = [[0., 0.5, 1.2], [0., 0.8, 2.], [0., 0., 0.1]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.OrdinalLoss(name=None, ordinal_size=2)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        (_sigmoid_cross_entropy([0., 0., 1.], [1., 3., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [2., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 1.], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
+        places=5)
+    loss_fn_frac = losses_impl.OrdinalLoss(name=None, ordinal_size=2,
+                                           use_fraction_label=True)
+    self.assertAlmostEqual(
+        loss_fn_frac.compute(labels, scores, None, reduction).numpy(),
+        (_sigmoid_cross_entropy([0., 0.5, 1.], [1., 3., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.2], [2., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0.8, 1.], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 1.], [3., 2., 2.]) +
+         _sigmoid_cross_entropy([0., 0., 0.1], [1., 2., 3.]) +
+         _sigmoid_cross_entropy([0., 0., 0.], [1., 1., 3.])) / 9.,
+        places=5)
+
 
 class SimpleOrdinalLossTest(tf.test.TestCase):
 

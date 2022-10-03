@@ -1837,7 +1837,8 @@ def gumbel_neural_sort(logits,
 class OrdinalLoss(_PointwiseLoss):
   """Implements ordinal loss."""
 
-  def __init__(self, name, ordinal_size, temperature=1.0, ragged=False):
+  def __init__(self, name, ordinal_size, temperature=1.0, ragged=False,
+               use_fraction_label=False):
     """Initializer.
 
     Args:
@@ -1845,12 +1846,24 @@ class OrdinalLoss(_PointwiseLoss):
       ordinal_size: A integer number of ordinal levels of labels.
       temperature: A float number to modify the logits=logits/temperature.
       ragged: A boolean indicating whether the input tensors are ragged.
+      use_fraction_label: A boolean indicating when the input labels contain
+        fractions, whether to leverage the fraction part.
     """
     super().__init__(name, None, temperature, ragged)
     self._ordinal_size = ordinal_size
+    self._use_fraction_label = use_fraction_label
 
   def _labels_to_ordinals(self, labels, mask):
     """Helper function to transform input labels to ordinal values.
+
+    When use_fraction_label is false, ordinals will be 1.0 if labels >= i for
+    the ordinal head i, with i = 1, ..., ordinal_size.
+    When use_fraction_label is true, the fraction part of labels will be counted
+    if labels > i-1 but < i.
+
+    For a fraction label 1.2, and ordinal_size=2
+    when use_fraction_label is false, it maps to an ordinal like [1.0, 0.0],
+    when use_fraction_label is true, it maps to an ordinal like [1.0, 0.2].
 
     Args:
       labels: A Tensor of shape [batch_size, list_size].
@@ -1862,10 +1875,13 @@ class OrdinalLoss(_PointwiseLoss):
     one_to_n = tf.range(1, self._ordinal_size + 1, dtype=tf.float32)
     unsqueezed = tf.repeat(
         tf.expand_dims(labels, axis=2), self._ordinal_size, axis=-1)
-    return tf.where(
-        tf.expand_dims(mask, axis=-1), tf.cast(unsqueezed >= one_to_n,
-                                               tf.float32),
-        tf.expand_dims(labels, axis=-1))
+    ordinals = tf.where(unsqueezed >= one_to_n, tf.ones_like(unsqueezed), 0.0)
+    if self._use_fraction_label:
+      fractions = unsqueezed - one_to_n + 1.0
+      fractions = tf.where(
+          tf.logical_and(fractions > 0.0, fractions < 1.0), fractions, 0.0)
+      ordinals += fractions
+    return tf.where(tf.expand_dims(mask, axis=-1), ordinals, 0.0)
 
   def _compute_unreduced_loss_impl(self, labels, logits, mask=None):
     """See `_RankingLoss`."""
@@ -1877,16 +1893,15 @@ class OrdinalLoss(_PointwiseLoss):
       raise ValueError(
           'The last dimension of logits must be the number of ordinal levels '
           f'{self._ordinal_size}, the actual dimension is {logits.shape[-1]}.')
-    labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
-    logits = tf.where(
-        tf.expand_dims(mask, -1), logits, tf.zeros_like(logits))
+    labels = tf.where(mask, labels, 0.0)
+    logits = tf.where(tf.expand_dims(mask, -1), logits, 0.0)
     ordinals = self._labels_to_ordinals(labels, mask)
     losses = tf.where(
         tf.expand_dims(mask, -1),
         tf.compat.v1.nn.sigmoid_cross_entropy_with_logits(
             labels=ordinals,
             logits=logits),
-        tf.zeros_like(ordinals))
+        0.0)
     return tf.reduce_sum(losses, axis=-1), tf.cast(mask, dtype=tf.float32)
 
 

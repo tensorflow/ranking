@@ -1379,9 +1379,11 @@ class OrdinalLoss(_RankingLoss):
                reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
                name: Optional[str] = None,
                ragged: bool = False,
-               ordinal_size: int = 1):
+               ordinal_size: int = 1,
+               use_fraction_label: bool = False):
     super().__init__(reduction, name, ragged)
     self._loss = losses_impl.OrdinalLoss(
         name='{}_impl'.format(name) if name else None,
         ordinal_size=ordinal_size,
-        ragged=ragged)
+        ragged=ragged,
+        use_fraction_label=use_fraction_label)
