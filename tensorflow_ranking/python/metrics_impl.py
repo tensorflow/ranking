@@ -258,6 +258,7 @@ class _RankingMetric(six.with_metaclass(abc.ABCMeta, object)):
     # All labels should be >= 0. Invalid entries are reset.
     if mask is None:
       mask = utils.is_label_valid(labels)
+    mask = tf.math.logical_and(mask, tf.math.greater(example_weights, 0.0))
     labels = tf.compat.v1.where(mask, labels, tf.zeros_like(labels))
     predictions = tf.compat.v1.where(
         mask, predictions, -1e-6 * tf.ones_like(predictions) +

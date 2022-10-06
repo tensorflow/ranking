@@ -827,6 +827,17 @@ class NDCGMetricTest(tf.test.TestCase):
                           ((2**3. - 1.) / log2p1(1) + (2**2. - 1.) / log2p1(3) +
                            (2**1. - 1.) / log2p1(2) * 4.)]])
 
+  def test_ndcg_with_all_zero_weights(self):
+    scores = [[1., 2., 3.]]
+    labels = [[1., 2., 3.]]
+    weights = [[0., 0., 0.]]
+
+    metric = metrics_impl.NDCGMetric(name=None, topn=None)
+    output, output_weights = metric.compute(labels, scores, weights)
+
+    self.assertAllClose(output, [[0.0]])
+    self.assertAllClose(output_weights, [[0.0]])
+
 
 class DCGMetricTest(tf.test.TestCase):
 
@@ -952,6 +963,17 @@ class DCGMetricTest(tf.test.TestCase):
     self.assertAllClose(
         output_weights,
         [[(1. * 3. + (2. ** 2. - 1.) * 9.) / (1. + (2. ** 2. - 1.))]])
+
+  def test_dcg_with_all_zero_weights(self):
+    scores = [[1., 3., 2.]]
+    labels = [[1., 0., 2.]]
+    weights = [[0., 0., 0.]]
+
+    metric = metrics_impl.DCGMetric(name=None, topn=None)
+    output, output_weights = metric.compute(labels, scores, weights)
+
+    self.assertAllClose(output, [[0.0]])
+    self.assertAllClose(output_weights, [[0.0]])
 
   def test_dcg_weights_should_be_1_when_no_rel_items(self):
     scores = [[1., 3., 2.]]
