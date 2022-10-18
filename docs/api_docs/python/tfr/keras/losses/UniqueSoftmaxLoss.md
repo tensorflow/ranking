@@ -71,9 +71,7 @@ model.compile(optimizer='sgd', loss=tfr.keras.losses.UniqueSoftmaxLoss())
 #### Definition:
 
 $$
-\mathcal{L}(\{y\}, \{s\}) =
-- \sum_i (2^{y_i} - 1) \cdot
-\log\left(\frac{\exp(s_i)}{\sum_j I_{y_i > y_j} \exp(s_j) + \exp(s_i)}\right)
+\mathcal{L}(\{y\}, \{s\}) =- \sum_i (2^{y_i} - 1) \cdot\log\left(\frac{\exp(s_i)}{\sum_j I_{y_i > y_j} \exp(s_j) + \exp(s_i)}\right)
 $$
 
 #### References:
