@@ -68,9 +68,7 @@ model.compile(optimizer='sgd',
 #### Definition:
 
 $$
-\mathcal{L}(\{y\}, \{s\}) = - \sum_{i}
-y_i \log(\text{sigmoid}(s_i))
-+ (1 - y_i) \log(1 - \text{sigmoid}(s_i))
+\mathcal{L}(\{y\}, \{s\}) = - \sum_{i} y_i \log(\text{sigmoid}(s_i))+ (1 - y_i) \log(1 - \text{sigmoid}(s_i))
 $$
 
 <!-- Tabular view -->
