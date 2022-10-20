@@ -54,3 +54,11 @@ according to per-example scores.
 
 [`sorted_ranks(...)`](../tfr/utils/sorted_ranks.md): Returns an int `Tensor` as
 the ranks (1-based) after sorting scores.
+
+## Type Aliases
+
+[`LossFunction`](../tfr/utils/LossFunction.md)
+
+[`TensorLike`](../tfr/keras/model/TensorLike.md)
+
+[`TransformationFunction`](../tfr/keras/utils/GainFunction.md)

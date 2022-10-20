@@ -46,7 +46,7 @@ strategy = get_strategy("MirroredStrategy")
 
 <tr>
 <td>
-`strategy`
+`strategy`<a id="strategy"></a>
 </td>
 <td>
 Key for a `tf.distribute` strategy to be used to train the model.
@@ -56,14 +56,14 @@ strategy will be used.
 </td>
 </tr><tr>
 <td>
-`cluster_resolver`
+`cluster_resolver`<a id="cluster_resolver"></a>
 </td>
 <td>
 A cluster_resolver to build strategy.
 </td>
 </tr><tr>
 <td>
-`variable_partitioner`
+`variable_partitioner`<a id="variable_partitioner"></a>
 </td>
 <td>
 Variable partitioner to be used in
@@ -77,7 +77,7 @@ more information.
 </td>
 </tr><tr>
 <td>
-`tpu`
+`tpu`<a id="tpu"></a>
 </td>
 <td>
 TPU address for TPUStrategy. Not used for other strategy.

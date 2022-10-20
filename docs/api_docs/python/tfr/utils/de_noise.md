@@ -11,7 +11,7 @@ description: Returns a float Tensor as the de-noised counts.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L340-L399">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L343-L402">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -42,7 +42,7 @@ the true distribution.
 
 <tr>
 <td>
-`counts`
+`counts`<a id="counts"></a>
 </td>
 <td>
 A 2-D `Tensor` representing the observations. All values should be
@@ -50,7 +50,7 @@ nonnegative.
 </td>
 </tr><tr>
 <td>
-`noise`
+`noise`<a id="noise"></a>
 </td>
 <td>
 A 2-D `Tensor` representing the noise distribution. This should be
@@ -59,7 +59,7 @@ normalized to a simplex per row.
 </td>
 </tr><tr>
 <td>
-`ratio`
+`ratio`<a id="ratio"></a>
 </td>
 <td>
 A float in (0, 1) representing the contribution from noise.
@@ -86,14 +86,14 @@ A 2-D float `Tensor` and each row is a simplex.
 
 <tr>
 <td>
-`ValueError`
+`ValueError`<a id="ValueError"></a>
 </td>
 <td>
 if `ratio` is not in (0,1).
 </td>
 </tr><tr>
 <td>
-`InvalidArgumentError`
+`InvalidArgumentError`<a id="InvalidArgumentError"></a>
 </td>
 <td>
 if any of `counts` is negative or any of `noise` is

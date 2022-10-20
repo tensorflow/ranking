@@ -9,6 +9,8 @@ description: Hyperparameters used in ModelFitPipeline.
 <meta itemprop="property" content="best_exporter_metric"/>
 <meta itemprop="property" content="best_exporter_metric_higher_better"/>
 <meta itemprop="property" content="cluster_resolver"/>
+<meta itemprop="property" content="early_stopping_min_delta"/>
+<meta itemprop="property" content="early_stopping_patience"/>
 <meta itemprop="property" content="export_best_model"/>
 <meta itemprop="property" content="loss_reduction"/>
 <meta itemprop="property" content="loss_weights"/>
@@ -26,7 +28,7 @@ description: Hyperparameters used in ModelFitPipeline.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L249-L314">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L247-L320">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -43,11 +45,13 @@ Hyperparameters used in `ModelFitPipeline`.
     validation_steps: int,
     learning_rate: float,
     loss: Union[str, Dict[str, str]],
-    loss_reduction: str = &#x27;auto&#x27;,
+    loss_reduction: str = tf.losses.Reduction.AUTO,
     optimizer: str = &#x27;adam&#x27;,
     loss_weights: Optional[Union[float, Dict[str, float]]] = None,
     steps_per_execution: int = 10,
     automatic_reduce_lr: bool = False,
+    early_stopping_patience: int = 0,
+    early_stopping_min_delta: float = 0.0,
     use_weighted_metrics: bool = False,
     export_best_model: bool = False,
     best_exporter_metric_higher_better: bool = False,
@@ -70,21 +74,21 @@ Hyperparameters to be specified for ranking pipeline.
 
 <tr>
 <td>
-`model_dir`
+`model_dir`<a id="model_dir"></a>
 </td>
 <td>
 A path to output the model and training data.
 </td>
 </tr><tr>
 <td>
-`num_epochs`
+`num_epochs`<a id="num_epochs"></a>
 </td>
 <td>
 An integer to specify the number of epochs of training.
 </td>
 </tr><tr>
 <td>
-`steps_per_epoch`
+`steps_per_epoch`<a id="steps_per_epoch"></a>
 </td>
 <td>
 An integer to specify the number of steps per epoch. When
@@ -92,7 +96,7 @@ it is None, going over the training data once is counted as an epoch.
 </td>
 </tr><tr>
 <td>
-`validation_steps`
+`validation_steps`<a id="validation_steps"></a>
 </td>
 <td>
 An integer to specify the number of validation steps in
@@ -101,14 +105,14 @@ and this is the number of steps taken for validation in each epoch.
 </td>
 </tr><tr>
 <td>
-`learning_rate`
+`learning_rate`<a id="learning_rate"></a>
 </td>
 <td>
 A float to indicate the learning rate of the optimizer.
 </td>
 </tr><tr>
 <td>
-`loss`
+`loss`<a id="loss"></a>
 </td>
 <td>
 A string or a map to strings that indicate the loss to be used. When
@@ -118,7 +122,7 @@ implied by the corresponding keys.
 </td>
 </tr><tr>
 <td>
-`loss_reduction`
+`loss_reduction`<a id="loss_reduction"></a>
 </td>
 <td>
 An option in `tf.keras.losses.Reduction` to specify the
@@ -126,7 +130,7 @@ reduction method.
 </td>
 </tr><tr>
 <td>
-`optimizer`
+`optimizer`<a id="optimizer"></a>
 </td>
 <td>
 An option in `tf.keras.optimizers` identifiers to specify the
@@ -134,7 +138,7 @@ optimizer to be used.
 </td>
 </tr><tr>
 <td>
-`loss_weights`
+`loss_weights`<a id="loss_weights"></a>
 </td>
 <td>
 None or a float or a map to floats that indicate the relative
@@ -143,7 +147,7 @@ same weight 1.
 </td>
 </tr><tr>
 <td>
-`steps_per_execution`
+`steps_per_execution`<a id="steps_per_execution"></a>
 </td>
 <td>
 An integer to specify the number of steps executed in
@@ -152,7 +156,7 @@ distributed training.
 </td>
 </tr><tr>
 <td>
-`automatic_reduce_lr`
+`automatic_reduce_lr`<a id="automatic_reduce_lr"></a>
 </td>
 <td>
 A boolean to indicate whether to use
@@ -160,14 +164,31 @@ A boolean to indicate whether to use
 </td>
 </tr><tr>
 <td>
-`use_weighted_metrics`
+`early_stopping_patience`<a id="early_stopping_patience"></a>
+</td>
+<td>
+Number of epochs with no improvement after which
+training will be stopped.
+</td>
+</tr><tr>
+<td>
+`early_stopping_min_delta`<a id="early_stopping_min_delta"></a>
+</td>
+<td>
+Minimum change in the monitored quantity to
+qualify as an improvement, i.e. an absolute change of less than
+early_stopping_min_delta, will count as no improvement.
+</td>
+</tr><tr>
+<td>
+`use_weighted_metrics`<a id="use_weighted_metrics"></a>
 </td>
 <td>
 A boolean to indicate whether to use weighted metrics.
 </td>
 </tr><tr>
 <td>
-`export_best_model`
+`export_best_model`<a id="export_best_model"></a>
 </td>
 <td>
 A boolean to indicate whether to export the best model
@@ -175,7 +196,7 @@ evaluated by the `best_exporter_metric` on the validation data.
 </td>
 </tr><tr>
 <td>
-`best_exporter_metric_higher_better`
+`best_exporter_metric_higher_better`<a id="best_exporter_metric_higher_better"></a>
 </td>
 <td>
 A boolean to indicate whether the
@@ -183,7 +204,7 @@ A boolean to indicate whether the
 </td>
 </tr><tr>
 <td>
-`best_exporter_metric`
+`best_exporter_metric`<a id="best_exporter_metric"></a>
 </td>
 <td>
 A string to specify the metric used to monitor the
@@ -191,7 +212,7 @@ training and to export the best model. Default to the 'loss'.
 </td>
 </tr><tr>
 <td>
-`strategy`
+`strategy`<a id="strategy"></a>
 </td>
 <td>
 An option of strategies supported in `strategy_utils`. Choose from
@@ -200,14 +221,14 @@ An option of strategies supported in `strategy_utils`. Choose from
 </td>
 </tr><tr>
 <td>
-`cluster_resolver`
+`cluster_resolver`<a id="cluster_resolver"></a>
 </td>
 <td>
 A cluster_resolver to build strategy.
 </td>
 </tr><tr>
 <td>
-`variable_partitioner`
+`variable_partitioner`<a id="variable_partitioner"></a>
 </td>
 <td>
 Variable partitioner to be used in
@@ -215,7 +236,7 @@ ParameterServerStrategy.
 </td>
 </tr><tr>
 <td>
-`tpu`
+`tpu`<a id="tpu"></a>
 </td>
 <td>
 TPU address for TPUStrategy. Not used for other strategy.
@@ -265,6 +286,20 @@ cluster_resolver<a id="cluster_resolver"></a>
 </td>
 <td>
 `None`
+</td>
+</tr><tr>
+<td>
+early_stopping_min_delta<a id="early_stopping_min_delta"></a>
+</td>
+<td>
+`0.0`
+</td>
+</tr><tr>
+<td>
+early_stopping_patience<a id="early_stopping_patience"></a>
+</td>
+<td>
+`0`
 </td>
 </tr><tr>
 <td>

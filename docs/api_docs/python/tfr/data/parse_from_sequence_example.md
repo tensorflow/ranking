@@ -11,7 +11,7 @@ description: Parses SequenceExample to feature maps.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L698-L839">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L699-L840">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,9 +22,14 @@ Parses SequenceExample to feature maps.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.parse_from_sequence_example(
-    serialized, list_size=None, context_feature_spec=None,
-    example_feature_spec=None, size_feature_name=None, mask_feature_name=None,
-    shuffle_examples=False, seed=None
+    serialized,
+    list_size=None,
+    context_feature_spec=None,
+    example_feature_spec=None,
+    size_feature_name=None,
+    mask_feature_name=None,
+    shuffle_examples=False,
+    seed=None
 )
 </code></pre>
 
@@ -131,7 +136,7 @@ And the expected output is:
 
 <tr>
 <td>
-`serialized`
+`serialized`<a id="serialized"></a>
 </td>
 <td>
 (Tensor) A string Tensor for a batch of serialized
@@ -139,7 +144,7 @@ SequenceExample.
 </td>
 </tr><tr>
 <td>
-`list_size`
+`list_size`<a id="list_size"></a>
 </td>
 <td>
 (int) The number of frames to keep for a SequenceExample. If
@@ -148,7 +153,7 @@ have a dynamic list size.
 </td>
 </tr><tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -156,7 +161,7 @@ have a dynamic list size.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -168,7 +173,7 @@ SequenceExample. Note that no missing value in the middle of a
 </td>
 </tr><tr>
 <td>
-`size_feature_name`
+`size_feature_name`<a id="size_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list sizes. Populates
@@ -178,7 +183,7 @@ generated.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list masks. Populates
@@ -188,7 +193,7 @@ is not generated.
 </td>
 </tr><tr>
 <td>
-`shuffle_examples`
+`shuffle_examples`<a id="shuffle_examples"></a>
 </td>
 <td>
 (bool) A boolean to indicate whether examples within a
@@ -197,7 +202,7 @@ list are shuffled before the list is trimmed down to list_size elements
 </td>
 </tr><tr>
 <td>
-`seed`
+`seed`<a id="seed"></a>
 </td>
 <td>
 (int) A seed passed onto random_ops.uniform() to shuffle examples.

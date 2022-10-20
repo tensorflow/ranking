@@ -11,7 +11,7 @@ description: Gathers the values from input tensor based on per-row indices.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L33-L56">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L36-L59">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -44,7 +44,7 @@ Returns [[3., 2.], [3., 2.]]
 
 <tr>
 <td>
-`inputs`
+`inputs`<a id="inputs"></a>
 </td>
 <td>
 (tf.Tensor) A tensor of shape [batch_size, list_size] or
@@ -52,7 +52,7 @@ Returns [[3., 2.], [3., 2.]]
 </td>
 </tr><tr>
 <td>
-`indices`
+`indices`<a id="indices"></a>
 </td>
 <td>
 (tf.Tensor) A tensor of shape [batch_size, size] of positions to

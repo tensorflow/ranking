@@ -11,7 +11,7 @@ description: Returns a receiver function with the provided parsing_fn.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1047-L1074">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1057-L1084">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,7 +35,7 @@ Returns a receiver function with the provided `parsing_fn`.
 
 <tr>
 <td>
-`parsing_fn`
+`parsing_fn`<a id="parsing_fn"></a>
 </td>
 <td>
 (function) It has a single argument parsing_fn(serialized).
@@ -43,7 +43,7 @@ Users can customize this for their own data formats.
 </td>
 </tr><tr>
 <td>
-`receiver_name`
+`receiver_name`<a id="receiver_name"></a>
 </td>
 <td>
 (string) The name for the receiver Tensor that contains the
@@ -51,7 +51,7 @@ serialized data.
 </td>
 </tr><tr>
 <td>
-`default_batch_size`
+`default_batch_size`<a id="default_batch_size"></a>
 </td>
 <td>
 (int) Number of instances expected per batch. Leave

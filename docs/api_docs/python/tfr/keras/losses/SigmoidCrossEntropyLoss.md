@@ -15,7 +15,7 @@ description: Computes the Sigmoid cross-entropy loss between y_true and y_pred.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1024-L1070">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1224-L1271">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -26,7 +26,9 @@ Computes the Sigmoid cross-entropy loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.SigmoidCrossEntropyLoss(
-    reduction=tf.losses.Reduction.AUTO, name=None, ragged=False
+    reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+    name: Optional[str] = None,
+    ragged: bool = False
 )
 </code></pre>
 
@@ -55,7 +57,7 @@ with binary relevance labels ($y \in [0, 1]$).
 >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
 >>> loss = tfr.keras.losses.SigmoidCrossEntropyLoss(ragged=True)
 >>> loss(y_true, y_pred).numpy()
-0.6444636
+0.64446354
 ```
 
 Usage with the `compile()` API:
@@ -68,9 +70,8 @@ model.compile(optimizer='sgd',
 #### Definition:
 
 $$
-\mathcal{L}(\{y\}, \{s\}) = - \sum_{i}
-y_i \log(\text{sigmoid}(s_i))
-+ (1 - y_i) \log(1 - \text{sigmoid}(s_i))
+\mathcal{L}(\{y\}, \{s\}) = - \sum_{i} y_i
+\log(\text{sigmoid}(s_i)) + (1 - y_i) \log(1 - \text{sigmoid}(s_i))
 $$
 
 <!-- Tabular view -->
@@ -80,7 +81,7 @@ $$
 
 <tr>
 <td>
-`reduction`
+`reduction`<a id="reduction"></a>
 </td>
 <td>
 Type of `tf.keras.losses.Reduction` to apply to
@@ -88,13 +89,14 @@ loss. Default value is `AUTO`. `AUTO` indicates that the reduction
 option will be determined by the usage context. For almost all cases
 this defaults to `SUM_OVER_BATCH_SIZE`. When used with
 `tf.distribute.Strategy`, outside of built-in training loops such as
-`tf.keras` `compile` and `fit`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
-will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training) for
-    more details.
+`tf.keras` `compile` and `fit`, using `AUTO` or
+`SUM_OVER_BATCH_SIZE`
+will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training)
+  for more details.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 Optional name for the instance.
@@ -144,24 +146,26 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L186-L191">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L238-L241">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>get_config()
+<code>get_config() -> Dict[str, Any]
 </code></pre>
 
 Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L177">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L220-L228">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>__call__(
-    y_true, y_pred, sample_weight=None
-)
+    y_true: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    y_pred: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    sample_weight: Optional[utils.TensorLike] = None
+) -> tf.Tensor
 </code></pre>
 
 See tf.keras.losses.Loss.

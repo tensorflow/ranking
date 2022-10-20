@@ -17,7 +17,7 @@ description: Hyperparameters used in BaseDatasetBuilder.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L318-L346">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L323-L352">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -34,7 +34,7 @@ Hyperparameters used in `BaseDatasetBuilder`.
     valid_batch_size: int,
     list_size: Optional[int] = None,
     valid_list_size: Optional[int] = None,
-    dataset_reader: Any = tfr.keras.pipeline.DatasetHparams.dataset_reader,
+    dataset_reader: Any = <a href="../../../tfr/keras/pipeline/DatasetHparams/dataset_reader.md"><code>tfr.keras.pipeline.DatasetHparams.dataset_reader</code></a>,
     convert_labels_to_binary: bool = False
 )
 </code></pre>
@@ -50,7 +50,7 @@ Hyperparameters to be specified to create the dataset_builder.
 
 <tr>
 <td>
-`train_input_pattern`
+`train_input_pattern`<a id="train_input_pattern"></a>
 </td>
 <td>
 A glob pattern to specify the paths to the input data
@@ -58,7 +58,7 @@ for training.
 </td>
 </tr><tr>
 <td>
-`valid_input_pattern`
+`valid_input_pattern`<a id="valid_input_pattern"></a>
 </td>
 <td>
 A glob pattern to specify the paths to the input data
@@ -66,21 +66,21 @@ for validation.
 </td>
 </tr><tr>
 <td>
-`train_batch_size`
+`train_batch_size`<a id="train_batch_size"></a>
 </td>
 <td>
 An integer to specify the batch size of training dataset.
 </td>
 </tr><tr>
 <td>
-`valid_batch_size`
+`valid_batch_size`<a id="valid_batch_size"></a>
 </td>
 <td>
 An integer to specify the batch size of valid dataset.
 </td>
 </tr><tr>
 <td>
-`list_size`
+`list_size`<a id="list_size"></a>
 </td>
 <td>
 An integer to specify the list size. When None, data will be
@@ -88,7 +88,7 @@ padded to the longest list in each batch.
 </td>
 </tr><tr>
 <td>
-`valid_list_size`
+`valid_list_size`<a id="valid_list_size"></a>
 </td>
 <td>
 An integer to specify the list size in valid dataset. When
@@ -96,7 +96,7 @@ not specified, valid dataset uses the same list size as `list_size`.
 </td>
 </tr><tr>
 <td>
-`dataset_reader`
+`dataset_reader`<a id="dataset_reader"></a>
 </td>
 <td>
 A function or class that can be called with a `filenames`
@@ -105,7 +105,7 @@ tensor and (optional) `reader_args` and returns a `Dataset`. Defaults to
 </td>
 </tr><tr>
 <td>
-`convert_labels_to_binary`
+`convert_labels_to_binary`<a id="convert_labels_to_binary"></a>
 </td>
 <td>
 A boolean to indicate whether to use binary label.

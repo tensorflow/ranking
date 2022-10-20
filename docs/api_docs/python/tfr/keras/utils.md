@@ -39,3 +39,13 @@ element-wise for each label.
 
 [`symmetric_log1p(...)`](../../tfr/keras/utils/symmetric_log1p.md): Computes
 `sign(x) * log(1 + sign(x))`.
+
+## Type Aliases
+
+[`GainFunction`](../../tfr/keras/utils/GainFunction.md)
+
+[`PositiveFunction`](../../tfr/keras/utils/GainFunction.md)
+
+[`RankDiscountFunction`](../../tfr/keras/utils/GainFunction.md)
+
+[`TensorLike`](../../tfr/keras/model/TensorLike.md)

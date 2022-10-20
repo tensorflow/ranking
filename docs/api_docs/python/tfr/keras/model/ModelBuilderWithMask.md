@@ -16,7 +16,7 @@ description: Interface to build a tf.keras.Model for ranking with a mask Tensor.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L100-L300">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L99-L299">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -30,8 +30,7 @@ Inherits From:
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.model.ModelBuilderWithMask(
-    mask_feature_name: str,
-    name: Optional[str] = None
+    mask_feature_name: str, name: Optional[str] = None
 )
 </code></pre>
 
@@ -103,14 +102,14 @@ class SimpleModelBuilder(ModelBuilderWithMask):
 
 <tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 name of 2D mask boolean feature.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 (optional) name of the Model.
@@ -122,7 +121,7 @@ name of 2D mask boolean feature.
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L272-L300">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L271-L299">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -156,7 +155,7 @@ A `tf.keras.Model`.
 
 <h3 id="create_inputs"><code>create_inputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L177-L198">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L176-L197">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -212,7 +211,7 @@ Keras Input for the mask feature.
 
 <h3 id="preprocess"><code>preprocess</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L200-L234">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L199-L233">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -298,7 +297,7 @@ list_size, feature_dims]-tensors of preprocessed example features.
 
 <h3 id="score"><code>score</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L236-L270">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L235-L269">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

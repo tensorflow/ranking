@@ -54,7 +54,7 @@ tower_logits = tower(inputs)
 
 <tr>
 <td>
-`hidden_layer_dims`
+`hidden_layer_dims`<a id="hidden_layer_dims"></a>
 </td>
 <td>
 Iterable of number hidden units per layer. All layers are
@@ -63,14 +63,14 @@ one has 32.
 </td>
 </tr><tr>
 <td>
-`output_units`
+`output_units`<a id="output_units"></a>
 </td>
 <td>
 Size of output logits from this tower.
 </td>
 </tr><tr>
 <td>
-`activation`
+`activation`<a id="activation"></a>
 </td>
 <td>
 Activation function applied to each layer. If `None`, will use
@@ -78,28 +78,28 @@ an identity activation.
 </td>
 </tr><tr>
 <td>
-`input_batch_norm`
+`input_batch_norm`<a id="input_batch_norm"></a>
 </td>
 <td>
 Whether to use batch normalization for input layer.
 </td>
 </tr><tr>
 <td>
-`use_batch_norm`
+`use_batch_norm`<a id="use_batch_norm"></a>
 </td>
 <td>
 Whether to use batch normalization after each hidden layer.
 </td>
 </tr><tr>
 <td>
-`batch_norm_moment`
+`batch_norm_moment`<a id="batch_norm_moment"></a>
 </td>
 <td>
 Momentum for the moving average in batch normalization.
 </td>
 </tr><tr>
 <td>
-`dropout`
+`dropout`<a id="dropout"></a>
 </td>
 <td>
 When not `None`, the probability we will drop out a given
@@ -107,14 +107,14 @@ coordinate.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 Name of the Keras layer.
 </td>
 </tr><tr>
 <td>
-`**kwargs`
+`**kwargs`<a id="**kwargs"></a>
 </td>
 <td>
 Keyword arguments for every `tf.keras.Dense` layers.

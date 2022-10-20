@@ -11,7 +11,7 @@ description: Factory method to get a list of ranking metrics.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L53-L111">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L55-L114">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -49,7 +49,7 @@ MRR@2.
 
 <tr>
 <td>
-`key`
+`key`<a id="key"></a>
 </td>
 <td>
 An attribute of `RankingMetricKey`, defining which metric objects to
@@ -57,28 +57,28 @@ return.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 Name of metrics.
 </td>
 </tr><tr>
 <td>
-`dtype`
+`dtype`<a id="dtype"></a>
 </td>
 <td>
 Dtype of the metrics.
 </td>
 </tr><tr>
 <td>
-`topn`
+`topn`<a id="topn"></a>
 </td>
 <td>
 Cutoff of how many items are considered in the metric.
 </td>
 </tr><tr>
 <td>
-`**kwargs`
+`**kwargs`<a id="**kwargs"></a>
 </td>
 <td>
 Keyword arguments for the metric object.
@@ -105,7 +105,7 @@ A tf.keras.metrics.Metric. See `_RankingMetric` signature for more details.
 
 <tr>
 <td>
-`ValueError`
+`ValueError`<a id="ValueError"></a>
 </td>
 <td>
 If key is unsupported.

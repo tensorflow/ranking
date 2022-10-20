@@ -13,7 +13,7 @@ description: Preprocessing inputs with provided spec.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L588-L652">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L587-L651">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -54,7 +54,7 @@ preprocessor = PreprocessorWithSpec(preprocess_spec)
 
 <tr>
 <td>
-`preprocess_spec`
+`preprocess_spec`<a id="preprocess_spec"></a>
 </td>
 <td>
 maps a feature key to a callable to preprocess a feature.
@@ -62,7 +62,7 @@ Only include those features that need preprocessing.
 </td>
 </tr><tr>
 <td>
-`default_value_spec`
+`default_value_spec`<a id="default_value_spec"></a>
 </td>
 <td>
 maps a feature key to a default value to convert a
@@ -75,7 +75,7 @@ RaggedTensor to Tensor. Default to 0. if not specified.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L622-L652">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L621-L651">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

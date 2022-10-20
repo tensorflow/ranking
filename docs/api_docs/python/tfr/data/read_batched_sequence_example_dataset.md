@@ -11,7 +11,7 @@ description: Returns a Dataset of features from SequenceExample.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1125-L1286">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1135-L1296">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,10 +22,20 @@ Returns a `Dataset` of features from `SequenceExample`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.read_batched_sequence_example_dataset(
-    file_pattern, batch_size, list_size, context_feature_spec, example_feature_spec,
-    reader=tfr.keras.pipeline.DatasetHparams.dataset_reader, reader_args=None,
-    num_epochs=None, shuffle=True, shuffle_buffer_size=1000, shuffle_seed=None,
-    prefetch_buffer_size=32, reader_num_threads=10, sloppy_ordering=True,
+    file_pattern,
+    batch_size,
+    list_size,
+    context_feature_spec,
+    example_feature_spec,
+    reader=<a href="../../tfr/keras/pipeline/DatasetHparams/dataset_reader.md"><code>tfr.keras.pipeline.DatasetHparams.dataset_reader</code></a>,
+    reader_args=None,
+    num_epochs=None,
+    shuffle=True,
+    shuffle_buffer_size=1000,
+    shuffle_seed=None,
+    prefetch_buffer_size=32,
+    reader_num_threads=10,
+    sloppy_ordering=True,
     drop_final_batch=False
 )
 </code></pre>
@@ -122,7 +132,7 @@ And the expected output is:
 
 <tr>
 <td>
-`file_pattern`
+`file_pattern`<a id="file_pattern"></a>
 </td>
 <td>
 (str | list(str)) List of files or patterns of file paths
@@ -131,14 +141,14 @@ rules.
 </td>
 </tr><tr>
 <td>
-`batch_size`
+`batch_size`<a id="batch_size"></a>
 </td>
 <td>
 (int) Number of records to combine in a single batch.
 </td>
 </tr><tr>
 <td>
-`list_size`
+`list_size`<a id="list_size"></a>
 </td>
 <td>
 (int) The number of frames to keep in a SequenceExample. If
@@ -147,7 +157,7 @@ allow dynamic list size.
 </td>
 </tr><tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from  feature keys to
@@ -155,7 +165,7 @@ allow dynamic list size.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping feature keys to `FixedLenFeature` or
@@ -163,7 +173,7 @@ allow dynamic list size.
 </td>
 </tr><tr>
 <td>
-`reader`
+`reader`<a id="reader"></a>
 </td>
 <td>
 A function or class that can be called with a `filenames` tensor and
@@ -172,14 +182,14 @@ A function or class that can be called with a `filenames` tensor and
 </td>
 </tr><tr>
 <td>
-`reader_args`
+`reader_args`<a id="reader_args"></a>
 </td>
 <td>
 (list) Additional argument list to pass to the reader class.
 </td>
 </tr><tr>
 <td>
-`num_epochs`
+`num_epochs`<a id="num_epochs"></a>
 </td>
 <td>
 (int) Number of times to read through the dataset. If None,
@@ -187,7 +197,7 @@ cycles through the dataset forever. Defaults to `None`.
 </td>
 </tr><tr>
 <td>
-`shuffle`
+`shuffle`<a id="shuffle"></a>
 </td>
 <td>
 (bool) Indicates whether the input should be shuffled. Defaults to
@@ -195,7 +205,7 @@ cycles through the dataset forever. Defaults to `None`.
 </td>
 </tr><tr>
 <td>
-`shuffle_buffer_size`
+`shuffle_buffer_size`<a id="shuffle_buffer_size"></a>
 </td>
 <td>
 (int) Buffer size of the ShuffleDataset. A large
@@ -204,14 +214,14 @@ startup time.
 </td>
 </tr><tr>
 <td>
-`shuffle_seed`
+`shuffle_seed`<a id="shuffle_seed"></a>
 </td>
 <td>
 (int) Randomization seed to use for shuffling.
 </td>
 </tr><tr>
 <td>
-`prefetch_buffer_size`
+`prefetch_buffer_size`<a id="prefetch_buffer_size"></a>
 </td>
 <td>
 (int) Number of feature batches to prefetch in order
@@ -220,7 +230,7 @@ consumed per training step (default is 1).
 </td>
 </tr><tr>
 <td>
-`reader_num_threads`
+`reader_num_threads`<a id="reader_num_threads"></a>
 </td>
 <td>
 (int) Number of threads used to read records. If greater
@@ -228,7 +238,7 @@ than 1, the results will be interleaved.
 </td>
 </tr><tr>
 <td>
-`sloppy_ordering`
+`sloppy_ordering`<a id="sloppy_ordering"></a>
 </td>
 <td>
 (bool) If `True`, reading performance will be improved at
@@ -239,7 +249,7 @@ elements after shuffling is deterministic). Defaults to `False`.
 </td>
 </tr><tr>
 <td>
-`drop_final_batch`
+`drop_final_batch`<a id="drop_final_batch"></a>
 </td>
 <td>
 (bool) If `True`, and the batch size does not evenly

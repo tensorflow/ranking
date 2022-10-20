@@ -15,7 +15,7 @@ description: Builds datasets for multi-task training.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L1091-L1192">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L1169-L1270">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -86,21 +86,21 @@ dataset_builder = MultiLabelDatasetBuilder(
 
 <tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 Maps context (aka, query) names to feature specs.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 Maps example (aka, document) names to feature specs.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 If set, populates the feature dictionary with this name
@@ -109,7 +109,7 @@ list_size] indicating the actual example is padded or not.
 </td>
 </tr><tr>
 <td>
-`label_spec`
+`label_spec`<a id="label_spec"></a>
 </td>
 <td>
 A dict that maps task names to label specs. Each of the latter
@@ -117,14 +117,14 @@ have a label name and a tf.io.FixedLenFeature spec.
 </td>
 </tr><tr>
 <td>
-`hparams`
+`hparams`<a id="hparams"></a>
 </td>
 <td>
 A dict containing model hyperparameters.
 </td>
 </tr><tr>
 <td>
-`sample_weight_spec`
+`sample_weight_spec`<a id="sample_weight_spec"></a>
 </td>
 <td>
 Feature spec for per-example weight.
@@ -136,7 +136,7 @@ Feature spec for per-example weight.
 
 <h3 id="build_signatures"><code>build_signatures</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L972-L978">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L1050-L1056">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -149,7 +149,7 @@ See `AbstractDatasetBuilder`.
 
 <h3 id="build_train_dataset"><code>build_train_dataset</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L955-L961">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L1033-L1039">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -160,7 +160,7 @@ See `AbstractDatasetBuilder`.
 
 <h3 id="build_valid_dataset"><code>build_valid_dataset</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L963-L970">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L1041-L1048">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

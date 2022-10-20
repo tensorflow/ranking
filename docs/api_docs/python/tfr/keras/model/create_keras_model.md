@@ -11,7 +11,7 @@ description: Creates a Functional Keras ranking model.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L17-L64">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L16-L63">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -38,7 +38,7 @@ feature dictionary as inputs.
 
 <tr>
 <td>
-`network`
+`network`<a id="network"></a>
 </td>
 <td>
 (`tfr.keras.network.RankingNetwork`) A ranking network which
@@ -46,14 +46,14 @@ generates a list of scores.
 </td>
 </tr><tr>
 <td>
-`loss`
+`loss`<a id="loss"></a>
 </td>
 <td>
 (`tfr.keras.losses._RankingLoss`) A ranking loss.
 </td>
 </tr><tr>
 <td>
-`metrics`
+`metrics`<a id="metrics"></a>
 </td>
 <td>
 (list) List of ranking metrics, `tfr.keras.metrics._RankingMetric`
@@ -61,7 +61,7 @@ instances.
 </td>
 </tr><tr>
 <td>
-`optimizer`
+`optimizer`<a id="optimizer"></a>
 </td>
 <td>
 (`tf.keras.optimizer.Optimizer`) Optimizer to minimize ranking
@@ -69,7 +69,7 @@ loss.
 </td>
 </tr><tr>
 <td>
-`size_feature_name`
+`size_feature_name`<a id="size_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list sizes. If not
@@ -79,7 +79,7 @@ examples are treated as valid.
 </td>
 </tr><tr>
 <td>
-`list_size`
+`list_size`<a id="list_size"></a>
 </td>
 <td>
 (int) The list size for example features. If None, use dynamic

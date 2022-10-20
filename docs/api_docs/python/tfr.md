@@ -26,6 +26,8 @@ TensorFlow Ranking, the project to build ranking models on TensorFlow.
 
 [`data`](./tfr/data.md) module: Input data parsing for tf-ranking library.
 
+[`extension`](./tfr/extension.md) module: TensorFlow Ranking library.
+
 [`keras`](./tfr/keras.md) module: TensorFlow Ranking Keras Module.
 
 [`utils`](./tfr/utils.md) module: Utility functions for ranking library.

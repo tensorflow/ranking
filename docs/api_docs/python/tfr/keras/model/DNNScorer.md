@@ -13,7 +13,7 @@ description: Univariate scorer using DNN.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L767-L804">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L766-L803">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -47,7 +47,7 @@ scorer=DNNScorer(hidden_layer_dims=[16])
 
 <tr>
 <td>
-`**dnn_kwargs`
+`**dnn_kwargs`<a id="**dnn_kwargs"></a>
 </td>
 <td>
 A dict of keyward arguments for dense neural network layers.
@@ -61,7 +61,7 @@ arguments.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L742-L764">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L741-L763">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

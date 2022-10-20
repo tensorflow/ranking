@@ -31,6 +31,54 @@ toc:
     path: /ranking/api_docs/python/tfr/data/parse_from_tf_example
   - title: read_batched_sequence_example_dataset
     path: /ranking/api_docs/python/tfr/data/read_batched_sequence_example_dataset
+- title: tfr.extension
+  section:
+  - title: Overview
+    path: /ranking/api_docs/python/tfr/extension
+  - title: pipeline
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/extension/pipeline
+    - title: RankingPipeline
+      path: /ranking/api_docs/python/tfr/extension/pipeline/RankingPipeline
+  - title: premade
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/extension/premade
+    - title: TFRBertConfig
+      path: /ranking/api_docs/python/tfr/extension/premade/TFRBertConfig
+    - title: TFRBertDataConfig
+      path: /ranking/api_docs/python/tfr/extension/premade/TFRBertDataConfig
+    - title: TFRBertDataLoader
+      path: /ranking/api_docs/python/tfr/extension/premade/TFRBertDataLoader
+    - title: TFRBertModelBuilder
+      path: /ranking/api_docs/python/tfr/extension/premade/TFRBertModelBuilder
+    - title: TFRBertModelConfig
+      path: /ranking/api_docs/python/tfr/extension/premade/TFRBertModelConfig
+    - title: TFRBertScorer
+      path: /ranking/api_docs/python/tfr/extension/premade/TFRBertScorer
+    - title: TFRBertTask
+      path: /ranking/api_docs/python/tfr/extension/premade/TFRBertTask
+    - title: TensorDict
+      path: /ranking/api_docs/python/tfr/extension/premade/TensorDict
+    - title: tfrbert_task
+      section:
+      - title: Overview
+        path: /ranking/api_docs/python/tfr/extension/premade/tfrbert_task
+  - title: task
+    section:
+    - title: Overview
+      path: /ranking/api_docs/python/tfr/extension/task
+    - title: FeatureSpec
+      path: /ranking/api_docs/python/tfr/extension/task/FeatureSpec
+    - title: RankingDataConfig
+      path: /ranking/api_docs/python/tfr/extension/task/RankingDataConfig
+    - title: RankingDataLoader
+      path: /ranking/api_docs/python/tfr/extension/task/RankingDataLoader
+    - title: RankingTask
+      path: /ranking/api_docs/python/tfr/extension/task/RankingTask
+    - title: RankingTaskConfig
+      path: /ranking/api_docs/python/tfr/extension/task/RankingTaskConfig
 - title: tfr.keras
   section:
   - title: Overview
@@ -39,6 +87,8 @@ toc:
     section:
     - title: Overview
       path: /ranking/api_docs/python/tfr/keras/layers
+    - title: Bilinear
+      path: /ranking/api_docs/python/tfr/keras/layers/Bilinear
     - title: ConcatFeatures
       path: /ranking/api_docs/python/tfr/keras/layers/ConcatFeatures
     - title: DocumentInteractionAttention
@@ -67,18 +117,28 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/losses/DCGLambdaWeight
     - title: GumbelApproxNDCGLoss
       path: /ranking/api_docs/python/tfr/keras/losses/GumbelApproxNDCGLoss
+    - title: LabelDiffLambdaWeight
+      path: /ranking/api_docs/python/tfr/keras/losses/LabelDiffLambdaWeight
     - title: ListMLELambdaWeight
       path: /ranking/api_docs/python/tfr/keras/losses/ListMLELambdaWeight
     - title: ListMLELoss
       path: /ranking/api_docs/python/tfr/keras/losses/ListMLELoss
     - title: MeanSquaredLoss
       path: /ranking/api_docs/python/tfr/keras/losses/MeanSquaredLoss
+    - title: MixtureEMLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/MixtureEMLoss
     - title: NDCGLambdaWeight
       path: /ranking/api_docs/python/tfr/keras/losses/NDCGLambdaWeight
+    - title: NDCGLambdaWeightV2
+      path: /ranking/api_docs/python/tfr/keras/losses/NDCGLambdaWeightV2
+    - title: OrdinalLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/OrdinalLoss
     - title: PairwiseHingeLoss
       path: /ranking/api_docs/python/tfr/keras/losses/PairwiseHingeLoss
     - title: PairwiseLogisticLoss
       path: /ranking/api_docs/python/tfr/keras/losses/PairwiseLogisticLoss
+    - title: PairwiseMSELoss
+      path: /ranking/api_docs/python/tfr/keras/losses/PairwiseMSELoss
     - title: PairwiseSoftZeroOneLoss
       path: /ranking/api_docs/python/tfr/keras/losses/PairwiseSoftZeroOneLoss
     - title: PrecisionLambdaWeight
@@ -103,6 +163,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/metrics/AlphaDCGMetric
     - title: DCGMetric
       path: /ranking/api_docs/python/tfr/keras/metrics/DCGMetric
+    - title: HitsMetric
+      path: /ranking/api_docs/python/tfr/keras/metrics/HitsMetric
     - title: MRRMetric
       path: /ranking/api_docs/python/tfr/keras/metrics/MRRMetric
     - title: MeanAveragePrecisionMetric
@@ -175,6 +237,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/pipeline/ModelFitPipeline
     - title: MultiLabelDatasetBuilder
       path: /ranking/api_docs/python/tfr/keras/pipeline/MultiLabelDatasetBuilder
+    - title: MultiObjectivePipeline
+      path: /ranking/api_docs/python/tfr/keras/pipeline/MultiObjectivePipeline
     - title: MultiTaskPipeline
       path: /ranking/api_docs/python/tfr/keras/pipeline/MultiTaskPipeline
     - title: NullDatasetBuilder
@@ -207,6 +271,8 @@ toc:
     section:
     - title: Overview
       path: /ranking/api_docs/python/tfr/keras/utils
+    - title: GainFunction
+      path: /ranking/api_docs/python/tfr/keras/utils/GainFunction
     - title: identity
       path: /ranking/api_docs/python/tfr/keras/utils/identity
     - title: inverse
@@ -223,6 +289,8 @@ toc:
   section:
   - title: Overview
     path: /ranking/api_docs/python/tfr/utils
+  - title: LossFunction
+    path: /ranking/api_docs/python/tfr/utils/LossFunction
   - title: de_noise
     path: /ranking/api_docs/python/tfr/utils/de_noise
   - title: gather_per_row

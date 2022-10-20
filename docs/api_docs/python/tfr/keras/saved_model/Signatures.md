@@ -17,7 +17,7 @@ description: Defines signatures to support regress and predict serving.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L11-L162">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L10-L161">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -76,14 +76,14 @@ scores = predictor(serialized_elwcs)[tf.saved_model.PREDICT_OUTPUTS]
 
 <tr>
 <td>
-`model`
+`model`<a id="model"></a>
 </td>
 <td>
 A Keras ranking model.
 </td>
 </tr><tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -92,7 +92,7 @@ A Keras ranking model.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -101,7 +101,7 @@ A Keras ranking model.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list masks.
@@ -114,19 +114,19 @@ A Keras ranking model.
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
-<tr> <td> `name` </td> <td> Returns the name of this module as passed or
-determined in the ctor.
+<tr> <td> `name`<a id="name"></a> </td> <td> Returns the name of this module as
+passed or determined in the ctor.
 
 NOTE: This is not the same as the `self.name_scope.name` which includes parent
-module names. </td> </tr><tr> <td> `name_scope` </td> <td> Returns a
-`tf.name_scope` instance for this class. </td> </tr><tr> <td>
-`non_trainable_variables` </td> <td> Sequence of non-trainable variables owned
-by this module and its submodules.
+module names. </td> </tr><tr> <td> `name_scope`<a id="name_scope"></a> </td>
+<td> Returns a `tf.name_scope` instance for this class. </td> </tr><tr> <td>
+`non_trainable_variables`<a id="non_trainable_variables"></a> </td> <td>
+Sequence of non-trainable variables owned by this module and its submodules.
 
 Note: this method uses reflection to find variables on the current instance and
 submodules. For performance reasons you may wish to cache the result of calling
 this method if you don't expect the return value to change. </td> </tr><tr> <td>
-`submodules` </td> <td> Sequence of all sub-modules.
+`submodules`<a id="submodules"></a> </td> <td> Sequence of all sub-modules.
 
 Submodules are modules which are properties of this module, or found as
 properties of modules which are properties of this module (and so on).
@@ -145,14 +145,14 @@ True
 True
 ```
 
-</td> </tr><tr> <td> `trainable_variables` </td> <td> Sequence of trainable
-variables owned by this module and its submodules.
+</td> </tr><tr> <td> `trainable_variables`<a id="trainable_variables"></a> </td>
+<td> Sequence of trainable variables owned by this module and its submodules.
 
 Note: this method uses reflection to find variables on the current instance and
 submodules. For performance reasons you may wish to cache the result of calling
 this method if you don't expect the return value to change. </td> </tr><tr> <td>
-`variables` </td> <td> Sequence of variables owned by this module and its
-submodules.
+`variables`<a id="variables"></a> </td> <td> Sequence of variables owned by this
+module and its submodules.
 
 Note: this method uses reflection to find variables on the current instance
 and submodules. For performance reasons you may wish to cache the result
@@ -165,13 +165,12 @@ of calling this method if you don't expect the return value to change.
 
 <h3 id="normalize_outputs"><code>normalize_outputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L71-L92">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L70-L91">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>normalize_outputs(
-    default_key: str,
-    outputs: Union[tf.Tensor, Dict[str, tf.Tensor]]
+    default_key: str, outputs: Union[tf.Tensor, Dict[str, tf.Tensor]]
 ) -> Dict[str, tf.Tensor]
 </code></pre>
 
@@ -225,7 +224,7 @@ TypeError if outputs is not a Tensor nor a dict.
 
 <h3 id="predict_tf_function"><code>predict_tf_function</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L94-L111">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L93-L110">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -236,7 +235,7 @@ Makes a tensorflow function for `predict`.
 
 <h3 id="regress_tf_function"><code>regress_tf_function</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L113-L132">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L112-L131">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -306,7 +305,7 @@ The original method wrapped such that it enters the module's name scope.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L134-L162">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/saved_model.py#L133-L161">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

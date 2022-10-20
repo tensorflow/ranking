@@ -29,7 +29,7 @@ description: Alpha discounted cumulative gain (alphaDCG).
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L803-L926">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L871-L995">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -40,8 +40,14 @@ Alpha discounted cumulative gain (alphaDCG).
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.metrics.AlphaDCGMetric(
-    name=&#x27;alpha_dcg_metric&#x27;, topn=None, alpha=0.5, rank_discount_fn=None,
-    seed=None, dtype=None, ragged=False, **kwargs
+    name=&#x27;alpha_dcg_metric&#x27;,
+    topn=None,
+    alpha=0.5,
+    rank_discount_fn=None,
+    seed=None,
+    dtype=None,
+    ragged=False,
+    **kwargs
 )
 </code></pre>
 
@@ -110,11 +116,19 @@ I[\text{cond}] = \begin{cases}
 0 & \text{else}\end{cases}
 $$
 
-#### References:
+<!-- Tabular view -->
 
--   [Novelty and diversity in information retrieval evaluation, Clarke et al,
-    2008][clarke2008]
--   [Overview of the TREC 2009 Web Track, Clarke et al, 2009][clarke2009]
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">References</h2></th></tr>
+<tr class="alt">
+<td colspan="2">
+- [Novelty and diversity in information retrieval evaluation, Clarke et al,    2008][clarke2008]
+- [Overview of the TREC 2009 Web Track, Clarke et al, 2009][clarke2009]
+</td>
+</tr>
+
+</table>
 
 [clarke2008]: https://dl.acm.org/doi/10.1145/1390334.1390446
 [clarke2009]: https://trec.nist.gov/pubs/trec18/papers/ENT09.OVERVIEW.pdf
@@ -126,21 +140,21 @@ $$
 
 <tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 A string used as the name for this metric.
 </td>
 </tr><tr>
 <td>
-`topn`
+`topn`<a id="topn"></a>
 </td>
 <td>
 A cutoff for how many examples to consider for this metric.
 </td>
 </tr><tr>
 <td>
-`alpha`
+`alpha`<a id="alpha"></a>
 </td>
 <td>
 A float between 0 and 1, parameter used in definition of alpha-DCG.
@@ -149,7 +163,7 @@ covering a subtopic of the query.
 </td>
 </tr><tr>
 <td>
-`rank_discount_fn`
+`rank_discount_fn`<a id="rank_discount_fn"></a>
 </td>
 <td>
 A function of rank discounts. Default is set to
@@ -159,21 +173,21 @@ customized functions.
 </td>
 </tr><tr>
 <td>
-`seed`
+`seed`<a id="seed"></a>
 </td>
 <td>
 The ops-level random seed used in shuffle ties in `sort_by_scores`.
 </td>
 </tr><tr>
 <td>
-`dtype`
+`dtype`<a id="dtype"></a>
 </td>
 <td>
 Data type of the metric output. See `tf.keras.metrics.Metric`.
 </td>
 </tr><tr>
 <td>
-`ragged`
+`ragged`<a id="ragged"></a>
 </td>
 <td>
 A bool indicating whether the supplied tensors are ragged. If
@@ -182,7 +196,7 @@ need to be ragged tensors with compatible shapes.
 </td>
 </tr><tr>
 <td>
-`**kwargs`
+`**kwargs`<a id="**kwargs"></a>
 </td>
 <td>
 Other keyward arguments used in `tf.keras.metrics.Metric`.
@@ -195,9 +209,10 @@ Other keyward arguments used in `tf.keras.metrics.Metric`.
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
-<tr> <td> `activity_regularizer` </td> <td> Optional regularizer function for
-the output of this layer. </td> </tr><tr> <td> `compute_dtype` </td> <td> The
-dtype of the layer's computations.
+<tr> <td> `activity_regularizer`<a id="activity_regularizer"></a> </td> <td>
+Optional regularizer function for the output of this layer. </td> </tr><tr> <td>
+`compute_dtype`<a id="compute_dtype"></a> </td> <td> The dtype of the layer's
+computations.
 
 This is equivalent to `Layer.dtype_policy.compute_dtype`. Unless mixed precision
 is used, this is the same as `Layer.dtype`, the dtype of the weights.
@@ -210,21 +225,22 @@ casts if implementing your own layer.
 Layers often perform certain internal computations in higher precision when
 `compute_dtype` is float16 or bfloat16 for numeric stability. The output will
 still typically be float16 or bfloat16 in such cases. </td> </tr><tr> <td>
-`dtype` </td> <td> The dtype of the layer weights.
+`dtype`<a id="dtype"></a> </td> <td> The dtype of the layer weights.
 
 This is equivalent to `Layer.dtype_policy.variable_dtype`. Unless mixed
 precision is used, this is the same as `Layer.compute_dtype`, the dtype of the
-layer's computations. </td> </tr><tr> <td> `dtype_policy` </td> <td> The dtype
-policy associated with this layer.
+layer's computations. </td> </tr><tr> <td>
+`dtype_policy`<a id="dtype_policy"></a> </td> <td> The dtype policy associated
+with this layer.
 
 This is an instance of a `tf.keras.mixed_precision.Policy`. </td> </tr><tr> <td>
-`dynamic` </td> <td> Whether the layer is dynamic (eager-only); set in the
-constructor. </td> </tr><tr> <td> `input` </td> <td> Retrieves the input
-tensor(s) of a layer.
+`dynamic`<a id="dynamic"></a> </td> <td> Whether the layer is dynamic
+(eager-only); set in the constructor. </td> </tr><tr> <td>
+`input`<a id="input"></a> </td> <td> Retrieves the input tensor(s) of a layer.
 
 Only applicable if the layer has exactly one input, i.e. if it is connected to
-one incoming layer. </td> </tr><tr> <td> `input_spec` </td> <td> `InputSpec`
-instance(s) describing the input format for this layer.
+one incoming layer. </td> </tr><tr> <td> `input_spec`<a id="input_spec"></a>
+</td> <td> `InputSpec` instance(s) describing the input format for this layer.
 
 When you create a layer subclass, you can set `self.input_spec` to enable the
 layer to run input compatibility checks when it is called. Consider a `Conv2D`
@@ -247,7 +263,8 @@ Input checks that can be specified via `input_spec` include: - Structure (e.g. a
 single input, a list of 2 inputs, etc) - Shape - Rank (ndim) - Dtype
 
 For more information, see `tf.keras.layers.InputSpec`. </td> </tr><tr> <td>
-`losses` </td> <td> List of losses added using the `add_loss()` API.
+`losses`<a id="losses"></a> </td> <td> List of losses added using the
+`add_loss()` API.
 
 Variable regularization tensors are created when this property is accessed, so
 it is eager safe: accessing `losses` under a `tf.GradientTape` will propagate
@@ -289,8 +306,8 @@ gradients back to the corresponding variables.
 [<tf.Tensor: shape=(), dtype=float32, numpy=1.0>]
 ```
 
-</td> </tr><tr> <td> `metrics` </td> <td> List of metrics added using the
-`add_metric()` API.
+</td> </tr><tr> <td> `metrics`<a id="metrics"></a> </td> <td> List of metrics
+added using the `add_metric()` API.
 
 ```
 >>> input = tf.keras.layers.Input(shape=(3,))
@@ -302,19 +319,20 @@ gradients back to the corresponding variables.
 ['max', 'min']
 ```
 
-</td> </tr><tr> <td> `name` </td> <td> Name of the layer (string), set in the
-constructor. </td> </tr><tr> <td> `name_scope` </td> <td> Returns a
-`tf.name_scope` instance for this class. </td> </tr><tr> <td>
-`non_trainable_weights` </td> <td> List of all non-trainable weights tracked by
-this layer.
+</td> </tr><tr> <td> `name`<a id="name"></a> </td> <td> Name of the layer
+(string), set in the constructor. </td> </tr><tr> <td>
+`name_scope`<a id="name_scope"></a> </td> <td> Returns a `tf.name_scope`
+instance for this class. </td> </tr><tr> <td>
+`non_trainable_weights`<a id="non_trainable_weights"></a> </td> <td> List of all
+non-trainable weights tracked by this layer.
 
 Non-trainable weights are *not* updated during training. They are expected to be
-updated manually in `call()`. </td> </tr><tr> <td> `output` </td> <td> Retrieves
-the output tensor(s) of a layer.
+updated manually in `call()`. </td> </tr><tr> <td> `output`<a id="output"></a>
+</td> <td> Retrieves the output tensor(s) of a layer.
 
 Only applicable if the layer has exactly one output, i.e. if it is connected to
-one incoming layer. </td> </tr><tr> <td> `submodules` </td> <td> Sequence of all
-sub-modules.
+one incoming layer. </td> </tr><tr> <td> `submodules`<a id="submodules"></a>
+</td> <td> Sequence of all sub-modules.
 
 Submodules are modules which are properties of this module, or found as
 properties of modules which are properties of this module (and so on).
@@ -333,25 +351,25 @@ True
 True
 ```
 
-</td> </tr><tr> <td> `supports_masking` </td> <td> Whether this layer supports
-computing a mask using `compute_mask`. </td> </tr><tr> <td> `trainable` </td>
-<td>
+</td> </tr><tr> <td> `supports_masking`<a id="supports_masking"></a> </td> <td>
+Whether this layer supports computing a mask using `compute_mask`. </td>
+</tr><tr> <td> `trainable`<a id="trainable"></a> </td> <td>
 
-</td> </tr><tr> <td> `trainable_weights` </td> <td> List of all trainable
-weights tracked by this layer.
+</td> </tr><tr> <td> `trainable_weights`<a id="trainable_weights"></a> </td>
+<td> List of all trainable weights tracked by this layer.
 
 Trainable weights are updated via gradient descent during training.
 </td>
 </tr><tr>
 <td>
-`variable_dtype`
+`variable_dtype`<a id="variable_dtype"></a>
 </td>
 <td>
 Alias of `Layer.dtype`, the dtype of the weights.
 </td>
 </tr><tr>
 <td>
-`weights`
+`weights`<a id="weights"></a>
 </td>
 <td>
 Returns the list of all layer variables/weights.
@@ -431,17 +449,16 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 `losses`
 </td>
 <td>
-Loss tensor, or list/tuple of tensors. Rather than tensors, losses
-may also be zero-argument callables which create a loss tensor.
+Loss tensor, or list/tuple of tensors. Rather than tensors,
+losses may also be zero-argument callables which create a loss
+tensor.
 </td>
 </tr><tr>
 <td>
 `**kwargs`
 </td>
 <td>
-Additional keyword arguments for backward compatibility.
-Accepted values:
-  inputs - Deprecated, will be automatically inferred.
+Used for backwards compatibility only.
 </td>
 </tr>
 </table>
@@ -522,9 +539,9 @@ String metric name.
 <td>
 Additional keyword arguments for backward compatibility.
 Accepted values:
-`aggregation` - When the `value` tensor provided is not the result of
-calling a `keras.Metric` instance, it will be aggregated by default
-using a `keras.Metric.Mean`.
+`aggregation` - When the `value` tensor provided is not the result
+of calling a `keras.Metric` instance, it will be aggregated by
+default using a `keras.Metric.Mean`.
 </td>
 </tr>
 </table>
@@ -632,8 +649,9 @@ the input shape provided here.
 `input_shape`
 </td>
 <td>
-Shape tuple (tuple of integers)
-or list of shape tuples (one per output tensor of the layer).
+Shape tuple (tuple of integers) or `tf.TensorShape`,
+or structure of shape tuples / `tf.TensorShape` instances
+(one per output tensor of the layer).
 Shape tuples can include None for free dimensions,
 instead of an integer.
 </td>
@@ -641,12 +659,14 @@ instead of an integer.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-An input shape tuple.
+A `tf.TensorShape` instance
+or structure of `tf.TensorShape` instances.
 </td>
 </tr>
 
@@ -733,7 +753,7 @@ A layer instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L918-L926">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L987-L995">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -827,7 +847,6 @@ follows:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -837,13 +856,13 @@ follows:
 `metrics`
 </td>
 <td>
-an iterable of metrics. The metrics must have compatible state.
+an iterable of metrics. The metrics must have compatible
+state.
 </td>
 </tr>
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -853,8 +872,8 @@ an iterable of metrics. The metrics must have compatible state.
 `ValueError`
 </td>
 <td>
-If the provided iterable does not contain metrics matching the
-metric's required specifications.
+If the provided iterable does not contain metrics matching
+the metric's required specifications.
 </td>
 </tr>
 </table>
@@ -882,7 +901,6 @@ Result computation is an idempotent operation that simply calculates the metric
 value using the state variables.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -971,7 +989,7 @@ layer's specifications.
 
 <h3 id="update_state"><code>update_state</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L154-L176">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L157-L179">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

@@ -15,7 +15,7 @@ description: Computes click EM loss between y_true and y_pred.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L947-L1020">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1069-L1143">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -26,8 +26,11 @@ Computes click EM loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.ClickEMLoss(
-    reduction=tf.losses.Reduction.AUTO, name=None, exam_loss_weight=1.0,
-    rel_loss_weight=1.0, ragged=False
+    reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+    name: Optional[str] = None,
+    exam_loss_weight: float = 1.0,
+    rel_loss_weight: float = 1.0,
+    ragged: bool = False
 )
 </code></pre>
 
@@ -68,10 +71,19 @@ Usage with the `compile()` API:
 model.compile(optimizer='sgd', loss=tfr.keras.losses.ClickEMLoss())
 ```
 
-#### References:
+<!-- Tabular view -->
 
--   [Position Bias Estimation for Unbiased Learning to Rank in Personal Search,
-    Wang et al, 2018][wang2018].
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">References</h2></th></tr>
+<tr class="alt">
+<td colspan="2">
+- [Position Bias Estimation for Unbiased Learning to Rank in Personal
+Search, Wang et al, 2018][wang2018].
+</td>
+</tr>
+
+</table>
 
 [wang2018]: https://research.google/pubs/pub46485/
 
@@ -82,7 +94,7 @@ model.compile(optimizer='sgd', loss=tfr.keras.losses.ClickEMLoss())
 
 <tr>
 <td>
-`reduction`
+`reduction`<a id="reduction"></a>
 </td>
 <td>
 (Optional) The `tf.keras.losses.Reduction` to use (see
@@ -90,28 +102,28 @@ model.compile(optimizer='sgd', loss=tfr.keras.losses.ClickEMLoss())
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 (Optional) The name for the op.
 </td>
 </tr><tr>
 <td>
-`exam_loss_weight`
+`exam_loss_weight`<a id="exam_loss_weight"></a>
 </td>
 <td>
 (Optional) Weight of examination logits.
 </td>
 </tr><tr>
 <td>
-`rel_loss_weight`
+`rel_loss_weight`<a id="rel_loss_weight"></a>
 </td>
 <td>
 (Optional) Weight of relevance logits.
 </td>
 </tr><tr>
 <td>
-`ragged`
+`ragged`<a id="ragged"></a>
 </td>
 <td>
 (Optional) If True, this loss will accept ragged tensors. If
@@ -162,24 +174,26 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1014-L1020">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1137-L1143">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>get_config()
+<code>get_config() -> Dict[str, Any]
 </code></pre>
 
 Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L177">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L220-L228">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>__call__(
-    y_true, y_pred, sample_weight=None
-)
+    y_true: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    y_pred: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    sample_weight: Optional[utils.TensorLike] = None
+) -> tf.Tensor
 </code></pre>
 
 See tf.keras.losses.Loss.

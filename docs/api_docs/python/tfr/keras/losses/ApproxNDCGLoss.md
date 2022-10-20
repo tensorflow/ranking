@@ -15,7 +15,7 @@ description: Computes approximate NDCG loss between y_true and y_pred.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L769-L842">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L889-L962">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -26,8 +26,11 @@ Computes approximate NDCG loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.ApproxNDCGLoss(
-    reduction=tf.losses.Reduction.AUTO, name=None, lambda_weight=None,
-    temperature=0.1, ragged=False
+    reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+    name: Optional[str] = None,
+    lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+    temperature: float = 0.1,
+    ragged: bool = False
 )
 </code></pre>
 
@@ -85,15 +88,23 @@ $$
 \frac{1}{1 + \exp\left(\frac{-(s_j - s_i)}{\text{temperature}}\right)}
 $$
 
-#### References:
+<!-- Tabular view -->
 
--   [A General Approximation Framework for Direct Optimization of Information
-    Retrieval Measures, Qin et al, 2008][qin2008]
--   [Revisiting Approximate Metric Optimization in the Age of Deep Neural
-    Networks, Bruch et al, 2019][bruch2019]
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">References</h2></th></tr>
+<tr class="alt">
+<td colspan="2">
+- [A General Approximation Framework for Direct Optimization of Information
+   Retrieval Measures, Qin et al, 2008][qin2008]
+- [Revisiting Approximate Metric Optimization in the Age of Deep Neural
+   Networks, Bruch et al, 2019][bruch2019]
+</td>
+</tr>
 
-[qin2008]:
-https://www.microsoft.com/en-us/research/publication/a-general-approximation-framework-for-direct-optimization-of-information-retrieval-measures/
+</table>
+
+[qin2008]: https://dl.acm.org/doi/10.1007/s10791-009-9124-x
 [bruch2019]: https://research.google/pubs/pub48168/
 
 <!-- Tabular view -->
@@ -103,7 +114,7 @@ https://www.microsoft.com/en-us/research/publication/a-general-approximation-fra
 
 <tr>
 <td>
-`reduction`
+`reduction`<a id="reduction"></a>
 </td>
 <td>
 Type of `tf.keras.losses.Reduction` to apply to
@@ -111,13 +122,14 @@ loss. Default value is `AUTO`. `AUTO` indicates that the reduction
 option will be determined by the usage context. For almost all cases
 this defaults to `SUM_OVER_BATCH_SIZE`. When used with
 `tf.distribute.Strategy`, outside of built-in training loops such as
-`tf.keras` `compile` and `fit`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
-will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training) for
-    more details.
+`tf.keras` `compile` and `fit`, using `AUTO` or
+`SUM_OVER_BATCH_SIZE`
+will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training)
+  for more details.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 Optional name for the instance.
@@ -129,7 +141,7 @@ Optional name for the instance.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L465-L472">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L584-L591">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -170,24 +182,26 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L455-L463">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L574-L582">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>get_config()
+<code>get_config() -> Dict[str, Any]
 </code></pre>
 
 Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L177">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L220-L228">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>__call__(
-    y_true, y_pred, sample_weight=None
-)
+    y_true: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    y_pred: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    sample_weight: Optional[utils.TensorLike] = None
+) -> tf.Tensor
 </code></pre>
 
 See tf.keras.losses.Loss.

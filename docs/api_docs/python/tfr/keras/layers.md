@@ -22,6 +22,9 @@ Defines Keras Layers for TF-Ranking.
 
 ## Classes
 
+[`class Bilinear`](../../tfr/keras/layers/Bilinear.md): A Keras Layer makes
+bilinear interaction of two vectors.
+
 [`class ConcatFeatures`](../../tfr/keras/layers/ConcatFeatures.md): Concatenates
 context features and example features in a listwise manner.
 

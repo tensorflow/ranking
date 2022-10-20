@@ -37,6 +37,9 @@ serializable class for DCG.
 [`class GumbelApproxNDCGLoss`](../../tfr/keras/losses/GumbelApproxNDCGLoss.md):
 Computes the Gumbel approximate NDCG loss between `y_true` and `y_pred`.
 
+[`class LabelDiffLambdaWeight`](../../tfr/keras/losses/LabelDiffLambdaWeight.md):
+Keras serializable class for LabelDiffLambdaWeight.
+
 [`class ListMLELambdaWeight`](../../tfr/keras/losses/ListMLELambdaWeight.md):
 LambdaWeight for ListMLE cost function.
 
@@ -46,14 +49,26 @@ loss between `y_true` and `y_pred`.
 [`class MeanSquaredLoss`](../../tfr/keras/losses/MeanSquaredLoss.md): Computes
 mean squared loss between `y_true` and `y_pred`.
 
+[`class MixtureEMLoss`](../../tfr/keras/losses/MixtureEMLoss.md): Computes
+mixture EM loss between `y_true` and `y_pred`.
+
 [`class NDCGLambdaWeight`](../../tfr/keras/losses/NDCGLambdaWeight.md): Keras
 serializable class for NDCG.
+
+[`class NDCGLambdaWeightV2`](../../tfr/keras/losses/NDCGLambdaWeightV2.md):
+Keras serializable class for NDCG LambdaWeight V2 for topn.
+
+[`class OrdinalLoss`](../../tfr/keras/losses/OrdinalLoss.md): Computes the
+Ordinal loss between `y_true` and `y_pred`.
 
 [`class PairwiseHingeLoss`](../../tfr/keras/losses/PairwiseHingeLoss.md):
 Computes pairwise hinge loss between `y_true` and `y_pred`.
 
 [`class PairwiseLogisticLoss`](../../tfr/keras/losses/PairwiseLogisticLoss.md):
 Computes pairwise logistic loss between `y_true` and `y_pred`.
+
+[`class PairwiseMSELoss`](../../tfr/keras/losses/PairwiseMSELoss.md): Computes
+pairwise mean squared error loss between `y_true` and `y_pred`.
 
 [`class PairwiseSoftZeroOneLoss`](../../tfr/keras/losses/PairwiseSoftZeroOneLoss.md):
 Computes pairwise soft zero-one loss between `y_true` and `y_pred`.

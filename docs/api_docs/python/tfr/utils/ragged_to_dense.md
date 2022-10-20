@@ -11,7 +11,7 @@ description: Converts given inputs from ragged tensors to dense tensors.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L402-L424">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L405-L427">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,7 +35,7 @@ Converts given inputs from ragged tensors to dense tensors.
 
 <tr>
 <td>
-`labels`
+`labels`<a id="labels"></a>
 </td>
 <td>
 A `tf.RaggedTensor` of the same shape as `predictions` representing
@@ -43,7 +43,7 @@ relevance.
 </td>
 </tr><tr>
 <td>
-`predictions`
+`predictions`<a id="predictions"></a>
 </td>
 <td>
 A `tf.RaggedTensor` with shape [batch_size, (list_size)]. Each
@@ -51,7 +51,7 @@ value is the ranking score of the corresponding example.
 </td>
 </tr><tr>
 <td>
-`weights`
+`weights`<a id="weights"></a>
 </td>
 <td>
 An optional `tf.RaggedTensor` of the same shape of predictions or a

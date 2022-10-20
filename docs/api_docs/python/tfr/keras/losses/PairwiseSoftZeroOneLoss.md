@@ -15,7 +15,7 @@ description: Computes pairwise soft zero-one loss between y_true and y_pred.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L374-L438">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L424-L489">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -26,8 +26,11 @@ Computes pairwise soft zero-one loss between `y_true` and `y_pred`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.PairwiseSoftZeroOneLoss(
-    reduction=tf.losses.Reduction.AUTO, name=None, lambda_weight=None,
-    temperature=1.0, ragged=False
+    reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+    name: Optional[str] = None,
+    lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+    temperature: float = 1.0,
+    ragged: bool = False
 )
 </code></pre>
 
@@ -79,7 +82,7 @@ $$
 
 <tr>
 <td>
-`reduction`
+`reduction`<a id="reduction"></a>
 </td>
 <td>
 (Optional) The `tf.keras.losses.Reduction` to use (see
@@ -87,14 +90,14 @@ $$
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 (Optional) The name for the op.
 </td>
 </tr><tr>
 <td>
-`lambda_weight`
+`lambda_weight`<a id="lambda_weight"></a>
 </td>
 <td>
 (Optional) A lambdaweight to apply to the loss. Can be one
@@ -104,14 +107,14 @@ of <a href="../../../tfr/keras/losses/DCGLambdaWeight.md"><code>tfr.keras.losses
 </td>
 </tr><tr>
 <td>
-`temperature`
+`temperature`<a id="temperature"></a>
 </td>
 <td>
 (Optional) The temperature to use for scaling the logits.
 </td>
 </tr><tr>
 <td>
-`ragged`
+`ragged`<a id="ragged"></a>
 </td>
 <td>
 (Optional) If True, this loss will accept ragged tensors. If
@@ -124,7 +127,7 @@ False, this loss will accept dense tensors.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L218-L225">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L268-L275">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -165,7 +168,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L208-L216">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L258-L266">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -176,13 +179,15 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L177">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L220-L228">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>__call__(
-    y_true, y_pred, sample_weight=None
-)
+    y_true: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    y_pred: <a href="../../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
+    sample_weight: Optional[utils.TensorLike] = None
+) -> tf.Tensor
 </code></pre>
 
 See tf.keras.losses.Loss.

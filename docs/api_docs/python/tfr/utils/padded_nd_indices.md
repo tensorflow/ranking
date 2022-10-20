@@ -11,7 +11,7 @@ description: Pads the invalid entries by valid ones and returns the nd_indices.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L289-L337">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L292-L340">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -49,7 +49,7 @@ nd_indices)` and get the following Tensor with first 2 dims are [1, 3]:
 
 <tr>
 <td>
-`is_valid`
+`is_valid`<a id="is_valid"></a>
 </td>
 <td>
 A boolean `Tensor` for entry validity with shape [batch_size,
@@ -57,14 +57,14 @@ list_size].
 </td>
 </tr><tr>
 <td>
-`shuffle`
+`shuffle`<a id="shuffle"></a>
 </td>
 <td>
 A boolean that indicates whether valid indices should be shuffled.
 </td>
 </tr><tr>
 <td>
-`seed`
+`seed`<a id="seed"></a>
 </td>
 <td>
 Random seed for shuffle.

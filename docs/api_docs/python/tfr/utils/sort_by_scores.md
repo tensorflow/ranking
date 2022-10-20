@@ -11,7 +11,7 @@ description: Sorts list of features according to per-example scores.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L96-L145">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L99-L148">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,7 +35,7 @@ Sorts list of features according to per-example scores.
 
 <tr>
 <td>
-`scores`
+`scores`<a id="scores"></a>
 </td>
 <td>
 A `Tensor` of shape [batch_size, list_size] representing the
@@ -43,7 +43,7 @@ per-example scores.
 </td>
 </tr><tr>
 <td>
-`features_list`
+`features_list`<a id="features_list"></a>
 </td>
 <td>
 A list of `Tensor`s to be sorted. The shape of the `Tensor`
@@ -52,28 +52,28 @@ The latter is applicable for example features.
 </td>
 </tr><tr>
 <td>
-`topn`
+`topn`<a id="topn"></a>
 </td>
 <td>
 An integer as the cutoff of examples in the sorted list.
 </td>
 </tr><tr>
 <td>
-`shuffle_ties`
+`shuffle_ties`<a id="shuffle_ties"></a>
 </td>
 <td>
 A boolean. If True, randomly shuffle before the sorting.
 </td>
 </tr><tr>
 <td>
-`seed`
+`seed`<a id="seed"></a>
 </td>
 <td>
 The ops-level random seed used when `shuffle_ties` is True.
 </td>
 </tr><tr>
 <td>
-`mask`
+`mask`<a id="mask"></a>
 </td>
 <td>
 An optional `Tensor` of shape [batch_size, list_size] representing

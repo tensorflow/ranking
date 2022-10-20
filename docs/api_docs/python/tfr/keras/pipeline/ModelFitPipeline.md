@@ -18,7 +18,7 @@ description: Pipeline using model.fit to train a ranking tf.keras.Model.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L349-L617">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L355-L636">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -83,14 +83,14 @@ class BasicModelFitPipeline(ModelFitPipeline):
 
 <tr>
 <td>
-`model_builder`
+`model_builder`<a id="model_builder"></a>
 </td>
 <td>
 A `ModelBuilder` instance for model fit.
 </td>
 </tr><tr>
 <td>
-`dataset_builder`
+`dataset_builder`<a id="dataset_builder"></a>
 </td>
 <td>
 An `AbstractDatasetBuilder` instance to load train and
@@ -98,7 +98,7 @@ validate datasets and create signatures for SavedModel.
 </td>
 </tr><tr>
 <td>
-`hparams`
+`hparams`<a id="hparams"></a>
 </td>
 <td>
 A dict containing model hyperparameters.
@@ -110,7 +110,7 @@ A dict containing model hyperparameters.
 
 <h3 id="build_callbacks"><code>build_callbacks</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L452-L499">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L458-L518">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -144,7 +144,7 @@ A list of `tf.keras.callbacks.Callback` or a
 
 <h3 id="build_loss"><code>build_loss</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L77-L91">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L76-L90">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -175,7 +175,7 @@ A `tf.keras.losses.Loss` or a dict or list of `tf.keras.losses.Loss`.
 
 <h3 id="build_metrics"><code>build_metrics</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L93-L107">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L92-L106">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -206,7 +206,7 @@ A list or a dict of `tf.keras.metrics.Metric`s.
 
 <h3 id="build_weighted_metrics"><code>build_weighted_metrics</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L109-L123">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L108-L122">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -237,7 +237,7 @@ A list or a dict of `tf.keras.metrics.Metric`s.
 
 <h3 id="export_saved_model"><code>export_saved_model</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L501-L526">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L520-L545">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -291,7 +291,7 @@ If given, export the model with weights from this checkpoint.
 
 <h3 id="train_and_validate"><code>train_and_validate</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L528-L617">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/pipeline.py#L547-L636">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

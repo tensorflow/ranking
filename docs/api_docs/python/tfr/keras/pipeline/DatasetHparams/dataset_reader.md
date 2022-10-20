@@ -16,6 +16,7 @@ description: A Dataset comprising records from one or more TFRecord files.
 <meta itemprop="property" content="cardinality"/>
 <meta itemprop="property" content="choose_from_datasets"/>
 <meta itemprop="property" content="concatenate"/>
+<meta itemprop="property" content="counter"/>
 <meta itemprop="property" content="enumerate"/>
 <meta itemprop="property" content="filter"/>
 <meta itemprop="property" content="flat_map"/>
@@ -24,18 +25,22 @@ description: A Dataset comprising records from one or more TFRecord files.
 <meta itemprop="property" content="from_tensors"/>
 <meta itemprop="property" content="get_single_element"/>
 <meta itemprop="property" content="group_by_window"/>
+<meta itemprop="property" content="ignore_errors"/>
 <meta itemprop="property" content="interleave"/>
 <meta itemprop="property" content="list_files"/>
+<meta itemprop="property" content="load"/>
 <meta itemprop="property" content="map"/>
 <meta itemprop="property" content="options"/>
 <meta itemprop="property" content="padded_batch"/>
 <meta itemprop="property" content="prefetch"/>
 <meta itemprop="property" content="random"/>
 <meta itemprop="property" content="range"/>
+<meta itemprop="property" content="rebatch"/>
 <meta itemprop="property" content="reduce"/>
 <meta itemprop="property" content="rejection_resample"/>
 <meta itemprop="property" content="repeat"/>
 <meta itemprop="property" content="sample_from_datasets"/>
+<meta itemprop="property" content="save"/>
 <meta itemprop="property" content="scan"/>
 <meta itemprop="property" content="shard"/>
 <meta itemprop="property" content="shuffle"/>
@@ -62,7 +67,10 @@ A `Dataset` comprising records from one or more TFRecord files.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.pipeline.DatasetHparams.dataset_reader(
-    filenames, compression_type=None, buffer_size=None, num_parallel_reads=None,
+    filenames,
+    compression_type=None,
+    buffer_size=None,
+    num_parallel_reads=None,
     name=None
 )
 </code></pre>
@@ -124,7 +132,7 @@ x = 0.4376,  y = 0.8918
 
 <tr>
 <td>
-`filenames`
+`filenames`<a id="filenames"></a>
 </td>
 <td>
 A `tf.string` tensor or `tf.data.Dataset` containing one or
@@ -132,7 +140,7 @@ more filenames.
 </td>
 </tr><tr>
 <td>
-`compression_type`
+`compression_type`<a id="compression_type"></a>
 </td>
 <td>
 (Optional.) A `tf.string` scalar evaluating to one of
@@ -140,7 +148,7 @@ more filenames.
 </td>
 </tr><tr>
 <td>
-`buffer_size`
+`buffer_size`<a id="buffer_size"></a>
 </td>
 <td>
 (Optional.) A `tf.int64` scalar representing the number of
@@ -150,7 +158,7 @@ sensible default for both local and remote file systems is used.
 </td>
 </tr><tr>
 <td>
-`num_parallel_reads`
+`num_parallel_reads`<a id="num_parallel_reads"></a>
 </td>
 <td>
 (Optional.) A `tf.int64` scalar representing the
@@ -162,7 +170,7 @@ read sequentially.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 (Optional.) A name for the tf.data operation.
@@ -177,14 +185,14 @@ read sequentially.
 
 <tr>
 <td>
-`TypeError`
+`TypeError`<a id="TypeError"></a>
 </td>
 <td>
 If any argument does not have the expected type.
 </td>
 </tr><tr>
 <td>
-`ValueError`
+`ValueError`<a id="ValueError"></a>
 </td>
 <td>
 If any argument does not have the expected shape.
@@ -197,8 +205,8 @@ If any argument does not have the expected shape.
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
 
-<tr> <td> `element_spec` </td> <td> The type specification of an element of this
-dataset.
+<tr> <td> `element_spec`<a id="element_spec"></a> </td> <td> The type
+specification of an element of this dataset.
 
 ```
 >>> dataset = tf.data.Dataset.from_tensor_slices([1, 2, 3])
@@ -254,19 +262,16 @@ returns a `Dataset`.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-The `Dataset` returned by applying `transformation_func` to this
-dataset.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="as_numpy_iterator"><code>as_numpy_iterator</code></h3>
@@ -357,7 +362,10 @@ if eager execution is not enabled.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>batch(
-    batch_size, drop_remainder=False, num_parallel_calls=None, deterministic=None,
+    batch_size,
+    drop_remainder=False,
+    num_parallel_calls=None,
+    deterministic=None,
     name=None
 )
 </code></pre>
@@ -449,27 +457,31 @@ behavior.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="bucket_by_sequence_length"><code>bucket_by_sequence_length</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>bucket_by_sequence_length(
-    element_length_func, bucket_boundaries, bucket_batch_sizes, padded_shapes=None,
-    padding_values=None, pad_to_bucket_boundary=False, no_padding=False,
-    drop_remainder=False, name=None
+    element_length_func,
+    bucket_boundaries,
+    bucket_batch_sizes,
+    padded_shapes=None,
+    padding_values=None,
+    pad_to_bucket_boundary=False,
+    no_padding=False,
+    drop_remainder=False,
+    name=None
 )
 </code></pre>
 
@@ -592,12 +604,13 @@ batch.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -632,8 +645,9 @@ The first time the dataset is iterated over, its elements will be cached either
 in the specified file or in memory. Subsequent iterations will use the cached
 data.
 
-Note: For the cache to be finalized, the input dataset must be iterated through
-in its entirety. Otherwise, subsequent iterations will not use cached data.
+Note: To guarantee that the cache gets finalized, the input dataset must be
+iterated through in its entirety, until it raises StopIteration. Otherwise,
+subsequent iterations may not use cached data.
 
 ```
 >>> dataset = tf.data.Dataset.range(5)
@@ -693,18 +707,16 @@ If a filename is not provided, the dataset will be cached in memory.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="cardinality"><code>cardinality</code></h3>
@@ -780,7 +792,6 @@ The elements of `result` will be:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -823,15 +834,13 @@ Defaults to `True`.
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A dataset that interleaves elements from `datasets` according to the
-values of `choice_dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -906,18 +915,101 @@ TypeError: Two datasets to concatenate have different types
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
+</td>
+</tr>
+
+</table>
+
+<h3 id="counter"><code>counter</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>@staticmethod</code>
+<code>counter(
+    start=0, step=1, dtype=dtypes.int64, name=None
+)
+</code></pre>
+
+Creates a `Dataset` that counts from `start` in steps of size `step`.
+
+Unlike `tf.data.Dataset.range`, which stops at some ending number,
+`tf.data.Dataset.counter` produces elements indefinitely.
+
+```
+>>> dataset = tf.data.experimental.Counter().take(5)
+>>> list(dataset.as_numpy_iterator())
+[0, 1, 2, 3, 4]
+>>> dataset.element_spec
+TensorSpec(shape=(), dtype=tf.int64, name=None)
+>>> dataset = tf.data.experimental.Counter(dtype=tf.int32)
+>>> dataset.element_spec
+TensorSpec(shape=(), dtype=tf.int32, name=None)
+>>> dataset = tf.data.experimental.Counter(start=2).take(5)
+>>> list(dataset.as_numpy_iterator())
+[2, 3, 4, 5, 6]
+>>> dataset = tf.data.experimental.Counter(start=2, step=5).take(5)
+>>> list(dataset.as_numpy_iterator())
+[2, 7, 12, 17, 22]
+>>> dataset = tf.data.experimental.Counter(start=10, step=-1).take(5)
+>>> list(dataset.as_numpy_iterator())
+[10, 9, 8, 7, 6]
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
 
 <tr>
 <td>
-`Dataset`
+`start`
 </td>
 <td>
-A `Dataset`.
+(Optional.) The starting value for the counter. Defaults to 0.
+</td>
+</tr><tr>
+<td>
+`step`
+</td>
+<td>
+(Optional.) The step size for the counter. Defaults to 1.
+</td>
+</tr><tr>
+<td>
+`dtype`
+</td>
+<td>
+(Optional.) The data type for counter elements. Defaults to
+`tf.int64`.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+(Optional.) A name for the tf.data operation.
 </td>
 </tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `Dataset` of scalar `dtype` elements.
+</td>
+</tr>
+
 </table>
 
 <h3 id="enumerate"><code>enumerate</code></h3>
@@ -977,18 +1069,16 @@ Optional. A name for the tf.data operations used by `enumerate`.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="filter"><code>filter</code></h3>
@@ -1037,19 +1127,16 @@ A function mapping a dataset element to a boolean.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-The `Dataset` containing the elements of this dataset for which
-`predicate` is `True`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="flat_map"><code>flat_map</code></h3>
@@ -1078,8 +1165,7 @@ elements:
 ```
 >>> dataset = tf.data.Dataset.from_tensor_slices(
 ...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
->>> dataset = dataset.flat_map(
-...     lambda x: tf.data.Dataset.from_tensor_slices(x))
+>>> dataset = dataset.flat_map(tf.data.Dataset.from_tensor_slices)
 >>> list(dataset.as_numpy_iterator())
 [1, 2, 3, 4, 5, 6, 7, 8, 9]
 ```
@@ -1111,18 +1197,16 @@ A function mapping a dataset element to a dataset.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="from_generator"><code>from_generator</code></h3>
@@ -1130,17 +1214,30 @@ A `Dataset`.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@staticmethod</code>
 <code>from_generator(
-    generator, output_types=None, output_shapes=None, args=None,
-    output_signature=None, name=None
+    generator,
+    output_types=None,
+    output_shapes=None,
+    args=None,
+    output_signature=None,
+    name=None
 )
 </code></pre>
 
 Creates a `Dataset` whose elements are generated by `generator`. (deprecated
 arguments)
 
-Warning: SOME ARGUMENTS ARE DEPRECATED: `(output_shapes, output_types)`. They
+Deprecated: SOME ARGUMENTS ARE DEPRECATED: `(output_shapes, output_types)`. They
 will be removed in a future version. Instructions for updating: Use
 output_signature instead
+
+Note: The current implementation of `Dataset.from_generator()` uses
+`tf.numpy_function` and inherits the same constraints. In particular, it
+requires the dataset and iterator related operations to be placed on a device in
+the same process as the Python program that called `Dataset.from_generator()`.
+In particular, using `from_generator` will preclude the use of tf.data service
+for scaling out dataset processing. The body of `generator` will not be
+serialized in a `GraphDef`, and you should not use this method if you need to
+serialize your model and restore it in a different environment.
 
 The `generator` argument must be a callable object that returns an object that
 supports the `iter()` protocol (e.g. a generator function).
@@ -1175,14 +1272,6 @@ There is also a deprecated way to call `from_generator` by either with
 case the output of the function will be assumed to consist of `tf.Tensor`
 objects with the types defined by `output_types` and with the shapes which are
 either unknown or defined by `output_shapes`.
-
-Note: The current implementation of `Dataset.from_generator()` uses
-`tf.numpy_function` and inherits the same constraints. In particular, it
-requires the dataset and iterator related operations to be placed on a device in
-the same process as the Python program that called `Dataset.from_generator()`.
-The body of `generator` will not be serialized in a `GraphDef`, and you should
-not use this method if you need to serialize your model and restore it in a
-different environment.
 
 Note: If `generator` depends on mutable global variables or other external
 state, be aware that the runtime may invoke `generator` multiple times (in order
@@ -1584,7 +1673,6 @@ estimator.export_saved_model(your_exported_model_dir, serving_input_fn)
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1600,7 +1688,6 @@ estimator.export_saved_model(your_exported_model_dir, serving_input_fn)
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1716,12 +1803,13 @@ the same key to combine in a single batch, which will be passed to
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -1743,12 +1831,75 @@ passed.
 </tr>
 </table>
 
+<h3 id="ignore_errors"><code>ignore_errors</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>ignore_errors(
+    log_warning=False, name=None
+)
+</code></pre>
+
+Drops elements that cause errors.
+
+```
+>>> dataset = tf.data.Dataset.from_tensor_slices([1., 2., 0., 4.])
+>>> dataset = dataset.map(lambda x: tf.debugging.check_numerics(1. / x, ""))
+>>> list(dataset.as_numpy_iterator())
+Traceback (most recent call last):
+...
+InvalidArgumentError: ... Tensor had Inf values
+>>> dataset = dataset.ignore_errors()
+>>> list(dataset.as_numpy_iterator())
+[1.0, 0.5, 0.25]
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`log_warning`
+</td>
+<td>
+(Optional.) A bool indicating whether or not ignored errors
+should be logged to stderr. Defaults to `False`.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+(Optional.) A string indicating a name for the `tf.data` operation.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
+</td>
+</tr>
+
+</table>
+
 <h3 id="interleave"><code>interleave</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>interleave(
-    map_func, cycle_length=None, block_length=None, num_parallel_calls=None,
-    deterministic=None, name=None
+    map_func,
+    cycle_length=None,
+    block_length=None,
+    num_parallel_calls=None,
+    deterministic=None,
+    name=None
 )
 </code></pre>
 
@@ -1897,18 +2048,16 @@ behavior.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="list_files"><code>list_files</code></h3>
@@ -1931,8 +2080,13 @@ Note: The default behavior of this method is to return filenames in a
 non-deterministic random shuffled order. Pass a `seed` or `shuffle=False` to get
 results in a deterministic order.
 
-#### Example:
+<!-- Tabular view -->
 
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Example</th></tr>
+<tr class="alt">
+<td colspan="2">
 If we had the following files on our filesystem:
 
 -   /path/to/dir/a.txt
@@ -1942,7 +2096,9 @@ If we had the following files on our filesystem:
 If we pass "/path/to/dir/*.py" as the directory, the dataset would produce:
 
 -   /path/to/dir/b.py
--   /path/to/dir/c.py
+-   /path/to/dir/c.py </td> </tr>
+
+</table>
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -1996,6 +2152,132 @@ Optional. A name for the tf.data operations used by `list_files`.
 </td>
 <td>
 A `Dataset` of strings corresponding to file names.
+</td>
+</tr>
+</table>
+
+<h3 id="load"><code>load</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>@staticmethod</code>
+<code>load(
+    path, element_spec=None, compression=None, reader_func=None
+)
+</code></pre>
+
+Loads a previously saved dataset.
+
+#### Example usage:
+
+```
+>>> import tempfile
+>>> path = os.path.join(tempfile.gettempdir(), "saved_data")
+>>> # Save a dataset
+>>> dataset = tf.data.Dataset.range(2)
+>>> tf.data.Dataset.save(dataset, path)
+>>> new_dataset = tf.data.Dataset.load(path)
+>>> for elem in new_dataset:
+...   print(elem)
+tf.Tensor(0, shape=(), dtype=int64)
+tf.Tensor(1, shape=(), dtype=int64)
+```
+
+If the default option of sharding the saved dataset was used, the element order
+of the saved dataset will be preserved when loading it.
+
+The `reader_func` argument can be used to specify a custom order in which
+elements should be loaded from the individual shards. The `reader_func` is
+expected to take a single argument -- a dataset of datasets, each containing
+elements of one of the shards -- and return a dataset of elements. For example,
+the order of shards can be shuffled when loading them as follows:
+
+```python
+def custom_reader_func(datasets):
+  datasets = datasets.shuffle(NUM_SHARDS)
+  return datasets.interleave(lambda x: x, num_parallel_calls=AUTOTUNE)
+
+dataset = tf.data.Dataset.load(
+    path="/path/to/data", ..., reader_func=custom_reader_func)
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`path`
+</td>
+<td>
+Required. A path pointing to a previously saved dataset.
+</td>
+</tr><tr>
+<td>
+`element_spec`
+</td>
+<td>
+Optional. A nested structure of `tf.TypeSpec` objects
+matching the structure of an element of the saved dataset and specifying
+the type of individual element components. If not provided, the nested
+structure of `tf.TypeSpec` saved with the saved dataset is used. Note
+that this argument is required in graph mode.
+</td>
+</tr><tr>
+<td>
+`compression`
+</td>
+<td>
+Optional. The algorithm to use to decompress the data when
+reading it. Supported options are `GZIP` and `NONE`. Defaults to `NONE`.
+</td>
+</tr><tr>
+<td>
+`reader_func`
+</td>
+<td>
+Optional. A function to control how to read data from shards.
+If present, the function will be traced and executed as graph
+computation.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `tf.data.Dataset` instance.
+</td>
+</tr>
+
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+
+<tr>
+<td>
+`FileNotFoundError`
+</td>
+<td>
+If `element_spec` is not specified and the saved nested
+structure of `tf.TypeSpec` can not be located with the saved dataset.
+</td>
+</tr><tr>
+<td>
+`ValueError`
+</td>
+<td>
+If `element_spec` is not specified and the method is executed
+in graph mode.
 </td>
 </tr>
 </table>
@@ -2194,18 +2476,16 @@ behavior.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="options"><code>options</code></h3>
@@ -2232,7 +2512,10 @@ A `tf.data.Options` object representing the dataset options.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>padded_batch(
-    batch_size, padded_shapes=None, padding_values=None, drop_remainder=False,
+    batch_size,
+    padded_shapes=None,
+    padding_values=None,
+    drop_remainder=False,
     name=None
 )
 </code></pre>
@@ -2378,18 +2661,16 @@ batch.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <!-- Tabular view -->
@@ -2469,18 +2750,16 @@ Optional. A name for the tf.data transformation.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="random"><code>random</code></h3>
@@ -2499,7 +2778,7 @@ The dataset generates a sequence of uniformly distributed integer values.
 ```
 >>> ds1 = tf.data.Dataset.random(seed=4).take(10)
 >>> ds2 = tf.data.Dataset.random(seed=4).take(10)
->>> print(list(ds2.as_numpy_iterator())==list(ds2.as_numpy_iterator()))
+>>> print(list(ds1.as_numpy_iterator())==list(ds2.as_numpy_iterator()))
 True
 ```
 
@@ -2627,6 +2906,103 @@ if len(args) == 0.
 </tr>
 </table>
 
+<h3 id="rebatch"><code>rebatch</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>rebatch(
+    batch_size, drop_remainder=False, name=None
+)
+</code></pre>
+
+Creates a `Dataset` that rebatches the elements from this dataset.
+
+`rebatch(N)` is functionally equivalent to `unbatch().batch(N)`, but is more
+efficient, performing one copy instead of two.
+
+```
+>>> ds = tf.data.Dataset.range(6)
+>>> ds = ds.batch(2)
+>>> ds = ds.rebatch(3)
+>>> list(ds.as_numpy_iterator())
+[array([0, 1, 2]), array([3, 4, 5])]
+```
+
+```
+>>> ds = tf.data.Dataset.range(7)
+>>> ds = ds.batch(4)
+>>> ds = ds.rebatch(3)
+>>> list(ds.as_numpy_iterator())
+[array([0, 1, 2]), array([3, 4, 5]), array([6])]
+```
+
+```
+>>> ds = tf.data.Dataset.range(7)
+>>> ds = ds.batch(2)
+>>> ds = ds.rebatch(3, drop_remainder=True)
+>>> list(ds.as_numpy_iterator())
+[array([0, 1, 2]), array([3, 4, 5])]
+```
+
+If the `batch_size` argument is a list, `rebatch` cycles through the list to
+determine the size of each batch.
+
+```
+>>> ds = tf.data.Dataset.range(8)
+>>> ds = ds.batch(4)
+>>> ds = ds.rebatch([2, 1, 1])
+>>> list(ds.as_numpy_iterator())
+[array([0, 1]), array([2]), array([3]), array([4, 5]), array([6]),
+array([7])]
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`batch_size`
+</td>
+<td>
+A `tf.int64` scalar or vector, representing the size of
+batches to produce. If this argument is a vector, these values are
+cycled through in round robin fashion.
+</td>
+</tr><tr>
+<td>
+`drop_remainder`
+</td>
+<td>
+(Optional.) A `tf.bool` scalar `tf.Tensor`, representing
+whether the last batch should be dropped in the case it has fewer than
+`batch_size[cycle_index]` elements; the default behavior is not to drop
+the smaller batch.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+(Optional.) A name for the tf.data operation.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A `Dataset` of scalar `dtype` elements.
+</td>
+</tr>
+
+</table>
+
 <h3 id="reduce"><code>reduce</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -2702,47 +3078,35 @@ A dataset element corresponding to the final state of the transformation.
 )
 </code></pre>
 
-A transformation that resamples a dataset to a target distribution.
+Resamples elements to reach a target distribution.
 
-Lets consider the following example where a dataset with an initial data
-distribution of `init_dist` needs to be resampled into a dataset with
-`target_dist` distribution.
-
-```
->>> import collections
->>> initial_dist = [0.5, 0.5]
->>> target_dist = [0.6, 0.4]
->>> num_classes = len(initial_dist)
->>> num_samples = 100000
->>> data_np = np.random.choice(num_classes, num_samples, p=initial_dist)
->>> dataset = tf.data.Dataset.from_tensor_slices(data_np)
->>> x = collections.defaultdict(int)
->>> for i in dataset:
-...   x[i.numpy()] += 1
-```
-
-The value of `x` will be close to `{0: 50000, 1: 50000}` as per the
-`initial_dist` distribution.
+Note: This implementation can reject **or repeat** elements in order to reach
+the `target_dist`. So, in some cases, the output `Dataset` may be larger than
+the input `Dataset`.
 
 ```
+>>> initial_dist = [0.6, 0.4]
+>>> n = 1000
+>>> elems = np.random.choice(len(initial_dist), size=n, p=initial_dist)
+>>> dataset = tf.data.Dataset.from_tensor_slices(elems)
+>>> zero, one = np.bincount(list(dataset.as_numpy_iterator())) / n
+```
+
+Following from `initial_dist`, `zero` is ~0.6 and `one` is ~0.4.
+
+```
+>>> target_dist = [0.5, 0.5]
 >>> dataset = dataset.rejection_resample(
-...    class_func=lambda x: x % 2,
+...    class_func=lambda x: x,
 ...    target_dist=target_dist,
 ...    initial_dist=initial_dist)
+>>> dataset = dataset.map(lambda class_func_result, data: data)
+>>> zero, one = np.bincount(list(dataset.as_numpy_iterator())) / n
 ```
 
-```
->>> y = collections.defaultdict(int)
->>> for i in dataset:
-...   cls, _ = i
-...   y[cls.numpy()] += 1
-```
-
-The value of `y` will be now be close to `{0: 75000, 1: 50000}` thus satisfying
-the `target_dist` distribution.
+Following from `target_dist`, `zero` is ~0.5 and `one` is ~0.5.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2795,7 +3159,7 @@ estimated live in a streaming fashion.
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -2818,8 +3182,9 @@ Repeats this dataset so each original value is seen `count` times.
 [1, 2, 3, 1, 2, 3, 1, 2, 3]
 ```
 
-Note: If this dataset is a function of global state (e.g. a random number
-generator), then different repetitions may produce different elements.
+Note: If the input dataset depends on global state (e.g. a random number
+generator) or its output is non-deterministic (e.g. because of upstream
+`shuffle`), then different repetitions may produce different elements.
 
 <!-- Tabular view -->
  <table class="responsive fixed orange">
@@ -2846,18 +3211,16 @@ number of times the dataset should be repeated. The default behavior (if
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="sample_from_datasets"><code>sample_from_datasets</code></h3>
@@ -2895,7 +3258,6 @@ print(list(sample_dataset.as_numpy_iterator()))
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2933,17 +3295,16 @@ seed that will be used to create the distribution. See
 </td>
 <td>
 If `True`, sampling stops if it encounters an empty
-dataset. If `False`, it skips empty datasets. It is recommended to set
-it to `True`. Otherwise, the distribution of samples starts off as the
-user intends, but may change as input datasets become empty. This can be
-difficult to detect since the dataset starts off looking correct.
-Default to `False` for backward compatibility.
+dataset. If `False`, it continues sampling and skips any empty datasets.
+It is recommended to set it to `True`. Otherwise, the distribution of
+samples starts off as the user intends, but may change as input datasets
+become empty. This can be difficult to detect since the dataset starts
+off looking correct. Default to `False` for backward compatibility.
 </td>
 </tr>
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2957,7 +3318,6 @@ to `weights` if provided, otherwise with uniform probability.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -2978,6 +3338,124 @@ If the `datasets` or `weights` arguments have the wrong type.
 - If `weights` is specified and does not match the length of `datasets`.
 </td>
 </tr>
+</table>
+
+<h3 id="save"><code>save</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>save(
+    path, compression=None, shard_func=None, checkpoint_args=None
+)
+</code></pre>
+
+Saves the content of the given dataset.
+
+Example usage:
+
+```
+  >>> import tempfile
+  >>> path = os.path.join(tempfile.gettempdir(), "saved_data")
+  >>> # Save a dataset
+  >>> dataset = tf.data.Dataset.range(2)
+  >>> dataset.save(path)
+  >>> new_dataset = tf.data.Dataset.load(path)
+  >>> for elem in new_dataset:
+  ...   print(elem)
+  tf.Tensor(0, shape=(), dtype=int64)
+  tf.Tensor(1, shape=(), dtype=int64)
+```
+
+The saved dataset is saved in multiple file "shards". By default, the dataset
+output is divided to shards in a round-robin fashion but custom sharding can be
+specified via the `shard_func` function. For example, you can save the dataset
+to using a single shard as follows:
+
+```python
+  dataset = make_dataset()
+  def custom_shard_func(element):
+    return np.int64(0)
+  dataset.save(
+      path="/path/to/data", ..., shard_func=custom_shard_func)
+```
+
+To enable checkpointing, pass in `checkpoint_args` to the `save` method as
+follows:
+
+```python
+  dataset = tf.data.Dataset.range(100)
+  save_dir = "..."
+  checkpoint_prefix = "..."
+  step_counter = tf.Variable(0, trainable=False)
+  checkpoint_args = {
+    "checkpoint_interval": 50,
+    "step_counter": step_counter,
+    "directory": checkpoint_prefix,
+    "max_to_keep": 20,
+  }
+  dataset.save(dataset, save_dir, checkpoint_args=checkpoint_args)
+```
+
+NOTE: The directory layout and file format used for saving the dataset is
+considered an implementation detail and may change. For this reason, datasets
+saved through `tf.data.Dataset.save` should only be consumed through
+`tf.data.Dataset.load`, which is guaranteed to be backwards compatible.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`path`
+</td>
+<td>
+Required. A directory to use for saving the dataset.
+</td>
+</tr><tr>
+<td>
+`compression`
+</td>
+<td>
+Optional. The algorithm to use to compress data when writing
+it. Supported options are `GZIP` and `NONE`. Defaults to `NONE`.
+</td>
+</tr><tr>
+<td>
+`shard_func`
+</td>
+<td>
+Optional. A function to control the mapping of dataset
+elements to file shards. The function is expected to map elements of
+the input dataset to int64 shard IDs. If present, the function will be
+traced and executed as graph computation.
+</td>
+</tr><tr>
+<td>
+`checkpoint_args`
+</td>
+<td>
+Optional args for checkpointing which will be passed into
+the `tf.train.CheckpointManager`. If `checkpoint_args` are not
+specified, then checkpointing will not be performed. The `save()`
+implementation creates a `tf.train.Checkpoint` object internally, so
+users should not set the `checkpoint` argument in `checkpoint_args`.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Raises</th></tr>
+<tr class="alt">
+<td colspan="2">
+ValueError if `checkpoint` is passed into `checkpoint_args`.
+</td>
+</tr>
+
 </table>
 
 <h3 id="scan"><code>scan</code></h3>
@@ -3037,12 +3515,13 @@ structure of `initial_state`.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -3097,7 +3576,7 @@ d = d.map(parser_fn, num_parallel_calls=num_map_threads)
     strategy within a complete pipeline:
 
 ```python
-d = Dataset.list_files(pattern)
+d = Dataset.list_files(pattern, shuffle=False)
 d = d.shard(num_workers, worker_index)
 d = d.repeat(num_epochs)
 d = d.shuffle(shuffle_buffer_size)
@@ -3137,18 +3616,16 @@ A `tf.int64` scalar `tf.Tensor`, representing the worker index.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <!-- Tabular view -->
@@ -3267,18 +3744,16 @@ iterated over. (Defaults to `True`.)
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="skip"><code>skip</code></h3>
@@ -3324,25 +3799,27 @@ will contain no elements.  If `count` is -1, skips the entire dataset.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="snapshot"><code>snapshot</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>snapshot(
-    path, compression=&#x27;AUTO&#x27;, reader_func=None, shard_func=None, name=None
+    path,
+    compression=&#x27;AUTO&#x27;,
+    reader_func=None,
+    shard_func=None,
+    name=None
 )
 </code></pre>
 
@@ -3454,12 +3931,13 @@ a snapshot.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -3508,18 +3986,16 @@ dataset, the new dataset will contain all elements of this dataset.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="take_while"><code>take_while</code></h3>
@@ -3564,12 +4040,13 @@ shapes and types defined by `self.output_shapes` and
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -3603,7 +4080,6 @@ smaller, unbatched tensors. When optimizing performance, try to avoid
 unnecessary usage of `unbatch`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -3625,7 +4101,7 @@ unnecessary usage of `unbatch`.
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -3655,7 +4131,6 @@ Note: This transformation only supports datasets which fit into memory and have
 elements of either `tf.int32`, `tf.int64` or `tf.string` type.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -3677,7 +4152,7 @@ elements of either `tf.int32`, `tf.int64` or `tf.string` type.
 <tr><th colspan="2">Returns</th></tr>
 <tr class="alt">
 <td colspan="2">
-A `Dataset`.
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
 
@@ -3713,7 +4188,7 @@ Since windows are datasets, they can be iterated over:
 
 ```
 >>> for window in dataset:
-...   print([item.numpy() for item in window])
+...   print(list(window.as_numpy_iterator()))
 [0, 1, 2]
 [3, 4, 5]
 [6]
@@ -3821,8 +4296,7 @@ sequentially.
 For example, to turn each window into a dense tensor:
 
 ```
->>> size = 3
->>> dataset = tf.data.Dataset.range(7).window(size, shift=1,
+>>> dataset = tf.data.Dataset.range(7).window(3, shift=1,
 ...                                           drop_remainder=True)
 >>> batched = dataset.flat_map(lambda x:x.batch(3))
 >>> for batch in batched:
@@ -3885,19 +4359,16 @@ whether the last windows should be dropped if their size is smaller than
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset` of (nests of) windows. Each window is a finite
-datasets of flat elements.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="with_options"><code>with_options</code></h3>
@@ -3948,18 +4419,16 @@ A `tf.data.Options` that identifies the options the use.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset` with the given options.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <!-- Tabular view -->
@@ -4047,18 +4516,16 @@ A (nested) structure of datasets.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
-
-<tr>
-<td>
-`Dataset`
-</td>
-<td>
-A `Dataset`.
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
 </td>
 </tr>
+
 </table>
 
 <h3 id="__bool__"><code>__bool__</code></h3>

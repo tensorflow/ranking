@@ -11,7 +11,7 @@ description: Returns an int Tensor as the ranks (1-based) after sorting scores.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L148-L176">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L151-L179">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -39,7 +39,7 @@ at position 1, and 2.1 will be ranked at position 2.
 
 <tr>
 <td>
-`scores`
+`scores`<a id="scores"></a>
 </td>
 <td>
 A `Tensor` of shape [batch_size, list_size] representing the
@@ -47,14 +47,14 @@ per-example scores.
 </td>
 </tr><tr>
 <td>
-`shuffle_ties`
+`shuffle_ties`<a id="shuffle_ties"></a>
 </td>
 <td>
 See `sort_by_scores`.
 </td>
 </tr><tr>
 <td>
-`seed`
+`seed`<a id="seed"></a>
 </td>
 <td>
 See `sort_by_scores`.

@@ -16,7 +16,7 @@ description: Builds a tf.keras.Model.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L303-L382">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L302-L381">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -74,7 +74,7 @@ model_builder = ModelBuilder(
 
 <tr>
 <td>
-`input_creator`
+`input_creator`<a id="input_creator"></a>
 </td>
 <td>
 A callable or a class like `InputCreator` to implement
@@ -82,7 +82,7 @@ A callable or a class like `InputCreator` to implement
 </td>
 </tr><tr>
 <td>
-`preprocessor`
+`preprocessor`<a id="preprocessor"></a>
 </td>
 <td>
 A callable or a class like `Preprocessor` to implement
@@ -90,21 +90,21 @@ A callable or a class like `Preprocessor` to implement
 </td>
 </tr><tr>
 <td>
-`scorer`
+`scorer`<a id="scorer"></a>
 </td>
 <td>
 A callable or a class like `Scorer` to implement `score`.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 name of 2D mask boolean feature.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 (optional) name of the Model.
@@ -116,7 +116,7 @@ name of 2D mask boolean feature.
 
 <h3 id="build"><code>build</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L272-L300">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L271-L299">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -150,7 +150,7 @@ A `tf.keras.Model`.
 
 <h3 id="create_inputs"><code>create_inputs</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L359-L364">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L358-L363">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -161,7 +161,7 @@ See `ModelBuilderWithMask`.
 
 <h3 id="preprocess"><code>preprocess</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L366-L373">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L365-L372">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -176,7 +176,7 @@ See `ModelBuilderWithMask`.
 
 <h3 id="score"><code>score</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L375-L382">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L374-L381">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

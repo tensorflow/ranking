@@ -6,6 +6,9 @@ description: Input data parsing for tf-ranking library.
 <meta itemprop="property" content="EIE"/>
 <meta itemprop="property" content="ELWC"/>
 <meta itemprop="property" content="SEQ"/>
+<meta itemprop="property" content="absolute_import"/>
+<meta itemprop="property" content="division"/>
+<meta itemprop="property" content="print_function"/>
 </div>
 
 # Module: tfr.data
@@ -89,6 +92,27 @@ SEQ<a id="SEQ"></a>
 </td>
 <td>
 `'sequence_example'`
+</td>
+</tr><tr>
+<td>
+absolute_import<a id="absolute_import"></a>
+</td>
+<td>
+Instance of `__future__._Feature`
+</td>
+</tr><tr>
+<td>
+division<a id="division"></a>
+</td>
+<td>
+Instance of `__future__._Feature`
+</td>
+</tr><tr>
+<td>
+print_function<a id="print_function"></a>
+</td>
+<td>
+Instance of `__future__._Feature`
 </td>
 </tr>
 </table>

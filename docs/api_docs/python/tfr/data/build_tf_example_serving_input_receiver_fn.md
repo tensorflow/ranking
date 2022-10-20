@@ -11,7 +11,7 @@ description: Builds a serving input fn for tensorflow.training.Example.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1374-L1411">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1384-L1421">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,8 +22,11 @@ Builds a serving input fn for `tensorflow.training.Example`.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.build_tf_example_serving_input_receiver_fn(
-    context_feature_spec, example_feature_spec, size_feature_name=None,
-    mask_feature_name=None, default_batch_size=None
+    context_feature_spec,
+    example_feature_spec,
+    size_feature_name=None,
+    mask_feature_name=None,
+    default_batch_size=None
 )
 </code></pre>
 
@@ -36,7 +39,7 @@ Builds a serving input fn for `tensorflow.training.Example`.
 
 <tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) Map from feature keys to `FixedLenFeature`,
@@ -44,7 +47,7 @@ Builds a serving input fn for `tensorflow.training.Example`.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) Map from  feature keys to `FixedLenFeature`,
@@ -52,7 +55,7 @@ Builds a serving input fn for `tensorflow.training.Example`.
 </td>
 </tr><tr>
 <td>
-`size_feature_name`
+`size_feature_name`<a id="size_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list sizes. Populates
@@ -62,7 +65,7 @@ feature is not generated.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list masks. Populates
@@ -72,7 +75,7 @@ is not generated.
 </td>
 </tr><tr>
 <td>
-`default_batch_size`
+`default_batch_size`<a id="default_batch_size"></a>
 </td>
 <td>
 (int) Number of instances expected per batch. Leave

@@ -13,7 +13,7 @@ description: Univariate scorer using GAM.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L807-L852">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L806-L851">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -51,7 +51,7 @@ scorer=GAMScorer(hidden_layer_dims=[16])
 
 <tr>
 <td>
-`**gam_kwargs`
+`**gam_kwargs`<a id="**gam_kwargs"></a>
 </td>
 <td>
 A dict of keyward arguments for GAM layers. Please see
@@ -64,7 +64,7 @@ A dict of keyward arguments for GAM layers. Please see
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L742-L764">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L741-L763">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

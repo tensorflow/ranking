@@ -42,7 +42,7 @@ with strategy_scope(strategy):
 
 <tr>
 <td>
-`strategy`
+`strategy`<a id="strategy"></a>
 </td>
 <td>
 Distributed training strategy is used.

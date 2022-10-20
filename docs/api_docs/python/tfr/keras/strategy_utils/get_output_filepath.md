@@ -22,8 +22,7 @@ Gets filepaths for different workers to resolve conflict of MWMS.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.strategy_utils.get_output_filepath(
-    filepath: str,
-    strategy: Optional[tf.distribute.Strategy]
+    filepath: str, strategy: Optional[tf.distribute.Strategy]
 ) -> str
 </code></pre>
 
@@ -43,14 +42,14 @@ worker_filepath = get_output_filepath("model/", strategy)
 
 <tr>
 <td>
-`filepath`
+`filepath`<a id="filepath"></a>
 </td>
 <td>
 Path to output model files.
 </td>
 </tr><tr>
 <td>
-`strategy`
+`strategy`<a id="strategy"></a>
 </td>
 <td>
 Distributed training strategy is used.

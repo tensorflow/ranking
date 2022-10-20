@@ -11,7 +11,7 @@ description: Returns a serving input receiver fn for a standard data format.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1077-L1121">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1087-L1131">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,9 +22,14 @@ Returns a serving input receiver fn for a standard data format.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.build_ranking_serving_input_receiver_fn(
-    data_format, context_feature_spec, example_feature_spec, list_size=None,
-    size_feature_name=None, mask_feature_name=None,
-    receiver_name=&#x27;input_ranking_data&#x27;, default_batch_size=None
+    data_format,
+    context_feature_spec,
+    example_feature_spec,
+    list_size=None,
+    size_feature_name=None,
+    mask_feature_name=None,
+    receiver_name=&#x27;input_ranking_data&#x27;,
+    default_batch_size=None
 )
 </code></pre>
 
@@ -37,14 +42,14 @@ Returns a serving input receiver fn for a standard data format.
 
 <tr>
 <td>
-`data_format`
+`data_format`<a id="data_format"></a>
 </td>
 <td>
 (string) See RankingDataFormat.
 </td>
 </tr><tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) Map from feature keys to `FixedLenFeature` or
@@ -52,7 +57,7 @@ Returns a serving input receiver fn for a standard data format.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) Map from  feature keys to `FixedLenFeature` or
@@ -60,7 +65,7 @@ Returns a serving input receiver fn for a standard data format.
 </td>
 </tr><tr>
 <td>
-`list_size`
+`list_size`<a id="list_size"></a>
 </td>
 <td>
 (int) The number of examples to keep. If specified, truncation or
@@ -69,7 +74,7 @@ padding may happen. Otherwise, set it to None to allow dynamic list size
 </td>
 </tr><tr>
 <td>
-`size_feature_name`
+`size_feature_name`<a id="size_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list sizes. Populates
@@ -79,7 +84,7 @@ generated.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list masks. Populates
@@ -89,14 +94,14 @@ is not generated.
 </td>
 </tr><tr>
 <td>
-`receiver_name`
+`receiver_name`<a id="receiver_name"></a>
 </td>
 <td>
 (string) The name for the receiver tensor.
 </td>
 </tr><tr>
 <td>
-`default_batch_size`
+`default_batch_size`<a id="default_batch_size"></a>
 </td>
 <td>
 (int) Number of instances expected per batch. Leave

@@ -11,7 +11,7 @@ description: Parse function to convert tf.train.Example to feature maps.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1324-L1371">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1334-L1381">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,8 +22,11 @@ Parse function to convert `tf.train.Example` to feature maps.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.parse_from_tf_example(
-    serialized, context_feature_spec=None, example_feature_spec=None,
-    size_feature_name=None, mask_feature_name=None
+    serialized,
+    context_feature_spec=None,
+    example_feature_spec=None,
+    size_feature_name=None,
+    mask_feature_name=None
 )
 </code></pre>
 
@@ -36,7 +39,7 @@ Parse function to convert `tf.train.Example` to feature maps.
 
 <tr>
 <td>
-`serialized`
+`serialized`<a id="serialized"></a>
 </td>
 <td>
 (`tf.train.Example`) A serialized proto object containing
@@ -44,7 +47,7 @@ context and example features.
 </td>
 </tr><tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -53,7 +56,7 @@ in `tf.train.Example` proto.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -62,7 +65,7 @@ in `tf.train.Example` proto.
 </td>
 </tr><tr>
 <td>
-`size_feature_name`
+`size_feature_name`<a id="size_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list sizes. Populates
@@ -72,7 +75,7 @@ generated.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list masks. Populates

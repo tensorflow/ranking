@@ -11,7 +11,7 @@ description: Reshapes the first n dims of the input tensor to new shape.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L219-L237">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L222-L240">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,21 +35,21 @@ Reshapes the first n dims of the input `tensor` to `new shape`.
 
 <tr>
 <td>
-`tensor`
+`tensor`<a id="tensor"></a>
 </td>
 <td>
 The input `Tensor`.
 </td>
 </tr><tr>
 <td>
-`first_ndims`
+`first_ndims`<a id="first_ndims"></a>
 </td>
 <td>
 A int denoting the first n dims.
 </td>
 </tr><tr>
 <td>
-`new_shape`
+`new_shape`<a id="new_shape"></a>
 </td>
 <td>
 A list of int representing the new shape.

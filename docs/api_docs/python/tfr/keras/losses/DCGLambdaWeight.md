@@ -15,7 +15,7 @@ description: Keras serializable class for DCG.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L87-L109">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L106-L129">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -26,8 +26,12 @@ Keras serializable class for DCG.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.DCGLambdaWeight(
-    topn=None, gain_fn=None, rank_discount_fn=None, normalized=False,
-    smooth_fraction=0.0, **kwargs
+    topn: Optional[int] = None,
+    gain_fn: Optional[<a href="../../../tfr/keras/utils/GainFunction.md"><code>tfr.keras.utils.GainFunction</code></a>] = None,
+    rank_discount_fn: Optional[<a href="../../../tfr/keras/utils/GainFunction.md"><code>tfr.keras.utils.GainFunction</code></a>] = None,
+    normalized: bool = False,
+    smooth_fraction: float = 0.0,
+    **kwargs
 )
 </code></pre>
 
@@ -40,35 +44,35 @@ Keras serializable class for DCG.
 
 <tr>
 <td>
-`topn`
+`topn`<a id="topn"></a>
 </td>
 <td>
 (int) The topn for the DCG metric.
 </td>
 </tr><tr>
 <td>
-`gain_fn`
+`gain_fn`<a id="gain_fn"></a>
 </td>
 <td>
 (function) Transforms labels.
 </td>
 </tr><tr>
 <td>
-`rank_discount_fn`
+`rank_discount_fn`<a id="rank_discount_fn"></a>
 </td>
 <td>
 (function) The rank discount function.
 </td>
 </tr><tr>
 <td>
-`normalized`
+`normalized`<a id="normalized"></a>
 </td>
 <td>
 (bool) If True, normalize weight by the max DCG.
 </td>
 </tr><tr>
 <td>
-`smooth_fraction`
+`smooth_fraction`<a id="smooth_fraction"></a>
 </td>
 <td>
 (float) parameter to control the contribution from
@@ -81,16 +85,16 @@ LambdaMART.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L102-L109">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L122-L129">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>get_config()
+<code>get_config() -> Dict[str, Any]
 </code></pre>
 
 <h3 id="individual_weights"><code>individual_weights</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L275-L290">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L267-L282">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -103,7 +107,7 @@ See `_LambdaWeight`.
 
 <h3 id="pair_weights"><code>pair_weights</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L215-L273">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L241-L265">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

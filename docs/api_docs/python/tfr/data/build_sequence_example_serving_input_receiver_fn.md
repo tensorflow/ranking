@@ -11,7 +11,7 @@ description: Creates a serving_input_receiver_fn for SequenceExample inputs.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1290-L1321">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L1300-L1331">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,7 +22,10 @@ Creates a serving_input_receiver_fn for `SequenceExample` inputs.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.build_sequence_example_serving_input_receiver_fn(
-    input_size, context_feature_spec, example_feature_spec, default_batch_size=None
+    input_size,
+    context_feature_spec,
+    example_feature_spec,
+    default_batch_size=None
 )
 </code></pre>
 
@@ -39,7 +42,7 @@ in general.
 
 <tr>
 <td>
-`input_size`
+`input_size`<a id="input_size"></a>
 </td>
 <td>
 (int) The number of frames to keep in a SequenceExample. If
@@ -48,7 +51,7 @@ allow dynamic list size (recommended).
 </td>
 </tr><tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) Map from feature keys to `FixedLenFeature` or
@@ -56,7 +59,7 @@ allow dynamic list size (recommended).
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) Map from  feature keys to `FixedLenFeature` or
@@ -64,7 +67,7 @@ allow dynamic list size (recommended).
 </td>
 </tr><tr>
 <td>
-`default_batch_size`
+`default_batch_size`<a id="default_batch_size"></a>
 </td>
 <td>
 (int) Number of query examples expected per batch. Leave

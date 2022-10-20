@@ -11,7 +11,7 @@ description: Returns a parsing fn for a standard data format.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L842-L896">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/data.py#L843-L897">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,9 +22,14 @@ Returns a parsing fn for a standard data format.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.data.make_parsing_fn(
-    data_format, list_size=None, context_feature_spec=None,
-    example_feature_spec=None, size_feature_name=None, mask_feature_name=None,
-    shuffle_examples=False, seed=None
+    data_format,
+    list_size=None,
+    context_feature_spec=None,
+    example_feature_spec=None,
+    size_feature_name=None,
+    mask_feature_name=None,
+    shuffle_examples=False,
+    seed=None
 )
 </code></pre>
 
@@ -37,14 +42,14 @@ Returns a parsing fn for a standard data format.
 
 <tr>
 <td>
-`data_format`
+`data_format`<a id="data_format"></a>
 </td>
 <td>
 (string) See RankingDataFormat.
 </td>
 </tr><tr>
 <td>
-`list_size`
+`list_size`<a id="list_size"></a>
 </td>
 <td>
 (int) The number of examples to keep per ranking instance. If
@@ -53,7 +58,7 @@ have a dynamic list size.
 </td>
 </tr><tr>
 <td>
-`context_feature_spec`
+`context_feature_spec`<a id="context_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -61,7 +66,7 @@ have a dynamic list size.
 </td>
 </tr><tr>
 <td>
-`example_feature_spec`
+`example_feature_spec`<a id="example_feature_spec"></a>
 </td>
 <td>
 (dict) A mapping from feature keys to
@@ -69,7 +74,7 @@ have a dynamic list size.
 </td>
 </tr><tr>
 <td>
-`size_feature_name`
+`size_feature_name`<a id="size_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list sizes. Populates
@@ -79,7 +84,7 @@ generated.
 </td>
 </tr><tr>
 <td>
-`mask_feature_name`
+`mask_feature_name`<a id="mask_feature_name"></a>
 </td>
 <td>
 (str) Name of feature for example list masks. Populates
@@ -89,7 +94,7 @@ is not generated.
 </td>
 </tr><tr>
 <td>
-`shuffle_examples`
+`shuffle_examples`<a id="shuffle_examples"></a>
 </td>
 <td>
 (bool) A boolean to indicate whether examples within a
@@ -98,7 +103,7 @@ list are shuffled before the list is trimmed down to list_size elements
 </td>
 </tr><tr>
 <td>
-`seed`
+`seed`<a id="seed"></a>
 </td>
 <td>
 (int) A seed passed onto random_ops.uniform() to shuffle examples.

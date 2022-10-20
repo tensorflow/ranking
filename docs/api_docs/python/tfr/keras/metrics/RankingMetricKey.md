@@ -6,6 +6,7 @@ description: Ranking metric key strings.
 <meta itemprop="property" content="ALPHA_DCG"/>
 <meta itemprop="property" content="ARP"/>
 <meta itemprop="property" content="DCG"/>
+<meta itemprop="property" content="HITS"/>
 <meta itemprop="property" content="MAP"/>
 <meta itemprop="property" content="MRR"/>
 <meta itemprop="property" content="NDCG"/>
@@ -20,7 +21,7 @@ description: Ranking metric key strings.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L23-L50">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L22-L52">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -56,6 +57,13 @@ DCG<a id="DCG"></a>
 </td>
 <td>
 `'dcg'`
+</td>
+</tr><tr>
+<td>
+HITS<a id="HITS"></a>
+</td>
+<td>
+`'hits'`
 </td>
 </tr><tr>
 <td>

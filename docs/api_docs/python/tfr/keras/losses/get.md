@@ -11,7 +11,7 @@ description: Factory method to get a ranking loss class.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L28-L83">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L35-L92">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -22,9 +22,12 @@ Factory method to get a ranking loss class.
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>tfr.keras.losses.get(
-    loss, reduction=tf.losses.Reduction.AUTO, lambda_weight=None, name=None,
+    loss: str,
+    reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+    lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+    name: Optional[str] = None,
     **kwargs
-)
+) -> tf.keras.losses.Loss
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
@@ -36,7 +39,7 @@ Factory method to get a ranking loss class.
 
 <tr>
 <td>
-`loss`
+`loss`<a id="loss"></a>
 </td>
 <td>
 (str) An attribute of `RankingLossKey`, defining which loss object to
@@ -44,7 +47,7 @@ return.
 </td>
 </tr><tr>
 <td>
-`reduction`
+`reduction`<a id="reduction"></a>
 </td>
 <td>
 (enum)  An enum of strings indicating the loss reduction type.
@@ -52,7 +55,7 @@ See type definition in the `tf.compat.v2.losses.Reduction`.
 </td>
 </tr><tr>
 <td>
-`lambda_weight`
+`lambda_weight`<a id="lambda_weight"></a>
 </td>
 <td>
 (losses_impl._LambdaWeight) A lambda object for ranking
@@ -60,14 +63,14 @@ metric optimization.
 </td>
 </tr><tr>
 <td>
-`name`
+`name`<a id="name"></a>
 </td>
 <td>
 (optional) (str) Name of loss.
 </td>
 </tr><tr>
 <td>
-`**kwargs`
+`**kwargs`<a id="**kwargs"></a>
 </td>
 <td>
 Keyword arguments for the loss object.
@@ -94,7 +97,7 @@ A ranking loss instance. See `_RankingLoss` signature for more details.
 
 <tr>
 <td>
-`ValueError`
+`ValueError`<a id="ValueError"></a>
 </td>
 <td>
 If loss_key is unsupported.

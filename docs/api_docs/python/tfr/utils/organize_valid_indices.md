@@ -11,7 +11,7 @@ description: Organizes indices in such a way that valid items appear first.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L184-L216">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/utils.py#L187-L219">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -35,7 +35,7 @@ Organizes indices in such a way that valid items appear first.
 
 <tr>
 <td>
-`is_valid`
+`is_valid`<a id="is_valid"></a>
 </td>
 <td>
 A boolean `Tensor` for entry validity with shape [batch_size,
@@ -43,14 +43,14 @@ list_size].
 </td>
 </tr><tr>
 <td>
-`shuffle`
+`shuffle`<a id="shuffle"></a>
 </td>
 <td>
 A boolean indicating whether valid items should be shuffled.
 </td>
 </tr><tr>
 <td>
-`seed`
+`seed`<a id="seed"></a>
 </td>
 <td>
 An int for random seed at the op level. It works together with the

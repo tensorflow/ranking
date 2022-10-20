@@ -13,7 +13,7 @@ description: InputCreator with tensor type specs.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L488-L536">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L487-L535">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -49,7 +49,7 @@ input_creator=TypeSpecInputCreator(
 
 <tr>
 <td>
-`type_spec`
+`type_spec`<a id="type_spec"></a>
 </td>
 <td>
 A dict maps the context and example feature keys to the
@@ -57,14 +57,14 @@ corresponding context and example type specs.
 </td>
 </tr><tr>
 <td>
-`context_feature_names`
+`context_feature_names`<a id="context_feature_names"></a>
 </td>
 <td>
 A list of context feature keys.
 </td>
 </tr><tr>
 <td>
-`example_feature_names`
+`example_feature_names`<a id="example_feature_names"></a>
 </td>
 <td>
 A list of example feature keys.
@@ -76,7 +76,7 @@ A list of example feature keys.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L518-L536">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/model.py#L517-L535">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
