@@ -18,7 +18,6 @@ from typing import Any, Dict, List, Optional
 
 import tensorflow.compat.v2 as tf
 
-from tensorflow.python.keras.utils import losses_utils
 from tensorflow_ranking.python import losses_impl
 from tensorflow_ranking.python.keras import utils
 
@@ -678,7 +677,7 @@ class SoftmaxLoss(_ListwiseLoss):
     """See _RankingLoss."""
     losses, sample_weight = self._loss.compute_per_list(y_true, y_pred,
                                                         sample_weight)
-    return losses_utils.compute_weighted_loss(
+    return tf.keras.__internal__.losses.compute_weighted_loss(
         losses, sample_weight, reduction=self._get_reduction())
 
 
