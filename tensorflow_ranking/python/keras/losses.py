@@ -38,6 +38,7 @@ class RankingLossKey(object):
   APPROX_NDCG_LOSS = 'approx_ndcg_loss'
   APPROX_MRR_LOSS = 'approx_mrr_loss'
   GUMBEL_APPROX_NDCG_LOSS = 'gumbel_approx_ndcg_loss'
+  COUPLED_RANKDISTIL_LOSS = 'couple_rankdistil_loss'
   # TODO: Add support for circle loss and neural sort losses.
 
   @classmethod
@@ -82,6 +83,7 @@ def get(loss: str,
       RankingLossKey.APPROX_NDCG_LOSS: ApproxNDCGLoss,
       RankingLossKey.APPROX_MRR_LOSS: ApproxMRRLoss,
       RankingLossKey.GUMBEL_APPROX_NDCG_LOSS: GumbelApproxNDCGLoss,
+      RankingLossKey.COUPLED_RANKDISTIL_LOSS: CoupledRankDistilLoss,
   }
 
   key_to_cls_with_lambda_weights = {
@@ -1392,3 +1394,93 @@ class OrdinalLoss(_RankingLoss):
         ordinal_size=ordinal_size,
         ragged=ragged,
         use_fraction_label=use_fraction_label)
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class CoupledRankDistilLoss(_RankingLoss):
+  r"""Computes the Rank Distil loss between `y_true` and `y_pred`.
+
+  The Coupled-RankDistil loss ([Reddi et al, 2021][reddi2021]) is the
+  cross-entropy between k-Plackett's probability of logits (student) and labels
+  (teacher).
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[[0.6, 0.2], [0.8, 0.3]]]
+  >>> loss = tfr.keras.losses.CoupledRankDistilLoss()
+  >>> loss(y_true, y_pred).numpy()
+  0.75251794
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd',
+                loss=tfr.keras.losses.CoupledRankDistilLoss())
+  ```
+
+  Definition:
+
+  The k-Plackett's probability model is defined as:
+  $$
+  \mathcal{P}_k(\pi|s) = \frac{1}{(N-k)!} \\
+  \frac{\prod_{i=1}^k exp(s_{\pi(i)})}{\sum_{j=k}^N log(exp(s_{\pi(i)}))}.
+  $$
+
+  The Coupled-RankDistil loss is defined as:
+  $$
+  \mathcal{L}(y, s) = -\sum_{\pi} \mathcal{P}_k(\pi|y) log\mathcal{P}(\pi|s) \\
+  =  \mathcal{E}_{\pi \sim \matcal{P}(.|y)} [-\log \mathcal{P}(\pi|s)]
+  $$
+
+  References:
+    - [RankDistil: Knowledge Distillation for Ranking, Reddi et al,
+       2021][reddi2021]
+
+  [reddi2021]: https://research.google/pubs/pub50695/
+  """
+
+  def __init__(
+      self,
+      reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+      name: Optional[str] = None,
+      ragged: bool = False,
+      sample_size: int = 8,
+      topk: Optional[int] = None,
+      temperature: Optional[float] = 1.,
+  ):
+    """Coupled Rank Distil loss.
+
+    Args:
+      reduction: (Optional) The `tf.keras.losses.Reduction` to use (see
+        `tf.keras.losses.Loss`).
+      name: (Optional) The name for the op.
+      ragged: (Optional) If True, this loss will accept ragged tensors. If
+        False, this loss will accept dense tensors.
+      sample_size: (Optional) Number of permutations to sample from teacher
+        scores. Defaults to 8.
+      topk: (Optional) top-k entries over which order is matched. A penalty is
+        applied over non top-k items. Defaults to `None`, which treats top-k as
+        all entries in the list.
+      temperature: (Optional) A float number to modify the logits as
+        `logits=logits/temperature`. Defaults to 1.
+    """
+    super().__init__(reduction, name, ragged)
+    self._sample_size = sample_size
+    self._topk = topk
+    self._temperature = temperature
+    self._loss = losses_impl.CoupledRankDistilLoss(
+        name='{}_impl'.format(name) if name else None,
+        temperature=temperature,
+        topk=topk,
+        sample_size=sample_size,
+        ragged=ragged)
+
+  def get_config(self) -> Dict[str, Any]:
+    config = super().get_config()
+    config.update({
+        'sample_size': self._sample_size,
+        'topk': self._topk,
+        'temperature': self._temperature,
+    })
+    return config

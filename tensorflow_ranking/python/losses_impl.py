@@ -2101,7 +2101,8 @@ class CoupledRankDistilLoss(_ListwiseLoss):
       sample_size: Number of permutations to sample from teacher scores.
       topk: top-k entries over which order is matched. A penalty is applied over
         non top-k items.
-      temperature: A float number to modify the logits=logits/temperature.
+      temperature: A float number to modify the logits as
+        `logits=logits/temperature`.
       ragged: A boolean indicating whether the input tensors are ragged.
     """
     super().__init__(name, None, temperature, ragged)

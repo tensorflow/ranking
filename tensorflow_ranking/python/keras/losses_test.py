@@ -392,6 +392,50 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
         9.,
         places=5)
 
+  def test_coupled_rankdistil_loss(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    loss = losses.CoupledRankDistilLoss(
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores).numpy(),
+        -((ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rankdistil_loss_with_weights(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    weights = [[2.], [1.]]
+    loss = losses.CoupledRankDistilLoss(
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores, sample_weight=weights).numpy(),
+        -(2 * (ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) + 1 *
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rankdistil_loss_with_invalid_labels(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 1., -1.], [1., 0., 2.]]
+    loss = losses.CoupledRankDistilLoss(
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1,
+        topk=2)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores).numpy(),
+        -((ln(1. / (1 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)))) / 2,
+        places=5)
+
   def test_ordinal_loss(self):
     scores = [[[1., 2.], [3., 2.], [2., 3.]], [[1., 3.], [2., 2.], [3., 2.]],
               [[1., 1.], [2., 1.], [3., 3.]]]
@@ -1167,6 +1211,53 @@ class GetLossesTest(tf.test.TestCase):
     loss = losses.get(loss=losses.RankingLossKey.MEAN_SQUARED_LOSS)
     self.assertAlmostEqual(
         loss(labels, scores).numpy(), (1. + 1.) / 3., places=5)
+
+  def test_coupled_rankdistil_loss(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    loss = losses.get(
+        loss=losses.RankingLossKey.COUPLED_RANKDISTIL_LOSS,
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores).numpy(),
+        -((ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rankdistil_loss_with_weights(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    weights = [[2.], [1.]]
+    loss = losses.get(
+        loss=losses.RankingLossKey.COUPLED_RANKDISTIL_LOSS,
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores, sample_weight=weights).numpy(),
+        -(2 * (ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) + 1 *
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rankdistil_loss_with_invalid_labels(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
+    labels = [[0., 1., -1.], [1., 0., 2.]]
+    loss = losses.get(
+        loss=losses.RankingLossKey.COUPLED_RANKDISTIL_LOSS,
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1,
+        topk=2)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores).numpy(),
+        -((ln(1. / (1 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)))) / 2,
+        places=5)
 
 
 class SerializationTest(parameterized.TestCase, tf.test.TestCase):
