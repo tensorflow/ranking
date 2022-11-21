@@ -4,6 +4,17 @@ This file describes a set of TF-Ranking extensions.
 [TOC]
 
 ## `RankingPipeline` Extension
+
+Warning: Feature columns have been deprecated, meant to be used only with
+[v1.Session](https://www.tensorflow.org/api_docs/python/tf/compat/v1/Session)-style
+code like Estimators, and thus not recommended for new code. Users should use
+Keras preprocessing layers, either directly or via
+[tf.keras.utils.FeatureSpace](https://www.tensorflow.org/api_docs/python/tf/keras/utils/FeatureSpace).
+Feature columns do fall under our
+[compatibility guarantees](https://tensorflow.org/guide/versions), but will
+receive no fixes other than security vulnerabilities. See the
+[migration guide](https://tensorflow.org/guide/migrate) for details.
+
 We firstly provide a step-by-step guide on quickly developing a TF-Ranking model
 using `RankingPipeline`. Overall, there are three steps as shown in below.
 
