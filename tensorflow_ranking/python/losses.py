@@ -26,6 +26,40 @@ from tensorflow_ranking.python import losses_impl
 from tensorflow_ranking.python import utils
 
 
+def _parse_loss_key(loss_key: str) -> Dict[str, float]:
+  """Parses the loss_key.
+
+  This parse function will remove all spaces. Different keys are split by ","
+  and then weight associated with key is split by ":".
+
+  Args:
+    loss_key: A string represents the loss key defined in `RankingLossKey`. Or A
+      string of multiple loss keys in `RankingLossKey`, split by ",", and
+      weighted by the loss weights split by ":". For example, loss_key =
+      'softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1'.
+
+  Returns:
+    A dict from `RankingLossKey` to weight.
+  """
+
+  def _parse(loss_key_with_weight: str) -> Tuple[str, float]:
+    if ':' in loss_key_with_weight:
+      pair = loss_key_with_weight.split(':')
+    else:
+      pair = [loss_key_with_weight, 1.0]
+
+    return pair[0], float(pair[1])
+
+  # Remove spaces.
+  loss_key = loss_key.replace(' ', '')
+  # Single objective or multiple objectives with weights:
+  keys_to_weights = dict(
+      _parse(loss_key_with_weight)
+      for loss_key_with_weight in loss_key.split(','))
+
+  return keys_to_weights
+
+
 class RankingLossKey(object):
   """Ranking loss key strings."""
   # Names for the ranking based loss functions.
@@ -74,7 +108,10 @@ class _LossFunctionMaker(object):
       loss_keys: A string or list of strings representing loss keys defined in
         `RankingLossKey`. Listed loss functions will be combined in a weighted
         manner, with weights specified by `loss_weights`. If `loss_weights` is
-        None, default weight of 1 will be used.
+        None, default weight of 1 will be used. The loss_keys could also be of
+        form 'mean_squared_loss:0.1,softmax_loss:0.9' in which case it will be
+        parsed as a list of loss keys `['mean_squared_loss', 'softmax_loss']`
+        and corresponding loss weights `[0.1, 0.9]`.
       loss_weights: List of weights, same length as `loss_keys`. Used when
         merging losses to calculate the weighted sum of losses. If `None`, all
         losses are weighted equally with weight being 1.
@@ -90,6 +127,15 @@ class _LossFunctionMaker(object):
       gumbel_params: A string-keyed dictionary that contains other
         `gumbel_softmax_sample` arguments.
     """
+
+    if isinstance(loss_keys, str) and (':' in loss_keys or ',' in loss_keys):
+      if loss_weights is not None:
+        raise ValueError(
+            '`loss_weights` has to be None when weights are encoded in `loss_keys`.'
+        )
+      keys_to_weights = _parse_loss_key(loss_keys)
+      loss_keys = list(keys_to_weights.keys())
+      loss_weights = list(keys_to_weights.values())
 
     self.loss_keys = loss_keys
     self.loss_weights = loss_weights
@@ -261,7 +307,10 @@ def make_loss_fn(
     loss_keys: A string or list of strings representing loss keys defined in
       `RankingLossKey`. Listed loss functions will be combined in a weighted
       manner, with weights specified by `loss_weights`. If `loss_weights` is
-      None, default weight of 1 will be used.
+      None, default weight of 1 will be used. The loss_keys could also be of
+      form 'mean_squared_loss:0.1,softmax_loss:0.9' in which case it will be
+      parsed as a list of loss keys `['mean_squared_loss', 'softmax_loss']`
+      and corresponding loss weights `[0.1, 0.9]`.
     loss_weights: List of weights, same length as `loss_keys`. Used when merging
       losses to calculate the weighted sum of losses. If `None`, all losses are
       weighted equally with weight being 1.
@@ -285,7 +334,6 @@ def make_loss_fn(
     ValueError: If `loss_keys` is None or empty.
     ValueError: If `loss_keys` and `loss_weights` have different sizes.
   """
-
   return _LossFunctionMaker(loss_keys, loss_weights, weights_feature_name,
                             lambda_weight, reduction, name, params,
                             gumbel_params).make()

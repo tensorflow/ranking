@@ -1043,6 +1043,91 @@ class LossesTest(tf.test.TestCase):
     with self.assertRaisesRegex(ValueError, r'Invalid loss_key: invalid_key.'):
       invalid_loss_fn(labels, scores, features).numpy()
 
+  def test_make_loss_fn_with_a_string_of_keys_and_weights(self):
+    scores = [[0.2, 0.5, 0.3], [0.2, 0.3, 0.5]]
+    labels = [[0., 0., 1.], [0., 0., 1.]]
+    weights = [[2.], [1.]]
+    weights_1d = [2., 1.]
+    weights_3d = [[[2.], [1.], [0.]], [[0.], [1.], [2.]]]
+    weights_feature_name = 'weights'
+    weights_1d_feature_name = 'weights_1d'
+    weights_3d_feature_name = 'weights_3d'
+    features = {
+        weights_feature_name: weights,
+        weights_1d_feature_name: weights_1d,
+        weights_3d_feature_name: weights_3d
+    }
+    pairwise_hinge_loss = ranking_losses._pairwise_hinge_loss(labels,
+                                                              scores).numpy()
+    pairwise_hinge_loss_weighted = ranking_losses._pairwise_hinge_loss(
+        labels, scores, weights=weights).numpy()
+    pairwise_hinge_loss_itemwise_weighted = (
+        ranking_losses._pairwise_hinge_loss(
+            labels, scores, weights=tf.squeeze(weights_3d)).numpy())
+    mean_squared_loss = ranking_losses._mean_squared_loss(labels,
+                                                          scores).numpy()
+    mean_squared_loss_weighted = ranking_losses._mean_squared_loss(
+        labels, scores, weights=weights).numpy()
+    mean_squared_loss_itemwise_weighted = ranking_losses._mean_squared_loss(
+        labels, scores, weights=tf.squeeze(weights_3d)).numpy()
+
+    loss_keys = 'pairwise_hinge_loss:1.0,mean_squared_loss:1.0'
+    loss_fn_simple = ranking_losses.make_loss_fn(loss_keys)
+    self.assertAlmostEqual(
+        loss_fn_simple(labels, scores, features).numpy(),
+        pairwise_hinge_loss + mean_squared_loss,
+        places=5)
+
+    # With 2-d list-wise weighted examples.
+    loss_fn_weighted_example = ranking_losses.make_loss_fn(
+        loss_keys, weights_feature_name=weights_feature_name)
+    self.assertAlmostEqual(
+        loss_fn_weighted_example(labels, scores, features).numpy(),
+        pairwise_hinge_loss_weighted + mean_squared_loss_weighted,
+        places=5)
+
+    # With 1-d list-wise weighted examples.
+    loss_fn_weighted_example = ranking_losses.make_loss_fn(
+        loss_keys, weights_feature_name=weights_1d_feature_name)
+    self.assertAlmostEqual(
+        loss_fn_weighted_example(labels, scores, features).numpy(),
+        pairwise_hinge_loss_weighted + mean_squared_loss_weighted,
+        places=5)
+
+    # With 3-d item-wise weighted examples.
+    loss_fn_weighted_example = ranking_losses.make_loss_fn(
+        loss_keys, weights_feature_name=weights_3d_feature_name)
+    self.assertAlmostEqual(
+        loss_fn_weighted_example(labels, scores, features).numpy(),
+        pairwise_hinge_loss_itemwise_weighted +
+        mean_squared_loss_itemwise_weighted,
+        places=5)
+
+    # Test loss reduction method.
+    # Two reduction methods should return different loss values.
+    loss_fn_1 = ranking_losses.make_loss_fn(
+        loss_keys, reduction=tf.compat.v1.losses.Reduction.SUM)
+    loss_fn_2 = ranking_losses.make_loss_fn(
+        loss_keys, reduction=tf.compat.v1.losses.Reduction.MEAN)
+    self.assertNotAlmostEqual(
+        loss_fn_1(labels, scores, features).numpy(),
+        loss_fn_2(labels, scores, features).numpy())
+
+    # With both weighted loss and weighted examples.
+    loss_keys_with_weights = 'pairwise_hinge_loss:3.0,mean_squared_loss:2.0'
+    weighted_loss_fn_weighted_example = ranking_losses.make_loss_fn(
+        loss_keys_with_weights, weights_feature_name=weights_feature_name)
+    self.assertAlmostEqual(
+        weighted_loss_fn_weighted_example(labels, scores, features).numpy(),
+        pairwise_hinge_loss_weighted * 3.0 + mean_squared_loss_weighted * 2.0,
+        places=5)
+
+    with self.assertRaisesRegex(
+        ValueError,
+        r'`loss_weights` has to be None when weights are encoded in `loss_keys`'
+    ):
+      ranking_losses.make_loss_fn(loss_keys, [2.0])
+
   def test_create_ndcg_lambda_weight(self):
     labels = [[2.0, 1.0]]
     ranks = [[1, 2]]
@@ -1119,6 +1204,37 @@ class LossMetricTest(tf.test.TestCase):
           (m(labels, scores, features), loss_mean),
       ])
 
+
+class ParseLossKeyUtilsTest(tf.test.TestCase):
+
+  def test_parse_loss_key(self):
+    self.assertDictEqual(ranking_losses._parse_loss_key('a'), {'a': 1.0})
+    self.assertDictEqual(ranking_losses._parse_loss_key('a :0.9'), {'a': 0.9})
+    self.assertDictEqual(
+        ranking_losses._parse_loss_key('a,b'), {
+            'a': 1.,
+            'b': 1.
+        })
+    self.assertDictEqual(
+        ranking_losses._parse_loss_key('a, b'), {
+            'a': 1.,
+            'b': 1.
+        })
+    self.assertDictEqual(
+        ranking_losses._parse_loss_key('a, b: 2.'), {
+            'a': 1.,
+            'b': 2.
+        })
+    self.assertDictEqual(
+        ranking_losses._parse_loss_key('a:0.1,b:0.9'), {
+            'a': 0.1,
+            'b': 0.9
+        })
+    self.assertDictEqual(
+        ranking_losses._parse_loss_key('a:0.1, b : 0.9'), {
+            'a': 0.1,
+            'b': 0.9
+        })
 
 if __name__ == '__main__':
   tf.test.main()
