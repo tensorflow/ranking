@@ -1205,36 +1205,5 @@ class LossMetricTest(tf.test.TestCase):
       ])
 
 
-class ParseLossKeyUtilsTest(tf.test.TestCase):
-
-  def test_parse_loss_key(self):
-    self.assertDictEqual(ranking_losses._parse_loss_key('a'), {'a': 1.0})
-    self.assertDictEqual(ranking_losses._parse_loss_key('a :0.9'), {'a': 0.9})
-    self.assertDictEqual(
-        ranking_losses._parse_loss_key('a,b'), {
-            'a': 1.,
-            'b': 1.
-        })
-    self.assertDictEqual(
-        ranking_losses._parse_loss_key('a, b'), {
-            'a': 1.,
-            'b': 1.
-        })
-    self.assertDictEqual(
-        ranking_losses._parse_loss_key('a, b: 2.'), {
-            'a': 1.,
-            'b': 2.
-        })
-    self.assertDictEqual(
-        ranking_losses._parse_loss_key('a:0.1,b:0.9'), {
-            'a': 0.1,
-            'b': 0.9
-        })
-    self.assertDictEqual(
-        ranking_losses._parse_loss_key('a:0.1, b : 0.9'), {
-            'a': 0.1,
-            'b': 0.9
-        })
-
 if __name__ == '__main__':
   tf.test.main()

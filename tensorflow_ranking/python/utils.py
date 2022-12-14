@@ -14,7 +14,7 @@
 
 """Utility functions for ranking library."""
 
-from typing import Callable, Dict
+from typing import Callable, Dict, Tuple
 
 import tensorflow as tf
 
@@ -439,3 +439,35 @@ def ragged_to_dense(labels, predictions, weights):
   if isinstance(weights, tf.RaggedTensor):
     weights = weights.to_tensor(_PADDING_WEIGHT)
   return labels, predictions, weights, mask
+
+
+def parse_keys_and_weights(key: str) -> Dict[str, float]:
+  """Parses the encoded key to keys and weights.
+
+  This parse function will remove all spaces. Different keys are split by ","
+  and then weight associated with key is split by ":".
+
+  Args:
+    key: A string represents a key, or a string of multiple keys, split by ",",
+      and weighted by the weights split by ":". For example, key =
+      'softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1'.
+
+  Returns:
+    A dict from keys to weights.
+  """
+
+  def _parse(key_with_weight: str) -> Tuple[str, float]:
+    if ':' in key_with_weight:
+      pair = key_with_weight.split(':')
+    else:
+      pair = [key_with_weight, 1.0]
+
+    return pair[0], float(pair[1])
+
+  # Remove spaces.
+  key = key.replace(' ', '')
+  # Single objective or multiple objectives with weights:
+  keys_to_weights = dict(
+      _parse(loss_key_with_weight) for loss_key_with_weight in key.split(','))
+
+  return keys_to_weights

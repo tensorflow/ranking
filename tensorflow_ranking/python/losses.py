@@ -26,40 +26,6 @@ from tensorflow_ranking.python import losses_impl
 from tensorflow_ranking.python import utils
 
 
-def _parse_loss_key(loss_key: str) -> Dict[str, float]:
-  """Parses the loss_key.
-
-  This parse function will remove all spaces. Different keys are split by ","
-  and then weight associated with key is split by ":".
-
-  Args:
-    loss_key: A string represents the loss key defined in `RankingLossKey`. Or A
-      string of multiple loss keys in `RankingLossKey`, split by ",", and
-      weighted by the loss weights split by ":". For example, loss_key =
-      'softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1'.
-
-  Returns:
-    A dict from `RankingLossKey` to weight.
-  """
-
-  def _parse(loss_key_with_weight: str) -> Tuple[str, float]:
-    if ':' in loss_key_with_weight:
-      pair = loss_key_with_weight.split(':')
-    else:
-      pair = [loss_key_with_weight, 1.0]
-
-    return pair[0], float(pair[1])
-
-  # Remove spaces.
-  loss_key = loss_key.replace(' ', '')
-  # Single objective or multiple objectives with weights:
-  keys_to_weights = dict(
-      _parse(loss_key_with_weight)
-      for loss_key_with_weight in loss_key.split(','))
-
-  return keys_to_weights
-
-
 class RankingLossKey(object):
   """Ranking loss key strings."""
   # Names for the ranking based loss functions.
@@ -133,7 +99,7 @@ class _LossFunctionMaker(object):
         raise ValueError(
             '`loss_weights` has to be None when weights are encoded in `loss_keys`.'
         )
-      keys_to_weights = _parse_loss_key(loss_keys)
+      keys_to_weights = utils.parse_keys_and_weights(loss_keys)
       loss_keys = list(keys_to_weights.keys())
       loss_weights = list(keys_to_weights.values())
 

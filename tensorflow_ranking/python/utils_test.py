@@ -294,5 +294,34 @@ class UtilsTest(tf.test.TestCase):
                         [[1., 1., utils._PADDING_WEIGHT], [2., 1., 2.]])
     self.assertAllClose(mask, [[True, True, False], [True, True, True]])
 
+  def testparse_loss_key(self):
+    self.assertDictEqual(utils.parse_keys_and_weights('a'), {'a': 1.0})
+    self.assertDictEqual(utils.parse_keys_and_weights('a :0.9'), {'a': 0.9})
+    self.assertDictEqual(
+        utils.parse_keys_and_weights('a,b'), {
+            'a': 1.,
+            'b': 1.
+        })
+    self.assertDictEqual(
+        utils.parse_keys_and_weights('a, b'), {
+            'a': 1.,
+            'b': 1.
+        })
+    self.assertDictEqual(
+        utils.parse_keys_and_weights('a, b: 2.'), {
+            'a': 1.,
+            'b': 2.
+        })
+    self.assertDictEqual(
+        utils.parse_keys_and_weights('a:0.1,b:0.9'), {
+            'a': 0.1,
+            'b': 0.9
+        })
+    self.assertDictEqual(
+        utils.parse_keys_and_weights('a:0.1, b : 0.9'), {
+            'a': 0.1,
+            'b': 0.9
+        })
+
 if __name__ == '__main__':
   tf.test.main()
