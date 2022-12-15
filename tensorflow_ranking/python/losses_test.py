@@ -1160,7 +1160,7 @@ class LossesTest(tf.test.TestCase):
 class LossMetricTest(tf.test.TestCase):
 
   def setUp(self):
-    super(LossMetricTest, self).setUp()
+    super().setUp()
     tf.compat.v1.reset_default_graph()
 
   def _check_metrics(self, metrics_and_values):

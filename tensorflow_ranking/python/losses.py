@@ -185,7 +185,8 @@ class _LossFunctionMaker(object):
 
     gumbel_sampler = losses_impl.GumbelSampler(**self.gumbel_params)
 
-    def _loss_fn(labels, logits, features):
+    def _loss_fn(labels: utils.TensorLike, logits: utils.TensorLike,
+                 features: Dict[str, utils.TensorLike]) -> tf.Tensor:
       """Computes a single loss or weighted combination of losses.
 
       Args:
@@ -305,11 +306,121 @@ def make_loss_fn(
                             gumbel_params).make()
 
 
+class _LossMetricFunctionMaker(object):
+  """The loss metric function maker."""
+
+  def __init__(self,
+               loss_key: str,
+               weights_feature_name: Optional[str] = None,
+               lambda_weight: Optional[losses_impl._LambdaWeight] = None,
+               name: Optional[str] = None):
+    """Initializes a loss metric function maker.
+
+    Args:
+      loss_key: A key in `RankingLossKey`.
+      weights_feature_name: A `string` specifying the name of the weights
+        feature in `features` dict.
+      lambda_weight: A `_LambdaWeight` object.
+      name: A `string` used as the name for this metric.
+
+    Returns:
+      A metric fn with the following Args:
+      * `labels`: A `Tensor` of the same shape as `predictions` representing
+      graded relevance.
+      * `predictions`: A `Tensor` with shape [batch_size, list_size]. Each value
+      is the ranking score of the corresponding example.
+      * `features`: A dict of `Tensor`s that contains all features.
+    """
+    self.loss_key = loss_key
+    self.weights_feature_name = weights_feature_name
+    self.lambda_weight = lambda_weight
+    self.name = name
+
+  def build_key_to_loss_fn_mapping(
+      self, name: Optional[str],
+      lambda_weight: Optional[losses_impl._LambdaWeight]
+  ) -> Dict[str, losses_impl._RankingLoss]:
+    """Builds the mapping from loss keys to loss functions."""
+    metric_dict = {
+        RankingLossKey.PAIRWISE_HINGE_LOSS:
+            losses_impl.PairwiseHingeLoss(name, lambda_weight=lambda_weight),
+        RankingLossKey.PAIRWISE_LOGISTIC_LOSS:
+            losses_impl.PairwiseLogisticLoss(name, lambda_weight=lambda_weight),
+        RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
+            losses_impl.PairwiseSoftZeroOneLoss(
+                name, lambda_weight=lambda_weight),
+        RankingLossKey.PAIRWISE_MSE_LOSS:
+            losses_impl.PairwiseMSELoss(name, lambda_weight=lambda_weight),
+        RankingLossKey.CIRCLE_LOSS:
+            losses_impl.CircleLoss(name),
+        RankingLossKey.SOFTMAX_LOSS:
+            losses_impl.SoftmaxLoss(name, lambda_weight=lambda_weight),
+        RankingLossKey.POLY_ONE_SOFTMAX_LOSS:
+            losses_impl.PolyOneSoftmaxLoss(name, lambda_weight=lambda_weight),
+        RankingLossKey.UNIQUE_SOFTMAX_LOSS:
+            losses_impl.UniqueSoftmaxLoss(name, lambda_weight=lambda_weight),
+        RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
+            losses_impl.SigmoidCrossEntropyLoss(name),
+        RankingLossKey.MEAN_SQUARED_LOSS:
+            losses_impl.MeanSquaredLoss(name),
+        RankingLossKey.LIST_MLE_LOSS:
+            losses_impl.ListMLELoss(name, lambda_weight=lambda_weight),
+        RankingLossKey.APPROX_NDCG_LOSS:
+            losses_impl.ApproxNDCGLoss(name),
+        RankingLossKey.APPROX_MRR_LOSS:
+            losses_impl.ApproxMRRLoss(name),
+        RankingLossKey.GUMBEL_APPROX_NDCG_LOSS:
+            losses_impl.ApproxNDCGLoss(name),
+        RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS:
+            losses_impl.NeuralSortCrossEntropyLoss(name),
+        RankingLossKey.GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS:
+            losses_impl.NeuralSortCrossEntropyLoss(name),
+        RankingLossKey.NEURAL_SORT_NDCG_LOSS:
+            losses_impl.NeuralSortNDCGLoss(name),
+        RankingLossKey.GUMBEL_NEURAL_SORT_NDCG_LOSS:
+            losses_impl.NeuralSortNDCGLoss(name),
+    }
+    return metric_dict
+
+  def make(self) -> utils.MetricFunction:
+    """Makes the loss metric function.
+
+    Returns:
+      A function _metric_fn(). See `_metric_fn()` for its signature.
+    """
+
+    def _get_weights(features: Dict[str, utils.TensorLike]) -> utils.TensorLike:
+      """Gets weights tensor from features and reshape it to 2-D if necessary.
+      """
+
+      weights = None
+      if self.weights_feature_name:
+        weights = tf.convert_to_tensor(
+            value=features[self.weights_feature_name])
+        # Convert weights to a 2-D Tensor.
+        weights = utils.reshape_to_2d(weights)
+      return weights
+
+    def _metric_fn(labels: utils.TensorLike, predictions: utils.TensorLike,
+                   features: Dict[str, utils.TensorLike]) -> tf.Tensor:
+      """Defines the metric fn."""
+
+      weights = _get_weights(features)
+      metric_dict = self.build_key_to_loss_fn_mapping(self.name,
+                                                      self.lambda_weight)
+      loss = metric_dict.get(self.loss_key, None)
+      if loss is None:
+        raise ValueError(f'loss_key {self.loss_key} not supported.')
+      return loss.eval_metric(labels, predictions, weights)
+
+    return _metric_fn
+
+
 def make_loss_metric_fn(loss_key,
                         weights_feature_name=None,
                         lambda_weight=None,
                         name=None):
-  """Factory method to create a metric based on a loss.
+  """Creates a metric based on a loss.
 
   Args:
     loss_key: A key in `RankingLossKey`.
@@ -327,64 +438,8 @@ def make_loss_metric_fn(loss_key,
     * `features`: A dict of `Tensor`s that contains all features.
   """
 
-  metric_dict = {
-      RankingLossKey.PAIRWISE_HINGE_LOSS:
-          losses_impl.PairwiseHingeLoss(name, lambda_weight=lambda_weight),
-      RankingLossKey.PAIRWISE_LOGISTIC_LOSS:
-          losses_impl.PairwiseLogisticLoss(name, lambda_weight=lambda_weight),
-      RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS:
-          losses_impl.PairwiseSoftZeroOneLoss(
-              name, lambda_weight=lambda_weight),
-      RankingLossKey.PAIRWISE_MSE_LOSS:
-          losses_impl.PairwiseMSELoss(name, lambda_weight=lambda_weight),
-      RankingLossKey.CIRCLE_LOSS:
-          losses_impl.CircleLoss(name),
-      RankingLossKey.SOFTMAX_LOSS:
-          losses_impl.SoftmaxLoss(name, lambda_weight=lambda_weight),
-      RankingLossKey.POLY_ONE_SOFTMAX_LOSS:
-          losses_impl.PolyOneSoftmaxLoss(name, lambda_weight=lambda_weight),
-      RankingLossKey.UNIQUE_SOFTMAX_LOSS:
-          losses_impl.UniqueSoftmaxLoss(name, lambda_weight=lambda_weight),
-      RankingLossKey.SIGMOID_CROSS_ENTROPY_LOSS:
-          losses_impl.SigmoidCrossEntropyLoss(name),
-      RankingLossKey.MEAN_SQUARED_LOSS:
-          losses_impl.MeanSquaredLoss(name),
-      RankingLossKey.LIST_MLE_LOSS:
-          losses_impl.ListMLELoss(name, lambda_weight=lambda_weight),
-      RankingLossKey.APPROX_NDCG_LOSS:
-          losses_impl.ApproxNDCGLoss(name),
-      RankingLossKey.APPROX_MRR_LOSS:
-          losses_impl.ApproxMRRLoss(name),
-      RankingLossKey.GUMBEL_APPROX_NDCG_LOSS:
-          losses_impl.ApproxNDCGLoss(name),
-      RankingLossKey.NEURAL_SORT_CROSS_ENTROPY_LOSS:
-          losses_impl.NeuralSortCrossEntropyLoss(name),
-      RankingLossKey.GUMBEL_NEURAL_SORT_CROSS_ENTROPY_LOSS:
-          losses_impl.NeuralSortCrossEntropyLoss(name),
-      RankingLossKey.NEURAL_SORT_NDCG_LOSS:
-          losses_impl.NeuralSortNDCGLoss(name),
-      RankingLossKey.GUMBEL_NEURAL_SORT_NDCG_LOSS:
-          losses_impl.NeuralSortNDCGLoss(name),
-  }
-
-  def _get_weights(features):
-    """Get weights tensor from features and reshape it to 2-D if necessary."""
-    weights = None
-    if weights_feature_name:
-      weights = tf.convert_to_tensor(value=features[weights_feature_name])
-      # Convert weights to a 2-D Tensor.
-      weights = utils.reshape_to_2d(weights)
-    return weights
-
-  def metric_fn(labels, predictions, features):
-    """Defines the metric fn."""
-    weights = _get_weights(features)
-    loss = metric_dict.get(loss_key, None)
-    if loss is None:
-      raise ValueError(f'loss_key {loss_key} not supported.')
-    return loss.eval_metric(labels, predictions, weights)
-
-  return metric_fn
+  return _LossMetricFunctionMaker(loss_key, weights_feature_name, lambda_weight,
+                                  name).make()
 
 
 def create_ndcg_lambda_weight(topn=None, smooth_fraction=0.):

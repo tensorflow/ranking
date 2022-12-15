@@ -20,10 +20,6 @@ function, scoring function) for adopting TF-Ranking. Advanced users can also
 derive from this class and further tailor for their needs.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
 from tensorflow import estimator as tf_estimator
 

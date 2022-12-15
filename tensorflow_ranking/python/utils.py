@@ -26,6 +26,8 @@ TensorLike = tf.types.experimental.TensorLike
 TransformationFunction = Callable[[TensorLike], tf.Tensor]
 LossFunction = Callable[[TensorLike, TensorLike, Dict[str, TensorLike]],
                         tf.Tensor]
+MetricFunction = Callable[[TensorLike, TensorLike, Dict[str, TensorLike]],
+                          tf.Tensor]
 
 
 def _to_nd_indices(indices):
