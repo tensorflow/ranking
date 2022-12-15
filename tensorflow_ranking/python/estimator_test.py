@@ -14,10 +14,6 @@
 
 """Tests for estimator.py."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 
 from absl.testing import parameterized
@@ -88,17 +84,18 @@ def example_feature_columns():
   feature_names = ["custom_features_%d" % (i + 1) for i in range(0, 3)]
   return {
       name:
-      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)  # pylint: disable=g-deprecated-tf-checker
       for name in feature_names
   }
 
 
 def _inner_input_fn():
-  context_feature_spec = tf.feature_column.make_parse_example_spec(
+  context_feature_spec = tf.feature_column.make_parse_example_spec(  # pylint: disable=g-deprecated-tf-checker
       list(context_feature_column().values()))
-  label_column = tf.feature_column.numeric_column(
-      _LABEL_FEATURE, default_value=_PADDING_LABEL)
-  example_feature_spec = tf.feature_column.make_parse_example_spec(
+  label_column = tf.feature_column.numeric_column(  # pylint: disable=g-deprecated-tf-checker
+      _LABEL_FEATURE,
+      default_value=_PADDING_LABEL)
+  example_feature_spec = tf.feature_column.make_parse_example_spec(  # pylint: disable=g-deprecated-tf-checker
       list(example_feature_columns().values()) + [label_column])
   dataset = data.build_ranking_dataset(
       file_pattern=DATA_FILE,
@@ -116,7 +113,7 @@ def _inner_input_fn():
 def _example_feature_columns():
   return {
       name:
-      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)  # pylint: disable=g-deprecated-tf-checker
       for name in ["f1", "f2", "f3"]
   }
 
@@ -124,7 +121,7 @@ def _example_feature_columns():
 def _context_feature_columns():
   return {
       name:
-      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)  # pylint: disable=g-deprecated-tf-checker
       for name in ["c1"]
   }
 
@@ -148,7 +145,7 @@ def _multiply_by_two_transform_fn(features, mode):
   return context, example
 
 
-def _get_hparams():
+def _get_hparams(loss_key="softmax_loss"):
   hparams = dict(
       train_input_pattern="",
       eval_input_pattern="",
@@ -159,7 +156,7 @@ def _get_hparams():
       num_checkpoints=100,
       num_train_steps=10000,
       num_eval_steps=100,
-      loss="softmax_loss",
+      loss=loss_key,
       list_size=10,
       listwise_inference=False,
       convert_labels_to_binary=False,
@@ -167,14 +164,14 @@ def _get_hparams():
   return hparams
 
 
-class EstimatorBuilderTest(tf.test.TestCase):
+class EstimatorBuilderTest(tf.test.TestCase, parameterized.TestCase):
 
-  def _create_default_estimator(self, hparams=None):
+  def _create_default_estimator(self, loss_key=None, hparams=None):
     return tfr_estimator.EstimatorBuilder(
         _context_feature_columns(),
         _example_feature_columns(),
         _scoring_function,
-        hparams=(hparams or _get_hparams()))
+        hparams=(hparams or _get_hparams(loss_key)))
 
   def test_validate_hparams(self):
     hparams = {"allowed_key": "allowed_value"}
@@ -184,8 +181,10 @@ class EstimatorBuilderTest(tf.test.TestCase):
     with self.assertRaises(ValueError):
       tfr_estimator._validate_hparams(hparams, ["required"])
 
-  def test_create_estimator_with_misspecified_args(self):
-    hparams = _get_hparams()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_create_estimator_with_misspecified_args(self, loss_key):
+    hparams = _get_hparams(loss_key)
     with self.assertRaises(ValueError):
       _ = tfr_estimator.EstimatorBuilder(
           _context_feature_columns,
@@ -216,7 +215,7 @@ class EstimatorBuilderTest(tf.test.TestCase):
         _example_feature_columns,
         _scoring_function,
         optimizer=tf.compat.v1.train.AdamOptimizer(learning_rate=0.01),
-        hparams=_get_hparams())
+        hparams=_get_hparams(loss_key))
     self.assertIsInstance(pip, tfr_estimator.EstimatorBuilder)
 
     # Adding "learning_rate" to hparams (no optimizer) also silences the errors.
@@ -226,11 +225,14 @@ class EstimatorBuilderTest(tf.test.TestCase):
         _example_feature_columns,
         _scoring_function,
         optimizer=None,
-        hparams=_get_hparams())
+        hparams=_get_hparams(loss_key))
     self.assertIsInstance(pip, tfr_estimator.EstimatorBuilder)
 
-  def test_transform_fn_train(self):
-    estimator_with_default_transform_fn = self._create_default_estimator()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_transform_fn_train(self, loss_key):
+    estimator_with_default_transform_fn = self._create_default_estimator(
+        loss_key)
 
     # The below tests the `transform_fn` in the TRAIN mode. In this mode, the
     # `_transform_fn` invokes the `encode_listwise_features()`, which requires
@@ -253,8 +255,11 @@ class EstimatorBuilderTest(tf.test.TestCase):
     self.assertAllEqual(tf.ones(shape=[10, 1]), context["c1"])
     self.assertAllEqual(tf.ones(shape=[10, 10, 1]), example["f1"])
 
-  def test_transform_fn_predict_pointwise_inference(self):
-    estimator_with_default_transform_fn = self._create_default_estimator()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_transform_fn_predict_pointwise_inference(self, loss_key):
+    estimator_with_default_transform_fn = self._create_default_estimator(
+        loss_key)
 
     # The below tests `transform_fn` in PREDICT mode with pointwise inference.
     # In this mode, `_transform_fn` invokes the `encode_pointwise_features()`,
@@ -272,8 +277,10 @@ class EstimatorBuilderTest(tf.test.TestCase):
     self.assertAllEqual(tf.ones(shape=[10, 1]), context["c1"])
     self.assertAllEqual(tf.ones(shape=[10, 1, 1]), example["f1"])
 
-  def test_transform_fn_listwise_inference(self):
-    hparams = _get_hparams()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_transform_fn_listwise_inference(self, loss_key):
+    hparams = _get_hparams(loss_key)
     hparams["listwise_inference"] = True
     estimator_with_default_transform_fn = self._create_default_estimator(
         hparams=hparams)
@@ -323,8 +330,10 @@ class EstimatorBuilderTest(tf.test.TestCase):
     self.assertAllEqual(2 * tf.ones(shape=[10, 1]), context["c1"])
     self.assertAllEqual(2 * tf.ones(shape=[10, 10, 1]), example["f1"])
 
-  def test_group_score_fn(self):
-    estimator = self._create_default_estimator()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_group_score_fn(self, loss_key):
+    estimator = self._create_default_estimator(loss_key)
     logits = estimator._group_score_fn(
         {"c1": tf.ones([10, 1], dtype=tf.float32)},
         {"f1": tf.ones([10, 1, 1], dtype=tf.float32)},
@@ -332,27 +341,32 @@ class EstimatorBuilderTest(tf.test.TestCase):
 
     self.assertAllEqual(logits, tf.ones([10, 1], dtype=tf.float32))
 
-  def test_eval_metric_fns(self):
-    estimator = self._create_default_estimator()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_eval_metric_fns(self, loss_key):
+    estimator = self._create_default_estimator(loss_key)
     self.assertCountEqual(estimator._eval_metric_fns().keys(), [
         "metric/mrr", "metric/mrr_10", "metric/ndcg", "metric/ndcg_10",
-        "metric/ndcg_5", "metric/softmax_loss"
-    ])
+        "metric/ndcg_5"
+    ] + [f"metric/{key.split(':')[0]}" for key in loss_key.split(",")])
 
     # Metric weights feature name is set.
-    hparams = _get_hparams()
+    hparams = _get_hparams(loss_key)
     hparams.update({"metric_weights_feature_name": "a_weight_feature"})
     estimator = self._create_default_estimator(hparams=hparams)
-    self.assertCountEqual(estimator._eval_metric_fns().keys(), [
-        "metric/mrr", "metric/mrr_10", "metric/ndcg", "metric/ndcg_10",
-        "metric/ndcg_5", "metric/weighted_mrr", "metric/weighted_mrr_10",
-        "metric/weighted_ndcg", "metric/weighted_ndcg_10",
-        "metric/weighted_ndcg_5", "metric/softmax_loss",
-        "metric/weighted_softmax_loss"
-    ])
+    self.assertCountEqual(
+        estimator._eval_metric_fns().keys(), [
+            "metric/mrr", "metric/mrr_10", "metric/ndcg", "metric/ndcg_10",
+            "metric/ndcg_5", "metric/weighted_mrr", "metric/weighted_mrr_10",
+            "metric/weighted_ndcg", "metric/weighted_ndcg_10",
+            "metric/weighted_ndcg_5"
+        ] + [f"metric/{key.split(':')[0]}" for key in loss_key.split(",")] +
+        [f"metric/weighted_{key.split(':')[0]}" for key in loss_key.split(",")])
 
-  def test_optimizer(self):
-    estimator_with_default_optimizer = self._create_default_estimator()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_optimizer(self, loss_key):
+    estimator_with_default_optimizer = self._create_default_estimator(loss_key)
     self.assertIsInstance(estimator_with_default_optimizer._optimizer,
                           tf.compat.v1.train.AdagradOptimizer)
 
@@ -388,10 +402,12 @@ class DNNEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         use_batch_norm=False,
         model_dir=None,
         listwise_inference=listwise_inference)
-    train_spec = tf_estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
-    eval_spec = tf_estimator.EvalSpec(
-        name="eval", input_fn=_inner_input_fn, steps=10)
-    tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    train_spec = tf_estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)  # pylint: disable=g-deprecated-tf-checker
+    eval_spec = tf_estimator.EvalSpec(  # pylint: disable=g-deprecated-tf-checker
+        name="eval",
+        input_fn=_inner_input_fn,
+        steps=10)
+    tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)  # pylint: disable=g-deprecated-tf-checker
 
 
 class GAMEstimatorTest(tf.test.TestCase, parameterized.TestCase):
@@ -416,10 +432,12 @@ class GAMEstimatorTest(tf.test.TestCase, parameterized.TestCase):
         use_batch_norm=False,
         model_dir=None,
         listwise_inference=listwise_inference)
-    train_spec = tf_estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)
-    eval_spec = tf_estimator.EvalSpec(
-        name="eval", input_fn=_inner_input_fn, steps=10)
-    tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    train_spec = tf_estimator.TrainSpec(input_fn=_inner_input_fn, max_steps=1)  # pylint: disable=g-deprecated-tf-checker
+    eval_spec = tf_estimator.EvalSpec(  # pylint: disable=g-deprecated-tf-checker
+        name="eval",
+        input_fn=_inner_input_fn,
+        steps=10)
+    tf_estimator.train_and_evaluate(estimator, train_spec, eval_spec)  # pylint: disable=g-deprecated-tf-checker
 
 
 if __name__ == "__main__":

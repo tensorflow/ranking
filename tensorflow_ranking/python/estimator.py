@@ -29,6 +29,8 @@ from tensorflow_ranking.python import head
 from tensorflow_ranking.python import losses
 from tensorflow_ranking.python import metrics
 from tensorflow_ranking.python import model
+from tensorflow_ranking.python import utils
+
 
 _METRIC_WEIGHT = "metric_weights_feature_name"
 _LOSS_WEIGHT = "loss_weights_feature_name"
@@ -111,6 +113,17 @@ def _get_loss_metric_pair(key, weight=None):
       key,
   ])
   return name, losses.make_loss_metric_fn(key, weights_feature_name=weight)
+
+
+def _get_loss_metric_pairs(key: str, weight=None):
+  """Constructs pairs of metric name and function for a loss key."""
+  if "," in key or ":" in key:
+    keys_to_weights = utils.parse_keys_and_weights(key)
+    return [
+        _get_loss_metric_pair(key, weight=weight) for key in keys_to_weights
+    ]
+  else:
+    return [_get_loss_metric_pair(key, weight=weight)]
 
 
 class EstimatorBuilder(object):
@@ -302,7 +315,7 @@ class EstimatorBuilder(object):
         for topn in [10, None]
     })
 
-    metric_fns.update({_get_loss_metric_pair(self._hparams.get("loss"))})
+    metric_fns.update({*_get_loss_metric_pairs(self._hparams.get("loss"))})
 
     if self._hparams.get(_METRIC_WEIGHT):
       weight = self._hparams.get(_METRIC_WEIGHT)
@@ -319,7 +332,7 @@ class EstimatorBuilder(object):
           for topn in [10, None]
       })
       metric_fns.update(
-          {_get_loss_metric_pair(self._hparams.get("loss"), weight=weight)})
+          {*_get_loss_metric_pairs(self._hparams.get("loss"), weight=weight)})
 
     return metric_fns
 
@@ -369,11 +382,11 @@ class EstimatorBuilder(object):
 
   def make_estimator(self):
     """Returns the built `tf.estimator.Estimator` for the TF-Ranking model."""
-    config = tf_estimator.RunConfig(
+    config = tf_estimator.RunConfig(  # pylint: disable=g-deprecated-tf-checker
         model_dir=self._hparams.get("model_dir"),
         keep_checkpoint_max=self._hparams.get("num_checkpoints"),
         save_checkpoints_secs=self._hparams.get("checkpoint_secs"))
-    return tf_estimator.Estimator(model_fn=self._model_fn(), config=config)
+    return tf_estimator.Estimator(model_fn=self._model_fn(), config=config)  # pylint: disable=g-deprecated-tf-checker
 
 
 def _make_dnn_score_fn(hidden_units,
@@ -735,14 +748,14 @@ class GAMEstimatorBuilder(EstimatorBuilder):
                 tf.compat.v1.get_default_graph().get_tensor_by_name(
                     "{}:0".format(node.name)))
             subscore_signatures[subscore_name] = (
-                tf_estimator.export.RegressionOutput(subscore_tensor))
+                tf_estimator.export.RegressionOutput(subscore_tensor))  # pylint: disable=g-deprecated-tf-checker
           elif node.name.endswith(_SUBWEIGHT_POSTFIX):
             subscore_name = node.name[node.name.rfind("/") + 1:]
             subscore_tensor = (
                 tf.compat.v1.get_default_graph().get_tensor_by_name(
                     "{}:0".format(node.name)))
             subscore_signatures[subscore_name] = (
-                tf_estimator.export.PredictOutput(subscore_tensor))
+                tf_estimator.export.PredictOutput(subscore_tensor))  # pylint: disable=g-deprecated-tf-checker
 
         estimator_spec.export_outputs.update(subscore_signatures)
       return estimator_spec

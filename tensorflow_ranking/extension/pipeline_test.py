@@ -14,11 +14,8 @@
 
 """Tests for pipeline.py."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
+from absl.testing import parameterized
 
 import tensorflow as tf
 from tensorflow import estimator as tf_estimator
@@ -76,7 +73,7 @@ ELWC = text_format.Parse(
 def _example_feature_columns():
   return {
       name:
-      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)  # pylint: disable=g-deprecated-tf-checker
       for name in ["f1", "f2", "f3"]
   }
 
@@ -84,7 +81,7 @@ def _example_feature_columns():
 def _context_feature_columns():
   return {
       name:
-      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)
+      tf.feature_column.numeric_column(name, shape=(1,), default_value=0.0)  # pylint: disable=g-deprecated-tf-checker
       for name in ["c1"]
   }
 
@@ -121,7 +118,8 @@ def _make_hparams(train_input_pattern,
                   num_eval_steps=1,
                   checkpoint_secs=1,
                   num_checkpoints=2,
-                  listwise_inference=False):
+                  listwise_inference=False,
+                  loss_key=None):
   return dict(
       train_input_pattern=train_input_pattern,
       eval_input_pattern=eval_input_pattern,
@@ -132,17 +130,17 @@ def _make_hparams(train_input_pattern,
       num_checkpoints=num_checkpoints,
       num_train_steps=num_train_steps,
       num_eval_steps=num_eval_steps,
-      loss="softmax_loss",
+      loss=loss_key,
       list_size=list_size,
       listwise_inference=listwise_inference,
       convert_labels_to_binary=False,
       model_dir=model_dir)
 
 
-class RankingPipelineTest(tf.test.TestCase):
+class RankingPipelineTest(tf.test.TestCase, parameterized.TestCase):
 
   def setUp(self):
-    super(RankingPipelineTest, self).setUp()
+    super().setUp()
     tf.compat.v1.reset_default_graph()
 
     # Prepares model directory, and train and eval data.
@@ -152,17 +150,18 @@ class RankingPipelineTest(tf.test.TestCase):
     _write_tfrecord_files(self._data_file)
 
   def tearDown(self):
-    super(RankingPipelineTest, self).tearDown()
+    super().tearDown()
     if self._model_dir:
       tf.io.gfile.rmtree(self._model_dir)
     self._model_dir = None
 
-  def _create_pipeline(self):
+  def _create_pipeline(self, loss_key):
     hparams = _make_hparams(
         train_input_pattern=self._data_file,
         eval_input_pattern=self._data_file,
         model_dir=self._model_dir,
-        list_size=5)
+        list_size=5,
+        loss_key=loss_key)
     estimator = tfr.estimator.EstimatorBuilder(
         _context_feature_columns(),
         _example_feature_columns(),
@@ -176,10 +175,12 @@ class RankingPipelineTest(tf.test.TestCase):
         label_feature_name="utility",
         label_feature_type=tf.float32)
 
-  def test_make_input_fn(self):
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_make_input_fn(self, loss_key):
     batch_size = 1
 
-    pip = self._create_pipeline()
+    pip = self._create_pipeline(loss_key)
     ds = pip._make_input_fn(
         input_pattern=self._data_file,
         batch_size=batch_size,
@@ -192,11 +193,15 @@ class RankingPipelineTest(tf.test.TestCase):
         labels,
         tf.tile(tf.constant([[0., 1., -1., -1., -1.]]), [batch_size, 1]))
 
-  def test_estimator(self):
-    pip = self._create_pipeline()
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_estimator(self, loss_key):
+    pip = self._create_pipeline(loss_key)
     self.assertIsInstance(pip._estimator, tf_estimator.Estimator)
 
-  def test_train_and_eval(self):
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_train_and_eval(self, loss_key):
 
     def _trainable_score_fn(context_features, example_features, mode):
       del context_features, mode
@@ -209,7 +214,8 @@ class RankingPipelineTest(tf.test.TestCase):
         model_dir=self._model_dir,
         list_size=None,
         num_train_steps=1,
-        num_eval_steps=1)
+        num_eval_steps=1,
+        loss_key=loss_key)
 
     estimator = tfr.estimator.EstimatorBuilder(
         _context_feature_columns(),
@@ -240,11 +246,14 @@ class RankingPipelineTest(tf.test.TestCase):
     with self.assertRaises(ValueError):
       pip.train_and_eval(local_training=False)
 
-  def test_create_pipeline_with_misspecified_args(self):
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_create_pipeline_with_misspecified_args(self, loss_key):
     hparams = _make_hparams(
         train_input_pattern=self._data_file,
         eval_input_pattern=self._data_file,
-        model_dir=self._model_dir)
+        model_dir=self._model_dir,
+        loss_key=loss_key)
 
     # The `estimator` cannot be None.
     with self.assertRaises(ValueError):
@@ -325,10 +334,10 @@ class RankingPipelineClient(object):
         best_exporter_metric="metric/ndcg_5")
 
 
-class RankingPipelineIntegrationTest(tf.test.TestCase):
+class RankingPipelineIntegrationTest(tf.test.TestCase, parameterized.TestCase):
 
   def setUp(self):
-    super(RankingPipelineIntegrationTest, self).setUp()
+    super().setUp()
     tf.compat.v1.reset_default_graph()
 
     # Prepares model directory, and train and eval data.
@@ -341,12 +350,14 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
     _write_assets(self._asset_file, self._asset_content)
 
   def tearDown(self):
-    super(RankingPipelineIntegrationTest, self).tearDown()
+    super().tearDown()
     if self._model_dir:
       tf.io.gfile.rmtree(self._model_dir)
     self._model_dir = None
 
-  def test_pipeline(self):
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_pipeline(self, loss_key):
     model_dir = self._model_dir + "pipeline/"
     hparams = _make_hparams(
         train_input_pattern=self._data_file,
@@ -356,7 +367,8 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
         num_train_steps=3,
         num_eval_steps=3,
         checkpoint_secs=1,
-        num_checkpoints=2)
+        num_checkpoints=2,
+        loss_key=loss_key)
 
     pip = RankingPipelineClient().build_pipeline(hparams)
     pip.train_and_eval(local_training=True)
@@ -370,7 +382,9 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
     for pattern in required_patterns:
       self.assertRegex(",".join(output_files), pattern)
 
-  def test_pipeline_with_best_exporter(self):
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_pipeline_with_best_exporter(self, loss_key):
     model_dir = self._model_dir + "pipeline-exporter/"
     hparams = _make_hparams(
         train_input_pattern=self._data_file,
@@ -380,7 +394,8 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
         num_train_steps=3,
         num_eval_steps=3,
         checkpoint_secs=1,
-        num_checkpoints=2)
+        num_checkpoints=2,
+        loss_key=loss_key)
     hparams["assets_extra"] = {"text_asset": self._asset_file}
 
     pip = RankingPipelineClient().build_best_exporter_pipeline(hparams)
@@ -401,7 +416,9 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
             self._asset_content,
             tf.io.gfile.GFile(asset_dir + "/text_asset").read())
 
-  def test_pipeline_with_listwise_inference(self):
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_pipeline_with_listwise_inference(self, loss_key):
     model_dir = self._model_dir + "pipeline-elwc/"
     hparams = _make_hparams(
         train_input_pattern=self._data_file,
@@ -412,7 +429,8 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
         num_eval_steps=3,
         checkpoint_secs=1,
         num_checkpoints=2,
-        listwise_inference=True)
+        listwise_inference=True,
+        loss_key=loss_key)
 
     pip = RankingPipelineClient().build_pipeline(hparams)
     pip.train_and_eval(local_training=True)
@@ -426,7 +444,9 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
     for pattern in required_patterns:
       self.assertRegex(",".join(output_files), pattern)
 
-  def test_pipeline_with_size_feature_name(self):
+  @parameterized.parameters("softmax_loss",
+                            "softmax_loss:0.9,sigmoid_cross_entropy_loss:0.1")
+  def test_pipeline_with_size_feature_name(self, loss_key):
     model_dir = self._model_dir + "pipeline-size-feature/"
     hparams = _make_hparams(
         train_input_pattern=self._data_file,
@@ -436,7 +456,8 @@ class RankingPipelineIntegrationTest(tf.test.TestCase):
         num_train_steps=3,
         num_eval_steps=3,
         checkpoint_secs=1,
-        num_checkpoints=2)
+        num_checkpoints=2,
+        loss_key=loss_key)
 
     pip = RankingPipelineClient().build_pipeline(
         hparams, size_feature_name="example_list_size")

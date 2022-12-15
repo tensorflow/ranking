@@ -46,6 +46,7 @@ py_test(
     visibility = ["//visibility:private"],
     deps = [
         ":pipeline",
+        # py/absl/testing:parameterized dep,
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
         "//tensorflow_ranking",

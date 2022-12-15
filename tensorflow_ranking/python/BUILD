@@ -295,6 +295,7 @@ py_library(
         ":losses",
         ":metrics",
         ":model",
+        ":utils",
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
     ],
