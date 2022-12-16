@@ -105,27 +105,6 @@ def _get_metric_pair(key, weight=None, topn=None):
       key, weights_feature_name=weight, topn=topn)
 
 
-def _get_loss_metric_pair(key, weight=None):
-  """Helper function to construct metric name and function for a loss."""
-  name = "".join([
-      "metric/",
-      "weighted_" if weight else "",
-      key,
-  ])
-  return name, losses.make_loss_metric_fn(key, weights_feature_name=weight)
-
-
-def _get_loss_metric_pairs(key: str, weight=None):
-  """Constructs pairs of metric name and function for a loss key."""
-  if "," in key or ":" in key:
-    keys_to_weights = utils.parse_keys_and_weights(key)
-    return [
-        _get_loss_metric_pair(key, weight=weight) for key in keys_to_weights
-    ]
-  else:
-    return [_get_loss_metric_pair(key, weight=weight)]
-
-
 class EstimatorBuilder(object):
   """Builds a tf.estimator.Estimator for a TF-Ranking model.
 
@@ -303,6 +282,26 @@ class EstimatorBuilder(object):
           mode=mode,
           scope="transform_layer")
 
+  def _get_loss_metric_pair(self, key, weight=None):
+    """Constructs metric name and function for a loss."""
+    name = "".join([
+        "metric/",
+        "weighted_" if weight else "",
+        key,
+    ])
+    return name, losses.make_loss_metric_fn(key, weights_feature_name=weight)
+
+  def _get_loss_metric_pairs(self, key: str, weight=None):
+    """Constructs pairs of metric name and function for a loss key."""
+    if "," in key or ":" in key:
+      keys_to_weights = utils.parse_keys_and_weights(key)
+      return [
+          self._get_loss_metric_pair(key, weight=weight)
+          for key in keys_to_weights
+      ]
+    else:
+      return [self._get_loss_metric_pair(key, weight=weight)]
+
   def _eval_metric_fns(self):
     """Returns a dict from name to metric functions."""
     metric_fns = {}
@@ -315,7 +314,7 @@ class EstimatorBuilder(object):
         for topn in [10, None]
     })
 
-    metric_fns.update({*_get_loss_metric_pairs(self._hparams.get("loss"))})
+    metric_fns.update({*self._get_loss_metric_pairs(self._hparams.get("loss"))})
 
     if self._hparams.get(_METRIC_WEIGHT):
       weight = self._hparams.get(_METRIC_WEIGHT)
@@ -331,8 +330,10 @@ class EstimatorBuilder(object):
               metrics.RankingMetricKey.MRR, weight=weight, topn=topn)
           for topn in [10, None]
       })
-      metric_fns.update(
-          {*_get_loss_metric_pairs(self._hparams.get("loss"), weight=weight)})
+      metric_fns.update({
+          *self._get_loss_metric_pairs(
+              self._hparams.get("loss"), weight=weight)
+      })
 
     return metric_fns
 
@@ -354,6 +355,13 @@ class EstimatorBuilder(object):
         example_features=example_features,
         mode=mode)
 
+  def _get_loss_fn(self):
+    """Gets the loss function."""
+    return losses.make_loss_fn(
+        self._hparams.get("loss"),
+        weights_feature_name=self._hparams.get(_LOSS_WEIGHT),
+        reduction=self._loss_reduction)
+
   def _model_fn(self):
     """Returns a model_fn."""
 
@@ -367,10 +375,7 @@ class EstimatorBuilder(object):
       return train_op
 
     ranking_head = head.create_ranking_head(
-        loss_fn=losses.make_loss_fn(
-            self._hparams.get("loss"),
-            weights_feature_name=self._hparams.get(_LOSS_WEIGHT),
-            reduction=self._loss_reduction),
+        loss_fn=self._get_loss_fn(),
         eval_metric_fns=self._eval_metric_fns(),
         train_op_fn=_train_op_fn)
 
