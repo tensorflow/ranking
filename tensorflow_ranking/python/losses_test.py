@@ -14,10 +14,6 @@
 
 """Tests for ranking losses."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import math
 import tensorflow as tf
 
@@ -217,7 +213,7 @@ def _mean_squared_error(logits, labels):
 
 class LossesTest(tf.test.TestCase):
 
-  def _check_pairwise_loss(self, loss_fn):
+  def _check_pairwise_loss(self, loss_fn):  # pylint: disable=g-unreachable-test-method
     """Helper function to test `loss_fn`."""
     scores = [[1., 3., 2.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 0., 2.]]

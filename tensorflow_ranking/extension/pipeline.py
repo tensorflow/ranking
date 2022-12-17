@@ -20,10 +20,6 @@ model export strategies) for running TF-Ranking models. Advanced users can also
 derive from this class and further tailor for their needs.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
 from tensorflow import estimator as tf_estimator
 from tensorflow.compat.v1 import estimator as tf_compat_v1_estimator
@@ -245,14 +241,14 @@ class RankingPipeline(object):
     Returns:
       A tuple of (feature tensors, label tensor).
     """
-    context_feature_spec = tf.feature_column.make_parse_example_spec(
+    context_feature_spec = tf.feature_column.make_parse_example_spec(  # pylint: disable=g-deprecated-tf-checker
         self._context_feature_columns.values())
 
-    label_column = tf.feature_column.numeric_column(
+    label_column = tf.feature_column.numeric_column(  # pylint: disable=g-deprecated-tf-checker
         self._label_feature_name,
         dtype=self._label_feature_type,
         default_value=_PADDING_LABEL)
-    example_feature_spec = tf.feature_column.make_parse_example_spec(
+    example_feature_spec = tf.feature_column.make_parse_example_spec(  # pylint: disable=g-deprecated-tf-checker
         list(self._example_feature_columns.values()) + [label_column])
 
     dataset = tfr_data.build_ranking_dataset(
@@ -311,9 +307,9 @@ class RankingPipeline(object):
       `input_fn` that can be used in serving. The returned input_fn takes no
       arguments and returns `InputFnOps'.
     """
-    context_feature_spec = tf.feature_column.make_parse_example_spec(
+    context_feature_spec = tf.feature_column.make_parse_example_spec(  # pylint: disable=g-deprecated-tf-checker
         self._context_feature_columns.values())
-    example_feature_spec = tf.feature_column.make_parse_example_spec(
+    example_feature_spec = tf.feature_column.make_parse_example_spec(  # pylint: disable=g-deprecated-tf-checker
         self._example_feature_columns.values())
 
     if self._hparams.get("listwise_inference"):
@@ -328,7 +324,7 @@ class RankingPipeline(object):
       feature_spec = {}
       feature_spec.update(example_feature_spec)
       feature_spec.update(context_feature_spec)
-      return tf_estimator.export.build_parsing_serving_input_receiver_fn(
+      return tf_estimator.export.build_parsing_serving_input_receiver_fn(  # pylint: disable=g-deprecated-tf-checker
           feature_spec)
 
   def _export_strategies(self, event_file_pattern, assets_extra=None):
@@ -344,15 +340,16 @@ class RankingPipeline(object):
     """
     export_strategies = []
 
-    latest_exporter = tf_estimator.LatestExporter(
-        "latest_model", serving_input_receiver_fn=self._make_serving_input_fn(),
+    latest_exporter = tf_estimator.LatestExporter(  # pylint: disable=g-deprecated-tf-checker
+        "latest_model",
+        serving_input_receiver_fn=self._make_serving_input_fn(),
         assets_extra=assets_extra)
     export_strategies.append(latest_exporter)
 
     # In case of not specifying the `best_exporter_metric`, uses the default
     # BestExporter by the loss value.
     if self._best_exporter_metric is None:
-      best_exporter = tf_estimator.BestExporter(
+      best_exporter = tf_estimator.BestExporter(  # pylint: disable=g-deprecated-tf-checker
           name="best_model_by_loss",
           serving_input_receiver_fn=self._make_serving_input_fn(),
           event_file_pattern=event_file_pattern,
@@ -374,7 +371,7 @@ class RankingPipeline(object):
 
       return is_current_the_best
 
-    best_exporter = tf_estimator.BestExporter(
+    best_exporter = tf_estimator.BestExporter(  # pylint: disable=g-deprecated-tf-checker
         name="best_model_by_metric",
         serving_input_receiver_fn=self._make_serving_input_fn(),
         event_file_pattern=event_file_pattern,
@@ -398,15 +395,16 @@ class RankingPipeline(object):
         list_size=eval_list_size,
         randomize_input=False)
 
-    train_spec = tf_estimator.TrainSpec(
-        input_fn=train_input_fn, max_steps=self._hparams.get("num_train_steps"))
-    eval_on_train_spec = tf_estimator.EvalSpec(
+    train_spec = tf_estimator.TrainSpec(  # pylint: disable=g-deprecated-tf-checker
+        input_fn=train_input_fn,
+        max_steps=self._hparams.get("num_train_steps"))
+    eval_on_train_spec = tf_estimator.EvalSpec(  # pylint: disable=g-deprecated-tf-checker
         name="on_train",
         input_fn=train_input_fn,
         steps=self._hparams.get("num_eval_steps"),
         throttle_secs=5)
 
-    eval_on_eval_spec = tf_estimator.EvalSpec(
+    eval_on_eval_spec = tf_estimator.EvalSpec(  # pylint: disable=g-deprecated-tf-checker
         name="on_eval",
         input_fn=eval_input_fn,
         steps=self._hparams.get("num_eval_steps"),
@@ -423,4 +421,4 @@ class RankingPipeline(object):
       raise ValueError("The non local training is not supported now!")
 
     train_spec, eval_spec, _ = self._train_eval_specs()
-    tf_estimator.train_and_evaluate(self._estimator, train_spec, eval_spec)
+    tf_estimator.train_and_evaluate(self._estimator, train_spec, eval_spec)  # pylint: disable=g-deprecated-tf-checker
