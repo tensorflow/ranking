@@ -392,7 +392,7 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
         9.,
         places=5)
 
-  def test_coupled_rankdistil_loss(self):
+  def test_coupled_rankdistil_loss_basic(self):
     tf.random.set_seed(1)
     scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
     labels = [[0., 2., 1.], [1., 0., 2.]]
@@ -404,6 +404,21 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
         loss(y_true=labels, y_pred=scores).numpy(),
         -((ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) +
           (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rank_distil_loss_handle_large_logits(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3e30), ln(2e30)], [0., ln(2e30), ln(3e30)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    loss = losses.CoupledRankDistilLoss(
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores).numpy(),
+        -((ln(2. / (2 + 1e-30 + 3)) + ln(1e-30 / (1e-30 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1e-30 + 2)) + ln(1e-30 / (1e-30 + 2)) + ln(2. / 2))) /
+        2,
         places=5)
 
   def test_coupled_rankdistil_loss_with_weights(self):
@@ -1212,7 +1227,7 @@ class GetLossesTest(tf.test.TestCase):
     self.assertAlmostEqual(
         loss(labels, scores).numpy(), (1. + 1.) / 3., places=5)
 
-  def test_coupled_rankdistil_loss(self):
+  def test_coupled_rankdistil_loss_basic(self):
     tf.random.set_seed(1)
     scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
     labels = [[0., 2., 1.], [1., 0., 2.]]
@@ -1225,6 +1240,22 @@ class GetLossesTest(tf.test.TestCase):
         loss(y_true=labels, y_pred=scores).numpy(),
         -((ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) +
           (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rank_distil_loss_handle_large_logits(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3e30), ln(2e30)], [0., ln(2e30), ln(3e30)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    loss = losses.get(
+        loss=losses.RankingLossKey.COUPLED_RANKDISTIL_LOSS,
+        name=None,
+        reduction=tf.losses.Reduction.SUM_OVER_BATCH_SIZE,
+        sample_size=1)
+    self.assertAlmostEqual(
+        loss(y_true=labels, y_pred=scores).numpy(),
+        -((ln(2. / (2 + 1e-30 + 3)) + ln(1e-30 / (1e-30 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1e-30 + 2)) + ln(1e-30 / (1e-30 + 2)) + ln(2. / 2))) /
+        2,
         places=5)
 
   def test_coupled_rankdistil_loss_with_weights(self):

@@ -1816,7 +1816,7 @@ class NeuralSortNDCGLossTest(tf.test.TestCase):
 
 class CoupledRankDistilLossTest(tf.test.TestCase):
 
-  def test_coupled_rank_distil_loss(self):
+  def test_coupled_rank_distil_loss_basic(self):
     tf.random.set_seed(1)
     scores = [[0., ln(3), ln(2)], [0., ln(2), ln(3)]]
     labels = [[0., 2., 1.], [1., 0., 2.]]
@@ -1828,6 +1828,19 @@ class CoupledRankDistilLossTest(tf.test.TestCase):
         loss_fn.compute(labels, scores, None, reduction).numpy(),
         -((ln(2. / (2 + 1 + 3)) + ln(1. / (1 + 3)) + ln(3. / 3)) +
           (ln(3. / (3 + 1 + 2)) + ln(1. / (1 + 2)) + ln(2. / 2))) / 2,
+        places=5)
+
+  def test_coupled_rank_distil_loss_handle_large_logits(self):
+    tf.random.set_seed(1)
+    scores = [[0., ln(3e30), ln(2e30)], [0., ln(2e30), ln(3e30)]]
+    labels = [[0., 2., 1.], [1., 0., 2.]]
+    reduction = tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS
+    loss_fn = losses_impl.CoupledRankDistilLoss(name=None, sample_size=1)
+    self.assertAlmostEqual(
+        loss_fn.compute(labels, scores, None, reduction).numpy(),
+        -((ln(2. / (2 + 1e-30 + 3)) + ln(1e-30 / (1e-30 + 3)) + ln(3. / 3)) +
+          (ln(3. / (3 + 1e-30 + 2)) + ln(1e-30 / (1e-30 + 2)) + ln(2. / 2))) /
+        2,
         places=5)
 
   def test_coupled_rank_distil_loss_with_weights(self):

@@ -205,7 +205,7 @@ py_test(
         ":losses",
         ":utils",
         # py/absl/testing:parameterized dep,
-        # py/tensorflow dep,
+        # py/tensorflow:tensorflow_no_contrib dep,
     ],
 )
 

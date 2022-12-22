@@ -38,7 +38,7 @@ class RankingLossKey(object):
   APPROX_NDCG_LOSS = 'approx_ndcg_loss'
   APPROX_MRR_LOSS = 'approx_mrr_loss'
   GUMBEL_APPROX_NDCG_LOSS = 'gumbel_approx_ndcg_loss'
-  COUPLED_RANKDISTIL_LOSS = 'couple_rankdistil_loss'
+  COUPLED_RANKDISTIL_LOSS = 'coupled_rankdistil_loss'
   # TODO: Add support for circle loss and neural sort losses.
 
   @classmethod
@@ -1406,11 +1406,13 @@ class CoupledRankDistilLoss(_RankingLoss):
 
   Standalone usage:
 
-  >>> y_true = [[1., 0.]]
-  >>> y_pred = [[[0.6, 0.2], [0.8, 0.3]]]
-  >>> loss = tfr.keras.losses.CoupledRankDistilLoss()
+  >>> tf.random.set_seed(1)
+  >>> y_true = [[0., 2., 1.], [1., 0., 2.]]
+  >>> ln = tf.math.log
+  >>> y_pred = [[0., ln(3.), ln(2.)], [0., ln(2.), ln(3.)]]
+  >>> loss = tfr.keras.losses.CoupledRankDistilLoss(topk=2, sample_size=1)
   >>> loss(y_true, y_pred).numpy()
-  0.75251794
+  2.138333
 
   Usage with the `compile()` API:
 

@@ -2062,25 +2062,43 @@ class CoupledRankDistilLoss(_ListwiseLoss):
         sorted_student_scores, 1, [batch_size, self._sample_size])
     topk = self._topk or list_size
     topk_student_scores = sorted_student_scores[:, :, :topk]
-    topk_cumsum = tf.math.cumulative_logsumexp(topk_student_scores, axis=2)
-
-    # logsumexp over all student scores.
-    logsumexp_list = tf.math.reduce_logsumexp(
-        student_scores, axis=1, keepdims=True)
-    logsumexp_list = tf.expand_dims(logsumexp_list, axis=1)
 
     # For \pi from teacher scores, compute top-k Plackett's probability as:
     # \prod_{i=1}^k exp(s_{\pi(i)}) / \sum_{j=k}^N log(exp(s_{\pi(i)})).
-    logprob = logsumexp_list + tf.math.log(1.0 + tf.exp(topk_student_scores -
-                                                        logsumexp_list) -
-                                           tf.exp(topk_cumsum - logsumexp_list))
-    logprob -= topk_student_scores
-    # Compute negative log-likelihood over top-k Plackett-Luce scores.
+
+    # Compute the denominator mask for  \sum_{j=k}^N log(exp(s_{\pi(i)}).
+    # We apply logsumexp over valid entries in this mask.
+    # topk_pl_denominator_mask = batch x sample_size x valid_denom_entries,
+    # where valid_denom_entries = [[1 1 1 1 1 1]
+    #                             [0 1 1 1 1 1]
+    #                             [0 0 1 1 1 1]].
+    # An alternative implementation would be to use `cumulative_logsumexp` with
+    # `reverse=True` to compute the denominator term.
+    ones = tf.ones((topk, list_size), dtype=tf.float32)
+    ones_upper = tf.linalg.band_part(ones, 0, -1)
+    topk_pl_denominator_mask = tf.tile(
+        tf.expand_dims(ones_upper, axis=0),
+        [batch_size * self._sample_size, 1, 1])
+    # [batch_size * sample_size, topk, list_size] ->
+    # [batch_size, sample_size, topk, list_size].
+    topk_pl_denominator_mask = tf.cast(
+        utils.reshape_first_ndims(topk_pl_denominator_mask, 1,
+                                  [batch_size, self._sample_size]),
+        dtype=tf.bool)
+    sorted_student_scores = tf.tile(
+        tf.expand_dims(sorted_student_scores, 2), [1, 1, topk, 1])
+
+    sorted_student_scores_denom = tf.where(
+        topk_pl_denominator_mask, sorted_student_scores,
+        tf.math.log(_EPSILON) * tf.ones_like(sorted_student_scores))
+    logprob = topk_student_scores - tf.math.reduce_logsumexp(
+        sorted_student_scores_denom, axis=3)
+    # Compute log-likelihood over top-k Plackett-Luce scores.
     # [batch_size, sample_size, topk] -> [batch_size, sample_size].
-    pl_loss = tf.reduce_sum(logprob, axis=2)
+    logprob = tf.reduce_sum(logprob, axis=2)
 
     # Compute RankDistil loss as a mean over samples.
     # [batch_size, sample_size] -> [batch_size, 1].
-    nll = tf.reduce_mean(pl_loss, axis=1, keepdims=True)
+    nll = tf.reduce_mean(-logprob, axis=1, keepdims=True)
 
     return nll, tf.reshape(tf.cast(nonzero_mask, dtype=tf.float32), [-1, 1])
