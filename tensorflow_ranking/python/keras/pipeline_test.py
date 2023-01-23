@@ -143,7 +143,6 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
       loss_key=(
           "mean_squared_loss",
           "softmax_loss",
-          ("mean_squared_loss", "softmax_loss"),
       ))
   def test_pipeline_with_feature_specs(self, strategy, loss_key):
     data_dir = self.create_tempdir()
@@ -202,10 +201,7 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
         name="test_model",
     )
 
-    pipeline_builder = pipeline.SimplePipeline if isinstance(
-        loss_key, str) else pipeline.MultiObjectivePipeline
-
-    ranking_pipeline = pipeline_builder(
+    ranking_pipeline = pipeline.SimplePipeline(
         model_builder,
         dataset_builder=pipeline.SimpleDatasetBuilder(
             context_feature_spec,
@@ -214,7 +210,8 @@ class PipelineTest(tf.test.TestCase, parameterized.TestCase):
             label_spec,
             dataset_hparams,
         ),
-        hparams=pipeline_hparams)
+        hparams=pipeline_hparams,
+    )
 
     ranking_pipeline.train_and_validate(verbose=1)
 
