@@ -9,10 +9,12 @@ description: A Keras Layer makes bilinear interaction of two vectors.
 <meta itemprop="property" content="add_loss"/>
 <meta itemprop="property" content="add_metric"/>
 <meta itemprop="property" content="build"/>
+<meta itemprop="property" content="build_from_config"/>
 <meta itemprop="property" content="compute_mask"/>
 <meta itemprop="property" content="compute_output_shape"/>
 <meta itemprop="property" content="count_params"/>
 <meta itemprop="property" content="from_config"/>
+<meta itemprop="property" content="get_build_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
 <meta itemprop="property" content="set_weights"/>
@@ -53,7 +55,6 @@ appears to be helpful in model the complex interaction between position and
 relevance in unbiased LTR.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -84,7 +85,6 @@ A dict of keyword arguments for the tf.keras.layers.Layer.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -286,7 +286,11 @@ class MyLayer(tf.keras.layers.Layer):
     return inputs
 ```
 
-This method can also be called directly on a Functional Model during
+The same code works in distributed training: the input to `add_loss()` is
+treated like a regularization loss and averaged across replicas by the training
+loop (both built-in `Model.fit()` and compliant custom training loops).
+
+The `add_loss` method can also be called directly on a Functional Model during
 construction. In this case, any loss Tensors passed to this Model must be
 symbolic and be able to be traced back to the model's `Input`s. These losses
 become part of the model's topology and are tracked in `get_config`.
@@ -320,7 +324,6 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -395,7 +398,6 @@ model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -441,6 +443,14 @@ source</a>
 
 See tf.keras.layers.Layer.
 
+<h3 id="build_from_config"><code>build_from_config</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>build_from_config(
+    config
+)
+</code></pre>
+
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -452,7 +462,6 @@ See tf.keras.layers.Layer.
 Computes an output mask tensor.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -475,7 +484,6 @@ Tensor or list of tensors.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -510,7 +518,6 @@ See tf.keras.layers.Layer.
 Count the total number of scalars composing the weights.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -523,7 +530,6 @@ An integer count.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -555,7 +561,6 @@ layer from the config dictionary. It does not handle layer connectivity (handled
 by Network), nor weights (handled by `set_weights`).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -572,7 +577,6 @@ output of get_config.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -583,6 +587,12 @@ A layer instance.
 </tr>
 
 </table>
+
+<h3 id="get_build_config"><code>get_build_config</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>get_build_config()
+</code></pre>
 
 <h3 id="get_config"><code>get_config</code></h3>
 
@@ -634,7 +644,6 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -687,7 +696,6 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -707,7 +715,6 @@ output of `get_weights`).
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -756,7 +763,6 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -772,7 +778,6 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -795,7 +800,6 @@ The original method wrapped such that it enters the module's name scope.
 Wraps `call`, applying pre- and post-processing steps.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -818,7 +822,6 @@ Keyword arguments to be passed to `self.call`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -831,7 +834,6 @@ Output tensor(s).
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Note</th></tr>
@@ -854,7 +856,6 @@ Output tensor(s).
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>

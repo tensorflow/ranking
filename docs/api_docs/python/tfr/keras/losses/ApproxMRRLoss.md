@@ -15,7 +15,7 @@ description: Computes approximate MRR loss between y_true and y_pred.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L818-L886">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L819-L887">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -88,7 +88,6 @@ $$
 $$
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">References</h2></th></tr>
@@ -116,10 +115,9 @@ Retrieval Measures, Qin et al, 2008][qin2008]
 Type of `tf.keras.losses.Reduction` to apply to
 loss. Default value is `AUTO`. `AUTO` indicates that the reduction
 option will be determined by the usage context. For almost all cases
-this defaults to `SUM_OVER_BATCH_SIZE`. When used with
-`tf.distribute.Strategy`, outside of built-in training loops such as
-`tf.keras` `compile` and `fit`, using `AUTO` or
-`SUM_OVER_BATCH_SIZE`
+this defaults to `SUM_OVER_BATCH_SIZE`. When used under a
+`tf.distribute.Strategy`, except via `Model.compile()` and
+`Model.fit()`, using `AUTO` or `SUM_OVER_BATCH_SIZE`
 will raise an error. Please see this custom training [tutorial](https://www.tensorflow.org/tutorials/distribute/custom_training)
   for more details.
 </td>
@@ -137,7 +135,7 @@ Optional name for the instance.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L584-L591">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L585-L592">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -178,7 +176,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L574-L582">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L575-L583">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -189,7 +187,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L220-L228">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L221-L229">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

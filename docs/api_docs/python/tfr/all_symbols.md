@@ -61,6 +61,7 @@
 *   <a href="../tfr/keras/losses/ApproxMRRLoss.md"><code>tfr.keras.losses.ApproxMRRLoss</code></a>
 *   <a href="../tfr/keras/losses/ApproxNDCGLoss.md"><code>tfr.keras.losses.ApproxNDCGLoss</code></a>
 *   <a href="../tfr/keras/losses/ClickEMLoss.md"><code>tfr.keras.losses.ClickEMLoss</code></a>
+*   <a href="../tfr/keras/losses/CoupledRankDistilLoss.md"><code>tfr.keras.losses.CoupledRankDistilLoss</code></a>
 *   <a href="../tfr/keras/losses/DCGLambdaWeight.md"><code>tfr.keras.losses.DCGLambdaWeight</code></a>
 *   <a href="../tfr/keras/losses/GumbelApproxNDCGLoss.md"><code>tfr.keras.losses.GumbelApproxNDCGLoss</code></a>
 *   <a href="../tfr/keras/losses/LabelDiffLambdaWeight.md"><code>tfr.keras.losses.LabelDiffLambdaWeight</code></a>
@@ -120,7 +121,6 @@
 *   <a href="../tfr/keras/pipeline/DatasetHparams/dataset_reader.md"><code>tfr.keras.pipeline.DatasetHparams.dataset_reader</code></a>
 *   <a href="../tfr/keras/pipeline/ModelFitPipeline.md"><code>tfr.keras.pipeline.ModelFitPipeline</code></a>
 *   <a href="../tfr/keras/pipeline/MultiLabelDatasetBuilder.md"><code>tfr.keras.pipeline.MultiLabelDatasetBuilder</code></a>
-*   <a href="../tfr/keras/pipeline/MultiObjectivePipeline.md"><code>tfr.keras.pipeline.MultiObjectivePipeline</code></a>
 *   <a href="../tfr/keras/pipeline/MultiTaskPipeline.md"><code>tfr.keras.pipeline.MultiTaskPipeline</code></a>
 *   <a href="../tfr/keras/pipeline/NullDatasetBuilder.md"><code>tfr.keras.pipeline.NullDatasetBuilder</code></a>
 *   <a href="../tfr/keras/pipeline/PipelineHparams.md"><code>tfr.keras.pipeline.PipelineHparams</code></a>
@@ -146,6 +146,7 @@
 *   <a href="../tfr/keras/utils/symmetric_log1p.md"><code>tfr.keras.utils.symmetric_log1p</code></a>
 *   <a href="../tfr/utils.md"><code>tfr.utils</code></a>
 *   <a href="../tfr/utils/LossFunction.md"><code>tfr.utils.LossFunction</code></a>
+*   <a href="../tfr/utils/LossFunction.md"><code>tfr.utils.MetricFunction</code></a>
 *   <a href="../tfr/keras/model/TensorLike.md"><code>tfr.utils.TensorLike</code></a>
 *   <a href="../tfr/keras/utils/GainFunction.md"><code>tfr.utils.TransformationFunction</code></a>
 *   <a href="../tfr/utils/de_noise.md"><code>tfr.utils.de_noise</code></a>
@@ -153,6 +154,7 @@
 *   <a href="../tfr/utils/is_label_valid.md"><code>tfr.utils.is_label_valid</code></a>
 *   <a href="../tfr/utils/organize_valid_indices.md"><code>tfr.utils.organize_valid_indices</code></a>
 *   <a href="../tfr/utils/padded_nd_indices.md"><code>tfr.utils.padded_nd_indices</code></a>
+*   <a href="../tfr/utils/parse_keys_and_weights.md"><code>tfr.utils.parse_keys_and_weights</code></a>
 *   <a href="../tfr/utils/ragged_to_dense.md"><code>tfr.utils.ragged_to_dense</code></a>
 *   <a href="../tfr/utils/reshape_first_ndims.md"><code>tfr.utils.reshape_first_ndims</code></a>
 *   <a href="../tfr/utils/reshape_to_2d.md"><code>tfr.utils.reshape_to_2d</code></a>

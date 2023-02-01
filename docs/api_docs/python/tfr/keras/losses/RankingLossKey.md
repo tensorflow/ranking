@@ -6,6 +6,7 @@ description: Ranking loss key strings.
 <meta itemprop="property" content="all_keys"/>
 <meta itemprop="property" content="APPROX_MRR_LOSS"/>
 <meta itemprop="property" content="APPROX_NDCG_LOSS"/>
+<meta itemprop="property" content="COUPLED_RANKDISTIL_LOSS"/>
 <meta itemprop="property" content="GUMBEL_APPROX_NDCG_LOSS"/>
 <meta itemprop="property" content="LIST_MLE_LOSS"/>
 <meta itemprop="property" content="MEAN_SQUARED_LOSS"/>
@@ -25,7 +26,7 @@ description: Ranking loss key strings.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L12-L32">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L11-L32">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -66,6 +67,13 @@ APPROX_NDCG_LOSS<a id="APPROX_NDCG_LOSS"></a>
 </td>
 <td>
 `'approx_ndcg_loss'`
+</td>
+</tr><tr>
+<td>
+COUPLED_RANKDISTIL_LOSS<a id="COUPLED_RANKDISTIL_LOSS"></a>
+</td>
+<td>
+`'coupled_rankdistil_loss'`
 </td>
 </tr><tr>
 <td>

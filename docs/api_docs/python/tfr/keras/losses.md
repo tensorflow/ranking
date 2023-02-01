@@ -31,6 +31,9 @@ approximate NDCG loss between `y_true` and `y_pred`.
 [`class ClickEMLoss`](../../tfr/keras/losses/ClickEMLoss.md): Computes click EM
 loss between `y_true` and `y_pred`.
 
+[`class CoupledRankDistilLoss`](../../tfr/keras/losses/CoupledRankDistilLoss.md):
+Computes the Rank Distil loss between `y_true` and `y_pred`.
+
 [`class DCGLambdaWeight`](../../tfr/keras/losses/DCGLambdaWeight.md): Keras
 serializable class for DCG.
 

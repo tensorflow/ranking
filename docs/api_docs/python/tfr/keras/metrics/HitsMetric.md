@@ -9,10 +9,12 @@ description: Hits@k metric.
 <meta itemprop="property" content="add_loss"/>
 <meta itemprop="property" content="add_metric"/>
 <meta itemprop="property" content="build"/>
+<meta itemprop="property" content="build_from_config"/>
 <meta itemprop="property" content="compute_mask"/>
 <meta itemprop="property" content="compute_output_shape"/>
 <meta itemprop="property" content="count_params"/>
 <meta itemprop="property" content="from_config"/>
+<meta itemprop="property" content="get_build_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
 <meta itemprop="property" content="merge_state"/>
@@ -98,7 +100,6 @@ where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores $s$
 with ties broken randomly and $y_i$ are labels.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -300,7 +301,11 @@ class MyLayer(tf.keras.layers.Layer):
     return inputs
 ```
 
-This method can also be called directly on a Functional Model during
+The same code works in distributed training: the input to `add_loss()` is
+treated like a regularization loss and averaged across replicas by the training
+loop (both built-in `Model.fit()` and compliant custom training loops).
+
+The `add_loss` method can also be called directly on a Functional Model during
 construction. In this case, any loss Tensors passed to this Model must be
 symbolic and be able to be traced back to the model's `Input`s. These losses
 become part of the model's topology and are tracked in `get_config`.
@@ -334,7 +339,6 @@ model.add_loss(lambda: tf.reduce_mean(d.kernel))
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -409,7 +413,6 @@ model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -450,7 +453,7 @@ default using a `keras.Metric.Mean`.
 )
 </code></pre>
 
-Creates the variables of the layer (optional, for subclass implementers).
+Creates the variables of the layer (for subclass implementers).
 
 This is a method that implementers of subclasses of `Layer` or `Model` can
 override if they need a state-creation step in-between layer instantiation and
@@ -460,7 +463,6 @@ This is typically used to create the weights of `Layer` subclasses (at the
 discretion of the subclass implementer).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -477,6 +479,14 @@ Instance of `TensorShape`, or list of instances of
 </tr>
 </table>
 
+<h3 id="build_from_config"><code>build_from_config</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>build_from_config(
+    config
+)
+</code></pre>
+
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -488,7 +498,6 @@ Instance of `TensorShape`, or list of instances of
 Computes an output mask tensor.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -511,7 +520,6 @@ Tensor or list of tensors.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -539,7 +547,6 @@ before. This requires that the layer will later be used with inputs that match
 the input shape provided here.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -559,7 +566,6 @@ instead of an integer.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -581,7 +587,6 @@ or structure of `tf.TensorShape` instances.
 Count the total number of scalars composing the weights.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -594,7 +599,6 @@ An integer count.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -626,7 +630,6 @@ layer from the config dictionary. It does not handle layer connectivity (handled
 by Network), nor weights (handled by `set_weights`).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -643,7 +646,6 @@ output of get_config.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -654,6 +656,12 @@ A layer instance.
 </tr>
 
 </table>
+
+<h3 id="get_build_config"><code>get_build_config</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>get_build_config()
+</code></pre>
 
 <h3 id="get_config"><code>get_config</code></h3>
 
@@ -705,7 +713,6 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -752,7 +759,6 @@ follows:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -769,7 +775,6 @@ state.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -808,7 +813,6 @@ Result computation is an idempotent operation that simply calculates the metric
 value using the state variables.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -861,7 +865,6 @@ the bias vector. These can be used to set the weights of another `Dense` layer:
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -881,7 +884,6 @@ output of `get_weights`).
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -913,7 +915,6 @@ Accumulates metric statistics.
 `y_true` and `y_pred` should have the same shape.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -945,7 +946,6 @@ be broadcastable to `y_true`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -990,7 +990,6 @@ numpy=..., dtype=float32)>
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1006,7 +1005,6 @@ The method to wrap.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1029,7 +1027,6 @@ The original method wrapped such that it enters the module's name scope.
 Accumulates statistics and then computes metric result value.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1049,7 +1046,6 @@ passed on to `update_state()`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

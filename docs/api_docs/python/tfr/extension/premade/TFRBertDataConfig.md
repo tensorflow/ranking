@@ -85,7 +85,7 @@ Inherits From:
     default_params: dataclasses.InitVar[Optional[Mapping[str, Any]]] = None,
     restrictions: dataclasses.InitVar[Optional[List[str]]] = None,
     input_path: Union[Sequence[str], str, base_config.Config] = &#x27;&#x27;,
-    tfds_name: str = &#x27;&#x27;,
+    tfds_name: Union[str, base_config.Config] = &#x27;&#x27;,
     tfds_split: str = &#x27;&#x27;,
     global_batch_size: int = 0,
     is_training: bool = True,
@@ -120,6 +120,34 @@ Inherits From:
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`default_params`<a id="default_params"></a>
+</td>
+<td>
+a Python dict or another ParamsDict object including the
+default parameters to initialize.
+</td>
+</tr><tr>
+<td>
+`restrictions`<a id="restrictions"></a>
+</td>
+<td>
+a list of strings, which define a list of restrictions to
+ensure the consistency of different parameters internally. Each
+restriction string is defined as a binary relation with a set of
+operators, including {'==', '!=',  '<', '<=', '>', '>='}.
+</td>
+</tr>
+</table>
+
 <!-- Tabular view -->
 
  <table class="responsive fixed orange">
@@ -442,7 +470,6 @@ Makes the ParamsDict immutable.
 Override the ParamsDict with a set of given params.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -499,7 +526,6 @@ bb2: 20 ccc: a1: 1 a3: 3` one can define two restrictions like this ['a.a1 ==
 b.ccc.a1', 'a.a2 <= b.bb.bb2']
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">What it enforces are</th></tr>
@@ -513,7 +539,6 @@ b.ccc.a1', 'a.a2 <= b.bb.bb2']
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -556,8 +581,9 @@ Implements the membership test operator.
 )
 </code></pre>
 
-<!-- Tabular view -->
+Return self==value.
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>

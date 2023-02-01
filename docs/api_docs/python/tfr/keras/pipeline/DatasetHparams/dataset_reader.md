@@ -33,6 +33,7 @@ description: A Dataset comprising records from one or more TFRecord files.
 <meta itemprop="property" content="options"/>
 <meta itemprop="property" content="padded_batch"/>
 <meta itemprop="property" content="prefetch"/>
+<meta itemprop="property" content="ragged_batch"/>
 <meta itemprop="property" content="random"/>
 <meta itemprop="property" content="range"/>
 <meta itemprop="property" content="rebatch"/>
@@ -46,6 +47,7 @@ description: A Dataset comprising records from one or more TFRecord files.
 <meta itemprop="property" content="shuffle"/>
 <meta itemprop="property" content="skip"/>
 <meta itemprop="property" content="snapshot"/>
+<meta itemprop="property" content="sparse_batch"/>
 <meta itemprop="property" content="take"/>
 <meta itemprop="property" content="take_while"/>
 <meta itemprop="property" content="unbatch"/>
@@ -262,7 +264,6 @@ returns a `Dataset`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -457,7 +458,6 @@ behavior.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -604,7 +604,6 @@ batch.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -707,7 +706,6 @@ If a filename is not provided, the dataset will be cached in memory.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -828,7 +826,6 @@ Defaults to `True`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -915,7 +912,6 @@ TypeError: Two datasets to concatenate have different types
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -962,7 +958,6 @@ TensorSpec(shape=(), dtype=tf.int32, name=None)
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1000,7 +995,6 @@ TensorSpec(shape=(), dtype=tf.int32, name=None)
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1069,7 +1063,6 @@ Optional. A name for the tf.data operations used by `enumerate`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1127,7 +1120,6 @@ A function mapping a dataset element to a boolean.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1197,7 +1189,6 @@ A function mapping a dataset element to a dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1803,7 +1794,6 @@ the same key to combine in a single batch, which will be passed to
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -1854,7 +1844,6 @@ InvalidArgumentError: ... Tensor had Inf values
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -1878,7 +1867,6 @@ should be logged to stderr. Defaults to `False`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2048,7 +2036,6 @@ behavior.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2081,7 +2068,6 @@ non-deterministic random shuffled order. Pass a `seed` or `shuffle=False` to get
 results in a deterministic order.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Example</th></tr>
@@ -2201,7 +2187,6 @@ dataset = tf.data.Dataset.load(
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2245,7 +2230,6 @@ computation.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2258,7 +2242,6 @@ A `tf.data.Dataset` instance.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -2476,7 +2459,6 @@ behavior.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2661,7 +2643,6 @@ batch.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2762,12 +2743,112 @@ A new `Dataset` with the transformation applied as described above.
 
 </table>
 
+<h3 id="ragged_batch"><code>ragged_batch</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>ragged_batch(
+    batch_size, drop_remainder=False, row_splits_dtype=dtypes.int64, name=None
+)
+</code></pre>
+
+Combines consecutive elements of this dataset into `tf.RaggedTensor`s.
+
+Like `tf.data.Dataset.batch`, the components of the resulting element will have
+an additional outer dimension, which will be `batch_size` (or `N % batch_size`
+for the last element if `batch_size` does not divide the number of input
+elements `N` evenly and `drop_remainder` is `False`). If your program depends on
+the batches having the same outer dimension, you should set the `drop_remainder`
+argument to `True` to prevent the smaller batch from being produced.
+
+Unlike `tf.data.Dataset.batch`, the input elements to be batched may have
+different shapes:
+
+*   If an input element is a `tf.Tensor` whose static `tf.TensorShape` is fully
+    defined, then it is batched as normal.
+*   If an input element is a `tf.Tensor` whose static `tf.TensorShape` contains
+    one or more axes with unknown size (i.e., `shape[i]=None`), then the output
+    will contain a `tf.RaggedTensor` that is ragged up to any of such
+    dimensions.
+*   If an input element is a `tf.RaggedTensor` or any other type, then it is
+    batched as normal.
+
+#### Example:
+
+```
+>>> dataset = tf.data.Dataset.range(6)
+>>> dataset = dataset.map(lambda x: tf.range(x))
+>>> dataset.element_spec.shape
+TensorShape([None])
+>>> dataset = dataset.ragged_batch(2)
+>>> for batch in dataset:
+...   print(batch)
+<tf.RaggedTensor [[], [0]]>
+<tf.RaggedTensor [[0, 1], [0, 1, 2]]>
+<tf.RaggedTensor [[0, 1, 2, 3], [0, 1, 2, 3, 4]]>
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`batch_size`
+</td>
+<td>
+A `tf.int64` scalar `tf.Tensor`, representing the number of
+consecutive elements of this dataset to combine in a single batch.
+</td>
+</tr><tr>
+<td>
+`drop_remainder`
+</td>
+<td>
+(Optional.) A `tf.bool` scalar `tf.Tensor`, representing
+whether the last batch should be dropped in the case it has fewer than
+`batch_size` elements; the default behavior is not to drop the smaller
+batch.
+</td>
+</tr><tr>
+<td>
+`row_splits_dtype`
+</td>
+<td>
+The dtype that should be used for the `row_splits` of
+any new ragged tensors.  Existing `tf.RaggedTensor` elements do not have
+their row_splits dtype changed.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+(Optional.) A string indicating a name for the `tf.data` operation.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
+</td>
+</tr>
+
+</table>
+
 <h3 id="random"><code>random</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@staticmethod</code>
 <code>random(
-    seed=None, name=None
+    seed=None, rerandomize_each_iteration=None, name=None
 )
 </code></pre>
 
@@ -2775,11 +2856,32 @@ Creates a `Dataset` of pseudorandom values.
 
 The dataset generates a sequence of uniformly distributed integer values.
 
+`rerandomize_each_iteration` controls whether the sequence of random number
+generated should be re-randomized for each epoch. The default value is False
+where the dataset generates the same sequence of random numbers for each epoch.
+
 ```
 >>> ds1 = tf.data.Dataset.random(seed=4).take(10)
 >>> ds2 = tf.data.Dataset.random(seed=4).take(10)
 >>> print(list(ds1.as_numpy_iterator())==list(ds2.as_numpy_iterator()))
 True
+```
+
+```
+>>> ds3 = tf.data.Dataset.random(seed=4).take(10)
+>>> ds3_first_epoch = list(ds3.as_numpy_iterator())
+>>> ds3_second_epoch = list(ds3.as_numpy_iterator())
+>>> print(ds3_first_epoch == ds3_second_epoch)
+True
+```
+
+```
+>>> ds4 = tf.data.Dataset.random(
+...     seed=4, rerandomize_each_iteration=True).take(10)
+>>> ds4_first_epoch = list(ds4.as_numpy_iterator())
+>>> ds4_second_epoch = list(ds4.as_numpy_iterator())
+>>> print(ds4_first_epoch == ds4_second_epoch)
+False
 ```
 
 <!-- Tabular view -->
@@ -2794,6 +2896,16 @@ True
 <td>
 (Optional) If specified, the dataset produces a deterministic
 sequence of values.
+</td>
+</tr><tr>
+<td>
+`rerandomize_each_iteration`
+</td>
+<td>
+(Optional) If set to False, the dataset
+generates the same sequence of random numbers for each epoch. If set to
+True, it generates a different deterministic sequence of random numbers
+for each epoch. It is defaulted to False if left unspecified.
 </td>
 </tr><tr>
 <td>
@@ -2956,7 +3068,6 @@ array([7])]
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2991,7 +3102,6 @@ the smaller batch.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3153,7 +3263,6 @@ estimated live in a streaming fashion.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3211,7 +3320,6 @@ number of times the dataset should be repeated. The default behavior (if
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3228,7 +3336,11 @@ A new `Dataset` with the transformation applied as described above.
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@staticmethod</code>
 <code>sample_from_datasets(
-    datasets, weights=None, seed=None, stop_on_empty_dataset=False
+    datasets,
+    weights=None,
+    seed=None,
+    stop_on_empty_dataset=False,
+    rerandomize_each_iteration=None
 )
 </code></pre>
 
@@ -3300,6 +3412,17 @@ It is recommended to set it to `True`. Otherwise, the distribution of
 samples starts off as the user intends, but may change as input datasets
 become empty. This can be difficult to detect since the dataset starts
 off looking correct. Default to `False` for backward compatibility.
+</td>
+</tr><tr>
+<td>
+`rerandomize_each_iteration`
+</td>
+<td>
+An optional `bool`. The boolean argument
+controls whether the sequence of random numbers used to determine which
+dataset to sample from will be rerandomized each epoch. That is, it
+determinies whether datasets will be sampled in the same order across
+different epochs (the default behavior) or not.
 </td>
 </tr>
 </table>
@@ -3401,7 +3524,6 @@ saved through `tf.data.Dataset.save` should only be consumed through
 `tf.data.Dataset.load`, which is guaranteed to be backwards compatible.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -3446,7 +3568,6 @@ users should not set the `checkpoint` argument in `checkpoint_args`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -3515,7 +3636,6 @@ structure of `initial_state`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3616,7 +3736,6 @@ A `tf.int64` scalar `tf.Tensor`, representing the worker index.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3744,7 +3863,6 @@ iterated over. (Defaults to `True`.)
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3799,7 +3917,6 @@ will contain no elements.  If `count` is -1, skips the entire dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3943,6 +4060,89 @@ A new `Dataset` with the transformation applied as described above.
 
 </table>
 
+<h3 id="sparse_batch"><code>sparse_batch</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>sparse_batch(
+    batch_size, row_shape, name=None
+)
+</code></pre>
+
+Combines consecutive elements into `tf.sparse.SparseTensor`s.
+
+Like `Dataset.padded_batch()`, this transformation combines multiple consecutive
+elements of the dataset, which might have different shapes, into a single
+element. The resulting element has three components (`indices`, `values`, and
+`dense_shape`), which comprise a `tf.sparse.SparseTensor` that represents the
+same data. The `row_shape` represents the dense shape of each row in the
+resulting `tf.sparse.SparseTensor`, to which the effective batch size is
+prepended. For example:
+
+```python
+# NOTE: The following examples use `{ ... }` to represent the
+# contents of a dataset.
+a = { ['a', 'b', 'c'], ['a', 'b'], ['a', 'b', 'c', 'd'] }
+
+a.apply(tf.data.experimental.dense_to_sparse_batch(
+    batch_size=2, row_shape=[6])) ==
+{
+    ([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1]],  # indices
+     ['a', 'b', 'c', 'a', 'b'],                 # values
+     [2, 6]),                                   # dense_shape
+    ([[0, 0], [0, 1], [0, 2], [0, 3]],
+     ['a', 'b', 'c', 'd'],
+     [1, 6])
+}
+```
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`batch_size`
+</td>
+<td>
+A `tf.int64` scalar `tf.Tensor`, representing the number of
+consecutive elements of this dataset to combine in a single batch.
+</td>
+</tr><tr>
+<td>
+`row_shape`
+</td>
+<td>
+A `tf.TensorShape` or `tf.int64` vector tensor-like object
+representing the equivalent dense shape of a row in the resulting
+`tf.sparse.SparseTensor`. Each element of this dataset must have the
+same rank as `row_shape`, and must have size less than or equal to
+`row_shape` in each dimension.
+</td>
+</tr><tr>
+<td>
+`name`
+</td>
+<td>
+(Optional.) A string indicating a name for the `tf.data` operation.
+</td>
+</tr>
+</table>
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A new `Dataset` with the transformation applied as described above.
+</td>
+</tr>
+
+</table>
+
 <h3 id="take"><code>take</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -3986,7 +4186,6 @@ dataset, the new dataset will contain all elements of this dataset.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -4040,7 +4239,6 @@ shapes and types defined by `self.output_shapes` and
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -4095,7 +4293,6 @@ unnecessary usage of `unbatch`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -4146,7 +4343,6 @@ elements of either `tf.int32`, `tf.int64` or `tf.string` type.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -4359,7 +4555,6 @@ whether the last windows should be dropped if their size is smaller than
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -4419,7 +4614,6 @@ A `tf.data.Options` that identifies the options the use.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -4516,7 +4710,6 @@ A (nested) structure of datasets.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>

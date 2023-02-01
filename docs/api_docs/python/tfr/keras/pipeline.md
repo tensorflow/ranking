@@ -40,9 +40,6 @@ Pipeline using `model.fit` to train a ranking `tf.keras.Model`.
 [`class MultiLabelDatasetBuilder`](../../tfr/keras/pipeline/MultiLabelDatasetBuilder.md):
 Builds datasets for multi-task training.
 
-[`class MultiObjectivePipeline`](../../tfr/keras/pipeline/MultiObjectivePipeline.md):
-Pipeline for multi-objective training.
-
 [`class MultiTaskPipeline`](../../tfr/keras/pipeline/MultiTaskPipeline.md):
 Pipeline for multi-task training.
 

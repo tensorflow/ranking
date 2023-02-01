@@ -9,10 +9,12 @@ description: Precision-IA@k (Pre-IA@k).
 <meta itemprop="property" content="add_loss"/>
 <meta itemprop="property" content="add_metric"/>
 <meta itemprop="property" content="build"/>
+<meta itemprop="property" content="build_from_config"/>
 <meta itemprop="property" content="compute_mask"/>
 <meta itemprop="property" content="compute_output_shape"/>
 <meta itemprop="property" content="count_params"/>
 <meta itemprop="property" content="from_config"/>
+<meta itemprop="property" content="get_build_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
 <meta itemprop="property" content="merge_state"/>
@@ -100,7 +102,6 @@ where $\text{rank}(s_i)$ is the rank of item $i$ after sorting by scores $s$
 with ties broken randomly.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">References</h2></th></tr>
@@ -364,7 +365,11 @@ class MyLayer(tf.keras.layers.Layer):
     return inputs
 ```
 
-This method can also be called directly on a Functional Model during
+The same code works in distributed training: the input to `add_loss()` is
+treated like a regularization loss and averaged across replicas by the training
+loop (both built-in `Model.fit()` and compliant custom training loops).
+
+The `add_loss` method can also be called directly on a Functional Model during
 construction. In this case, any loss Tensors passed to this Model must be
 symbolic and be able to be traced back to the model's `Input`s. These losses
 become part of the model's topology and are tracked in `get_config`.
@@ -512,7 +517,7 @@ default using a `keras.Metric.Mean`.
 )
 </code></pre>
 
-Creates the variables of the layer (optional, for subclass implementers).
+Creates the variables of the layer (for subclass implementers).
 
 This is a method that implementers of subclasses of `Layer` or `Model` can
 override if they need a state-creation step in-between layer instantiation and
@@ -537,6 +542,14 @@ Instance of `TensorShape`, or list of instances of
 </td>
 </tr>
 </table>
+
+<h3 id="build_from_config"><code>build_from_config</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>build_from_config(
+    config
+)
+</code></pre>
 
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
@@ -617,7 +630,6 @@ instead of an integer.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -708,6 +720,12 @@ A layer instance.
 </tr>
 
 </table>
+
+<h3 id="get_build_config"><code>get_build_config</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>get_build_config()
+</code></pre>
 
 <h3 id="get_config"><code>get_config</code></h3>
 

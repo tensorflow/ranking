@@ -113,6 +113,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/losses/ApproxNDCGLoss
     - title: ClickEMLoss
       path: /ranking/api_docs/python/tfr/keras/losses/ClickEMLoss
+    - title: CoupledRankDistilLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/CoupledRankDistilLoss
     - title: DCGLambdaWeight
       path: /ranking/api_docs/python/tfr/keras/losses/DCGLambdaWeight
     - title: GumbelApproxNDCGLoss
@@ -237,8 +239,6 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/pipeline/ModelFitPipeline
     - title: MultiLabelDatasetBuilder
       path: /ranking/api_docs/python/tfr/keras/pipeline/MultiLabelDatasetBuilder
-    - title: MultiObjectivePipeline
-      path: /ranking/api_docs/python/tfr/keras/pipeline/MultiObjectivePipeline
     - title: MultiTaskPipeline
       path: /ranking/api_docs/python/tfr/keras/pipeline/MultiTaskPipeline
     - title: NullDatasetBuilder
@@ -301,6 +301,8 @@ toc:
     path: /ranking/api_docs/python/tfr/utils/organize_valid_indices
   - title: padded_nd_indices
     path: /ranking/api_docs/python/tfr/utils/padded_nd_indices
+  - title: parse_keys_and_weights
+    path: /ranking/api_docs/python/tfr/utils/parse_keys_and_weights
   - title: ragged_to_dense
     path: /ranking/api_docs/python/tfr/utils/ragged_to_dense
   - title: reshape_first_ndims

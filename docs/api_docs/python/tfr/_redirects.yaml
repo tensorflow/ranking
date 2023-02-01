@@ -25,6 +25,8 @@ redirects:
   to: /ranking/api_docs/python/tfr/keras/utils/GainFunction
 - from: /ranking/api_docs/python/tfr/keras/utils/TensorLike
   to: /ranking/api_docs/python/tfr/keras/model/TensorLike
+- from: /ranking/api_docs/python/tfr/utils/MetricFunction
+  to: /ranking/api_docs/python/tfr/utils/LossFunction
 - from: /ranking/api_docs/python/tfr/utils/TensorLike
   to: /ranking/api_docs/python/tfr/keras/model/TensorLike
 - from: /ranking/api_docs/python/tfr/utils/TransformationFunction

@@ -52,7 +52,6 @@ object for tf-ranking BERT.
 [`TensorLike`](../../../tfr/keras/model/TensorLike.md)
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Other Members</h2></th></tr>

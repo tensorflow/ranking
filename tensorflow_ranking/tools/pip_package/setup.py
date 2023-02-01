@@ -28,7 +28,7 @@ DOCLINES = __doc__.split('\n')
 # This version string is semver compatible, but incompatible with pip.
 # For pip, we will remove all '-' characters from this string, and use the
 # result for pip.
-_VERSION = '0.5.1'
+_VERSION = '0.5.2'
 
 REQUIRED_PACKAGES = [
     'absl-py >= 0.1.6',

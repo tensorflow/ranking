@@ -254,6 +254,8 @@ TPU address for TPUStrategy. Not used for other strategy.
 )
 </code></pre>
 
+Return self==value.
+
 <!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>

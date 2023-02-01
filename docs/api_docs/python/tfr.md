@@ -42,7 +42,7 @@ TensorFlow Ranking, the project to build ranking models on TensorFlow.
 **version**<a id="__version__"></a>
 </td>
 <td>
-`'0.5.0.dev'`
+`'0.5.2.dev'`
 </td>
 </tr>
 </table>

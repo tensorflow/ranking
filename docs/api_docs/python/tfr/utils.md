@@ -37,6 +37,9 @@ Organizes indices in such a way that valid items appear first.
 [`padded_nd_indices(...)`](../tfr/utils/padded_nd_indices.md): Pads the invalid
 entries by valid ones and returns the nd_indices.
 
+[`parse_keys_and_weights(...)`](../tfr/utils/parse_keys_and_weights.md): Parses
+the encoded key to keys and weights.
+
 [`ragged_to_dense(...)`](../tfr/utils/ragged_to_dense.md): Converts given inputs
 from ragged tensors to dense tensors.
 
@@ -58,6 +61,8 @@ the ranks (1-based) after sorting scores.
 ## Type Aliases
 
 [`LossFunction`](../tfr/utils/LossFunction.md)
+
+[`MetricFunction`](../tfr/utils/LossFunction.md)
 
 [`TensorLike`](../tfr/keras/model/TensorLike.md)
 

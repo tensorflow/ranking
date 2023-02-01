@@ -57,6 +57,34 @@ A TFR-BERT model configuration.
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
+
+<tr>
+<td>
+`default_params`<a id="default_params"></a>
+</td>
+<td>
+a Python dict or another ParamsDict object including the
+default parameters to initialize.
+</td>
+</tr><tr>
+<td>
+`restrictions`<a id="restrictions"></a>
+</td>
+<td>
+a list of strings, which define a list of restrictions to
+ensure the consistency of different parameters internally. Each
+restriction string is defined as a binary relation with a set of
+operators, including {'==', '!=',  '<', '<=', '>', '>='}.
+</td>
+</tr>
+</table>
+
 <!-- Tabular view -->
 
  <table class="responsive fixed orange">
@@ -169,7 +197,6 @@ Makes the ParamsDict immutable.
 Override the ParamsDict with a set of given params.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -226,7 +253,6 @@ bb2: 20 ccc: a1: 1 a3: 3` one can define two restrictions like this ['a.a1 ==
 b.ccc.a1', 'a.a2 <= b.bb.bb2']
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">What it enforces are</th></tr>
@@ -240,7 +266,6 @@ b.ccc.a1', 'a.a2 <= b.bb.bb2']
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -283,8 +308,9 @@ Implements the membership test operator.
 )
 </code></pre>
 
-<!-- Tabular view -->
+Return self==value.
 
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Class Variables</h2></th></tr>
@@ -333,7 +359,7 @@ dropout_rate<a id="dropout_rate"></a>
 encoder<a id="encoder"></a>
 </td>
 <td>
-Instance of `official.nlp.configs.encoders.EncoderConfig`
+Instance of `tensorflow_models.official.nlp.configs.encoders.EncoderConfig`
 </td>
 </tr><tr>
 <td>
