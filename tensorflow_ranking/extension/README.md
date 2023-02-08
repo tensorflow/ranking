@@ -115,10 +115,10 @@ def scoring_function(context_features, example_features, mode):
   return tf.compat.v1.layers.dense(cur_layer, units=1)
 
 ranking_estimator = tfr.estimator.EstimatorBuilder(
-      context_feature_columns(),
-      example_feature_columns(),
-      scoring_function=scoring_function,
-      hparams=hparams).make_estimator()
+    context_feature_columns(),
+    example_feature_columns(),
+    scoring_function=scoring_function,
+    hparams=hparams).make_estimator()
 ```
 
 One benefit of using `tfr.estimator.EstimatorBuilder` is that it allows clients
@@ -142,10 +142,10 @@ class MyEstimatorBuilder(tfr.estimator.EstimatorBuilder):
     return metric_fns
 
 ranking_estimator = MyEstimatorBuilder(
-      context_feature_columns(),
-      example_feature_columns(),
-      scoring_function=scoring_function,
-      hparams=hparams).make_estimator()
+    context_feature_columns(),
+    example_feature_columns(),
+    scoring_function=scoring_function,
+    hparams=hparams).make_estimator()
 ```
 
 If `tfr.estimator.EstimatorBuilder` still cannot fulfill your needs. You can
@@ -162,12 +162,12 @@ instance, and simply call the `train_and_eval()` for model training and eval.
 import tensorflow_ranking as tfr
 
 ranking_pipeline = tfr.ext.pipeline.RankingPipeline(
-      context_feature_columns(),
-      example_feature_columns(),
-      hparams=hparams,
-      estimator=ranking_estimator,
-      label_feature_name="utility",
-      label_feature_type=tf.float32)
+    context_feature_columns(),
+    example_feature_columns(),
+    hparams=hparams,
+    estimator=ranking_estimator,
+    label_feature_name="utility",
+    label_feature_type=tf.float32)
 ranking_pipeline.train_and_eval()
 ```
 
@@ -187,10 +187,10 @@ class NoBestExporterRankingPipeline(tfr.ext.pipeline.RankingPipeline):
     return [latest_exporter]
 
 ranking_pipeline = NoBestExporterRankingPipeline(
-      context_feature_columns(),
-      example_feature_columns(),
-      hparams=hparams,
-      estimator=ranking_estimator)
+    context_feature_columns(),
+    example_feature_columns(),
+    hparams=hparams,
+    estimator=ranking_estimator)
 ranking_pipeline.train_and_eval()
 ```
 
@@ -240,18 +240,18 @@ def scoring_function(context_features, example_features, mode):
       convert_labels_to_binary=False,
       model_dir="/path/to/your/model/directory")            # step 1
 
-  ranking_estimator = tfr.estimator.EstimatorBuilder(       # step 2
-        context_feature_columns(),
-        example_feature_columns(),
-        scoring_function=scoring_function,
-        hparams=hparams).make_estimator()
+  ranking_estimator = tfr.estimator.EstimatorBuilder(  # step 2
+      context_feature_columns(),
+      example_feature_columns(),
+      scoring_function=scoring_function,
+      hparams=hparams).make_estimator()
 
-  ranking_pipeline = tfr.ext.pipeline.RankingPipeline(      # step 3
-        context_feature_columns(),
-        example_feature_columns(),
-        hparams=hparams,
-        estimator=ranking_estimator,
-        label_feature_name="utility",
-        label_feature_type=tf.float32)
+  ranking_pipeline = tfr.ext.pipeline.RankingPipeline(  # step 3
+      context_feature_columns(),
+      example_feature_columns(),
+      hparams=hparams,
+      estimator=ranking_estimator,
+      label_feature_name="utility",
+      label_feature_type=tf.float32)
   ranking_pipeline.train_and_eval()
 ```
