@@ -273,20 +273,23 @@ class _PairwiseLoss(_RankingLoss):
   def get_config(self) -> Dict[str, Any]:
     config = super().get_config()
     config.update({
-        'lambda_weight':
-            tf.keras.utils.serialize_keras_object(self._lambda_weight),
-        'temperature':
-            self._temperature,
+        'lambda_weight': utils.serialize_keras_object(
+            self._lambda_weight
+        ),
+        'temperature': self._temperature,
     })
     return config
 
   @classmethod
   def from_config(cls, config, custom_objects=None):
     config = config.copy()
-    config.update({
-        'lambda_weight':
-            tf.keras.utils.deserialize_keras_object(config['lambda_weight']),
-    })
+    config.update(
+        {
+            'lambda_weight': utils.deserialize_keras_object(
+                config['lambda_weight']
+            ),
+        }
+    )
     return cls(**config)
 
   def call(self, y_true: utils.TensorLike,
@@ -589,20 +592,23 @@ class _ListwiseLoss(_RankingLoss):
   def get_config(self) -> Dict[str, Any]:
     config = super().get_config()
     config.update({
-        'lambda_weight':
-            tf.keras.utils.serialize_keras_object(self._lambda_weight),
-        'temperature':
-            self._temperature,
+        'lambda_weight': utils.serialize_keras_object(
+            self._lambda_weight
+        ),
+        'temperature': self._temperature,
     })
     return config
 
   @classmethod
   def from_config(cls, config, custom_objects=None):
     config = config.copy()
-    config.update({
-        'lambda_weight':
-            tf.keras.utils.deserialize_keras_object(config['lambda_weight']),
-    })
+    config.update(
+        {
+            'lambda_weight': utils.deserialize_keras_object(
+                config['lambda_weight']
+            ),
+        }
+    )
     return cls(**config)
 
 

@@ -1177,8 +1177,9 @@ class GetLossesTest(tf.test.TestCase):
         -(2 * 1 / 2. + 1 * 1 / 2. * (1 / 3. + 1 / 1.)) / 3.,
         places=5)
 
-    deserialized = tf.keras.utils.deserialize_keras_object(
-        tf.keras.utils.serialize_keras_object(loss))
+    deserialized = utils.deserialize_keras_object(
+        utils.serialize_keras_object(loss)
+    )
     self.assertAlmostEqual(
         loss(labels, scores, weights).numpy(),
         deserialized(labels, scores, weights).numpy())
@@ -1315,8 +1316,8 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
       (losses.GumbelApproxNDCGLoss(seed=1)),
   )
   def test_is_loss_serializable(self, loss):
-    serialized = tf.keras.utils.serialize_keras_object(loss)
-    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    serialized = utils.serialize_keras_object(loss)
+    deserialized = utils.deserialize_keras_object(serialized)
     self.assertDictEqual(loss.get_config(), deserialized.get_config())
     scores = self._scores
     if isinstance(loss, losses.ClickEMLoss):
@@ -1351,8 +1352,8 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
     if isinstance(loss, losses.ClickEMLoss):
       scores = tf.stack([scores, scores], axis=2)
 
-    serialized = tf.keras.utils.serialize_keras_object(loss)
-    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    serialized = utils.serialize_keras_object(loss)
+    deserialized = utils.deserialize_keras_object(serialized)
 
     # Test whether the deserialized loss behaves the same as the original loss.
     # Note that we have to reset the random seed in between calls to make sure
@@ -1379,8 +1380,8 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
           topn=5, positive_fn=utils.is_greater_equal_1)),
   )
   def test_is_lambda_weight_serializable(self, lambda_weight):
-    serialized = tf.keras.utils.serialize_keras_object(lambda_weight)
-    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    serialized = utils.serialize_keras_object(lambda_weight)
+    deserialized = utils.deserialize_keras_object(serialized)
     self.assertDictEqual(lambda_weight.get_config(), deserialized.get_config())
 
 

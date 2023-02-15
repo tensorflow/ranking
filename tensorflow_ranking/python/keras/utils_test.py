@@ -30,7 +30,7 @@ class UtilsTest(tf.test.TestCase):
         utils.is_greater_equal_1,
         utils.symmetric_log1p,
     ]:
-      self.assertIsNotNone(tf.keras.utils.serialize_keras_object(fn))
+      self.assertIsNotNone(utils.serialize_keras_object(fn))
 
   def test_functions_are_callable(self):
     self.assertEqual(utils.identity(1.0), 1.0)

@@ -176,8 +176,8 @@ class MetricsSerializationTest(tf.test.TestCase, parameterized.TestCase):
       (metrics_lib.AlphaDCGMetric()),
       (metrics_lib.PrecisionIAMetric()))
   def test_is_metric_serializable(self, metric):
-    serialized = tf.keras.utils.serialize_keras_object(metric)
-    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    serialized = utils.serialize_keras_object(metric)
+    deserialized = utils.deserialize_keras_object(serialized)
     self.assertDictEqual(metric.get_config(), deserialized.get_config())
     y_true = tf.constant([[0., 0., 1.]])
     y_pred = tf.constant([[3., 1., 2.]])
@@ -214,8 +214,8 @@ class MetricsSerializationTest(tf.test.TestCase, parameterized.TestCase):
                   (metrics_lib.AlphaDCGMetric, metrics_lib.PrecisionIAMetric)):
       y_true = tf.stack([y_true, y_true], axis=2)
 
-    serialized = tf.keras.utils.serialize_keras_object(metric)
-    deserialized = tf.keras.utils.deserialize_keras_object(serialized)
+    serialized = utils.serialize_keras_object(metric)
+    deserialized = utils.deserialize_keras_object(serialized)
 
     # Test whether the deserialized metric behaves the same as the original
     # metric. Note that we have to reset the random seed in between calls to
@@ -238,10 +238,12 @@ class MetricsSerializationTest(tf.test.TestCase, parameterized.TestCase):
         'dtype': tf.float32,
     })
     metric_obj = metric_cls(**init_args)
-    serialized = tf.keras.utils.serialize_keras_object(metric_obj)
+    serialized = utils.serialize_keras_object(metric_obj)
     self.assertIsNotNone(serialized)
 
-    restored_metric_obj = tf.keras.utils.deserialize_keras_object(serialized)
+    restored_metric_obj = utils.deserialize_keras_object(
+        serialized
+    )
     self.assertAllEqual(metric_obj.get_config(),
                         restored_metric_obj.get_config())
 
