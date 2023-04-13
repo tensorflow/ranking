@@ -249,6 +249,8 @@ class SignaturesTest(tf.test.TestCase):
     self._export(self._model, self._saved_model_path)
     restored_model = tf.keras.models.load_model(self._saved_model_path)
     self.assertIsInstance(restored_model, tf.keras.Model)
+    self._model.use_legacy_config = True  # Old Keras serialization format flag
+    restored_model.use_legacy_config = True
     self.assertDictEqual(self._model.get_config(), restored_model.get_config())
 
   def test_dict_output_should_be_handled(self):
@@ -286,6 +288,8 @@ class SignaturesTest(tf.test.TestCase):
     self.assertTrue(tf.saved_model.contains_saved_model(self._saved_model_path))
     restored_model = tf.keras.models.load_model(self._saved_model_path)
     self.assertIsInstance(restored_model, tf.keras.Model)
+    self._model_with_dict_output.use_legacy_config = True
+    restored_model.use_legacy_config = True  # Old Keras serialization format
     self.assertDictEqual(self._model_with_dict_output.get_config(),
                          restored_model.get_config())
 
