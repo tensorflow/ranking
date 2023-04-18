@@ -32,7 +32,7 @@ _VERSION = '0.5.2'
 
 REQUIRED_PACKAGES = [
     'absl-py >= 0.1.6',
-    'numpy == 1.23.2',
+    'numpy >= 1.23.2',
     'six >= 1.10.0',
     'tensorflow-serving-api >= 2.0.0, < 3.0.0',
 ]
