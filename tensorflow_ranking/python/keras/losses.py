@@ -29,6 +29,7 @@ class RankingLossKey(object):
   PAIRWISE_LOGISTIC_LOSS = 'pairwise_logistic_loss'
   PAIRWISE_SOFT_ZERO_ONE_LOSS = 'pairwise_soft_zero_one_loss'
   PAIRWISE_MSE_LOSS = 'pairwise_mse_loss'
+  YETI_LOGISTIC_LOSS = 'yeti_logistic_loss'
   SOFTMAX_LOSS = 'softmax_loss'
   UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
@@ -92,6 +93,7 @@ def get(loss: str,
       RankingLossKey.PAIRWISE_LOGISTIC_LOSS: PairwiseLogisticLoss,
       RankingLossKey.PAIRWISE_SOFT_ZERO_ONE_LOSS: PairwiseSoftZeroOneLoss,
       RankingLossKey.PAIRWISE_MSE_LOSS: PairwiseMSELoss,
+      RankingLossKey.YETI_LOGISTIC_LOSS: YetiLogisticLoss,
       RankingLossKey.SOFTMAX_LOSS: SoftmaxLoss,
       RankingLossKey.UNIQUE_SOFTMAX_LOSS: UniqueSoftmaxLoss,
   }
@@ -162,6 +164,31 @@ class NDCGLambdaWeightV2(losses_impl.DCGLambdaWeightV2):
         'topn': self._topn,
         'gain_fn': self._gain_fn,
         'rank_discount_fn': self._rank_discount_fn,
+    }
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class YetiDCGLambdaWeight(losses_impl.YetiDCGLambdaWeight):
+  """Keras serializable class for YetiDCGLambdaWeight."""
+
+  def __init__(
+      self,
+      topn: Optional[int] = None,
+      gain_fn: Optional[utils.GainFunction] = None,
+      rank_discount_fn: Optional[utils.RankDiscountFunction] = None,
+      normalized: bool = False,
+      **kwargs
+  ):
+    gain_fn = gain_fn or utils.pow_minus_1
+    rank_discount_fn = rank_discount_fn or utils.log2_inverse
+    super().__init__(topn, gain_fn, rank_discount_fn, normalized=normalized)
+
+  def get_config(self) -> Dict[str, Any]:
+    return {
+        'topn': self._topn,
+        'gain_fn': self._gain_fn,
+        'rank_discount_fn': self._rank_discount_fn,
+        'normalized': self._normalized,
     }
 
 
@@ -573,6 +600,119 @@ class PairwiseMSELoss(_PairwiseLoss):
         lambda_weight=lambda_weight,
         temperature=temperature,
         ragged=ragged)
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class YetiLogisticLoss(_PairwiseLoss):
+  r"""Computes Yeti logistic loss between `y_true` and `y_pred`.
+
+  Adapted to neural network models from the Yeti loss implemenation for GBDT in
+  ([Lyzhin et al, 2022][lyzhin2022]).
+
+  In this code base, we support Yeti loss with the DCG lambda weight option.
+  The default uses the YetiDCGLambdaWeight with default settings. To customize,
+  please set the lambda_weight to YetiDCGLambdaWeight.
+
+  For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+
+  ```
+  loss = sum_a sum_i I[y_i > y_{i\pm 1}] * log(1 + exp(-(s^a_i - s^a_{i\pm 1})))
+  ```
+  where
+  ```
+  s^a_i = s_i + gumbel(0, 1)^a
+  ```
+
+  Standalone usage:
+
+  >>> y_true = [[1., 0.]]
+  >>> y_pred = [[0.6, 0.8]]
+  >>> loss = tfr.keras.losses.YetiLogisticLoss(sample_size=2, seed=1)
+  >>> loss(y_true, y_pred).numpy()
+  0.90761846
+
+  >>> # Using ragged tensors
+  >>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
+  >>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
+  >>> loss = tfr.keras.losses.YetiLogisticLoss(seed=1, ragged=True)
+  >>> loss(y_true, y_pred).numpy()
+  0.43420443
+
+  Usage with the `compile()` API:
+
+  ```python
+  model.compile(optimizer='sgd', loss=tfr.keras.losses.YetiLogisticLoss())
+  ```
+
+  Definition:
+
+  $$
+  \mathcal{L}(\{y\}, \{s\}) =
+  \sum_a \sum_i \sum_{j=i\pm 1}I[y_i > y_j] \log(1 + \exp(-(s^a_i - s^a_j)))
+  $$
+
+  References:
+    - [Which Tricks are Important for Learning to Rank?, Lyzhin et al,
+       2022][lyzhin2022]
+
+  [lyzhin2022]: https://arxiv.org/abs/2204.01500
+  """  # pylint: disable=g-line-too-long
+
+  def __init__(
+      self,
+      reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
+      name: Optional[str] = None,
+      lambda_weight: Optional[YetiDCGLambdaWeight] = None,
+      temperature: float = 0.1,
+      sample_size: int = 8,
+      gumbel_temperature: float = 1.0,
+      seed: Optional[int] = None,
+      ragged: bool = False,
+  ):
+    lambda_weight = lambda_weight or YetiDCGLambdaWeight()
+    super().__init__(
+        reduction, name, lambda_weight, temperature=temperature, ragged=ragged
+    )
+    self._loss = losses_impl.PairwiseLogisticLoss(
+        name='{}_impl'.format(name) if name else None,
+        lambda_weight=lambda_weight,
+        temperature=temperature,
+        ragged=ragged,
+    )
+    self._sample_size = sample_size
+    self._gumbel_temperature = gumbel_temperature
+    self._seed = seed
+
+    self._gumbel_sampler = losses_impl.GumbelSampler(
+        name=name,
+        sample_size=sample_size,
+        temperature=gumbel_temperature,
+        seed=seed,
+        ragged=ragged,
+    )
+
+  def get_config(self) -> Dict[str, Any]:
+    config = super().get_config()
+    config.update({
+        'sample_size': self._sample_size,
+        'gumbel_temperature': self._gumbel_temperature,
+        'seed': self._seed,
+    })
+    return config
+
+  def __call__(
+      self,
+      y_true: utils.TensorLike,
+      y_pred: utils.TensorLike,
+      sample_weight: Optional[utils.TensorLike] = None,
+  ) -> tf.Tensor:
+    """See _RankingLoss."""
+    # For Yeti losses, the logits are sampled from Gumbel distribution
+    # and then sorted.
+    gbl_labels, gbl_logits, gbl_weights = self._gumbel_sampler.sample(
+        y_true, y_pred, weights=sample_weight
+    )
+    return super().__call__(gbl_labels, gbl_logits, gbl_weights)
 
 
 class _ListwiseLoss(_RankingLoss):

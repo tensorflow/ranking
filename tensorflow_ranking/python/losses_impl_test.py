@@ -462,6 +462,39 @@ class DCGLambdaWeightV2Test(tf.test.TestCase):
         ]])
 
 
+class YetiDCGLambdaWeightTest(tf.test.TestCase):
+  """Test cases for YetiDCGLambdaWeight."""
+
+  def test_default(self):
+    """For the weight using rank diff."""
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.0
+    lambda_weight = losses_impl.YetiDCGLambdaWeight()
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale,
+        [[
+            [0.0, 1.0 / 2.0, 0.0],
+            [1.0 / 2.0, 0.0, 1.0 / 2.0],
+            [0.0, 1.0 / 2.0, 0.0],
+        ]],
+    )
+
+  def test_topn(self):
+    labels = [[2.0, 1.0, 0.0]]
+    ranks = [[1, 2, 3]]
+    scale = 3.0
+    lambda_weight = losses_impl.YetiDCGLambdaWeight(topn=1)
+    self.assertAllClose(
+        lambda_weight.pair_weights(labels, ranks) / scale,
+        [[
+            [0.0, 1.0, 0.0],
+            [1.0, 0.0, 3.0 / 4.0],
+            [0.0, 3.0 / 4.0, 0.0],
+        ]],
+    )
+
+
 class PrecisionLambdaWeightTest(tf.test.TestCase):
   """Test cases for PrecisionLambdaWeight."""
 

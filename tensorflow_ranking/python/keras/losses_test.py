@@ -264,6 +264,23 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
     self.assertAlmostEqual(
         loss(labels, scores, weights).numpy(), expected, places=5)
 
+  def test_yeti_logistic_loss(self):
+    scores = [[1.0, 3.0, 2.0], [1.0, 2.0, 3.0]]
+    labels = [[0.0, 0.0, 1.0], [0.0, 0.0, 2.0]]
+    weights = [[1.0], [2.0]]
+    example_weights = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+
+    loss = losses.get(
+        loss=losses.RankingLossKey.YETI_LOGISTIC_LOSS, sample_size=2, seed=1
+    )
+    self.assertAlmostEqual(loss(labels, scores).numpy(), 1.004541, places=5)
+    self.assertAlmostEqual(
+        loss(labels, scores, weights).numpy(), 0.514170, places=5
+    )
+    self.assertAlmostEqual(
+        loss(labels, scores, example_weights).numpy(), 2.270671, places=5
+    )
+
   def test_softmax_loss(self):
     scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
     labels = [[0., 0., 1.], [0., 0., 2.], [0., 0., 0.]]
@@ -1306,6 +1323,7 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
       (losses.PairwiseHingeLoss(lambda_weight=ndcg_lambda_weight)),
       (losses.PairwiseLogisticLoss(lambda_weight=ndcg_lambda_weight)),
       (losses.PairwiseSoftZeroOneLoss(lambda_weight=ndcg_lambda_weight)),
+      (losses.YetiLogisticLoss()),
       (losses.SoftmaxLoss(lambda_weight=ndcg_lambda_weight)),
       (losses.ListMLELoss(lambda_weight=ndcg_lambda_weight)),
       (losses.ApproxMRRLoss(lambda_weight=ndcg_lambda_weight)),
@@ -1336,6 +1354,7 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
       (losses.PairwiseHingeLoss(ragged=True)),
       (losses.PairwiseLogisticLoss(ragged=True)),
       (losses.PairwiseSoftZeroOneLoss(ragged=True)),
+      (losses.YetiLogisticLoss(ragged=True)),
       (losses.SoftmaxLoss(ragged=True)),
       (losses.ListMLELoss(ragged=True)),
       (losses.ApproxMRRLoss(ragged=True)),
@@ -1374,6 +1393,9 @@ class SerializationTest(parameterized.TestCase, tf.test.TestCase):
           gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse)),
       (losses.NDCGLambdaWeightV2()),
       (losses.NDCGLambdaWeightV2(
+          topn=1, gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse)),
+      (losses.YetiDCGLambdaWeight()),
+      (losses.YetiDCGLambdaWeight(
           topn=1, gain_fn=utils.identity, rank_discount_fn=utils.log2_inverse)),
       (losses.PrecisionLambdaWeight()),
       (losses.PrecisionLambdaWeight(

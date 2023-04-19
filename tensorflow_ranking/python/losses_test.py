@@ -447,6 +447,53 @@ class LossesTest(tf.test.TestCase):
         loss_fn_1(labels, scores, features).numpy(),
         loss_fn_2(labels, scores, features).numpy())
 
+  def test_make_yeti_logistic_loss(self):
+    scores = [[1.0, 3.0, 2.0], [1.0, 2.0, 3.0]]
+    labels = [[0.0, 0.0, 1.0], [0.0, 0.0, 2.0]]
+    weights = [[1.0], [2.0]]
+    weights_feature_name = 'weights'
+    features = {weights_feature_name: weights}
+
+    loss_fn_simple = ranking_losses.make_loss_fn(
+        ranking_losses.RankingLossKey.YETI_LOGISTIC_LOSS,
+        lambda_weight=losses_impl.YetiDCGLambdaWeight(),
+        reduction=tf.compat.v1.losses.Reduction.MEAN,
+        gumbel_params={'sample_size': 2, 'seed': 1},
+    )
+    expected = 1.037173
+    self.assertAlmostEqual(
+        loss_fn_simple(labels, scores, features).numpy(), expected, places=5
+    )
+
+    loss_fn_weighted = ranking_losses.make_loss_fn(
+        ranking_losses.RankingLossKey.YETI_LOGISTIC_LOSS,
+        lambda_weight=losses_impl.YetiDCGLambdaWeight(),
+        reduction=tf.compat.v1.losses.Reduction.MEAN,
+        weights_feature_name=weights_feature_name,
+        gumbel_params={'sample_size': 2, 'seed': 1},
+    )
+    expected = 0.427453
+    self.assertAlmostEqual(
+        loss_fn_weighted(labels, scores, features).numpy(), expected, places=5
+    )
+
+    # Test loss reduction method.
+    # Two reduction methods should return different loss values.
+    loss_fn_1 = ranking_losses.make_loss_fn(
+        ranking_losses.RankingLossKey.YETI_LOGISTIC_LOSS,
+        lambda_weight=losses_impl.YetiDCGLambdaWeight(),
+        reduction=tf.compat.v1.losses.Reduction.SUM,
+    )
+    loss_fn_2 = ranking_losses.make_loss_fn(
+        ranking_losses.RankingLossKey.YETI_LOGISTIC_LOSS,
+        lambda_weight=losses_impl.YetiDCGLambdaWeight(),
+        reduction=tf.compat.v1.losses.Reduction.MEAN,
+    )
+    self.assertNotAlmostEqual(
+        loss_fn_1(labels, scores, features).numpy(),
+        loss_fn_2(labels, scores, features).numpy(),
+    )
+
   def test_make_circle_loss(self):
     scores = [[0.1, 0.3, 0.2], [0.1, 0.2, 0.3]]
     labels = [[0., 0., 1.], [0., 1., 2.]]

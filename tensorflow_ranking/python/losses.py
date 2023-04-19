@@ -33,6 +33,7 @@ class RankingLossKey(object):
   PAIRWISE_LOGISTIC_LOSS = 'pairwise_logistic_loss'
   PAIRWISE_SOFT_ZERO_ONE_LOSS = 'pairwise_soft_zero_one_loss'
   PAIRWISE_MSE_LOSS = 'pairwise_mse_loss'
+  YETI_LOGISTIC_LOSS = 'yeti_logistic_loss'
   CIRCLE_LOSS = 'circle_loss'
   SOFTMAX_LOSS = 'softmax_loss'
   POLY_ONE_SOFTMAX_LOSS = 'poly_one_softmax_loss'
@@ -128,6 +129,8 @@ class _LossFunctionMaker(object):
             (_pairwise_soft_zero_one_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.PAIRWISE_MSE_LOSS:
             (_pairwise_mse_loss, loss_kwargs_with_lambda_weight),
+        RankingLossKey.YETI_LOGISTIC_LOSS:
+            (_pairwise_logistic_loss, gbl_loss_kwargs),
         RankingLossKey.CIRCLE_LOSS:
             (_circle_loss, loss_kwargs_with_lambda_weight),
         RankingLossKey.SOFTMAX_LOSS:
@@ -229,6 +232,8 @@ class _LossFunctionMaker(object):
       }
       loss_kwargs.update(self.params)
       gbl_loss_kwargs.update(self.params)
+      if self.lambda_weight is not None:
+        gbl_loss_kwargs['lambda_weight'] = self.lambda_weight
 
       loss_kwargs_with_lambda_weight = loss_kwargs.copy()
       loss_kwargs_with_lambda_weight['lambda_weight'] = self.lambda_weight

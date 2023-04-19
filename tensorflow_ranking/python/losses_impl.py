@@ -394,6 +394,19 @@ class DCGLambdaWeightV2(AbstractDCGLambdaWeight):
     return pair_discount
 
 
+class YetiDCGLambdaWeight(DCGLambdaWeightV2):
+  """A simple LambdaWeight to compute pair weight on neighbor pairs."""
+
+  def pair_weights(self, labels: tf.Tensor, ranks: tf.Tensor) -> tf.Tensor:
+    """See `_LambdaWeight`."""
+    pair_weight = super().pair_weights(labels, ranks)
+    with tf.compat.v1.name_scope(name='yeti_dcg_lambda_weight'):
+      neighbor_pair = tf.equal(
+          tf.abs(_apply_pairwise_op(tf.subtract, ranks)), 1)
+      pair_weight *= tf.cast(neighbor_pair, dtype=tf.float32)
+    return pair_weight
+
+
 class PrecisionLambdaWeight(_LambdaWeight):
   """LambdaWeight for Precision metric."""
 
