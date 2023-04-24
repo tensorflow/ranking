@@ -101,7 +101,7 @@ data = [
 
 ```
 context_features: {
-  "query_length": parsing_ops.FixedenFeature([1], dtypes.int64)
+  "query_length": parsing_ops.FixedLenFeature([1], dtypes.int64)
 }
 example_features: {
   "unigrams": parsing_ops.VarLenFeature(dtypes.string),

@@ -318,7 +318,7 @@ def parse_from_example_in_example(serialized,
 
   ```
   context_feature_spec: {
-    "query_length": tf.io.FixedenFeature([1], dtypes.int64),
+    "query_length": tf.io.FixedLenFeature([1], dtypes.int64),
   }
   example_feature_spec: {
     "unigrams": tf.io.VarLenFeature(dtypes.string),
@@ -477,7 +477,7 @@ def parse_from_example_list(serialized,
 
   ```
   context_feature_spec: {
-    "query_length": tf.io.FixedenFeature([1], dtypes.int64),
+    "query_length": tf.io.FixedLenFeature([1], dtypes.int64),
   }
   example_feature_spec: {
     "unigrams": tf.io.VarLenFeature(dtypes.string),
@@ -790,7 +790,7 @@ def parse_from_sequence_example(serialized,
 
   ```
   context_feature_spec: {
-    "query_length": tf.io.FixedenFeature([1], dtypes.int64)
+    "query_length": tf.io.FixedLenFeature([1], dtypes.int64)
   }
   example_feature_spec: {
     "unigrams": tf.io.VarLenFeature(dtypes.string),
@@ -1222,7 +1222,7 @@ def read_batched_sequence_example_dataset(file_pattern,
 
   ```
   context_features: {
-    "query_length": parsing_ops.FixedenFeature([1], dtypes.int64)
+    "query_length": parsing_ops.FixedLenFeature([1], dtypes.int64)
   }
   example_features: {
     "unigrams": parsing_ops.VarLenFeature(dtypes.string),

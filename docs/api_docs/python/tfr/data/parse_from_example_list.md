@@ -114,7 +114,7 @@ serialized = [
 
 ```
 context_feature_spec: {
-  "query_length": tf.io.FixedenFeature([1], dtypes.int64),
+  "query_length": tf.io.FixedLenFeature([1], dtypes.int64),
 }
 example_feature_spec: {
   "unigrams": tf.io.VarLenFeature(dtypes.string),
