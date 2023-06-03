@@ -146,17 +146,14 @@ And the expected output is:
 
 ```python
 {
-    "unigrams":
-        SparseTensor(
-            indices=array([[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2],
-                           [1, 0, 0], [1, 1, 0], [1, 1, 1]]),
-            values=[
-                "tensorflow", "learning", "to", "rank", "gbdt", "neural",
-                "network"
-            ],
-            dense_shape=array([2, 2, 3])),
-    "utility": [[[0.], [1.]], [[0.], [1.]]],
-    "query_length": [[3], [2]],
+  "unigrams": SparseTensor(
+    indices=array([[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0],
+      [1, 1, 0], [1, 1, 1]]),
+    values=["tensorflow", "learning", "to", "rank", "gbdt", "neural" ,
+      "network"],
+    dense_shape=array([2, 2, 3])),
+  "utility": [[[ 0.], [ 1.]], [[ 0.], [ 1.]]],
+  "query_length": [[3], [2]],
 }
 ```
 

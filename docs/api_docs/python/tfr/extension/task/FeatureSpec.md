@@ -6,7 +6,6 @@
 # tfr.extension.task.FeatureSpec
 
 <!-- Insert buttons and diff -->
-
 This symbol is a **type alias**.
 
 #### Source:

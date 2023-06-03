@@ -19,6 +19,7 @@ description: The tf-ranking BERT task config.
 <meta itemprop="property" content="RESERVED_ATTR"/>
 <meta itemprop="property" content="SEQUENCE_TYPES"/>
 <meta itemprop="property" content="aggregated_metrics"/>
+<meta itemprop="property" content="allow_image_summary"/>
 <meta itemprop="property" content="default_params"/>
 <meta itemprop="property" content="differential_privacy_config"/>
 <meta itemprop="property" content="init_checkpoint"/>
@@ -68,6 +69,7 @@ Inherits From:
     validation_data: <a href="../../../tfr/extension/task/RankingDataConfig.md"><code>tfr.extension.task.RankingDataConfig</code></a> = None,
     name: Optional[str] = None,
     differential_privacy_config: Optional[dp_configs.DifferentialPrivacyConfig] = None,
+    allow_image_summary: bool = False,
     loss: str = &#x27;softmax_loss&#x27;,
     loss_reduction: str = tf.keras.losses.Reduction.NONE,
     aggregated_metrics: bool = False,
@@ -78,7 +80,6 @@ Inherits From:
 <!-- Placeholder for "Used in" -->
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -105,7 +106,6 @@ operators, including {'==', '!=',  '<', '<=', '>', '>='}.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -165,6 +165,13 @@ Dataclass field
 </tr><tr>
 <td>
 `differential_privacy_config`<a id="differential_privacy_config"></a>
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`allow_image_summary`<a id="allow_image_summary"></a>
 </td>
 <td>
 Dataclass field
@@ -418,6 +425,13 @@ SEQUENCE_TYPES<a id="SEQUENCE_TYPES"></a>
 </tr><tr>
 <td>
 aggregated_metrics<a id="aggregated_metrics"></a>
+</td>
+<td>
+`False`
+</td>
+</tr><tr>
+<td>
+allow_image_summary<a id="allow_image_summary"></a>
 </td>
 <td>
 `False`

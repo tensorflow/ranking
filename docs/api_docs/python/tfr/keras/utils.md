@@ -22,6 +22,8 @@ Utils for tfr.keras.
 
 ## Functions
 
+[`deserialize_keras_object(...)`](../../tfr/keras/utils/deserialize_keras_object.md)
+
 [`identity(...)`](../../tfr/keras/utils/identity.md): Identity function that
 returns the input label.
 
@@ -36,6 +38,8 @@ Computes whether label is greater or equal to 1.
 
 [`pow_minus_1(...)`](../../tfr/keras/utils/pow_minus_1.md): Computes `2**x - 1`
 element-wise for each label.
+
+[`serialize_keras_object(...)`](../../tfr/keras/utils/serialize_keras_object.md)
 
 [`symmetric_log1p(...)`](../../tfr/keras/utils/symmetric_log1p.md): Computes
 `sign(x) * log(1 + sign(x))`.

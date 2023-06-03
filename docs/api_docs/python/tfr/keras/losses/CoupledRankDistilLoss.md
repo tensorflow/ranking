@@ -15,7 +15,7 @@ description: Computes the Rank Distil loss between y_true and y_pred.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1385-L1474">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1531-L1620">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -86,7 +86,6 @@ The Coupled-RankDistil loss is defined as: $$ \mathcal{L}(y, s) = -\sum_{\pi}
 [reddi2021]: https://research.google/pubs/pub50695/
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -156,7 +155,6 @@ all entries in the list.
 Instantiates a `Loss` from its config (output of `get_config()`).
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -172,7 +170,6 @@ Output of `get_config()`.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -186,7 +183,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1467-L1474">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L1613-L1620">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -197,7 +194,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L221-L229">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L248-L256">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

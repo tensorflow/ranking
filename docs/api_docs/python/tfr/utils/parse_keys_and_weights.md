@@ -32,7 +32,6 @@ This parse function will remove all spaces. Different keys are split by "," and
 then weight associated with key is split by ":".
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -50,7 +49,6 @@ and weighted by the weights split by ":". For example, key =
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Returns</h2></th></tr>

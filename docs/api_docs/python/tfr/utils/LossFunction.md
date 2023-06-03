@@ -6,7 +6,6 @@
 # tfr.utils.LossFunction
 
 <!-- Insert buttons and diff -->
-
 This symbol is a **type alias**.
 
 #### Source:

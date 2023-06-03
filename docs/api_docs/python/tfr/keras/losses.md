@@ -91,6 +91,12 @@ cross-entropy loss between `y_true` and `y_pred`.
 [`class UniqueSoftmaxLoss`](../../tfr/keras/losses/UniqueSoftmaxLoss.md):
 Computes unique softmax cross-entropy loss between `y_true` and `y_pred`.
 
+[`class YetiDCGLambdaWeight`](../../tfr/keras/losses/YetiDCGLambdaWeight.md):
+Keras serializable class for YetiDCGLambdaWeight.
+
+[`class YetiLogisticLoss`](../../tfr/keras/losses/YetiLogisticLoss.md): Computes
+Yeti logistic loss between `y_true` and `y_pred`.
+
 ## Functions
 
 [`get(...)`](../../tfr/keras/losses/get.md): Factory method to get a ranking

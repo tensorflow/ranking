@@ -153,6 +153,10 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/losses/SoftmaxLoss
     - title: UniqueSoftmaxLoss
       path: /ranking/api_docs/python/tfr/keras/losses/UniqueSoftmaxLoss
+    - title: YetiDCGLambdaWeight
+      path: /ranking/api_docs/python/tfr/keras/losses/YetiDCGLambdaWeight
+    - title: YetiLogisticLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/YetiLogisticLoss
     - title: get
       path: /ranking/api_docs/python/tfr/keras/losses/get
   - title: metrics
@@ -273,6 +277,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/utils
     - title: GainFunction
       path: /ranking/api_docs/python/tfr/keras/utils/GainFunction
+    - title: deserialize_keras_object
+      path: /ranking/api_docs/python/tfr/keras/utils/deserialize_keras_object
     - title: identity
       path: /ranking/api_docs/python/tfr/keras/utils/identity
     - title: inverse
@@ -283,6 +289,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/utils/log2_inverse
     - title: pow_minus_1
       path: /ranking/api_docs/python/tfr/keras/utils/pow_minus_1
+    - title: serialize_keras_object
+      path: /ranking/api_docs/python/tfr/keras/utils/serialize_keras_object
     - title: symmetric_log1p
       path: /ranking/api_docs/python/tfr/keras/utils/symmetric_log1p
 - title: tfr.utils

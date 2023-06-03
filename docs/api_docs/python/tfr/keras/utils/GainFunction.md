@@ -6,7 +6,6 @@
 # tfr.keras.utils.GainFunction
 
 <!-- Insert buttons and diff -->
-
 This symbol is a **type alias**.
 
 #### Source:

@@ -2731,7 +2731,6 @@ Optional. A name for the tf.data transformation.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -2788,7 +2787,6 @@ TensorShape([None])
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -2831,7 +2829,6 @@ their row_splits dtype changed.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -3568,6 +3565,20 @@ users should not set the `checkpoint` argument in `checkpoint_args`.
 </table>
 
 <!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+An operation which when executed performs the save. When writing
+checkpoints, returns None. The return value is useful in unit tests.
+</td>
+</tr>
+
+</table>
+
+<!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Raises</th></tr>
@@ -3821,6 +3832,24 @@ list(dataset.as_numpy_iterator())
 # [1, 0, 2]
 ```
 
+### Fully shuffling all the data
+
+To shuffle an entire dataset, set `buffer_size=dataset.cardinality(). This is
+equivalent to setting the`buffer_size` equal to the number of elements in the
+dataset, resulting in uniform shuffle.
+
+Note: `shuffle(dataset.cardinality())` loads the full dataset into memory so
+that it can be shuffled. This will cause a memory overflow (OOM) error if the
+dataset is too large, so full-shuffle should only be used for datasets that are
+known to fit in the memory, such as datasets of filenames or other small
+datasets.
+
+```python
+dataset = tf.data.Dataset.range(20)
+dataset = dataset.shuffle(dataset.cardinality())
+# [18, 4, 9, 2, 17, 8, 5, 10, 0, 6, 16, 3, 19, 7, 14, 11, 15, 13, 12, 1]
+```
+
 <!-- Tabular view -->
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
@@ -3832,7 +3861,9 @@ list(dataset.as_numpy_iterator())
 </td>
 <td>
 A `tf.int64` scalar `tf.Tensor`, representing the number of
-elements from this dataset from which the new dataset will sample.
+elements from this dataset from which the new dataset will sample. To
+uniformly shuffle the entire dataset, use
+`buffer_size=dataset.cardinality()`.
 </td>
 </tr><tr>
 <td>
@@ -4048,7 +4079,6 @@ a snapshot.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -4096,7 +4126,6 @@ a.apply(tf.data.experimental.dense_to_sparse_batch(
 ```
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -4645,7 +4674,7 @@ when an option is set more than once to a non-default value
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
 <code>@staticmethod</code>
 <code>zip(
-    datasets, name=None
+    *args, datasets=None, name=None
 )
 </code></pre>
 
@@ -4657,14 +4686,14 @@ structure of `Dataset` objects. The supported nesting mechanisms are documented
 [here](https://www.tensorflow.org/guide/data#dataset_structure).
 
 ```
->>> # The nested structure of the `datasets` argument determines the
->>> # structure of elements in the resulting dataset.
+>>> # The datasets or nested structure of datasets `*args` argument
+>>> # determines the structure of elements in the resulting dataset.
 >>> a = tf.data.Dataset.range(1, 4)  # ==> [ 1, 2, 3 ]
 >>> b = tf.data.Dataset.range(4, 7)  # ==> [ 4, 5, 6 ]
->>> ds = tf.data.Dataset.zip((a, b))
+>>> ds = tf.data.Dataset.zip(a, b)
 >>> list(ds.as_numpy_iterator())
 [(1, 4), (2, 5), (3, 6)]
->>> ds = tf.data.Dataset.zip((b, a))
+>>> ds = tf.data.Dataset.zip(b, a)
 >>> list(ds.as_numpy_iterator())
 [(4, 1), (5, 2), (6, 3)]
 >>>
@@ -4672,7 +4701,7 @@ structure of `Dataset` objects. The supported nesting mechanisms are documented
 >>> c = tf.data.Dataset.range(7, 13).batch(2)  # ==> [ [7, 8],
 ...                                            #       [9, 10],
 ...                                            #       [11, 12] ]
->>> ds = tf.data.Dataset.zip((a, b, c))
+>>> ds = tf.data.Dataset.zip(a, b, c)
 >>> for element in ds.as_numpy_iterator():
 ...   print(element)
 (1, 4, array([7, 8]))
@@ -4682,7 +4711,7 @@ structure of `Dataset` objects. The supported nesting mechanisms are documented
 >>> # The number of elements in the resulting dataset is the same as
 >>> # the size of the smallest dataset in `datasets`.
 >>> d = tf.data.Dataset.range(13, 15)  # ==> [ 13, 14 ]
->>> ds = tf.data.Dataset.zip((a, d))
+>>> ds = tf.data.Dataset.zip(a, d)
 >>> list(ds.as_numpy_iterator())
 [(1, 13), (2, 14)]
 ```
@@ -4694,10 +4723,20 @@ structure of `Dataset` objects. The supported nesting mechanisms are documented
 
 <tr>
 <td>
+`*args`
+</td>
+<td>
+Datasets or nested structures of datasets to zip together. This
+can't be set if `datasets` is set.
+</td>
+</tr><tr>
+<td>
 `datasets`
 </td>
 <td>
-A (nested) structure of datasets.
+A (nested) structure of datasets. This can't be set if `*args`
+is set. Note that this exists only for backwards compatibility and it is
+preferred to use *args.
 </td>
 </tr><tr>
 <td>

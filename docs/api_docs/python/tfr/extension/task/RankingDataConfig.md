@@ -19,6 +19,7 @@ description: Data set config.
 <meta itemprop="property" content="RESERVED_ATTR"/>
 <meta itemprop="property" content="SEQUENCE_TYPES"/>
 <meta itemprop="property" content="apply_tf_data_service_before_batching"/>
+<meta itemprop="property" content="autotune_algorithm"/>
 <meta itemprop="property" content="block_length"/>
 <meta itemprop="property" content="cache"/>
 <meta itemprop="property" content="convert_labels_to_binary"/>
@@ -93,6 +94,7 @@ Data set config.
     trainer_id: Optional[str] = None,
     seed: Optional[int] = None,
     prefetch_buffer_size: Optional[int] = None,
+    autotune_algorithm: Optional[str] = None,
     data_format: str = tfr_data.ELWC,
     dataset_fn: str = &#x27;tfrecord&#x27;,
     list_size: Optional[int] = None,
@@ -105,7 +107,6 @@ Data set config.
 <!-- Placeholder for "Used in" -->
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -132,7 +133,6 @@ operators, including {'==', '!=',  '<', '<=', '>', '>='}.
 </table>
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Attributes</h2></th></tr>
@@ -311,6 +311,13 @@ Dataclass field
 </tr><tr>
 <td>
 `prefetch_buffer_size`<a id="prefetch_buffer_size"></a>
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`autotune_algorithm`<a id="autotune_algorithm"></a>
 </td>
 <td>
 Dataclass field
@@ -581,6 +588,13 @@ apply_tf_data_service_before_batching<a id="apply_tf_data_service_before_batchin
 </td>
 <td>
 `False`
+</td>
+</tr><tr>
+<td>
+autotune_algorithm<a id="autotune_algorithm"></a>
+</td>
+<td>
+`None`
 </td>
 </tr><tr>
 <td>

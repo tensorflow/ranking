@@ -6,7 +6,6 @@
 # tfr.extension.premade.TensorDict
 
 <!-- Insert buttons and diff -->
-
 This symbol is a **type alias**.
 
 #### Source:

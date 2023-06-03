@@ -15,7 +15,7 @@ description: LambdaWeight for ListMLE cost function.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L190-L201">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L217-L228">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -52,7 +52,7 @@ LambdaWeight for ListMLE cost function.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L198-L201">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L225-L228">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -61,7 +61,7 @@ source</a>
 
 <h3 id="individual_weights"><code>individual_weights</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L447-L453">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L460-L466">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -74,7 +74,7 @@ See `_LambdaWeight`.
 
 <h3 id="pair_weights"><code>pair_weights</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L443-L445">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L456-L458">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">

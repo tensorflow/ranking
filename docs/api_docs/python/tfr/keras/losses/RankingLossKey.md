@@ -18,6 +18,7 @@ description: Ranking loss key strings.
 <meta itemprop="property" content="SIGMOID_CROSS_ENTROPY_LOSS"/>
 <meta itemprop="property" content="SOFTMAX_LOSS"/>
 <meta itemprop="property" content="UNIQUE_SOFTMAX_LOSS"/>
+<meta itemprop="property" content="YETI_LOGISTIC_LOSS"/>
 </div>
 
 # tfr.keras.losses.RankingLossKey
@@ -26,7 +27,7 @@ description: Ranking loss key strings.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L11-L32">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L11-L33">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -41,7 +42,7 @@ Ranking loss key strings.
 
 <h3 id="all_keys"><code>all_keys</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L30-L32">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L31-L33">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -151,6 +152,13 @@ UNIQUE_SOFTMAX_LOSS<a id="UNIQUE_SOFTMAX_LOSS"></a>
 </td>
 <td>
 `'unique_softmax_loss'`
+</td>
+</tr><tr>
+<td>
+YETI_LOGISTIC_LOSS<a id="YETI_LOGISTIC_LOSS"></a>
+</td>
+<td>
+`'yeti_logistic_loss'`
 </td>
 </tr>
 </table>

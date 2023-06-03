@@ -7,7 +7,6 @@ description: Alpha discounted cumulative gain (alphaDCG).
 <meta itemprop="property" content="__init__"/>
 <meta itemprop="property" content="__new__"/>
 <meta itemprop="property" content="add_loss"/>
-<meta itemprop="property" content="add_metric"/>
 <meta itemprop="property" content="build"/>
 <meta itemprop="property" content="build_from_config"/>
 <meta itemprop="property" content="compute_mask"/>
@@ -17,9 +16,11 @@ description: Alpha discounted cumulative gain (alphaDCG).
 <meta itemprop="property" content="get_build_config"/>
 <meta itemprop="property" content="get_config"/>
 <meta itemprop="property" content="get_weights"/>
+<meta itemprop="property" content="load_own_variables"/>
 <meta itemprop="property" content="merge_state"/>
 <meta itemprop="property" content="reset_state"/>
 <meta itemprop="property" content="result"/>
+<meta itemprop="property" content="save_own_variables"/>
 <meta itemprop="property" content="set_weights"/>
 <meta itemprop="property" content="update_state"/>
 <meta itemprop="property" content="with_name_scope"/>
@@ -309,20 +310,8 @@ gradients back to the corresponding variables.
 ```
 
 </td> </tr><tr> <td> `metrics`<a id="metrics"></a> </td> <td> List of metrics
-added using the `add_metric()` API.
-
-```
->>> input = tf.keras.layers.Input(shape=(3,))
->>> d = tf.keras.layers.Dense(2)
->>> output = d(input)
->>> d.add_metric(tf.reduce_max(output), name='max')
->>> d.add_metric(tf.reduce_min(output), name='min')
->>> [m.name for m in d.metrics]
-['max', 'min']
-```
-
-</td> </tr><tr> <td> `name`<a id="name"></a> </td> <td> Name of the layer
-(string), set in the constructor. </td> </tr><tr> <td>
+attached to the layer. </td> </tr><tr> <td> `name`<a id="name"></a> </td> <td>
+Name of the layer (string), set in the constructor. </td> </tr><tr> <td>
 `name_scope`<a id="name_scope"></a> </td> <td> Returns a `tf.name_scope`
 instance for this class. </td> </tr><tr> <td>
 `non_trainable_weights`<a id="non_trainable_weights"></a> </td> <td> List of all
@@ -469,89 +458,6 @@ Used for backwards compatibility only.
 </tr>
 </table>
 
-<h3 id="add_metric"><code>add_metric</code></h3>
-
-<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>add_metric(
-    value, name=None, **kwargs
-)
-</code></pre>
-
-Adds metric tensor to the layer.
-
-This method can be used inside the `call()` method of a subclassed layer or
-model.
-
-```python
-class MyMetricLayer(tf.keras.layers.Layer):
-  def __init__(self):
-    super(MyMetricLayer, self).__init__(name='my_metric_layer')
-    self.mean = tf.keras.metrics.Mean(name='metric_1')
-
-  def call(self, inputs):
-    self.add_metric(self.mean(inputs))
-    self.add_metric(tf.reduce_sum(inputs), name='metric_2')
-    return inputs
-```
-
-This method can also be called directly on a Functional Model during
-construction. In this case, any tensor passed to this Model must be symbolic and
-be able to be traced back to the model's `Input`s. These metrics become part of
-the model's topology and are tracked when you save the model via `save()`.
-
-```python
-inputs = tf.keras.Input(shape=(10,))
-x = tf.keras.layers.Dense(10)(inputs)
-outputs = tf.keras.layers.Dense(1)(x)
-model = tf.keras.Model(inputs, outputs)
-model.add_metric(math_ops.reduce_sum(x), name='metric_1')
-```
-
-Note: Calling `add_metric()` with the result of a metric object on a Functional
-Model, as shown in the example below, is not supported. This is because we
-cannot trace the metric result tensor back to the model's inputs.
-
-```python
-inputs = tf.keras.Input(shape=(10,))
-x = tf.keras.layers.Dense(10)(inputs)
-outputs = tf.keras.layers.Dense(1)(x)
-model = tf.keras.Model(inputs, outputs)
-model.add_metric(tf.keras.metrics.Mean()(x), name='metric_1')
-```
-
-<!-- Tabular view -->
- <table class="responsive fixed orange">
-<colgroup><col width="214px"><col></colgroup>
-<tr><th colspan="2">Args</th></tr>
-
-<tr>
-<td>
-`value`
-</td>
-<td>
-Metric tensor.
-</td>
-</tr><tr>
-<td>
-`name`
-</td>
-<td>
-String metric name.
-</td>
-</tr><tr>
-<td>
-`**kwargs`
-</td>
-<td>
-Additional keyword arguments for backward compatibility.
-Accepted values:
-`aggregation` - When the `value` tensor provided is not the result
-of calling a `keras.Metric` instance, it will be aggregated by
-default using a `keras.Metric.Mean`.
-</td>
-</tr>
-</table>
-
 <h3 id="build"><code>build</code></h3>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -593,6 +499,29 @@ Instance of `TensorShape`, or list of instances of
     config
 )
 </code></pre>
+
+Builds the layer's states with the supplied config dict.
+
+By default, this method calls the `build(config["input_shape"])` method, which
+creates weights based on the layer's input shape in the supplied config. If your
+config contains other information needed to load the layer's state, you should
+override this method.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`config`
+</td>
+<td>
+Dict containing the input shape associated with this layer.
+</td>
+</tr>
+</table>
 
 <h3 id="compute_mask"><code>compute_mask</code></h3>
 
@@ -770,6 +699,30 @@ A layer instance.
 <code>get_build_config()
 </code></pre>
 
+Returns a dictionary with the layer's input shape.
+
+This method returns a config dict that can be used by
+`build_from_config(config)` to create all states (e.g. Variables and Lookup
+tables) needed by the layer.
+
+By default, the config only contains the input shape that the layer was built
+with. If you're writing a custom layer that creates state in an unusual way, you
+should override this method to make sure this state is already created when
+Keras attempts to load its value upon model loading.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Returns</th></tr>
+<tr class="alt">
+<td colspan="2">
+A dict containing the input shape associated with the layer.
+</td>
+</tr>
+
+</table>
+
 <h3 id="get_config"><code>get_config</code></h3>
 
 <a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/metrics.py#L987-L995">View
@@ -829,6 +782,35 @@ Weights values as a list of NumPy arrays.
 </td>
 </tr>
 
+</table>
+
+<h3 id="load_own_variables"><code>load_own_variables</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>load_own_variables(
+    store
+)
+</code></pre>
+
+Loads the state of the layer.
+
+You can override this method to take full control of how the state of the layer
+is loaded upon calling `keras.models.load_model()`.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`store`
+</td>
+<td>
+Dict from which the state of the model will be loaded.
+</td>
+</tr>
 </table>
 
 <h3 id="merge_state"><code>merge_state</code></h3>
@@ -929,6 +911,35 @@ A scalar tensor, or a dictionary of scalar tensors.
 </td>
 </tr>
 
+</table>
+
+<h3 id="save_own_variables"><code>save_own_variables</code></h3>
+
+<pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
+<code>save_own_variables(
+    store
+)
+</code></pre>
+
+Saves the state of the layer.
+
+You can override this method to take full control of how the state of the layer
+is saved upon calling `model.save()`.
+
+<!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2">Args</th></tr>
+
+<tr>
+<td>
+`store`
+</td>
+<td>
+Dict where the state of the model will be saved.
+</td>
+</tr>
 </table>
 
 <h3 id="set_weights"><code>set_weights</code></h3>

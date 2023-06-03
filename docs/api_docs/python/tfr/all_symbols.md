@@ -81,6 +81,8 @@
 *   <a href="../tfr/keras/losses/SigmoidCrossEntropyLoss.md"><code>tfr.keras.losses.SigmoidCrossEntropyLoss</code></a>
 *   <a href="../tfr/keras/losses/SoftmaxLoss.md"><code>tfr.keras.losses.SoftmaxLoss</code></a>
 *   <a href="../tfr/keras/losses/UniqueSoftmaxLoss.md"><code>tfr.keras.losses.UniqueSoftmaxLoss</code></a>
+*   <a href="../tfr/keras/losses/YetiDCGLambdaWeight.md"><code>tfr.keras.losses.YetiDCGLambdaWeight</code></a>
+*   <a href="../tfr/keras/losses/YetiLogisticLoss.md"><code>tfr.keras.losses.YetiLogisticLoss</code></a>
 *   <a href="../tfr/keras/losses/get.md"><code>tfr.keras.losses.get</code></a>
 *   <a href="../tfr/keras/metrics.md"><code>tfr.keras.metrics</code></a>
 *   <a href="../tfr/keras/metrics/ARPMetric.md"><code>tfr.keras.metrics.ARPMetric</code></a>
@@ -138,11 +140,13 @@
 *   <a href="../tfr/keras/utils/GainFunction.md"><code>tfr.keras.utils.PositiveFunction</code></a>
 *   <a href="../tfr/keras/utils/GainFunction.md"><code>tfr.keras.utils.RankDiscountFunction</code></a>
 *   <a href="../tfr/keras/model/TensorLike.md"><code>tfr.keras.utils.TensorLike</code></a>
+*   <a href="../tfr/keras/utils/deserialize_keras_object.md"><code>tfr.keras.utils.deserialize_keras_object</code></a>
 *   <a href="../tfr/keras/utils/identity.md"><code>tfr.keras.utils.identity</code></a>
 *   <a href="../tfr/keras/utils/inverse.md"><code>tfr.keras.utils.inverse</code></a>
 *   <a href="../tfr/keras/utils/is_greater_equal_1.md"><code>tfr.keras.utils.is_greater_equal_1</code></a>
 *   <a href="../tfr/keras/utils/log2_inverse.md"><code>tfr.keras.utils.log2_inverse</code></a>
 *   <a href="../tfr/keras/utils/pow_minus_1.md"><code>tfr.keras.utils.pow_minus_1</code></a>
+*   <a href="../tfr/keras/utils/serialize_keras_object.md"><code>tfr.keras.utils.serialize_keras_object</code></a>
 *   <a href="../tfr/keras/utils/symmetric_log1p.md"><code>tfr.keras.utils.symmetric_log1p</code></a>
 *   <a href="../tfr/utils.md"><code>tfr.utils</code></a>
 *   <a href="../tfr/utils/LossFunction.md"><code>tfr.utils.LossFunction</code></a>

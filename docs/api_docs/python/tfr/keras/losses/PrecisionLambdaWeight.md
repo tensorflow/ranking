@@ -15,7 +15,7 @@ description: Keras serializable class for Precision.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L172-L187">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L199-L214">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -61,7 +61,7 @@ for positive examples. The rest are negative examples.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L183-L187">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L210-L214">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -118,7 +118,7 @@ A `Tensor` that can weight individual examples.
 
 <h3 id="pair_weights"><code>pair_weights</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L399-L427">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/losses_impl.py#L412-L440">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
