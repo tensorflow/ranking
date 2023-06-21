@@ -21,3 +21,15 @@ as listed below. For NQ, we also provide teacher scores from a ranker trained on
 | Istella | 173M | [istella.zip](https://storage.googleapis.com/gresearch/rd-suite/istella.zip)  |
 
 
+## Citation
+You can cite our work by copying the following bibtex:
+
+```
+@article{qin2023rd,
+  title={RD-Suite: A Benchmark for Ranking Distillation},
+  author={Qin, Zhen and Jagerman, Rolf and Pasumarthi, Rama and Zhuang, Honglei and Zhang, He and Bai, Aijun and Hui, Kai and Yan, Le and Wang, Xuanhui},
+  journal={arXiv preprint arXiv:2306.04455},
+  year={2023}
+}
+```
+
