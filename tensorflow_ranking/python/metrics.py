@@ -666,9 +666,11 @@ def eval_metric(metric_fn, **kwargs):
       the list of arguments included in kwargs.
 
   """
-  metric_spec = inspect.getargspec(metric_fn)
+  metric_spec = inspect.getfullargspec(metric_fn)
   metric_args = metric_spec.args
-  required_metric_args = (metric_args[:-len(metric_spec.defaults)])
+  required_metric_args = metric_args[: -len(metric_spec.defaults)] + [
+      n for n in metric_spec.kwonlyargs if n not in metric_spec.kwonlydefaults
+  ]
   for arg in required_metric_args:
     if arg not in kwargs:
       raise ValueError('Metric %s requires argument %s.' %
