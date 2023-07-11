@@ -101,7 +101,9 @@ class TFRBertDataLoader(tfr_task.RankingDataLoader):
 class TFRBertModelConfig(base_config.Config):
   """A TFR-BERT model configuration."""
   dropout_rate: float = 0.1
-  encoder: encoders.EncoderConfig = encoders.EncoderConfig()
+  encoder: encoders.EncoderConfig = dataclasses.field(
+      default_factory=encoders.EncoderConfig
+  )
 
 
 # TODO: Extend to more generic encoders in addition to BERT.
@@ -142,7 +144,9 @@ class TFRBertModelBuilder(tfr_model.ModelBuilder):
 @dataclasses.dataclass
 class TFRBertConfig(tfr_task.RankingTaskConfig):
   """The tf-ranking BERT task config."""
-  model: TFRBertModelConfig = TFRBertModelConfig()
+  model: TFRBertModelConfig = dataclasses.field(
+      default_factory=TFRBertModelConfig
+  )
   # If specified, group by `query_feature_name` to calculate aggregated metrics
   aggregated_metrics: bool = False
   # If True, output prediction results to a csv after each validation step.
