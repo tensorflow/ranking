@@ -723,6 +723,15 @@ class LossesTest(parameterized.TestCase, tf.test.TestCase):
     self.assertAlmostEqual(
         loss(labels, scores).numpy(), ln(1 + math.exp(-1.)), places=5)
 
+  def test_pairwise_logistic_loss_sum_with_temperature(self):
+    scores = [[1., 3., 2.]]
+    labels = [[0., -1., 1.]]
+
+    loss = losses.PairwiseLogisticLoss(
+        reduction=tf.losses.Reduction.SUM, temperature=0.1)
+    self.assertAlmostEqual(
+        loss(labels, scores).numpy(), ln(1 + math.exp(-10.)), places=5)
+
   def test_softmax_loss_with_invalid_labels(self):
     scores = [[1., 3., 2.]]
     labels = [[0., -1., 1.]]

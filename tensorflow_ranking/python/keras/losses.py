@@ -322,6 +322,7 @@ class _PairwiseLoss(_RankingLoss):
   def call(self, y_true: utils.TensorLike,
            y_pred: utils.TensorLike) -> tf.Tensor:
     """See _RankingLoss."""
+    y_pred = self._loss.get_logits(y_pred)
     losses, weights = self._loss.compute_unreduced_loss(
         labels=y_true, logits=y_pred)
     losses = tf.multiply(losses, weights)
@@ -663,7 +664,7 @@ class YetiLogisticLoss(_PairwiseLoss):
       reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
       name: Optional[str] = None,
       lambda_weight: Optional[YetiDCGLambdaWeight] = None,
-      temperature: float = 0.1,
+      temperature: float = 1.0,
       sample_size: int = 8,
       gumbel_temperature: float = 1.0,
       seed: Optional[int] = None,
