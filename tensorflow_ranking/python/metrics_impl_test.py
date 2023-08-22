@@ -1612,5 +1612,97 @@ class BPrefMetricTest(tf.test.TestCase):
     self.assertAllClose([[0.], [1.]], output)
 
 
+class PWAMetricTest(tf.test.TestCase):
+
+  def test_pwa_should_be_single_value(self):
+    scores = [[1., 3., 2.], [4., 3., 2.], [8., 7., 6.]]
+    labels = [[0., 1., 2.], [4., 3., 2.], [8., 7., 6.]]
+
+    metric = metrics_impl.PWAMetric(name=None, topn=5)
+    output, _ = metric.compute(labels, scores, None)
+
+    self.assertAllClose(output, [[2. / (11. / 6.)],
+                                 [(4. / 1. + 3. / 2. + 2./ 3.) /
+                                  (1. / 1. + 1. / 2. + 1. / 3.)],
+                                 [(8. / 1. + 7. / 2. + 6./ 3.) /
+                                  (1. / 1. + 1. / 2. + 1. / 3.)]])
+
+  def test_pwa_should_be_0_when_no_rel_item(self):
+    scores = [[1., 3., 2.]]
+    labels = [[0., 0., 0.]]
+
+    metric = metrics_impl.PWAMetric(name=None, topn=None)
+    output, _ = metric.compute(labels, scores, None)
+
+    self.assertAllClose(output, [[0.]])
+
+  def test_pwa_should_be_0_when_no_rel_item_in_topn(self):
+    scores = [[1., 3., 2.]]
+    labels = [[0., 0., 1.]]
+
+    metric = metrics_impl.PWAMetric(name=None, topn=1)
+    output, _ = metric.compute(labels, scores, None)
+
+    self.assertAllClose(output, [[0.]])
+
+  def test_pwa_should_handle_topn(self):
+    scores = [[3., 2., 1.], [3., 2., 1.], [3., 2., 1.]]
+    labels = [[1., 2., 0.], [2., 0., 1.], [0., 2., 1.]]
+
+    metric_top1 = metrics_impl.PWAMetric(name=None, topn=1)
+    metric_top2 = metrics_impl.PWAMetric(name=None, topn=2)
+    metric_top6 = metrics_impl.PWAMetric(name=None, topn=6)
+    output_top1, _ = metric_top1.compute(labels, scores, None)
+    output_top2, _ = metric_top2.compute(labels, scores, None)
+    output_top6, _ = metric_top6.compute(labels, scores, None)
+
+    self.assertAllClose(output_top1, [[1.], [2.], [0.]])
+    self.assertAllClose(output_top2, [[2. / (3. / 2.)],
+                                      [2. / (3. / 2.)], [1. / (3. / 2.)]])
+    self.assertAllClose(output_top6, [[2. / (11. / 6.)], [7. / 3. / (11. / 6.)],
+                                      [4. / 3. / (11. / 6.)]])
+
+  def test_pwa_should_ignore_masked_items(self):
+    scores = [[1., 2., 3.]]
+    labels = [[0., 1., 3.]]
+    mask = [[True, False, True]]
+
+    metric = metrics_impl.PWAMetric(name=None, topn=None)
+    output, _ = metric.compute(labels, scores, None, mask=mask)
+
+    self.assertAllClose(output, [[3. / 1. / (3. / 2.)]])
+
+  def test_pwa_weights_no_input_weights(self):
+    scores = [[1., 3., 2.], [1., 2., 3.]]
+    labels = [[1., 4., 2.], [0., 3., 1.]]
+
+    metric = metrics_impl.PWAMetric(name=None, topn=None)
+    _, output_weights = metric.compute(labels, scores)
+
+    self.assertAllClose(output_weights, [[1.], [1.]])
+
+  def test_pwa_weights_should_be_average_weight_of_rel_items(self):
+    scores = [[3., 2., 1.], [3., 2., 1.], [3., 2., 1.]]
+    labels = [[1., 2., 0.], [2., 0., 1.], [0., 2., 1.]]
+    weights = [[2.], [3.], [4.]]
+
+    metric = metrics_impl.PWAMetric(name=None, topn=None)
+    output_pwa, output_weights = metric.compute(labels, scores, weights)
+
+    self.assertAllClose(output_weights, [[2.], [3.], [4.]])
+    self.assertAllClose(output_pwa, [[2. / (11. / 6.)],
+                                     [7. / 3. / (11. / 6.)],
+                                     [4. / 3. / (11. / 6.)]])
+
+  def test_pwa_weights_should_raise_error_if_per_result(self):
+    scores = [[3., 2., 1.], [3., 2., 1.], [3., 2., 1.]]
+    labels = [[1., 2., 0.], [2., 0., 1.], [0., 2., 1.]]
+    weights = [[2., 3., 2.], [3., 7., 3.], [8., 1., 4.]]
+
+    metric = metrics_impl.PWAMetric(name=None, topn=None)
+    with self.assertRaises(ValueError):
+      metric.compute(labels, scores, weights)
+
+
 if __name__ == '__main__':
   tf.test.main()

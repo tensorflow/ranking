@@ -200,6 +200,30 @@ class MetricsTest(tf.test.TestCase):
                features), (sum([0., 1. / rel_rank[1], 0.]) / num_queries)),
       ])
 
+  def test_make_pwa_fn(self):
+    with tf.Graph().as_default():
+      scores = [[3., 2., 1.], [3., 2., 1.], [3., 2., 1.]]
+      labels = [[1., 2., 0.], [2., 0., 1.], [0., 2., 1.]]
+      weights = [[2.], [3.], [4.]]
+      num_queries = len(scores)
+      weights_feature_name = 'weights'
+      features = {weights_feature_name: weights}
+      m = metrics_lib.make_ranking_metric_fn(metrics_lib.RankingMetricKey.PWA)
+      m_2 = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.PWA, topn=2)
+      m_w = metrics_lib.make_ranking_metric_fn(
+          metrics_lib.RankingMetricKey.PWA,
+          weights_feature_name=weights_feature_name)
+      self._check_metrics([
+          (m(labels, scores, features), (((2. + 7. / 3. + 4. / 3.) / (11. / 6.))
+                                         / num_queries)),
+          (m_2(labels, scores, features), (((2. + 2. + 1.) / (3. / 2.))
+                                           / num_queries)),
+          (m_w(labels, scores, features),
+           ((2. * 2. + 3. * 7. / 3. + 4 * 4. / 3.) / (11. / 6.))
+           / (2. + 3. + 4.)),
+      ])
+
   def test_make_hits_fn(self):
     with tf.Graph().as_default():
       scores = [[1., 3., 2.], [1., 2., 3.]]

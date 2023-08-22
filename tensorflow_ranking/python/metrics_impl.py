@@ -163,7 +163,7 @@ def _per_list_recall(labels, predictions, topn, mask):
     mask: A mask indicating which entries are valid for computing the metric.
 
   Returns:
-    A `Tensor` of size [batch_size, 1] containing the precision of each query
+    A `Tensor` of size [batch_size, 1] containing the recall of each query
     respectively.
   """
   sorted_labels = utils.sort_by_scores(predictions, [labels], topn=topn,
@@ -896,3 +896,70 @@ class BPrefMetric(_RankingMetric):
         relevance=tf.cast(tf.greater_equal(relevance, 1.0), dtype=tf.float32))
 
     return bpref, per_list_weights
+
+
+class PWAMetric(_RankingMetric):
+  """Construct a custom Position-Weighted Average Metric.
+
+  For each query we order the results by scores and compute:
+
+  pwa = (ratings[0] * position_weights[0] + ...
+          + ratings[topn - 1] * position_weights[topn - 1]) /
+        (position_weights[0] + ... + position_weights[topn - 1])
+
+  where position_weights = (1. / 1, 1. / 2, ..., 1. / topn)
+
+  Metric value for the whole dataset is weighted sum over pwa values for
+  individual queries:
+
+  result = pwa(query_0) * weights[0] + pwa(query_1) * weights[1] + ...
+
+  For this metrcs, weights should be a `Tensor` of the shape [batch_size, 1].
+  """
+
+  def __init__(self, name, topn=5, ragged=False):
+    """Constructor."""
+    super().__init__(ragged=ragged)
+    self._name = name
+    self._topn = topn
+
+  @property
+  def name(self):
+    """The metric name."""
+    return self._name
+
+  def compute(self, labels, predictions, weights=None, mask=None):
+    """See `_RankingMetric`."""
+    if weights is not None:
+      weights_tensor = tf.convert_to_tensor(value=weights)
+      predictions_tensor = tf.convert_to_tensor(value=predictions)
+      expected_shape = tf.zeros([tf.shape(predictions_tensor)[0], 1])
+      if not weights_tensor.shape.is_compatible_with(expected_shape.shape):
+        raise ValueError('Weights should be a `Tensor` of the shape'
+                         '[batch_size, 1]')
+    return super().compute(labels, predictions, weights, mask)
+
+  def _compute_impl(self, labels, predictions, weights, mask):
+    """See `_RankingMetric`."""
+    topn = tf.shape(predictions)[1] if self._topn is None else self._topn
+    sorted_labels, sorted_mask = utils.sort_by_scores(
+        predictions, [labels, mask], topn=topn, mask=mask)
+
+    sorted_list_size = tf.shape(input=sorted_labels)[1]
+    position_weights = 1.0 / tf.cast(
+        tf.range(1, sorted_list_size + 1), dtype=tf.float32)
+    masked_position_weights = (tf.cast(sorted_mask, dtype=tf.float32)
+                               * position_weights)
+    pwa = tf.compat.v1.math.divide_no_nan(
+        tf.reduce_sum(input_tensor=tf.multiply(sorted_labels,
+                                               masked_position_weights),
+                      axis=1, keepdims=True),
+        tf.reduce_sum(input_tensor=masked_position_weights,
+                      axis=1, keepdims=True))
+    # Weights list should come in with size [batch_size, 1], then will be
+    # expanded out to [batch_size, list_size] in the
+    # "_prepare_and_validate_params" step, so we need to reduce the Tensor back
+    # to size [batch_size, 1].
+    per_list_weights = tf.reduce_mean(
+        input_tensor=weights, axis=1, keepdims=True)
+    return pwa, per_list_weights

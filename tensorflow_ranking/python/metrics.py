@@ -72,6 +72,9 @@ class RankingMetricKey(object):
   # Hits. For binary relevance.
   HITS = 'hits'
 
+  # Position Weighted Average.
+  PWA = 'pwa'
+
 
 def compute_mean(metric_key,
                  labels,
@@ -107,6 +110,7 @@ def compute_mean(metric_key,
       RankingMetricKey.ORDERED_PAIR_ACCURACY: metrics_impl.OPAMetric(name),
       RankingMetricKey.BPREF: metrics_impl.BPrefMetric(name, topn),
       RankingMetricKey.HITS: metrics_impl.HitsMetric(metric_key, topn),
+      RankingMetricKey.PWA: metrics_impl.PWAMetric(metric_key, topn),
   }
   assert metric_key in metric_dict, ('metric_key %s not supported.' %
                                      metric_key)
@@ -268,6 +272,15 @@ def make_ranking_metric_fn(metric_key,
         topn=topn,
         name=name)
 
+  def _pwa_fn(labels, predictions, features):
+    """Returns pwa as the metric."""
+    return pwa(
+        labels,
+        predictions,
+        weights=_get_weights(features),
+        topn=topn,
+        name=name)
+
   metric_fn_dict = {
       RankingMetricKey.ARP: _average_relevance_position_fn,
       RankingMetricKey.MRR: _mean_reciprocal_rank_fn,
@@ -281,6 +294,7 @@ def make_ranking_metric_fn(metric_key,
       RankingMetricKey.ALPHA_DCG: _alpha_discounted_cumulative_gain_fn,
       RankingMetricKey.BPREF: _binary_preference_fn,
       RankingMetricKey.HITS: _hits_fn,
+      RankingMetricKey.PWA: _pwa_fn,
   }
   assert metric_key in metric_fn_dict, ('metric_key %s not supported.' %
                                         metric_key)
@@ -716,3 +730,31 @@ def hits(labels,
     # TODO: Add mask argument for metric.compute() call
     hits_value, per_list_weights = metric.compute(labels, predictions, weights)
     return tf.compat.v1.metrics.mean(hits_value, per_list_weights)
+
+
+def pwa(labels,
+        predictions,
+        weights=None,
+        topn=None,
+        name=None):
+  """Computes PWA.
+
+  Args:
+    labels: A `Tensor` of the same shape as `predictions`. A value >= 1 means a
+      relevant example.
+    predictions: A `Tensor` with shape [batch_size, list_size]. Each value is
+      the ranking score of the corresponding example.
+    weights: A `Tensor` of the same shape of predictions or [batch_size, 1]. The
+      former case is per-example and the latter case is per-list.
+    topn: An integer cutoff specifying how many examples to consider for this
+      metric. If None, the whole list is considered.
+    name: A string used as the name for this metric.
+
+  Returns:
+    A metric for the Position Weighted Average of the batch.
+  """
+  metric = metrics_impl.PWAMetric(name, topn)
+  with tf.compat.v1.name_scope(metric.name, 'pwa',
+                               (labels, predictions, weights)):
+    pwa_value, per_list_weights = metric.compute(labels, predictions, weights)
+    return tf.compat.v1.metrics.mean(pwa_value, per_list_weights)
