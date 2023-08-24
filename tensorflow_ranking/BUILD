@@ -1,5 +1,7 @@
 # TensorFlow Ranking, the project to build ranking models on TensorFlow.
 
+# Placeholder: load py_library
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])

@@ -1,6 +1,9 @@
 # Description:
 # Folder for TensorFlow ranking extensions.
 
+# Placeholder: load py_library
+# Placeholder: load py_test
+
 package(
     default_visibility = [
         "//visibility:public",

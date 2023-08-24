@@ -1,6 +1,10 @@
 # Description:
 # TensorFlow Ranking examples.
 
+# Placeholder: load py_library
+# Placeholder: load py_test
+# Placeholder: load py_binary
+
 package(
     default_visibility = [
         "//tensorflow_ranking:__subpackages__",

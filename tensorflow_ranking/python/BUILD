@@ -1,5 +1,9 @@
 # Description:
 # TensorFlow Ranking, the project to build ranking models on TensorFlow.
+
+# Placeholder: load py_library
+# Placeholder: load py_test
+
 package(
     default_visibility = ["//tensorflow_ranking:__subpackages__"],
 )

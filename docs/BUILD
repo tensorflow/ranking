@@ -1,5 +1,7 @@
 # Docs
 
+# Placeholder: load py_binary
+
 licenses(["notice"])
 
 py_binary(

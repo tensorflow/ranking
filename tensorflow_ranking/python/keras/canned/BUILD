@@ -1,5 +1,8 @@
 # TensorFlow Ranking Keras canned models.
 
+# Placeholder: load py_library
+# Placeholder: load py_test
+
 package(
     default_visibility = [
         "//tensorflow_ranking:__subpackages__",
