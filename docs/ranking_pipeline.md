@@ -175,7 +175,7 @@ pipeline_hparams = tfr.keras.pipeline.PipelineHparams(
     steps_per_execution=100,
     export_best_model=True,
     strategy='MirroredStrategy',
-    master=None)
+    tpu=None)
 ```
 
 Make the `ranking_pipeline` and train.
