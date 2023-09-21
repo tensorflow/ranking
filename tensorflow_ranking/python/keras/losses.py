@@ -31,6 +31,7 @@ class RankingLossKey(object):
   PAIRWISE_MSE_LOSS = 'pairwise_mse_loss'
   YETI_LOGISTIC_LOSS = 'yeti_logistic_loss'
   SOFTMAX_LOSS = 'softmax_loss'
+  CALIBRATED_SOFTMAX_LOSS = 'calibrated_softmax_loss'
   UNIQUE_SOFTMAX_LOSS = 'unique_softmax_loss'
   SIGMOID_CROSS_ENTROPY_LOSS = 'sigmoid_cross_entropy_loss'
   MEAN_SQUARED_LOSS = 'mean_squared_loss'
@@ -95,6 +96,7 @@ def get(loss: str,
       RankingLossKey.PAIRWISE_MSE_LOSS: PairwiseMSELoss,
       RankingLossKey.YETI_LOGISTIC_LOSS: YetiLogisticLoss,
       RankingLossKey.SOFTMAX_LOSS: SoftmaxLoss,
+      RankingLossKey.CALIBRATED_SOFTMAX_LOSS: CalibratedSoftmaxLoss,
       RankingLossKey.UNIQUE_SOFTMAX_LOSS: UniqueSoftmaxLoss,
   }
   if loss in key_to_cls:
@@ -827,6 +829,58 @@ class SoftmaxLoss(_ListwiseLoss):
                                                         sample_weight)
     return tf.keras.__internal__.losses.compute_weighted_loss(
         losses, sample_weight, reduction=self._get_reduction())
+
+
+@tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
+class CalibratedSoftmaxLoss(SoftmaxLoss):
+    """Computes calibrated softmax cross-entropy loss between `y_true` and `y_pred`.
+    
+    
+    Implements calibrated softmax loss from ([Yan et al, 2022][yan2022]]).
+    
+    References:
+        - [Scale Calibration of Deep Ranking Models, Yan et al,
+           2022][zhu2022]
+
+    [yan2022]: https://arxiv.org/abs/2201.08740
+    """
+    def __init__(
+        self,
+        virtual_label,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self._virtual_label = virtual_label
+
+    def get_config(self) -> Dict[str, Any]:
+        config = super().get_config()
+        config.update({
+            'virtual_label': self._virtual_label,
+        })
+        return config  
+
+    def __call__(self, y_true, y_pred, sample_weight=None) -> tf.Tensor:
+        """See _RankingLoss."""
+        list_size = tf.shape(y_true)[0]
+
+        # Concatenate tunable virtual label to each list
+        virtual_labels = tf.ones([list_size, 1], dtype=tf.float32) * self._virtual_label
+        y_true = tf.concat([y_true, virtual_labels], axis=1)
+
+        # Concatenable virtual score of zero to each list
+        virtual_scores = tf.zeros([list_size, 1], dtype=tf.float32)
+        y_pred = tf.concat([y_pred, virtual_scores], axis=1)
+
+        if sample_weight is not None:
+            # Concatenate virtual weight of 1 to each list
+            virtual_weight = tf.ones([list_size, 1], dtype=tf.float32)
+            sample_weight = tf.concat([sample_weight, virtual_weight], axis=1)
+
+        return super().__call__(
+            y_true=y_true, 
+            y_pred=y_pred, 
+            sample_weight=sample_weight,
+        )
 
 
 @tf.keras.utils.register_keras_serializable(package='tensorflow_ranking')
