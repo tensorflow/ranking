@@ -842,7 +842,7 @@ class CalibratedSoftmaxLoss(SoftmaxLoss):
         - [Scale Calibration of Deep Ranking Models, Yan et al,
            2022][yan2022]
 
-    [yan2022]: https://arxiv.org/abs/2201.08740
+    [yan2022]: https://research.google/pubs/pub51402/
     """
     def __init__(
         self,
