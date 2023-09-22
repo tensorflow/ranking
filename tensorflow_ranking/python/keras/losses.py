@@ -840,7 +840,7 @@ class CalibratedSoftmaxLoss(SoftmaxLoss):
     
     References:
         - [Scale Calibration of Deep Ranking Models, Yan et al,
-           2022][zhu2022]
+           2022][yan2022]
 
     [yan2022]: https://arxiv.org/abs/2201.08740
     """
