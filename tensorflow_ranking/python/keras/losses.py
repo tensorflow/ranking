@@ -846,7 +846,7 @@ class CalibratedSoftmaxLoss(SoftmaxLoss):
     """
     def __init__(
         self,
-        virtual_label,
+        virtual_label: float = 0.0,
         **kwargs,
     ):
         super().__init__(**kwargs)
