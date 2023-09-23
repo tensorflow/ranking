@@ -110,10 +110,10 @@ def _batch_aggregation(batch_loss_list: Sequence[Tuple[float, float]]) -> float:
   return loss_sum / weight_sum
 
 
-def _softmax(values: Sequence[float]) -> List[float]:
+def _softmax(values: Sequence[float], shift: float = 0.0) -> List[float]:
   """Returns the softmax of `values`."""
   total = sum(math.exp(v) for v in values)
-  return [math.exp(v) / total for v in values]
+  return [math.exp(v) / (total + shift) for v in values]
 
 
 # Based on nn.sigmoid_cross_entropy_with_logits for x=logit and z=label the
@@ -932,6 +932,44 @@ class GetLossesTest(tf.test.TestCase):
         -(ln(_softmax(scores[0])[2]) / ln(1. + 2.) +
           ln(_softmax(scores[1])[2]) * 2. / ln(1. + 1.)) / 3.,
         places=5)
+
+  def test_calibrated_softmax_loss(self):
+    scores = [[1.0, 3.0, 2.0], [1.0, 2.0, 3.0], [1.0, 2.0, 3.0]]
+    labels = [[0.0, 0.0, 1.0], [0.0, 0.0, 2.0], [0.0, 0.0, 0.0]]
+    weights = [[2.0], [1.0], [1.0]]
+    virtual_label = 0.5
+
+    def softmax_denominator(values):
+      return sum(math.exp(v) for v in values)
+
+    loss = losses.get(
+        loss=losses.RankingLossKey.CALIBRATED_SOFTMAX_LOSS,
+        virtual_label=virtual_label,
+    )
+    self.assertAlmostEqual(
+        loss(labels, scores).numpy(),
+        -(
+            ln(_softmax(scores[0], shift=1.0)[2])
+            + ln(_softmax(scores[1], shift=1.0)[2]) * 2.0
+            - virtual_label * ln(1.0 + softmax_denominator(scores[0]))
+            - virtual_label * ln(1.0 + softmax_denominator(scores[1]))
+            - virtual_label * ln(1.0 + softmax_denominator(scores[2]))
+        )
+        / 3.0,
+        places=5,
+    )
+    self.assertAlmostEqual(
+        loss(labels, scores, weights).numpy(),
+        -(
+            ln(_softmax(scores[0], shift=1.0)[2]) * 2.0
+            + ln(_softmax(scores[1], shift=1.0)[2]) * 2.0 * 1.0
+            - virtual_label * ln(1.0 + softmax_denominator(scores[0])) * 2.0
+            - virtual_label * ln(1.0 + softmax_denominator(scores[1]))
+            - virtual_label * ln(1.0 + softmax_denominator(scores[2]))
+        )
+        / 3.0,
+        places=5,
+    )
 
   def test_unique_softmax_loss(self):
     scores = [[1., 3., 2.], [1., 2., 3.], [1., 2., 3.]]
