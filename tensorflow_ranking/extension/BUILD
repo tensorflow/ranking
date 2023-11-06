@@ -50,6 +50,7 @@ py_test(
     deps = [
         ":pipeline",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
         "//tensorflow_ranking",
@@ -93,6 +94,7 @@ py_test(
     deps = [
         ":task",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         "//tensorflow_ranking/python/keras:model",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,

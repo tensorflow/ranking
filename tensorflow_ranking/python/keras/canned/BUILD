@@ -45,6 +45,7 @@ py_test(
     ],
     deps = [
         ":dnn",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         "//tensorflow_ranking/python/keras:losses",
         "//tensorflow_ranking/python/keras:metrics",
@@ -76,6 +77,7 @@ py_test(
     ],
     deps = [
         ":gam",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         "//tensorflow_ranking/python/keras:losses",
         "//tensorflow_ranking/python/keras:metrics",

@@ -38,6 +38,7 @@ py_test(
     deps = [
         ":antique_kpl_din",
         # py/absl/testing:flagsaver dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         "//tensorflow_ranking",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
@@ -68,6 +69,7 @@ py_test(
         ":antique_ragged",
         # py/absl/testing:flagsaver dep,
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
@@ -95,6 +97,7 @@ py_test(
         ":keras_dnn_tfrecord",
         # py/absl/testing:flagsaver dep,
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
@@ -119,6 +122,7 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":tfrbert_task_experiments",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # tensorflow_models/official/core:config_definitions dep,
     ],

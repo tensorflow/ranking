@@ -44,6 +44,7 @@ py_test(
         ":tfrbert_task",
         # py/absl/flags dep,
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # tensorflow_models/official/nlp/configs:bert dep,
         # tensorflow_models/official/nlp/configs:encoders dep,

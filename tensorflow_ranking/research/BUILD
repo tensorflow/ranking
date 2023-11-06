@@ -51,6 +51,7 @@ py_test(
         # py/absl/flags dep,
         # py/absl/testing:flagsaver dep,
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],

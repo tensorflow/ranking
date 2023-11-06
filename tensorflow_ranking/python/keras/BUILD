@@ -52,6 +52,7 @@ py_test(
     ],
     deps = [
         ":utils",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -85,6 +86,7 @@ py_test(
         ":model",
         ":network",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_compat_v1_estimator dep,
         # py/tensorflow:tensorflow_estimator dep,
@@ -118,6 +120,7 @@ py_test(
         ":losses",
         ":metrics",
         ":network",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -151,6 +154,7 @@ py_test(
         ":model",
         ":network",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         "//tensorflow_ranking/python:data",
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
@@ -179,6 +183,7 @@ py_test(
     ],
     deps = [
         ":feature",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -208,6 +213,7 @@ py_test(
         ":losses",
         ":utils",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow:tensorflow_no_contrib dep,
     ],
 )
@@ -236,6 +242,7 @@ py_test(
     deps = [
         ":metrics",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -256,6 +263,7 @@ py_test(
     python_version = "PY3",
     deps = [
         ":layers",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -282,6 +290,7 @@ py_test(
     ],
     deps = [
         ":saved_model",
+        # Placeholder: proto upb dep
         # py/numpy dep,
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
@@ -304,6 +313,7 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":strategy_utils",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -333,6 +343,7 @@ py_test(
         ":model",
         ":pipeline",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],

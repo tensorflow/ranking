@@ -56,6 +56,7 @@ py_test(
     ],
     deps = [
         ":metrics_impl",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -83,6 +84,7 @@ py_test(
     ],
     deps = [
         ":metrics",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -108,6 +110,7 @@ py_test(
     ],
     deps = [
         ":utils",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -135,6 +138,7 @@ py_test(
     deps = [
         ":losses_impl",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -163,6 +167,7 @@ py_test(
     deps = [
         ":losses",
         ":losses_impl",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
     ],
 )
@@ -191,6 +196,7 @@ py_test(
     deps = [
         ":head",
         ":metrics",
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
     ],
@@ -220,6 +226,7 @@ py_test(
     deps = [
         ":data",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # tensorflow_serving/apis:input_proto_py_pb2 dep,
     ],
@@ -249,6 +256,7 @@ py_test(
     deps = [
         ":feature",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/numpy dep,
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
@@ -284,6 +292,7 @@ py_test(
         ":losses",
         ":model",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
     ],
@@ -320,6 +329,7 @@ py_test(
         ":estimator",
         ":feature",
         # py/absl/testing:parameterized dep,
+        # Placeholder: proto upb dep
         # py/six dep,
         # py/tensorflow:tensorflow_estimator dep,
         # py/tensorflow:tensorflow_no_contrib dep,
