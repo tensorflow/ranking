@@ -66,9 +66,7 @@ landing_page:
 
         # Create a model
         inputs = {
-            name: tf.keras.Input(shape=(None, 1), dtype=tf.float32, name=name)
-            for name in ds.element_spec[0]
-            if name != "_mask"
+            "float_features": tf.keras.Input(shape=(None, 136), dtype=tf.float32)
         }
         norm_inputs = [tf.keras.layers.BatchNormalization()(x) for x in inputs.values()]
         x = tf.concat(norm_inputs, axis=-1)
