@@ -12,6 +12,7 @@ py_binary(
     deps = [
         # py/absl:app dep,
         # py/absl/flags dep,
+        # Placeholder: proto upb dep
         # py/tensorflow_docs/api_generator:generate_lib dep,
         # py/tensorflow_docs/api_generator:public_api dep,
         # py/tensorflow_models dep,
