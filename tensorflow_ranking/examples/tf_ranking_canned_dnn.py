@@ -39,6 +39,7 @@ from absl import flags
 
 import tensorflow as tf
 import tensorflow_ranking as tfr
+import tensorflow_ranking.extension.pipeline as tfr_pipeline
 
 flags.DEFINE_string("train_input_pattern", None,
                     "Input file path used for training.")
@@ -123,7 +124,7 @@ def train_and_eval():
              "listwise_inference": FLAGS.listwise_inference,
              "model_dir": FLAGS.model_dir}
 
-  ranking_pipeline = tfr.ext.pipeline.RankingPipeline(
+  ranking_pipeline = tfr_pipeline.RankingPipeline(
       context_feature_columns(),
       example_feature_columns(),
       hparams,

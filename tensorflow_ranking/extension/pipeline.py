@@ -37,6 +37,7 @@ class RankingPipeline(object):
   ```python
   import tensorflow as tf
   import tensorflow_ranking as tfr
+  import tensorflow_ranking.extension.pipeline as tfr_pipeline
 
   context_feature_columns = {
     "c1": tf.feature_column.numeric_column("c1", shape=(1,))
@@ -63,7 +64,7 @@ class RankingPipeline(object):
   # See `tensorflow_ranking.estimator` for details about creating an estimator.
   estimator = <create your own estimator>
 
-  ranking_pipeline = tfr.ext.pipeline.RankingPipeline(
+  ranking_pipeline = tfr_pipeline.RankingPipeline(
         context_feature_columns,
         example_feature_columns,
         hparams,
@@ -89,7 +90,7 @@ class RankingPipeline(object):
   For example, if you want to remove the best exporters, you may overwrite:
 
   ```python
-  class NoBestExporterRankingPipeline(tfr.ext.pipeline.RankingPipeline):
+  class NoBestExporterRankingPipeline(tfr_pipeline.RankingPipeline):
     def _export_strategies(self, event_file_pattern):
       del event_file_pattern
       latest_exporter = tf.estimator.LatestExporter(
@@ -108,7 +109,7 @@ class RankingPipeline(object):
   if you want to customize your dataset reading behaviors, you may overwrite:
 
   ```python
-  class CustomizedDatasetRankingPipeline(tfr.ext.pipeline.RankingPipeline):
+  class CustomizedDatasetRankingPipeline(tfr_pipeline.RankingPipeline):
     def _make_dataset(self,
                       batch_size,
                       list_size,

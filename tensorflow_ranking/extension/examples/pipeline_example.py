@@ -51,6 +51,7 @@ from absl import flags
 import tensorflow as tf
 from tensorflow import estimator as tf_estimator
 import tensorflow_ranking as tfr
+import tensorflow_ranking.extension.pipeline as tfr_pipeline
 
 flags.DEFINE_string("train_input_pattern", "",
                     "Input file path pattern used for training.")
@@ -176,7 +177,7 @@ def train_and_eval():
       scoring_function=scoring_function,
       hparams=hparams).make_estimator()
 
-  ranking_pipeline = tfr.ext.pipeline.RankingPipeline(
+  ranking_pipeline = tfr_pipeline.RankingPipeline(
       context_feature_columns=context_feature_columns(),
       example_feature_columns=example_feature_columns(),
       hparams=hparams,

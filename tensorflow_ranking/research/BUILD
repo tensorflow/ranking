@@ -1,9 +1,9 @@
 # Description:
 # TensorFlow Ranking research code for published papers.
 
+# Placeholder: load py_binary
 # Placeholder: load py_library
 # Placeholder: load py_test
-# Placeholder: load py_binary
 
 package(
     default_visibility = [
@@ -22,6 +22,7 @@ py_library(
         # py/tensorflow dep,
         # py/tensorflow:tensorflow_estimator dep,
         "//tensorflow_ranking",
+        "//tensorflow_ranking/extension:pipeline",
     ],
 )
 

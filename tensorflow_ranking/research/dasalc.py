@@ -71,6 +71,7 @@ import tensorflow as tf
 from tensorflow import estimator as tf_estimator
 from tensorflow.python.estimator.canned import optimizers
 import tensorflow_ranking as tfr
+import tensorflow_ranking.extension.pipeline as tfr_pipeline
 
 flags.DEFINE_string("train_input_pattern", None,
                     "Input file path used for training.")
@@ -200,7 +201,7 @@ def scoring_function(context_features, example_features, mode):
   return tf.compat.v1.layers.dense(output_layer, units=1)
 
 
-class DASALCPipeline(tfr.ext.pipeline.RankingPipeline):
+class DASALCPipeline(tfr_pipeline.RankingPipeline):
   """A custom ranking pipeline for dasalc model."""
 
   def _make_serving_input_fn(self):

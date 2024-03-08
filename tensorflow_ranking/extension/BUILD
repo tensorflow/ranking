@@ -18,7 +18,6 @@ py_library(
     srcs_version = "PY2AND3",
     visibility = ["//tensorflow_ranking:__pkg__"],
     deps = [
-        ":pipeline",
         "//tensorflow_ranking/extension/premade",
     ],
 )

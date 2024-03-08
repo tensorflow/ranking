@@ -1,9 +1,9 @@
 # Description:
 # TensorFlow Ranking examples.
 
+# Placeholder: load py_binary
 # Placeholder: load py_library
 # Placeholder: load py_test
-# Placeholder: load py_binary
 
 package(
     default_visibility = [
@@ -108,6 +108,7 @@ py_library(
         # py/absl/flags dep,
         # py/tensorflow dep,
         "//tensorflow_ranking",
+        "//tensorflow_ranking/extension:pipeline",
     ],
 )
 
@@ -151,6 +152,7 @@ py_library(
         # py/absl/flags dep,
         # py/tensorflow dep,
         "//tensorflow_ranking",
+        "//tensorflow_ranking/extension:pipeline",
     ],
 )
 
