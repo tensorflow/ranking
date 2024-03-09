@@ -37,6 +37,7 @@ description: Data set config.
 <meta itemprop="property" content="list_size"/>
 <meta itemprop="property" content="mask_feature_name"/>
 <meta itemprop="property" content="prefetch_buffer_size"/>
+<meta itemprop="property" content="ram_budget"/>
 <meta itemprop="property" content="restrictions"/>
 <meta itemprop="property" content="seed"/>
 <meta itemprop="property" content="sharding"/>
@@ -81,6 +82,7 @@ Data set config.
     cache: bool = False,
     cycle_length: Optional[int] = None,
     block_length: int = 1,
+    ram_budget: Optional[int] = None,
     deterministic: Optional[bool] = None,
     sharding: bool = True,
     enable_tf_data_service: bool = False,
@@ -220,6 +222,13 @@ Dataclass field
 </tr><tr>
 <td>
 `block_length`<a id="block_length"></a>
+</td>
+<td>
+Dataclass field
+</td>
+</tr><tr>
+<td>
+`ram_budget`<a id="ram_budget"></a>
 </td>
 <td>
 Dataclass field
@@ -484,7 +493,7 @@ Overrides/returns a unlocked copy with the current config unchanged.
 Validate the parameters consistency based on the restrictions.
 
 This method validates the internal consistency using the pre-defined list of
-restrictions. A restriction is defined as a string which specfiies a binary
+restrictions. A restriction is defined as a string which specifies a binary
 operation. The supported binary operations are {'==', '!=', '<', '<=', '>',
 '>='}. Note that the meaning of these operators are consistent with the
 underlying Python immplementation. Users should make sure the define
@@ -711,6 +720,13 @@ mask_feature_name<a id="mask_feature_name"></a>
 </tr><tr>
 <td>
 prefetch_buffer_size<a id="prefetch_buffer_size"></a>
+</td>
+<td>
+`None`
+</td>
+</tr><tr>
+<td>
+ram_budget<a id="ram_budget"></a>
 </td>
 <td>
 `None`

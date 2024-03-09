@@ -20,7 +20,6 @@ description: A TFR-BERT model configuration.
 <meta itemprop="property" content="SEQUENCE_TYPES"/>
 <meta itemprop="property" content="default_params"/>
 <meta itemprop="property" content="dropout_rate"/>
-<meta itemprop="property" content="encoder"/>
 <meta itemprop="property" content="restrictions"/>
 </div>
 
@@ -30,7 +29,7 @@ description: A TFR-BERT model configuration.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/premade/tfrbert_task.py#L86-L90">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/premade/tfrbert_task.py#L86-L92">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -52,7 +51,7 @@ A TFR-BERT model configuration.
     default_params: dataclasses.InitVar[Optional[Mapping[str, Any]]] = None,
     restrictions: dataclasses.InitVar[Optional[List[str]]] = None,
     dropout_rate: float = 0.1,
-    encoder: encoders.EncoderConfig = <a href="../../../tfr/extension/premade/TFRBertModelConfig.md#encoder"><code>tfr.extension.premade.TFRBertModelConfig.encoder</code></a>
+    encoder: encoders.EncoderConfig = dataclasses.field(default_factory=encoders.EncoderConfig)
 )
 </code></pre>
 
@@ -240,7 +239,7 @@ Overrides/returns a unlocked copy with the current config unchanged.
 Validate the parameters consistency based on the restrictions.
 
 This method validates the internal consistency using the pre-defined list of
-restrictions. A restriction is defined as a string which specfiies a binary
+restrictions. A restriction is defined as a string which specifies a binary
 operation. The supported binary operations are {'==', '!=', '<', '<=', '>',
 '>='}. Note that the meaning of these operators are consistent with the
 underlying Python immplementation. Users should make sure the define
@@ -351,13 +350,6 @@ dropout_rate<a id="dropout_rate"></a>
 </td>
 <td>
 `0.1`
-</td>
-</tr><tr>
-<td>
-encoder<a id="encoder"></a>
-</td>
-<td>
-Instance of `tensorflow_models.official.nlp.configs.encoders.EncoderConfig`
 </td>
 </tr><tr>
 <td>

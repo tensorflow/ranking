@@ -28,6 +28,9 @@ approximate MRR loss between `y_true` and `y_pred`.
 [`class ApproxNDCGLoss`](../../tfr/keras/losses/ApproxNDCGLoss.md): Computes
 approximate NDCG loss between `y_true` and `y_pred`.
 
+[`class CalibratedSoftmaxLoss`](../../tfr/keras/losses/CalibratedSoftmaxLoss.md):
+Computes calibrated softmax cross-entropy loss.
+
 [`class ClickEMLoss`](../../tfr/keras/losses/ClickEMLoss.md): Computes click EM
 loss between `y_true` and `y_pred`.
 

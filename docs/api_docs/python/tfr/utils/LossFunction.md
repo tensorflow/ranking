@@ -14,8 +14,7 @@ This symbol is a **type alias**.
 <code>LossFunction = Callable[
     <a href="../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
     <a href="../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>,
-    <a href="../../tfr/keras/model/TensorDict.md"><code>tfr.keras.model.TensorDict</code></a>,
-    tensorflow.python.framework.ops.Tensor
+    dict[str, <a href="../../tfr/keras/model/TensorLike.md"><code>tfr.keras.model.TensorLike</code></a>], tensorflow.python.framework.ops.Tensor
 ]
 </code></pre>
 

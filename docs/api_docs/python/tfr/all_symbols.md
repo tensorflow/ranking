@@ -19,8 +19,6 @@
 *   <a href="../tfr/data/parse_from_tf_example.md"><code>tfr.data.parse_from_tf_example</code></a>
 *   <a href="../tfr/data/read_batched_sequence_example_dataset.md"><code>tfr.data.read_batched_sequence_example_dataset</code></a>
 *   <a href="../tfr/extension.md"><code>tfr.extension</code></a>
-*   <a href="../tfr/extension/pipeline.md"><code>tfr.extension.pipeline</code></a>
-*   <a href="../tfr/extension/pipeline/RankingPipeline.md"><code>tfr.extension.pipeline.RankingPipeline</code></a>
 *   <a href="../tfr/extension/premade.md"><code>tfr.extension.premade</code></a>
 *   <a href="../tfr/extension/premade/TFRBertConfig.md"><code>tfr.extension.premade.TFRBertConfig</code></a>
 *   <a href="../tfr/extension/premade/TFRBertDataConfig.md"><code>tfr.extension.premade.TFRBertDataConfig</code></a>
@@ -60,6 +58,7 @@
 *   <a href="../tfr/keras/losses.md"><code>tfr.keras.losses</code></a>
 *   <a href="../tfr/keras/losses/ApproxMRRLoss.md"><code>tfr.keras.losses.ApproxMRRLoss</code></a>
 *   <a href="../tfr/keras/losses/ApproxNDCGLoss.md"><code>tfr.keras.losses.ApproxNDCGLoss</code></a>
+*   <a href="../tfr/keras/losses/CalibratedSoftmaxLoss.md"><code>tfr.keras.losses.CalibratedSoftmaxLoss</code></a>
 *   <a href="../tfr/keras/losses/ClickEMLoss.md"><code>tfr.keras.losses.ClickEMLoss</code></a>
 *   <a href="../tfr/keras/losses/CoupledRankDistilLoss.md"><code>tfr.keras.losses.CoupledRankDistilLoss</code></a>
 *   <a href="../tfr/keras/losses/DCGLambdaWeight.md"><code>tfr.keras.losses.DCGLambdaWeight</code></a>

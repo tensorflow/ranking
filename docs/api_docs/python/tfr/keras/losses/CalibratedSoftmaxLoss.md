@@ -1,7 +1,7 @@
-description: Computes pairwise hinge loss between y_true and y_pred.
+description: Computes calibrated softmax cross-entropy loss.
 
 <div itemscope itemtype="http://developers.google.com/ReferenceObject">
-<meta itemprop="name" content="tfr.keras.losses.PairwiseHingeLoss" />
+<meta itemprop="name" content="tfr.keras.losses.CalibratedSoftmaxLoss" />
 <meta itemprop="path" content="Stable" />
 <meta itemprop="property" content="__call__"/>
 <meta itemprop="property" content="__init__"/>
@@ -9,37 +9,43 @@ description: Computes pairwise hinge loss between y_true and y_pred.
 <meta itemprop="property" content="get_config"/>
 </div>
 
-# tfr.keras.losses.PairwiseHingeLoss
+# tfr.keras.losses.CalibratedSoftmaxLoss
 
 <!-- Insert buttons and diff -->
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L324-L388">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L821-L929">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
 </td>
 </table>
 
-Computes pairwise hinge loss between `y_true` and `y_pred`.
+Computes calibrated softmax cross-entropy loss.
+
+Inherits From: [`SoftmaxLoss`](../../../tfr/keras/losses/SoftmaxLoss.md)
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
-<code>tfr.keras.losses.PairwiseHingeLoss(
+<code>tfr.keras.losses.CalibratedSoftmaxLoss(
     reduction: tf.losses.Reduction = tf.losses.Reduction.AUTO,
     name: Optional[str] = None,
     lambda_weight: Optional[losses_impl._LambdaWeight] = None,
     temperature: float = 1.0,
-    ragged: bool = False
+    virtual_label: float = 0.0
 )
 </code></pre>
 
 <!-- Placeholder for "Used in" -->
 
-For each list of scores `s` in `y_pred` and list of labels `y` in `y_true`:
+Implements calibrated softmax loss from ([Yan et al, 2022][yan2022]]).
+
+Given virtual label `y_0`, for each list of scores `s` in `y_pred`, and list of
+labels `y` in `y_true`:
 
 ```
-loss = sum_i sum_j I[y_i > y_j] * max(0, 1 - (s_i - s_j))
+loss = - sum_i y_i * log(exp(s_i) / (1 + sum_j exp(s_j)))
+       - y_0 * log(1 / (1 + sum_j exp(s_j)))
 ```
 
 #### Standalone usage:
@@ -47,34 +53,42 @@ loss = sum_i sum_j I[y_i > y_j] * max(0, 1 - (s_i - s_j))
 ```
 >>> y_true = [[1., 0.]]
 >>> y_pred = [[0.6, 0.8]]
->>> loss = tfr.keras.losses.PairwiseHingeLoss()
+>>> loss = tfr.keras.losses.CalibratedSoftmaxLoss(virtual_label=0.1)
 >>> loss(y_true, y_pred).numpy()
-0.6
-```
-
-```
->>> # Using ragged tensors
->>> y_true = tf.ragged.constant([[1., 0.], [0., 1., 0.]])
->>> y_pred = tf.ragged.constant([[0.6, 0.8], [0.5, 0.8, 0.4]])
->>> loss = tfr.keras.losses.PairwiseHingeLoss(ragged=True)
->>> loss(y_true, y_pred).numpy()
-0.41666666
+1.1808171
 ```
 
 Usage with the `compile()` API:
 
 ```python
-model.compile(optimizer='sgd', loss=tfr.keras.losses.PairwiseHingeLoss())
+model.compile(optimizer='sgd', loss=tfr.keras.losses.CalibratedSoftmaxLoss())
 ```
 
 #### Definition:
 
 $$
-\mathcal{L}(\{y\}, \{s\}) =
-\sum_i \sum_j I[y_i > y_j] \max(0, 1 - (s_i - s_j))
+\mathcal{L}(\{y\}, \{s\}) = - \sum_i y_i
+\log\left(\frac{\exp(s_i)}{1+\sum_j \exp(s_j)}\right)
+- y_0 \log\left(\frac{1}{1+\sum_j \exp(s_j)}\right)
 $$
 
 <!-- Tabular view -->
+
+ <table class="responsive fixed orange">
+<colgroup><col width="214px"><col></colgroup>
+<tr><th colspan="2"><h2 class="add-link">References</h2></th></tr>
+<tr class="alt">
+<td colspan="2">
+- [Scale Calibration of Deep Ranking Models, Yan et al, 2022][yan2022]
+</td>
+</tr>
+
+</table>
+
+[yan2022]: https://research.google/pubs/pub51402/
+
+<!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2"><h2 class="add-link">Args</h2></th></tr>
@@ -113,11 +127,11 @@ of <a href="../../../tfr/keras/losses/DCGLambdaWeight.md"><code>tfr.keras.losses
 </td>
 </tr><tr>
 <td>
-`ragged`<a id="ragged"></a>
+`virtual_label`<a id="virtual_label"></a>
 </td>
 <td>
-(Optional) If True, this loss will accept ragged tensors. If
-False, this loss will accept dense tensors.
+A NON-NEGATIVE float number as the hyperparameter of the
+loss to control the relative scores to zero of results with labels.
 </td>
 </tr>
 </table>
@@ -126,7 +140,7 @@ False, this loss will accept dense tensors.
 
 <h3 id="from_config"><code>from_config</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L298-L308">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L731-L741">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -139,6 +153,7 @@ source</a>
 Instantiates a `Loss` from its config (output of `get_config()`).
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -154,6 +169,7 @@ Output of `get_config()`.
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -167,7 +183,7 @@ A `Loss` instance.
 
 <h3 id="get_config"><code>get_config</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L288-L296">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L888-L893">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -178,7 +194,7 @@ Returns the config dictionary for a `Loss` instance.
 
 <h3 id="__call__"><code>__call__</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L250-L258">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L895-L929">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -189,4 +205,4 @@ source</a>
 ) -> tf.Tensor
 </code></pre>
 
-See tf.keras.losses.Loss.
+See _RankingLoss.

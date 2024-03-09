@@ -35,12 +35,6 @@ toc:
   section:
   - title: Overview
     path: /ranking/api_docs/python/tfr/extension
-  - title: pipeline
-    section:
-    - title: Overview
-      path: /ranking/api_docs/python/tfr/extension/pipeline
-    - title: RankingPipeline
-      path: /ranking/api_docs/python/tfr/extension/pipeline/RankingPipeline
   - title: premade
     section:
     - title: Overview
@@ -111,6 +105,8 @@ toc:
       path: /ranking/api_docs/python/tfr/keras/losses/ApproxMRRLoss
     - title: ApproxNDCGLoss
       path: /ranking/api_docs/python/tfr/keras/losses/ApproxNDCGLoss
+    - title: CalibratedSoftmaxLoss
+      path: /ranking/api_docs/python/tfr/keras/losses/CalibratedSoftmaxLoss
     - title: ClickEMLoss
       path: /ranking/api_docs/python/tfr/keras/losses/ClickEMLoss
     - title: CoupledRankDistilLoss

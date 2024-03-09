@@ -39,7 +39,7 @@ description: The tf-ranking BERT task config.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/premade/tfrbert_task.py#L128-L135">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/extension/premade/tfrbert_task.py#L130-L139">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -64,7 +64,7 @@ Inherits From:
     default_params: dataclasses.InitVar[Optional[Mapping[str, Any]]] = None,
     restrictions: dataclasses.InitVar[Optional[List[str]]] = None,
     init_checkpoint: str = &#x27;&#x27;,
-    model: <a href="../../../tfr/extension/premade/TFRBertModelConfig.md"><code>tfr.extension.premade.TFRBertModelConfig</code></a> = <a href="../../../tfr/extension/premade/TFRBertModelConfig.md"><code>TFRBertModelConfig()</code></a>,
+    model: <a href="../../../tfr/extension/premade/TFRBertModelConfig.md"><code>tfr.extension.premade.TFRBertModelConfig</code></a> = dataclasses.field(default_factory=TFRBertModelConfig),
     train_data: <a href="../../../tfr/extension/task/RankingDataConfig.md"><code>tfr.extension.task.RankingDataConfig</code></a> = None,
     validation_data: <a href="../../../tfr/extension/task/RankingDataConfig.md"><code>tfr.extension.task.RankingDataConfig</code></a> = None,
     name: Optional[str] = None,
@@ -324,7 +324,7 @@ Overrides/returns a unlocked copy with the current config unchanged.
 Validate the parameters consistency based on the restrictions.
 
 This method validates the internal consistency using the pre-defined list of
-restrictions. A restriction is defined as a string which specfiies a binary
+restrictions. A restriction is defined as a string which specifies a binary
 operation. The supported binary operations are {'==', '!=', '<', '<=', '>',
 '>='}. Note that the meaning of these operators are consistent with the
 underlying Python immplementation. Users should make sure the define
@@ -476,7 +476,7 @@ loss_reduction<a id="loss_reduction"></a>
 model<a id="model"></a>
 </td>
 <td>
-Instance of <a href="../../../tfr/extension/premade/TFRBertModelConfig.md"><code>tfr.extension.premade.TFRBertModelConfig</code></a>
+`None`
 </td>
 </tr><tr>
 <td>

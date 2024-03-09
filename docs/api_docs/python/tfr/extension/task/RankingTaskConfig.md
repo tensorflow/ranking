@@ -313,7 +313,7 @@ Overrides/returns a unlocked copy with the current config unchanged.
 Validate the parameters consistency based on the restrictions.
 
 This method validates the internal consistency using the pre-defined list of
-restrictions. A restriction is defined as a string which specfiies a binary
+restrictions. A restriction is defined as a string which specifies a binary
 operation. The supported binary operations are {'==', '!=', '<', '<=', '>',
 '>='}. Note that the meaning of these operators are consistent with the
 underlying Python immplementation. Users should make sure the define

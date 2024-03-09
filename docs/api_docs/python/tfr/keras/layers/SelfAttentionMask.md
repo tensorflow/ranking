@@ -361,7 +361,6 @@ config contains other information needed to load the layer's state, you should
 override this method.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -561,10 +560,9 @@ tables) needed by the layer.
 By default, the config only contains the input shape that the layer was built
 with. If you're writing a custom layer that creates state in an unusual way, you
 should override this method to make sure this state is already created when
-Keras attempts to load its value upon model loading.
+TF-Keras attempts to load its value upon model loading.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Returns</th></tr>
@@ -671,7 +669,6 @@ You can override this method to take full control of how the state of the layer
 is loaded upon calling `keras.models.load_model()`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -700,7 +697,6 @@ You can override this method to take full control of how the state of the layer
 is saved upon calling `model.save()`.
 
 <!-- Tabular view -->
-
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Args</th></tr>
@@ -894,6 +890,7 @@ Output tensor(s).
 </table>
 
 <!-- Tabular view -->
+
  <table class="responsive fixed orange">
 <colgroup><col width="214px"><col></colgroup>
 <tr><th colspan="2">Note</th></tr>
@@ -908,7 +905,7 @@ Output tensor(s).
   layers do), its default value will be set to the mask generated
   for `inputs` by the previous layer (if `input` did come from
   a layer that generated a corresponding mask, i.e. if it came from
-  a Keras layer with masking support.
+  a TF-Keras layer with masking support.
 - If the layer is not built, the method will call `build`.
 </td>
 </tr>

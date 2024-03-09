@@ -6,6 +6,7 @@ description: Ranking loss key strings.
 <meta itemprop="property" content="all_keys"/>
 <meta itemprop="property" content="APPROX_MRR_LOSS"/>
 <meta itemprop="property" content="APPROX_NDCG_LOSS"/>
+<meta itemprop="property" content="CALIBRATED_SOFTMAX_LOSS"/>
 <meta itemprop="property" content="COUPLED_RANKDISTIL_LOSS"/>
 <meta itemprop="property" content="GUMBEL_APPROX_NDCG_LOSS"/>
 <meta itemprop="property" content="LIST_MLE_LOSS"/>
@@ -27,7 +28,7 @@ description: Ranking loss key strings.
 
 <table class="tfo-notebook-buttons tfo-api nocontent" align="left">
 <td>
-  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L11-L33">
+  <a target="_blank" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L11-L34">
     <img src="https://www.tensorflow.org/images/GitHub-Mark-32px.png" />
     View source on GitHub
   </a>
@@ -42,7 +43,7 @@ Ranking loss key strings.
 
 <h3 id="all_keys"><code>all_keys</code></h3>
 
-<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L31-L33">View
+<a target="_blank" class="external" href="https://github.com/tensorflow/ranking/tree/master/tensorflow_ranking/python/keras/losses.py#L32-L34">View
 source</a>
 
 <pre class="devsite-click-to-copy prettyprint lang-py tfo-signature-link">
@@ -68,6 +69,13 @@ APPROX_NDCG_LOSS<a id="APPROX_NDCG_LOSS"></a>
 </td>
 <td>
 `'approx_ndcg_loss'`
+</td>
+</tr><tr>
+<td>
+CALIBRATED_SOFTMAX_LOSS<a id="CALIBRATED_SOFTMAX_LOSS"></a>
+</td>
+<td>
+`'calibrated_softmax_loss'`
 </td>
 </tr><tr>
 <td>
