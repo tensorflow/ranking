@@ -28,6 +28,10 @@ class TowerTest(tf.test.TestCase):
     outputs = tower(inputs)
     self.assertAllEqual([2, 3, 1], outputs.get_shape().as_list())
 
+  def test_create_tower_with_bias_kwarg(self):
+    tower = layers.create_tower([3, 2], 1, use_bias=False)
+    tower_layers_bias = [tower.get_layer(name).use_bias for name in ['dense_1', 'dense_2']]
+    self.assertAllEqual([False, False], tower_layers_bias)
 
 class FlattenListTest(tf.test.TestCase):
 
