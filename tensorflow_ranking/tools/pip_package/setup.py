@@ -28,13 +28,14 @@ DOCLINES = __doc__.split('\n')
 # This version string is semver compatible, but incompatible with pip.
 # For pip, we will remove all '-' characters from this string, and use the
 # result for pip.
-_VERSION = '0.5.4'
+_VERSION = '0.5.5'
 
 REQUIRED_PACKAGES = [
     'absl-py >= 0.1.6',
     'numpy >= 1.23.2',
     'six >= 1.10.0',
     'tensorflow-serving-api >= 2.0.0, < 3.0.0',
+    'tensorflow < 2.16.0',
 ]
 
 project_name = 'tensorflow_ranking'
