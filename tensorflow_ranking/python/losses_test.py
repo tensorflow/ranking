@@ -15,6 +15,8 @@
 """Tests for ranking losses."""
 
 import math
+
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_ranking.python import losses as ranking_losses
@@ -147,14 +149,11 @@ def _circle_loss(labels,
 
 def _batch_aggregation(batch_loss_list, reduction=None):
   """Returns the aggregated loss."""
-  loss_sum = 0.
-  weight_sum = 0.
-  for loss, weight, count in batch_loss_list:
-    loss_sum += loss
-    if reduction == 'mean':
-      weight_sum += weight
-    else:
-      weight_sum += count
+  loss_sum = np.sum([loss for loss, weight, count in batch_loss_list])
+  if reduction == 'mean':
+    weight_sum = np.sum([weight for loss, weight, count in batch_loss_list])
+  else:
+    weight_sum = np.sum([count for loss, weight, count in batch_loss_list])
   return loss_sum / weight_sum
 
 
